@@ -8,5 +8,5 @@ This is real music. Each piece will play indefinitely in any standard Web browse
 
 All source code for these pieces is available in the GitHub repository.
 
-The underlying technology is my WebAssembly builds of Csound and CsoundAC. Some pieces may use third party JavaScript libraries.
+The underlying technology is my WebAssembly builds of Csound and CsoundAC. Some pieces may use third party libraries.
 
