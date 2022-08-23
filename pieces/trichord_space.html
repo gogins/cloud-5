@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chord Space for Trichords</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<script src="CsoundAudioNode.js"></script>
+<script src="csound_loader.js"></script>
+<script src='CsoundAC.js'></script>
+<script src="silencio/js/sprintf.js"></script>
+<script src="silencio/js/three.js"></script>
+<script src="silencio/js/TrackballControls.js"></script>
+<script src="silencio/js/tinycolor.js"></script>
+<script src="silencio/js/dat.gui.js"></script>
+<style>
+    .trichord-box {
+        background:transparent;
+        border-box;
+        border-color:grey;
+     }
+    ::-webkit-scrollbar {
+        width:10px;
+    }
+    ::-webkit-scrollbar-track-piece {
+        opacity:.125;
+        background-color:grey;
+    }
+    ::-webkit-scrollbar-corner {
+        opacity:.25;
+        background-color:grey;
+    }
+</style>
+</head>
+<body style="background:black;">
+<canvas id="canvas" style="background:transparent;position:absolute;height:100vh;width:100vw;top:0vh;left:0vw;"></canvas>
+<table id="table" class="w3-table" style="position:absolute;height:25vh;width:100vw;top:0vh;left:0vw;display:block;">
+<tr>
+<td id="help">
+<div class="w3-border w3-panel trichord-box" style="height:25vh;width:50vw;display:block;overflow-y:scroll;color:white;">
+<h1>Chord Space for Trichords</h1>
+<h3>Michael Gogins<br>31 January 2021</h3>
+<p>This program is an interactive 3-dimensional model of a chord space for all 
+3-voice chords in 12-tone equal temperament. A chord is a single point in a 
+space with 1 dimension for each voice of a chord; thus, any chord space for 
+trichords has 3 dimensions. Different equivalence classes divide this space 
+into different quotient spaces (or orbifolds), e.g. octave equivalence 
+produces a cube, permutational equivalence a prism, transpositional 
+equivalence a flat layer, and inversional equivalence a reflection that 
+folds half the space over itself. The chord space at startup is the 
+combination of octave equivalence and permutational equivalence (OP). See: 
+Callendar, Quinn, and Tymoczko, "Generalized Voice-Leading Spaces," 
+<b><i>Science</i> 320</b>, 2008.</p>
+<p>Source code for this program <a href="https://github.com/gogins/csound-examples/blob/master/csound-extended-wasm/TrichordSpace.html">may be found here<a/>. 
+Source code for the CsoundAC library 
+that implements the chord spaces and transformations <a href="https://github.com/gogins/csound-extended">may be found here</a>.</p>
+<p>In OP, the augmented triads form a central column (white balls). It is 
+surrounded by 3 columns of major triads (red balls), and 3 columns of minor 
+triads (blue balls); each column is a different voicing of the triad. 
+Neighboring chords are connected by 1-semitone voice-leadings.<p>
+<p>Clicking on a chord selects it, plays it, and prints information about it 
+in the text area on the left side. Dragging the mouse with the left button 
+down rotates the model, dragging the mouse with the right button down moves 
+the model, and dragging the button with the mouse wheel down moves the model 
+closer to or farther away from the viewer.<p>
+<p>The following commands are available by using the menu (or key 
+combinations). Please note, pressing the shift key in a key combination makes 
+an up movement into a down movement.
+</p>
+<dl>
+<dt>Equivalence class</dt>
+<dd>Sets the current equivalence class of the orbifold. The possibilities are OP 
+(octave equivalence and permutational equivalence), OPT (octave equivalence, 
+permutational equivalence, and transpositional equivalence; maps to normal form),
+or OPTI (octave equivalence, permutational equivalence, transpositional 
+equivalence, and inversional equivalence; maps to prime form).<dd>
+<dt>Play</dt>
+<dd>Starts running the embedded Csound synthesizer, which will play chords as 
+they are selected.</dt>
+<dt>Stop</dt>
+<dd>Stops Csound.</dd>
+<dt>Transpose [T]</dt>
+<dd>Transposes the selected chord up (+ key) or down (- key) by 1 semitone.</dd>
+<dt>Invert [I]</dt>
+<dd>Inverts the selected chord, i.e. reflects it in the inversion flat that 
+divides each OPT domain into two OPTI domains.</dd>
+<dt>Move voice 1 [1]</dt>
+<dd>Moves voice 1 of the selected chord up or down by 1 semitone.</dd>
+<dt>Move voice 2 [2]</dt>
+<dd>Moves voice 2 of the selected chord up or down by 1 semitone.</dd>
+<dt>Move voice 3 [3]</dt>
+<dd>Moves voice 3 of the selected chord up or down by 1 semitone.</dd>
+<dt>Neo-Riemannian transformations</dt>
+<dd>
+<dl>
+<dt>Relative [R]</dt>
+<dd>Applies the relative transformation to the selected chord, e.g. I <=> vi./dd>
+<dt>Parallel [P]</dt>
+<dd>Applies parallel transformation to the selected chord, e.g. I <=> i.</dd>
+<dt>Leading-tone exchange [L]</dt>
+<dd>Applies the leading-tone transformation to the selected chord, e.g. I <=> iii.</dd>
+<dt>Slide [S]</dt>
+<dd>Applies the slide transformation to the selected chord, e.g. I <=> i#.</dd>
+<dt>Nebenverwandt [N]</dt>
+<dd>Applies the Nebenverwandt transformation to the selected chord, e.g. I <=> iv.</dd>
+<dt>Hexpole [X]</dt>
+<dd>Applies the hexpole transformation to the selected chord, e.g. I <=> vib.</dd>
+<dd></dd>
+</dl>
+<dt>Dominant [D]</dt>
+<dd>Not a neo-Reimannian transformation, but transposes the chord down a 
+perfect fifth, e.g. V => I.</dd>
+</dl>
+</div>
+</td>
+<td>
+<div id="console-layout" class="w3-panel trichord-box">
+<textarea id="console" style="height:25vh;width:50vw;background-color:transparent;color:#A9F5A9;font-family:Courier,sans-serif;font-size:9pt;display:block;overflow-y:scroll;">
+</textarea>
+</div>
+</td>
+</table>
+<textarea id="csd" class="w3-code" hidden="true" style="width:100%;height:25vh;box-sizing:border-box;background-color:MidnightBlue;color:NavajoWhite;">
+<CsoundSynthesizer>
+<CsOptions>
+-d -f -m195 -odac
+</CsOptions>
+<CsInstruments>
+sr = 48000
+ksmps = 128
+nchnls = 2
+0dbfs = 500000
+
+; Ensure the same random stream for each rendering.
+; rand, randh, randi, rnd(x) and birnd(x) are not affected by seed.
+
+;seed 81814
+;seed 818145
+seed 88818145
+
+connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
+connect "FMWaterBell", "outright", "ReverbSC", "inright"
+connect "Phaser", "outleft", "ReverbSC", "inleft"
+connect "Phaser", "outright", "ReverbSC", "inright"
+connect "Sweeper", "outleft", "ReverbSC", "inleft"
+connect "Sweeper", "outright", "ReverbSC", "inright"
+connect "Shiner", "outleft", "ReverbSC", "inleft"
+connect "Shiner", "outright", "ReverbSC", "inright"
+connect "ZakianFlute", "outleft", "ReverbSC", "inleft"
+connect "ZakianFlute", "outright", "ReverbSC", "inright"
+connect "ReverbSC", "outleft", "MasterOutput", "inleft"
+connect "ReverbSC", "outright", "MasterOutput", "inright"
+
+alwayson "ReverbSC"
+alwayson "MasterOutput"
+
+gk_overlap init 20
+
+prealloc 1, 6
+prealloc 2, 6
+prealloc 3, 6
+
+//////////////////////////////////////////////
+// Original by Steven Yi.
+// Adapted by Michael Gogins.
+//////////////////////////////////////////////
+gk_FMWaterBell_level init 15
+gi_FMWaterBell_attack init 0.002
+gi_FMWaterBell_release init 0.01
+gi_FMWaterBell_sustain init 20
+gi_FMWaterBell_sustain_level init .1
+gk_FMWaterBell_index init .125
+gk_FMWaterBell_crossfade init .05
+gk_FMWaterBell_vibrato_depth init 0.
+gk_FMWaterBell_vibrato_rate init 6
+gk_FMWaterBell_midi_dynamic_range init 127
+gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
+instr FMWaterBell, 1, 2, 3
+i_instrument = p1
+i_time = p2
+i_duration = p3
+; One of the envelopes in this instrument should be releasing, and use this:
+i_sustain = 1000
+xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
+i_midi_key = p4
+i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+k_space_left_to_right = p7
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+if i_midi_key > 42 goto high_level
+i_level_correction = -23.5
+goto end_level
+high_level:
+i_level_correction = -20
+end_level:
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
+k_gain = ampdb(gk_FMWaterBell_level)
+a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
+;a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 0
+a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, 1, gi_FMWaterBell_release, 0
+; ares transegr ia, idur, itype, ib [, idur2] [, itype] [, ic] ...
+; a_envelope transegr 0, gi_FMWaterBell_attack, 12, 1, i_sustain, 12, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 12, 0
+a_signal = a_signal * i_amplitude * a_envelope * k_gain
+a_out_left, a_out_right pan2 a_signal, p7
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+prints "%24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+; printks "%24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(a_out_left)), dbamp(rms(a_out_right))
+endin
+
+gk_ReverbSC_feedback init 0.85
+gi_ReverbSC_delay_modulation init 0.35
+gk_ReverbSC_frequency_cutoff init 15000
+instr ReverbSC
+ainleft inleta "inleft"
+ainright inleta "inright"
+; aoutL, aoutR reverbsc ainL, ainR, kfblvl, kfco[, israte[, ipitchm[, iskip]]]
+aoutleft, aoutright reverbsc ainleft, ainright, gk_ReverbSC_feedback, gk_ReverbSC_frequency_cutoff, sr, gi_ReverbSC_delay_modulation
+; printks "%24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(aoutleft)), dbamp(rms(aoutright))
+outleta "outleft", aoutleft
+outleta "outright", aoutright
+prints "%24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+gk_MasterOutput_level init .5
+instr MasterOutput
+aleft inleta "inleft"
+aright inleta "inright"
+kgain = ampdb(gk_MasterOutput_level)
+outs aleft * kgain, aright * kgain
+prints "%24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+instr exitnow
+prints "exitnow i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+ exitnow
+endin
+
+</CsInstruments>
+<CsScore>
+i "exitnow" [60 * 60 + 10 ] .1
+</CsScore>
+</CsoundSynthesizer>
+</textarea>
+</div>
+<script>
+var chord_space = null;
+var chord_space_view = null;
+try {
+    var fs = require("fs");
+    var __dirname = fs.realpathSync.native(".");
+} catch(e) {
+    console.log(e);
+}
+
+var csound_message_callback = function(text) {
+    let messages_textarea = document.getElementById("console");
+    let existing = messages_textarea.value;
+    messages_textarea.value = existing + text;
+    messages_textarea.scrollTop = messages_textarea.scrollHeight;
+};
+
+function onMIDISuccess(midiAccess) {
+    csound_message_callback(midiAccess);
+    var inputs = midiAccess.inputs;
+    for (let output of midiAccess.outputs.values) {
+        csound_message_callback("MIDI output: " + output + "\n");
+        console.log(output);
+    }
+}
+
+function onMIDIFailure() {
+    csound_message_callback('Could not access your MIDI devices.');
+}
+
+var draw_fundamental_domain = function(value) {
+    if (value === "OP") {
+        chord_space = new ChordSpace("RP", 12.);
+    }
+    if (value === "OPT") {
+        chord_space = new ChordSpace("RPTg", 12.);
+    }
+    if (value === "OPTI") {
+        chord_space = new ChordSpace("RPTgI", 12.);
+    }
+    chord_space_view = new ChordSpaceView(chord_space);
+    chord_space_view.draw3D(document.getElementById("canvas"));
+    chord_space_view.lookAtFullScene3D();
+};
+
+var CsoundAC;
+var csound_ = null;
+(async function() { 
+    CsoundAC = await createCsoundAC(); 
+    var txt = "";
+    txt += "Browser CodeName: " + navigator.appCodeName + "\n";
+    txt += "Browser Name: " + navigator.appName + "\n";
+    txt += "Browser Version: " + navigator.appVersion + "\n";
+    txt += "Cookies Enabled: " + navigator.cookieEnabled + "\n";
+    txt += "Browser Language: " + navigator.language + "\n";
+    txt += "Browser Online: " + navigator.onLine + "\n";
+    txt += "Platform: " + navigator.platform + "\n";
+    txt += "User-agent header: " + navigator.userAgent + "\n";
+    csound_message_callback(txt);
+    csound_message_callback(CsoundAC.chord_space_version() + "\n");
+    let CM = CsoundAC.chordForName("C+");
+    CM = CM.T(-4.);
+    console.log(CM.information());
+    console.log(CM.information_debug(-1));
+    draw_fundamental_domain("OP");
+}());
+
+var title = document.title;
+
+var play_ = async function() {
+    try {
+        let messages_textarea = document.getElementById("console");
+        messages_textarea.value = "";
+        let csound_ = await get_csound(csound_message_callback);
+        if (csound_ == null) {
+            return;
+        }
+        let seconds = await csound_.GetScoreTime();
+        csound_message_callback("Score time: " + seconds + "\n");
+        if (seconds > 0) {
+            csound_message_callback("Already playing...\n");
+            return;
+        }
+        csd = document.getElementById('csd').value;
+        await csound_.CompileCsdText(csd);
+        await csound_.Start();
+        await csound_.Perform();
+    } catch(err) {
+        csound_message_callback(err.name + ': ' + err.message + ' ' + err.line + '\n');
+        alert("Csound has not finished loading... wait a bit and try again.");
+    }
+}
+
+var stop_ = async function() {
+    let csound_ = await get_csound(csound_message_callback);
+    let seconds = await csound_.GetScoreTime();
+    csound_message_callback("Score time: " + seconds + "\n");
+    if (seconds > 0) {
+        await csound_.Stop();
+        await csound_.Cleanup();
+        await csound_.Reset();
+    }
+}
+
+var gk_update = async function(name, value) {
+    var numberValue = parseFloat(value);
+    //let csound_ = await get_csound(csound_message_callback);
+    //csound_.SetControlChannel(name, numberValue);
+};
+
+var add_slider = function(gui_folder, token, minimum, maximum, name) {
+    var on_parameter_change = function(value) {
+        gk_update(token, value);
+    };
+    gui_folder.add(gui_parameters, token, minimum, maximum).onChange(on_parameter_change);
+};
+
+window.addEventListener("unload", function(event) { 
+    gui_parameters.stop();
+    nw_window.close();
+});
+
+var gui_parameters = {
+     equivalence_class: 'OP',
+     gk_Reverb_feedback: .6,
+     gi_Reverb_delay_modulation: 0.05,
+     gk_Reverb_frequency_cutoff: 12000.,
+     gk_MasterOutput_level: 0.,
+     play: function() {play_();},
+     stop: function() {stop_();},
+     transpose: function() {chord_space_view.controller.transpose(this.semitone);},
+     invert: function() {chord_space_view.controller.invert();},
+     nrr: function() {chord_space_view.controller.nrr()},
+     nrp: function() {chord_space_view.controller.nrp()},
+     nrl: function() {chord_space_view.controller.nrl()},
+     nrs: function() {chord_space_view.controller.nrs()},
+     nrn: function() {chord_space_view.controller.nrn()},
+     nrh: function() {chord_space_view.controller.nrh()},
+     nrd: function() {chord_space_view.controller.nrd()},
+     v1: function() {chord_space_view.controller.v1(this.semitone)},
+     v2: function() {chord_space_view.controller.v2(this.semitone)},
+     v3: function() {chord_space_view.controller.v3(this.semitone)},
+     semitone: 1.,
+};
+
+window.addEventListener("load", function() {
+    try {
+        gui = new dat.GUI({width: 400});
+        gui.add(gui_parameters, 'play').name('Play');
+        gui.add(gui_parameters, 'stop').name('Stop');
+        let Master = gui.addFolder('Master effects');
+        add_slider(Master, 'gk_Reverb_feedback', 0, 1);    
+        add_slider(Master, 'gi_Reverb_delay_modulation', 0, 3);
+        add_slider(Master, 'gk_Reverb_frequency_cutoff', 5000, 20000);
+        add_slider(Master, 'gk_MasterOutput_level', -80, 80);
+        gui.add(gui_parameters, 'equivalence_class', ['OP', 'OPT', 'OPTI']).name('Equivalence class').onChange(draw_fundamental_domain);
+        gui.add(gui_parameters, 'transpose').name('Transpose [T]');
+        gui.add(gui_parameters, 'invert').name('Invert [I]');
+        let Neo_Reimannian = gui.addFolder('Neo-Riemannian Transformations');
+        Neo_Reimannian.add(gui_parameters, 'nrr').name('Relative [R]');
+        Neo_Reimannian.add(gui_parameters, 'nrp').name('Parallel [P]');
+        Neo_Reimannian.add(gui_parameters, 'nrl').name('Leading tone exchange [L]');
+        Neo_Reimannian.add(gui_parameters, 'nrs').name('Slide [S]');
+        Neo_Reimannian.add(gui_parameters, 'nrn').name('Nebenverwandt [N]');
+        Neo_Reimannian.add(gui_parameters, 'nrh').name('Hexpole [X]');
+        gui.add(gui_parameters, 'nrd').name('Dominant');
+        gui.add(gui_parameters, 'v1').name('Move voice 1 [1]');
+        gui.add(gui_parameters, 'v2').name('Move voice 2 [2]');
+        gui.add(gui_parameters, 'v3').name('Move voice 3 [3]');
+        document.addEventListener("keydown", function (e) {
+            const e_char = String.fromCharCode(e.keyCode || e.charCode);
+            if (e.shiftKey === true) {
+                gui_parameters.semitone = -1;
+            } else {
+                gui_parameters.semitone = 1.;
+            }
+            if        (e_char === 'H') {
+                var table = document.getElementById("table");
+                if (table.style.display === "none") {
+                    table.style.display = "block";
+                } else {
+                    table.style.display = "none";
+                }
+                gui.closed = true;
+                gui.closed = false;
+            } else if (e_char === ' ') {
+                gui_parameters.play();
+            } else if (e_char === 'T') {
+                gui_parameters.transpose();
+            } else if (e_char === 'I') {
+                gui_parameters.invert();
+            } else if (e_char === '1') {
+                gui_parameters.v1();
+            } else if (e_char === '2') {
+                gui_parameters.v2();
+            } else if (e_char === '3') {
+                gui_parameters.v3();
+            } else if (e_char === 'D') {
+                gui_parameters.nrd();
+            } else if (e_char === 'R') {
+                gui_parameters.nrr();
+            } else if (e_char === 'P') {
+                gui_parameters.nrp();
+            } else if (e_char === 'L') {
+                gui_parameters.nrl();
+            } else if (e_char === 'S') {
+                gui_parameters.nrs();
+            } else if (e_char === 'N') {
+                gui_parameters.nrn();
+            } else if (e_char === 'X') {
+                gui_parameters.nrh();
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    };
+});
+
+class ChordSpace {
+    constructor(equivalence_class_, range_) {
+        csound_message_callback("ChordSpace constructor: " + equivalence_class_ + ", " + range_ + "\n");
+        this.equivalence_class = equivalence_class_;
+        this.range = range_;
+        this.chords = CsoundAC.allOfEquivalenceClass(3, this.equivalence_class, this.range, 1., 0, false);
+    }
+    contains(a) {
+        let n = this.chords.size();
+        for (let i = 0; i < n; i++) {
+            let b = this.chords.get(i);
+            if (a.equals(b)) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
+const pickPosition = {x: 0, y: 0};
+
+function getCanvasRelativePosition(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (event.clientX - rect.left) * canvas.width  / rect.width,
+        y: (event.clientY - rect.top ) * canvas.height / rect.height,
+    };
+}
+ 
+function setPickPosition(event) {
+    try {
+        const pos = getCanvasRelativePosition(event);
+        pickPosition.x = (pos.x / canvas.width ) *  2 - 1;
+        pickPosition.y = (pos.y / canvas.height) * -2 + 1;  // note we flip Y
+    } catch(x) {
+        csound_message_callback(x);
+    }
+}
+ 
+function clearPickPosition() {
+  // unlike the mouse which always has a position
+  // if the user stops touching the screen we want
+  // to stop picking. For now we just pick a value
+  // unlikely to pick something
+  pickPosition.x = -100000;
+  pickPosition.y = -100000;
+}
+
+clearPickPosition();
+
+/**
+ * Manages user interactions with the balls in the scene graph that represent 
+ * chords. Chords are value types and balls are Three.js reference types.
+ */
+class ChordSpaceController {
+    constructor(view) {
+        this.raycaster = new THREE.Raycaster();
+        this.pickedObject = null;
+        this.pickedObjectSavedColor = 0;
+        this.view = view;
+        /**
+         * Maps Three.js object ids to Chord instances.
+         */
+        this.chords_for_balls = new Map();
+        /**
+         * Maps Chord ids to Three.js object ids.
+         */
+        this.balls_for_chords = new Map();
+    }
+    /**
+     * Returns the chord associated with the object, or undefined if the chord 
+     * does not exist.
+     */
+    chord_for_ball(object_) {
+        if (object_ == null) {
+            return;
+        }
+        let id = object_.id;
+        let chord = this.chords_for_balls.get(id);
+        return chord;
+    }
+    /**
+     * Returns the object associated with the chord, or undefined if the 
+     * object does not exist.
+     */
+    ball_for_chord(chord) {
+        if (chord == null) {
+            return;
+        }
+        let chord_id = chord.toString();
+        let ball_id = this.balls_for_chords.get(chord_id);
+        if (ball_id == null) {
+            return;
+        }
+        let object_ = this.view.scene.getObjectById(ball_id);
+        return object_;
+    }    
+    current_chord() {
+        return this.chord_for_ball(this.pickedObject);
+    }
+    transpose(semitone) {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.T(semitone).eOP();
+        this.select_chord(chord);
+     }
+    /*
+    Chord self = chord;
+    if (predicate<EQUIVALENCE_RELATION_RPTgI>(self, range, g, opt_sector) == true) {
+        return self;
+    } else {
+        auto rptt = equate<EQUIVALENCE_RELATION_RPTg>(self, range, g, opt_sector);
+        if (predicate<EQUIVALENCE_RELATION_I>(rptt, range, g, opt_sector) == true) {
+            return rptt;
+        } else {
+            auto rptt_i = equate<EQUIVALENCE_RELATION_I>(rptt, range, g, opt_sector);
+            auto rptt_i_rptt = equate<EQUIVALENCE_RELATION_RPTg>(rptt_i, range, g, opt_sector);
+            return rptt_i_rptt;
+        }
+    }
+    */
+    invert() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        csound_message_callback(sprintf("invert: chord:      %s\n", chord.toString()));
+        let sectors = chord.opt_domain_sectors();
+        let sector = sectors.get(0);
+        csound_message_callback(sprintf("invert: sector:     %d\n", sector));
+        let reflection = chord.reflect(sector).ceiling(1.).eOP();
+        csound_message_callback(sprintf("invert: reflection: %s\n", reflection.toString()));
+        this.select_chord(reflection);
+    }    nrr() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.nrR();
+        this.select_chord(chord);
+    }
+    nrp() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.nrP();
+        this.select_chord(chord);
+    }
+    nrl() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.nrL();
+        this.select_chord(chord);
+    }
+    nrs() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.nrS();
+        this.select_chord(chord);
+    }
+    nrn() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.nrN();
+        this.select_chord(chord);
+    }
+    nrh() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.nrH();
+        this.select_chord(chord);
+    }
+    nrd() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.nrD() ;
+        this.select_chord(chord);
+    }
+    v1(semitone) {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.move(0, semitone).eOP();
+        this.select_chord(chord);
+    }
+    v2(semitone) {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.move(1, semitone).eOP();
+        this.select_chord(chord);
+    }
+    v3(semitone) {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        chord = chord.move(2, semitone).eOP();
+        this.select_chord(chord);
+    }
+    information() {
+        let chord = this.current_chord();
+        if (chord == null) {
+            return;
+        }
+        let text = chord.information();
+        alert(text);
+    }
+    select_chord(chord) {
+        let ball = this.ball_for_chord(chord);
+        // Note: "variable == null" is true if the variable is either undefined or null.
+        if (ball == null) {
+            return;
+        }
+        this.select_ball(ball);
+        this.view.on_picked_chord(chord);
+    }
+    select_ball(ball) {
+        // Restore the state of a previoiusly picked chord.
+        if (this.pickedObject !== null) {
+            this.pickedObject.material.emissive.setHex(this.pickedObjectSavedColor);
+            this.pickedObject.scale.set(1, 1, 1);
+            this.pickedObject.material.emissive.multiplyScalar(.5);
+        }
+        this.pickedObject = ball;
+        // Save the state of the picked chord.
+        this.pickedObjectSavedColor = this.pickedObject.material.emissive.getHex();
+        this.pickedObject.scale.set(1.5, 1.5, 1.5);
+        this.pickedObject.material.emissive.multiplyScalar(2.);
+        this.view.render();
+     }
+    pick(normalizedPosition, scene, camera, time) {
+        try {
+            // Cast a ray through the view frustum.
+            this.raycaster.setFromCamera(normalizedPosition, camera);
+            // Returns the list of the objects that the ray intersects.
+            const intersectedObjects = this.raycaster.intersectObjects(scene.children);
+            for (let i = 0; i < intersectedObjects.length; ++i) {
+                let picked_ = intersectedObjects[i].object;
+                // We are only interested in objects that have associated chords.
+                let chord = this.chord_for_ball(picked_);
+                if (chord == null) {
+                    continue;
+                } else {
+                    this.select_ball(picked_);
+                    break;
+                }
+            }
+            return this.pickedObject;
+        } catch(x) {
+            csound_message_callback("Exception in ChordSpaceController.pick:\n", x.message);
+            return null;
+        }
+    }
+}
+
+class ChordSpaceView {
+    constructor(chord_space_) {
+        this.chord_space = chord_space_
+        this.score = null;
+        this.canvas = null;
+        this.context = null;
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.controls = null;
+        this.major = CsoundAC.chordForName("CM").normal_form();
+        this.minor = CsoundAC.chordForName("Cm").normal_form();
+        this.augmented = CsoundAC.chordForName("C+").normal_form();
+        this.controller = new ChordSpaceController(this);
+        this.current_chord = null;
+        this.prior_chord = null;
+    }
+    async play_chord() {
+        let csound_ = await get_csound(csound_message_callback);
+        if (csound_ == null) {
+            return;
+        }
+        // Stop playing the prior chord.
+        if (this.prior_chord !== null) {
+            if (this.current_chord.equals(this.prior_chord)) {
+                return;
+            }
+            for (let voice = 0; voice < this.prior_chord.voices(); ++voice) {
+                let instrument = 1. + voice;
+                let time = 0.;
+                let duration = 0.;
+                let key = 60. + this.prior_chord.getPitch(voice);
+                let velocity = 60.;
+                let x = 0.;
+                let y = voice / 4.;
+                let z = 0.;
+                let event = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f \n", -instrument, time, duration, key, velocity, x, y, z);
+                csound_.ReadScore(event);
+            }
+        } 
+        // Start playing the currrent chord.
+        if (this.current_chord == null) {
+            return;
+        } else {
+            for (let voice = 0; voice < this.current_chord.voices(); ++voice) {
+                let instrument = 1. + voice;
+                let time = 0.;
+                let duration = -100.;
+                let key = 60 + this.current_chord.getPitch(voice);
+                let velocity = 60.;
+                let x = 0.;
+                let y = voice / 4.;
+                let z = 0.;
+                let event = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f \n", instrument, time, duration, key, velocity, x, y, z);
+                csound_.ReadScore(event);
+            }
+        }
+    }
+    render() {
+        this.renderer.render(this.scene, this.camera);
+    }
+    on_picked_chord(new_chord) {
+        this.render();
+        csound_message_callback("Picked chord:\n" + new_chord.information() + "\n");
+        this.prior_chord = this.current_chord;
+        this.current_chord = new_chord;
+        this.play_chord();
+    }
+    prepareScene3D() {
+        let canvas = this.canvas;
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        this.scene = new THREE.Scene();
+        let scene = this.scene;
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true
+        });
+        let renderer = this.renderer;
+        renderer.setClearColor(0);
+        renderer.sortObjects = false;
+        renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+        renderer.setPixelRatio(canvas.devicePixelRatio);
+        // Wire up the view controls to the camera.
+        this.camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 1, 100000);
+        let camera = this.camera;
+        this.controls = new THREE.TrackballControls(camera, renderer.domElement);
+        let controls = this.controls;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1;
+        controls.panSpeed = 1;
+        controls.noZoom = false;
+        controls.noPan = false;
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
+        //controls.keys = [ 65, 83, 68 ];
+        var chord_space_view = this;
+        this.canvas.addEventListener("mousemove", function(e) {
+            chord_space_view.render3D();
+        });
+        this.canvas.addEventListener("mousedown", function(e) {
+            ///csound_message_callback(e.toString() + "\n");
+            clearPickPosition();
+            setPickPosition(e);
+            const picked = chord_space_view.controller.pick(pickPosition, chord_space_view.scene, chord_space_view.camera, 0);
+            let chord =  chord_space_view.controller.chord_for_ball(picked);
+            if (chord == null) {
+                return;
+            } else {
+                chord_space_view.on_picked_chord(chord);
+            }
+        });
+        // Ensure that all sides are lighted.
+        let light = new THREE.DirectionalLight(0xffffff, 3);
+        light.position.set(-1, -2, 11).normalize();
+        this.scene.add(light);
+        let light2 = new THREE.DirectionalLight(0xffffff, 2);
+        light2.position.set(2, 1, -22).normalize();
+        this.scene.add(light2);
+        var onResize = function() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            this.renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+            this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            this.controls.handleResize();
+            this.camera.updateProjectionMatrix();
+            this.renderer.render(this.scene, this.camera);
+        };
+        window.addEventListener('resize', onResize, false);
+    }
+    render3D() {
+        this.controls.update();
+        this.camera.updateProjectionMatrix();
+        this.renderer.render(this.scene, this.camera);
+    }
+    plotChord3D(chord) {
+        let hue;
+        let saturation;
+        let value;
+        let normal_form = chord.normal_form();
+        if (normal_form.equals(this.augmented)) {
+            hue = 0.;
+            saturation = 0.;
+            value = .75;
+        } else if (normal_form.equals(this.major)) {
+            hue = 0.;
+            saturation = 1.;
+            value = 1.;
+        } else if (normal_form.equals(this.minor)) {
+            hue = 240./360.;
+            saturation = 1.;
+            value = 1.;
+        } else {
+            hue = (chord.getPitch(0) + chord.getPitch(1) * 2.0 + chord.getPitch(2)) / 44.0;
+            saturation = 1.0;
+            value = .2;
+        }
+        let color_ = tinycolor.fromRatio({h: hue, s: saturation, v: value}).toHexString();
+        let emissive_ = tinycolor.fromRatio({h: hue, s: saturation, v: value / 3.}).toHexString();
+        let specular_ = tinycolor.fromRatio({h: hue, s: saturation / 2, v: value / 3.}).toHexString();
+        let geometry = new THREE.SphereGeometry(0.125, 12, 12);
+        let material = new THREE.MeshPhongMaterial( {specular: specular_, 
+        color: color_, emissive: emissive_, side: THREE.DoubleSide} );        
+        let ball = new THREE.Mesh(geometry, material);    
+        ball.position.x = chord.getPitch(0);
+        ball.position.y = chord.getPitch(1);
+        ball.position.z = chord.getPitch(2);
+        this.scene.add(ball);
+        this.controller.balls_for_chords.set(chord.toString(), ball.id);
+        this.controller.chords_for_balls.set(ball.id, chord);
+        ///csound_message_callback("plotChord3D: normal_form: " + chord.normal_form().toString() + " chord: " + chord.toString() + "\n");
+    }
+    lookAtFullScene3D() {
+        let bounding_box = new THREE.Box3().setFromObject(this.scene);
+        this.camera.lookAt(bounding_box.getCenter());
+        this.camera.fov = 2.5 * Math.atan((bounding_box.getSize().x / (this.canvas.width / this.canvas.height)) / (2 * bounding_box.getSize().y)) * (180 / Math.PI);
+        this.camera.position.copy(bounding_box.getCenter());
+        this.camera.position.z = 1.125 * Math.min(bounding_box.getSize().x, bounding_box.getSize().y);
+        this.camera.position.y = this.camera.position.x * 5;
+        this.camera.position.x = this.camera.position.x * 4;
+        this.controls.target.copy(bounding_box.getCenter());
+        this.controls.update();
+        this.camera.updateProjectionMatrix();
+        this.renderer.render(this.scene, this.camera);
+    }
+    drawAxes() {
+        let range = this.chord_space.range * 1.125;
+        const material = new THREE.LineBasicMaterial( { color: "yellow", linewidth: 5 } );    
+        const geometry = new THREE.Geometry();
+        geometry.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(range, 0, 0), new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, range, 0), new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, range));
+        const line = new THREE.Line(geometry, material);
+        this.scene.add(line);
+        const center_material = new THREE.LineBasicMaterial( { color: "white", linewidth: 5 } );    
+        const center_geometry = new THREE.Geometry();
+        range = range * .4;
+        center_geometry.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(range, range, range));
+        const center_line = new THREE.Line(center_geometry, center_material);
+        this.scene.add(center_line);
+    }
+    connect(origin, neighbor) {
+        if (this.chord_space.contains(neighbor) === false) {
+            return;
+        } else {
+            const material = new THREE.LineBasicMaterial( { color: "green", linewidth: 3, opacity: .25 } );    
+            const geometry = new THREE.Geometry();
+            geometry.vertices.push(new THREE.Vector3(origin.getPitch(0), origin.getPitch(1), origin.getPitch(2)), new THREE.Vector3(neighbor.getPitch(0), neighbor.getPitch(1), neighbor.getPitch(2)));
+            const line = new THREE.Line(geometry, material);
+            this.scene.add(line);
+        }
+    }
+    drawConnections() {
+        let n = this.chord_space.chords.size();
+        for (let i = 0; i < n; i++) {
+            let chord = this.chord_space.chords.get(i);
+            this.connect(chord, chord.move(0,  1.).eP());
+            this.connect(chord, chord.move(1,  1.).eP());
+            this.connect(chord, chord.move(2,  1.).eP());
+            this.connect(chord, chord.move(0, -1.).eP());
+            this.connect(chord, chord.move(1, -1.).eP());
+            this.connect(chord, chord.move(2, -1.).eP());
+        }
+    }
+    draw3D(canvas_) {
+        this.canvas = canvas_;
+        this.prepareScene3D(canvas_, this.chord_space);
+        // Plot the chords.
+        let n = this.chord_space.chords.size();
+        for (var i = 0; i < n; i++) {
+            let chord = this.chord_space.chords.get(i);
+            this.plotChord3D(chord);
+        }
+        this.drawAxes();
+        this.drawConnections();
+        this.lookAtFullScene3D();
+        return canvas;
+    }
+};
+
+</script>
+</body>
+</html>
