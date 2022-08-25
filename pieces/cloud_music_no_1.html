@@ -3,12 +3,12 @@
 <head>
 <title>Cloud Music No. 1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.1/dat.gui.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js" integrity="sha512-4P0ZJ49OMXe3jXT+EsEaq82eNwFeyYL81LeHGzGcEhowFbTqeQ80q+NEkgsE8tHPs6aCqvi7U+XWliAjDmT5Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.js" integrity="sha512-dY9NsJoe4eisOR4ZtU0WaFNOxGcGZMfaviwSYHoiiEXvC6QLBsOOVsv3uY+5lEvuRtGTATg7usKQGajlDWSo7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/91/three.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js" integrity="sha512-czfWedq9cnMibaqVP2Sw5Aw1PTTabHxMuTOkYkL15cbCYiatPIbxdV0zwhfBZKNODg0zFqmbz8f7rKmd6tfR/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src='CsoundAC.js'></script>
 <script src="silencio/js/TrackballControls.js"></script>
@@ -18,6 +18,7 @@
         margin:0px;
         width:100%;
         height:100%;
+        background-color:black;
     }
     .menu {
         font-family: Georgia, serif;
@@ -46,20 +47,19 @@
         left:0px;
     }
     .text-overlay {
-        position: fixed;
-        width: 100%;
-        height:100%
-        color:SkyBlue;
+        width:100%;
+        color:rgba(50,255,200,.75);
         background-color:transparent;
-        border:none;
+        border:0;
         text-align:left;
-        overflow:auto;
-        padding:0;margin:0;
-        border-collapse:collapse;
+        padding:10px;
+        margin:0;
+        overflow:scroll;
         font-family:Courier, sans-serif;
         font-size:9pt;
         z-index:2;
     }
+    <!--
     ::-webkit-scrollbar {
         width:10px;
     }
@@ -71,39 +71,41 @@
         opacity:.25;
         background-color:grey;
     }
+    -->
 </style>
 </head>
-<body id="body">
+<body id="body" height=100vh>
     </div>    
-    <ul class = "menu">
-        <li id="menu_item_play" class="menu_item">Play/stop</li>
-        <li id="menu_item_fullscreen" class="menu_item">Full screen</li>
-        <li id="menu_item_messages" class="menu_item">View messages</li>
-        <li id="menu_item_view" class="menu_item">View code</li>
-        <li id="menu_item_save" class="menu_item">Save settings</li>
-        <li id="menu_item_about" class="menu_item">About</li>
-    </ul>
-    <textarea id="messages_view" class="text-overlay">
-    </textarea>
-    <textarea id="code_view" class="text-overlay">
-    </textarea>
-    <textarea id="about_view" class="text-overlay">
+        <ul class = "menu">
+            <li id="menu_item_play" class="menu_item">Play/stop</li>
+            <li id="menu_item_fullscreen" class="menu_item">Full screen</li>
+            <li id="menu_item_save" class="menu_item">Save settings</li>
+            <li id="menu_item_about" class="menu_item">About</li>
+        </ul>
+    <div>
+         <textarea id="about_view" class="text-overlay" readonly>
 Cloud Music No. 1
 Michael Gogins
 August 2022
     
 This is an online piece of electroacoustic music. It will play indefinitely, always changing. Visuals accompany the music. There are controls you can play with. If you like your settings, save them.
-    </textarea>
+    
+To view Csound and JavaScript notifications, use your browser menu to view the JavaScript console.
+    
+To view the source code of this piece, use your browser menu to view the page source.
+
+To inspect the code of this piece as it runs, use your browser menu to open the developer tools.
+        </textarea>
+    </div>
     <script>
         var csound_message_callback = function(message) {
             console.log(message);
         };
         var CsoundAC;
-        var csound_ = null;
+        var csound = null;
         (async function() { 
             CsoundAC = await createCsoundAC(); 
-            var txt = "";
-            txt += "Browser CodeName: " + navigator.appCodeName + "\n";
+            var txt = "Browser CodeName: " + navigator.appCodeName + "\n";
             txt += "Browser Name: " + navigator.appName + "\n";
             txt += "Browser Version: " + navigator.appVersion + "\n";
             txt += "Cookies Enabled: " + navigator.cookieEnabled + "\n";
@@ -115,20 +117,37 @@ This is an online piece of electroacoustic music. It will play indefinitely, alw
             csound_message_callback(CsoundAC.chord_space_version() + "\n");
             let CM = CsoundAC.chordForName("C+");
             CM = CM.T(-4.);
-            console.log(CM.information());
-            console.log(CM.information_debug(-1));
+            csound_message_callback(CM.information());
+            csound_message_callback(CM.information_debug(-1));
+            try {
+                csound_message_callback("Trying to load CsoundAudioNode...\n");
+                var AudioContext = window.AudioContext || window.webkitAudioContext;
+                var audioContext = new AudioContext();
+                await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function() {
+                    csound_message_callback("Creating CsoundAudioNode...\n");
+                    csound_audio_node = new CsoundAudioNode(audioContext, csound_message_callback);
+                    csound_is_loaded = true;
+                    csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
+                    csound = csound_audio_node;
+                }, function(error) {
+                   csound_message_callback(error + '\n');
+                });
+            } catch (e) {
+                csound_message_callback(e + '\n');
+            }
         }());
         window.onload = function() {
             const display = document.getElementById("display");
             display.width = document.body.clientWidth; 
             display.height = document.body.clientHeight;
-            $("#code_view").style.display = "none";           
-            $("#messages_view").style.display = "none";            
-            $("#about_view").style.display = "none";          
+            $("#about_view").css("display", "none");         
+            $("#about_view").css("width", display.width);         
+            $("#about_view").css("height", display.height);         
             $("#menu_item_play").click(function(event) {
-                alert(event);
+                console.log("menu_item_play click...");
             });
             $("#menu_item_fullscreen").click(function(event) {
+                console.log("menu_item_fullscreen click...");
                 const display = document.getElementById("display");
                 if (display.requestFullscreen) {
                     display.requestFullscreen();
@@ -139,25 +158,20 @@ This is an online piece of electroacoustic music. It will play indefinitely, alw
                 }
             });
             $("#menu_item_save").click(function(event) {
-                alert(event);
+                console.log("menu_item_save click...");
             });
-            $("#menu_item_view").click(function(event) {
-                $("#code_view").toggle();            
-                $("#messages_view").style.display = "none";     
-                $("#about_view").style.display = "none";           
-            });
-            $("#menu_item_messages").click(function(event) {
-                $("#code_view").style.display = "none;"           
-                $("#messages_view").toggle();        
-                $("#about_view").style.display = "none";           
+            $("#menu_item_code").click(function(event) {
+                console.log("menu_item_code click...");
+             });
+            $("#menu_item_notifications").click(function(event) {
+                console.log("menu_item_notifications click...");
             });
             $("#menu_item_about").click(function(event) {
-                $("#code_view").style.display = "none";            
-                $("#messages_view").style.display = "none";         
+                console.log("menu_item_about click...");
                 $("#about_view").toggle();            
             });
             $(document).keydown(function(event) {
-                alert(event);
+                console.log("document keydown...");
                 if (event.keyCode === 'F11') {
                     $("#menu_item_fullscreen").trigger("click");
                 }
