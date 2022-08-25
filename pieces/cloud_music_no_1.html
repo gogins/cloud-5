@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Cloud Music No. 1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.1/dat.gui.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js" integrity="sha512-4P0ZJ49OMXe3jXT+EsEaq82eNwFeyYL81LeHGzGcEhowFbTqeQ80q+NEkgsE8tHPs6aCqvi7U+XWliAjDmT5Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.js" integrity="sha512-dY9NsJoe4eisOR4ZtU0WaFNOxGcGZMfaviwSYHoiiEXvC6QLBsOOVsv3uY+5lEvuRtGTATg7usKQGajlDWSo7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/91/three.js"></script>
+<script src="CsoundAudioNode.js"></script>
+<script src='CsoundAC.js'></script>
+<script src="silencio/js/TrackballControls.js"></script>
+<script src="silencio/js/tinycolor.js"></script>
+<style>
+    html, body {
+        margin:0px;
+        width:100%;
+        height:100%;
+    }
+    .menu {
+        font-family: Georgia, serif;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #333;
+    }
+    .menu_item {
+        float: left;
+        display: block;
+        color: white;
+        text-align: center;
+        padding: 10px 12px;
+        text-decoration: none;
+    }
+    /* Change the link color to #111 (black) on hover */
+    .menu_item:hover {
+        background-color: #111;
+    }    
+    .display {
+        background:black;
+        width:100%;
+        top:0px;
+        left:0px;
+    }
+    .text-overlay {
+        position: fixed;
+        width: 100%;
+        height:100%
+        color:SkyBlue;
+        background-color:transparent;
+        border:none;
+        text-align:left;
+        overflow:auto;
+        padding:0;margin:0;
+        border-collapse:collapse;
+        font-family:Courier, sans-serif;
+        font-size:9pt;
+        z-index:2;
+    }
+    ::-webkit-scrollbar {
+        width:10px;
+    }
+    ::-webkit-scrollbar-track-piece {
+        opacity:.125;
+        background-color:grey;
+    }
+    ::-webkit-scrollbar-corner {
+        opacity:.25;
+        background-color:grey;
+    }
+</style>
+</head>
+<body id="body">
+    </div>    
+    <ul class = "menu">
+        <li id="menu_item_play" class="menu_item">Play/stop</li>
+        <li id="menu_item_fullscreen" class="menu_item">Full screen</li>
+        <li id="menu_item_messages" class="menu_item">View messages</li>
+        <li id="menu_item_view" class="menu_item">View code</li>
+        <li id="menu_item_save" class="menu_item">Save settings</li>
+        <li id="menu_item_about" class="menu_item">About</li>
+    </ul>
+    <textarea id="messages_view" class="text-overlay">
+    </textarea>
+    <textarea id="code_view" class="text-overlay">
+    </textarea>
+    <textarea id="about_view" class="text-overlay">
+Cloud Music No. 1
+Michael Gogins
+August 2022
+    
+This is an online piece of electroacoustic music. It will play indefinitely, always changing. Visuals accompany the music. There are controls you can play with. If you like your settings, save them.
+    </textarea>
+    <script>
+        var csound_message_callback = function(message) {
+            console.log(message);
+        };
+        var CsoundAC;
+        var csound_ = null;
+        (async function() { 
+            CsoundAC = await createCsoundAC(); 
+            var txt = "";
+            txt += "Browser CodeName: " + navigator.appCodeName + "\n";
+            txt += "Browser Name: " + navigator.appName + "\n";
+            txt += "Browser Version: " + navigator.appVersion + "\n";
+            txt += "Cookies Enabled: " + navigator.cookieEnabled + "\n";
+            txt += "Browser Language: " + navigator.language + "\n";
+            txt += "Browser Online: " + navigator.onLine + "\n";
+            txt += "Platform: " + navigator.platform + "\n";
+            txt += "User-agent header: " + navigator.userAgent + "\n";
+            csound_message_callback(txt);
+            csound_message_callback(CsoundAC.chord_space_version() + "\n");
+            let CM = CsoundAC.chordForName("C+");
+            CM = CM.T(-4.);
+            console.log(CM.information());
+            console.log(CM.information_debug(-1));
+        }());
+        window.onload = function() {
+            const display = document.getElementById("display");
+            display.width = document.body.clientWidth; 
+            display.height = document.body.clientHeight;
+            $("#code_view").style.display = "none";           
+            $("#messages_view").style.display = "none";            
+            $("#about_view").style.display = "none";          
+            $("#menu_item_play").click(function(event) {
+                alert(event);
+            });
+            $("#menu_item_fullscreen").click(function(event) {
+                const display = document.getElementById("display");
+                if (display.requestFullscreen) {
+                    display.requestFullscreen();
+                } else if (display.webkitRequestFullscreen) { 
+                    display.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { 
+                    display.msRequestFullscreen();
+                }
+            });
+            $("#menu_item_save").click(function(event) {
+                alert(event);
+            });
+            $("#menu_item_view").click(function(event) {
+                $("#code_view").toggle();            
+                $("#messages_view").style.display = "none";     
+                $("#about_view").style.display = "none";           
+            });
+            $("#menu_item_messages").click(function(event) {
+                $("#code_view").style.display = "none;"           
+                $("#messages_view").toggle();        
+                $("#about_view").style.display = "none";           
+            });
+            $("#menu_item_about").click(function(event) {
+                $("#code_view").style.display = "none";            
+                $("#messages_view").style.display = "none";         
+                $("#about_view").toggle();            
+            });
+            $(document).keydown(function(event) {
+                alert(event);
+                if (event.keyCode === 'F11') {
+                    $("#menu_item_fullscreen").trigger("click");
+                }
+            });
+        };
+    </script>
+    <canvas id="display" class="display">
+    </canvas>
+</html>
