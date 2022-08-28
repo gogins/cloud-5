@@ -10,94 +10,36 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/91/three.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js" integrity="sha512-czfWedq9cnMibaqVP2Sw5Aw1PTTabHxMuTOkYkL15cbCYiatPIbxdV0zwhfBZKNODg0zFqmbz8f7rKmd6tfR/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="CsoundAudioNode.js"></script>
-<script src='CsoundAC.js'></script>
+<script src="CsoundAC.js"></script>
 <script src="silencio/js/TrackballControls.js"></script>
 <script src="silencio/js/tinycolor.js"></script>
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <style>
-    html, body {
-        margin:0px;
-        width:100%;
-        height:100%;
-        background-color:black;
-    }
-    .menu {
-        font-family: Georgia, serif;
-        list-style-type: none;
-        height:35px;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: #333;
-    }
-    .menu_item {
-        float: left;
-        display: block;
-        color: white;
-        text-align: center;
-        padding: 10px 12px;
-        text-decoration: none;
-    }
-    /* Change the link color to #111 (black) on hover */
-    .menu_item:hover {
-        background-color: #111;
-    }    
-    .display {
-        background:black;
-        top:35px;
-        width:100%;
-        left:0px;
-    }
-    .text-overlay {
-        width:100%;
-        color:rgba(50,255,200,.75);
-        background-color:transparent;
-        border:0;
-        text-align:left;
-        top:35px;
-        padding:10px;
-        overflow:scroll;
-        font-family:Courier, sans-serif;
-        font-size:9pt;
-        z-index:2;
-    }
-    <!--
-    ::-webkit-scrollbar {
-        width:10px;
-    }
-    ::-webkit-scrollbar-track-piece {
-        opacity:.125;
-        background-color:grey;
-    }
-    ::-webkit-scrollbar-corner {
-        opacity:.25;
-        background-color:grey;
-    }
-    -->
 </style>
 </head>
-<body id="body">
-    </div>    
+<body id="body" class="w3-medium" style="height:100vh;">
+    <div class="w3-bar w3-dark-grey" style="position:fixed;">    
         <ul class = "menu">
-            <li id="menu_item_play" class="menu_item">Play/stop</li>
-            <li id="menu_item_fullscreen" class="menu_item">Full screen</li>
-            <li id="menu_item_save" class="menu_item">Save settings</li>
-            <li id="menu_item_about" class="menu_item">About</li>
+            <li id="menu_item_play" class="w3-btn">Play/stop</li>
+            <li id="menu_item_fullscreen" class="w3-btn">Full screen</li>
+            <li id="menu_item_settings" class="w3-btn">Settings</li>
+            <li id="menu_item_about" class="w3-btn">About</li>
         </ul>
-    <div>
-         <textarea id="about_view" class="text-overlay " readonly>
-Cloud Music No. 1
-Michael Gogins
-August 2022
+    </div>
+    <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;">
+    </canvas>
+    <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgba(102,205,170,.5);">
+<h1>Cloud Music No. 1</h1>
+<h3>Michael Gogins<br>
+August 2022</h3>
     
 This is an online piece of electroacoustic music. It will play indefinitely, always changing. Visuals accompany the music. There are controls you can play with. If you like your settings, save them.
     
-To view Csound and JavaScript notifications, use your browser menu to view the JavaScript console.
-    
-To view the source code of this piece, use your browser menu to view the page source.
-
-To inspect the code of this piece as it runs, use your browser menu to open the developer tools.
-        </textarea>
+<ul>
+<li>To view Csound and JavaScript notifications, use your browser menu to view the JavaScript console.
+<li>To view the source code of this piece, use your browser menu to view the page source.
+<li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer tools.
+</ul>
     </div>
     <textarea id="csd" cols=80 rows=24 style="display:none;">
 <CsoundSynthesizer>
@@ -343,6 +285,126 @@ e
 </CsScore>
 </CsoundSynthesizer>    
     </textarea>
+
+<script id="draw-shader-fs" type="x-shader/x-fragment">
+    /**
+     * Theoretically, the fragment shader code shown in the ShaderToy editor can 
+     * replace the mainImage function below. The uniforms of course have to agree.
+     */
+    precision mediump float;
+
+    uniform vec2 iResolution;
+    uniform vec2 iMouse;
+    uniform float iTime;
+    uniform float iTimeDelta;
+    uniform float iFrame;
+
+    void mainImage(out vec4 fragColor, in vec2 fragCoord)
+    {
+        vec2 st = fragCoord.xy / iResolution.xy;
+        fragColor = vec4(st, 0.0, 1.0);
+    }
+
+    // The main function simply serves as a shim to call mainImage above.
+    void main() 
+    {
+        mainImage( gl_FragColor, gl_FragCoord.xy );
+    }
+</script>
+
+<script id="draw-shader-vs" type="x-shader/x-vertex">
+    attribute vec2 inPos;
+    void main() 
+    {
+        gl_Position = vec4(inPos, 0.0, 1.0);
+    }
+</script>
+    
+   <script> 
+(function loadscene() {    
+
+var canvas, gl, vp_size, prog, bufObj = {}, mousepos = [0, 0];
+
+function initScene() {
+
+    canvas = document.getElementById( "display");
+    gl = canvas.getContext( "experimental-webgl" );
+    if ( !gl )
+      return;
+
+    canvas.addEventListener('mousemove', (e) => {
+        mousepos = [e.clientX, e.clientY];
+    });
+
+    progDraw = gl.createProgram();
+    for (let i = 0; i < 2; ++i) {
+        let source = document.getElementById(i==0 ? "draw-shader-vs" : "draw-shader-fs").text;
+        let shaderObj = gl.createShader(i==0 ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER);
+        gl.shaderSource(shaderObj, source);
+        gl.compileShader(shaderObj);
+        let status = gl.getShaderParameter(shaderObj, gl.COMPILE_STATUS);
+        if (!status) alert(gl.getShaderInfoLog(shaderObj));
+        gl.attachShader(progDraw, shaderObj);
+        gl.linkProgram(progDraw);
+    }
+    status = gl.getProgramParameter(progDraw, gl.LINK_STATUS);
+    if ( !status ) alert(gl.getProgramInfoLog(progDraw));
+    progDraw.inPos = gl.getAttribLocation(progDraw, "inPos");
+    
+    progDraw.iMouse = gl.getUniformLocation(progDraw, "iMouse");
+    progDraw.iResolution = gl.getUniformLocation(progDraw, "iResolution");
+    progDraw.iTime = gl.getUniformLocation(progDraw, "iTime");
+    progDraw.iTimeDelta = gl.getUniformLocation(progDraw, "iTimeDelta");
+    progDraw.iFrame = gl.getUniformLocation(progDraw, "iFrame");
+    
+    gl.useProgram(progDraw);
+
+    var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
+    var inx = [ 0, 1, 2, 0, 2, 3 ];
+    bufObj.pos = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, bufObj.pos );
+    gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW );
+    bufObj.inx = gl.createBuffer();
+    bufObj.inx.len = inx.length;
+    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, bufObj.inx );
+    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW );
+    gl.enableVertexAttribArray( progDraw.inPos );
+    gl.vertexAttribPointer( progDraw.inPos, 2, gl.FLOAT, false, 0, 0 ); 
+    
+    gl.enable( gl.DEPTH_TEST );
+    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+
+    window.onresize = resize;
+    resize();
+    requestAnimationFrame(render);
+}
+
+function resize() {
+    //vp_size = [gl.drawingBufferWidth, gl.drawingBufferHeight];
+    vp_size = [window.innerWidth, window.innerHeight];
+    //vp_size = [256, 256]
+    canvas.width = vp_size[0];
+    canvas.height = vp_size[1];
+}
+
+function render(delta_milliseconds) {
+    gl.viewport( 0, 0, canvas.width, canvas.height );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+    gl.uniform1f(progDraw.iTime, delta_milliseconds/1000.0);
+    gl.uniform2f(progDraw.iResolution, canvas.width, canvas.height);
+    gl.uniform2f(progDraw.iMouse, mousepos[0], mousepos[1]);
+    gl.drawElements( gl.TRIANGLES, bufObj.inx.len, gl.UNSIGNED_SHORT, 0 );    
+    requestAnimationFrame(render);
+}  
+
+initScene();
+
+})();    
+
+</script>
+
+
+    
     <script>
         var message_callback_buffer = "";
         var csound_message_callback = function(message) {
@@ -373,13 +435,10 @@ e
             csound_message_callback(CM.information());
             csound_message_callback(CM.information_debug(-1));
         }());
+            
+        
         window.onload = function() {
-            const display = document.getElementById("display");
-            display.width = document.body.clientWidth; 
-            display.height = document.body.clientHeight;
             $("#about_view").css("display", "none");         
-            $("#about_view").css("width", display.width);         
-            $("#about_view").css("height", display.height);         
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
                 if (csound == null) {
@@ -400,11 +459,19 @@ e
                         csound_message_callback(e + '\n');
                     }
                 }
-                let csd = await document.getElementById('csd').value;
-                let result = await csound.CompileCsdText(csd);
-                csound_message_callback("CompileCsdText returned: " + result);
-                await csound.Start();
-                await csound.Perform();
+                if (csound.is_playing == false) {
+                    let csd = await document.getElementById('csd').value;
+                    let result = await csound.CompileCsdText(csd);
+                    csound_message_callback("CompileCsdText returned: " + result);
+                    await csound.Start();
+                    await csound.Perform();
+                    csound_message_callback("Csound is playing...\n");
+                } else {
+                    await csound.Stop();
+                    await csound.Cleanup();
+                    csound.Reset();
+                    csound_message_callback("Csound is stopping...\n");
+                }
              });
             $("#menu_item_fullscreen").click(function(event) {
                 console.log("menu_item_fullscreen click...");
@@ -417,8 +484,8 @@ e
                     display.msRequestFullscreen();
                 }
             });
-            $("#menu_item_save").click(function(event) {
-                console.log("menu_item_save click...");
+            $("#menu_item_settings").click(function(event) {
+                console.log("menu_item_settings click...");
             });
             $("#menu_item_code").click(function(event) {
                 console.log("menu_item_code click...");
@@ -438,6 +505,4 @@ e
             });
         };
     </script>
-    <canvas id="display" class="display">
-    </canvas>
-</html>
+ </html>
