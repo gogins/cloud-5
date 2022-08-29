@@ -286,162 +286,152 @@ e
 </CsoundSynthesizer>    
     </textarea>
 
-<script id="draw-shader-fs" type="x-shader/x-fragment">
-    precision mediump float;
-    
-    /**
-     * These are the "standard" ShaderToy uniforms.
-     */
-    uniform vec2 iResolution;
-    uniform vec2 iMouse;
-    uniform float iTime;
-    uniform float iTimeDelta;
-    uniform float iFrame;
-    /**
-     * Here we put custom uniforms for music visualization.
-     */
-    uniform float iFftBins[128];
-     /**
-     * Theoretically, fragment shader code shown in the ShaderToy editor can 
-     * replace the mainImage function below. Of course the uniforms and 
-     * channels from ShaderToy have to be implemented here.
-     */
-    // Ether by nimitz 2014 (twitter: @stormoid)
-    // https://www.shadertoy.com/view/MsjSW3
-    // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
-    // Contact the author for other licensing options
+    <script id="draw-shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+        /**
+         * These are "standard" ShaderToy uniforms.
+         */
+        uniform vec2 iResolution;
+        uniform vec2 iMouse;
+        uniform float iTime;
+        uniform float iTimeDelta;
+        uniform float iFrame;
+        /**
+         * These are custom uniforms for music visualization or score 
+         * generation.
+         */
+        uniform float iFftBins[128];
+         /**
+         * Theoretically, fragment shader code shown in the ShaderToy editor can 
+         * replace the mainImage function below. Of course the uniforms and 
+         * channels from ShaderToy have to be implemented here.
+         */
+        // Ether by nimitz 2014 (twitter: @stormoid)
+        // https://www.shadertoy.com/view/MsjSW3
+        // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
+        // Contact the author for other licensing options
 
-    #define t iTime
-    mat2 m(float a){float c=cos(a), s=sin(a);return mat2(c,-s,s,c);}
-    float map(vec3 p){
-        p.xz*= m(t*0.4);p.xy*= m(t*0.3);
-        vec3 q = p*2.+t;
-        return length(p+vec3(sin(t*0.7)))*log(length(p)+1.) + sin(q.x+sin(q.z+sin(q.y)))*0.5 - 1.;
-    }
-
-    void mainImage( out vec4 fragColor, in vec2 fragCoord ){	
-        vec2 p = fragCoord.xy/iResolution.y - vec2(.9,.5);
-        vec3 cl = vec3(0.);
-        ///float d = 2.5;
-        float d = -1. * iFftBins[10] / 90.;
-        for(int i=0; i<=5; i++)	{
-            vec3 p = vec3(0,0,5.) + normalize(vec3(p, -1.))*d;
-            float rz = map(p);
-            float f =  clamp((rz - map(p+.1))*0.5, -.1, 1. );
-            vec3 l = vec3(0.1,0.3,.4) + vec3(5., 2.5, 3.)*f;
-            cl = cl*l + smoothstep(2.5, .0, rz)*.7*l;
-            d += min(rz, 1.);
+        #define t iTime
+        mat2 m(float a){float c=cos(a), s=sin(a);return mat2(c,-s,s,c);}
+        float map(vec3 p){
+            p.xz*= m(t*0.4);p.xy*= m(t*0.3);
+            vec3 q = p*2.+t;
+            return length(p+vec3(sin(t*0.7)))*log(length(p)+1.) + sin(q.x+sin(q.z+sin(q.y)))*0.5 - 1.;
         }
-        fragColor = vec4(cl, 1.);
-    }
-    // The main function simply serves as a shim to call mainImage above.
-    void main() 
-    {
-        mainImage( gl_FragColor, gl_FragCoord.xy );
-    }
-</script>
 
-<script id="draw-shader-vs" type="x-shader/x-vertex">
-    attribute vec2 inPos;
-    void main() 
-    {
-        gl_Position = vec4(inPos, 0.0, 1.0);
-    }
-</script>
+        void mainImage( out vec4 fragColor, in vec2 fragCoord ) {	
+            vec2 p = fragCoord.xy/iResolution.y - vec2(.9,.5);
+            vec3 cl = vec3(0.);
+            float d = 2.5;
+            ///float d = -1. / iFftBins[10];
+            for(int i=0; i<=5; i++)	{
+                vec3 p = vec3(0,0,5.) + normalize(vec3(p, -1.))*d;
+                float rz = map(p);
+                float f =  clamp((rz - map(p+.1))*0.5, -.1, 1. );
+                vec3 l = vec3(0.1,0.3,.4) + vec3(5., 2.5, 3.)*f;
+                cl = cl*l + smoothstep(2.5, .0, rz)*.7*l;
+                d += min(rz, 1.);
+            }
+            fragColor = vec4(cl, 1.);
+        }
+        // The main function is just a shim that calls mainImage above.
+        void main() 
+        {
+            mainImage( gl_FragColor, gl_FragCoord.xy );
+        }
+    </script>
+
+    <script id="draw-shader-vs" type="x-shader/x-vertex">
+        attribute vec2 inPos;
+        void main() {
+            gl_Position = vec4(inPos, 0.0, 1.0);
+        }
+    </script>
     
    <script> 
-window.analyzer = null;
-window.dataArray = null;
+        var analyzer = null;
+        var fft_bins = null;
+        (function loadscene() {    
+            var canvas;
+            var webgl_context;
+            var webgl_viewport_size;
+            var webgl_buffer_object = {};
+            var mouse_position = [0, 0];
+            function create_scene() {
+                canvas = document.getElementById( "display");
+                webgl_context = canvas.getContext( "experimental-webgl" );
+                if (!webgl_context) {
+                  return;
+                }
+                canvas.addEventListener('mousemove', (e) => {
+                    mouse_position = [e.clientX, e.clientY];
+                });
+                shader_program = webgl_context.createProgram();
+                for (let i = 0; i < 2; ++i) {
+                    let shader_code = document.getElementById(i==0 ? "draw-shader-vs" : "draw-shader-fs").text;
+                    let shader_object = webgl_context.createShader(i==0 ? webgl_context.VERTEX_SHADER : webgl_context.FRAGMENT_SHADER);
+                    webgl_context.shaderSource(shader_object, shader_code);
+                    webgl_context.compileShader(shader_object);
+                    let status = webgl_context.getShaderParameter(shader_object, webgl_context.COMPILE_STATUS);
+                    if (!status) {
+                        alert(webgl_context.getShaderInfoLog(shader_object));
+                    }
+                    webgl_context.attachShader(shader_program, shader_object);
+                    webgl_context.linkProgram(shader_program);
+                }
+                status = webgl_context.getProgramParameter(shader_program, webgl_context.LINK_STATUS);
+                if ( !status ) {
+                    alert(webgl_context.getProgramInfoLog(shader_program));
+                }
+                shader_program.inPos = webgl_context.getAttribLocation(shader_program, "inPos");
+                shader_program.iMouse = webgl_context.getUniformLocation(shader_program, "iMouse");
+                shader_program.iResolution = webgl_context.getUniformLocation(shader_program, "iResolution");
+                shader_program.iTime = webgl_context.getUniformLocation(shader_program, "iTime");
+                shader_program.iTimeDelta = webgl_context.getUniformLocation(shader_program, "iTimeDelta");
+                shader_program.iFrame = webgl_context.getUniformLocation(shader_program, "iFrame");
+                shader_program.iFftBins = webgl_context.getUniformLocation(shader_program, "iFftBins");
+                webgl_context.useProgram(shader_program);
+                var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
+                var inx = [ 0, 1, 2, 0, 2, 3 ];
+                webgl_buffer_object.pos = webgl_context.createBuffer();
+                webgl_context.bindBuffer( webgl_context.ARRAY_BUFFER, webgl_buffer_object.pos );
+                webgl_context.bufferData( webgl_context.ARRAY_BUFFER, new Float32Array( pos ), webgl_context.STATIC_DRAW );
+                webgl_buffer_object.inx = webgl_context.createBuffer();
+                webgl_buffer_object.inx.len = inx.length;
+                webgl_context.bindBuffer( webgl_context.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
+                webgl_context.bufferData( webgl_context.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), webgl_context.STATIC_DRAW );
+                webgl_context.enableVertexAttribArray( shader_program.inPos );
+                webgl_context.vertexAttribPointer( shader_program.inPos, 2, webgl_context.FLOAT, false, 0, 0 ); 
+                webgl_context.enable( webgl_context.DEPTH_TEST );
+                webgl_context.clearColor( 0.0, 0.0, 0.0, 1.0 );
+                window.onresize = resize;
+                resize();
+                requestAnimationFrame(render_scene);
+            }
 
-(function loadscene() {    
+            function resize() {
+                webgl_viewport_size = [window.innerWidth, window.innerHeight];
+                canvas.width = webgl_viewport_size[0];
+                canvas.height = webgl_viewport_size[1];
+            }
 
-var canvas, gl, vp_size, prog, bufObj = {}, mousepos = [0, 0];
-    
-function initScene() {
-
-    canvas = document.getElementById( "display");
-    gl = canvas.getContext( "experimental-webgl" );
-    if ( !gl )
-      return;
-
-    canvas.addEventListener('mousemove', (e) => {
-        mousepos = [e.clientX, e.clientY];
-    });
-
-    progDraw = gl.createProgram();
-    for (let i = 0; i < 2; ++i) {
-        let source = document.getElementById(i==0 ? "draw-shader-vs" : "draw-shader-fs").text;
-        let shaderObj = gl.createShader(i==0 ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER);
-        gl.shaderSource(shaderObj, source);
-        gl.compileShader(shaderObj);
-        let status = gl.getShaderParameter(shaderObj, gl.COMPILE_STATUS);
-        if (!status) alert(gl.getShaderInfoLog(shaderObj));
-        gl.attachShader(progDraw, shaderObj);
-        gl.linkProgram(progDraw);
-    }
-    status = gl.getProgramParameter(progDraw, gl.LINK_STATUS);
-    if ( !status ) alert(gl.getProgramInfoLog(progDraw));
-    progDraw.inPos = gl.getAttribLocation(progDraw, "inPos");
-    
-    progDraw.iMouse = gl.getUniformLocation(progDraw, "iMouse");
-    progDraw.iResolution = gl.getUniformLocation(progDraw, "iResolution");
-    progDraw.iTime = gl.getUniformLocation(progDraw, "iTime");
-    progDraw.iTimeDelta = gl.getUniformLocation(progDraw, "iTimeDelta");
-    progDraw.iFrame = gl.getUniformLocation(progDraw, "iFrame");
-    progDraw.iFftBins = gl.getUniformLocation(progDraw, "iFftBins");
-    
-    gl.useProgram(progDraw);
-
-    var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
-    var inx = [ 0, 1, 2, 0, 2, 3 ];
-    bufObj.pos = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, bufObj.pos );
-    gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW );
-    bufObj.inx = gl.createBuffer();
-    bufObj.inx.len = inx.length;
-    gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, bufObj.inx );
-    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW );
-    gl.enableVertexAttribArray( progDraw.inPos );
-    gl.vertexAttribPointer( progDraw.inPos, 2, gl.FLOAT, false, 0, 0 ); 
-    
-    gl.enable( gl.DEPTH_TEST );
-    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
-
-    window.onresize = resize;
-    resize();
-    requestAnimationFrame(render);
-}
-
-function resize() {
-    //vp_size = [gl.drawingBufferWidth, gl.drawingBufferHeight];
-    vp_size = [window.innerWidth, window.innerHeight];
-    //vp_size = [256, 256]
-    canvas.width = vp_size[0];
-    canvas.height = vp_size[1];
-}
-
-function render(delta_milliseconds) {
-    if (window.analyzer !== null) {
-        window.analyzer.getFloatFrequencyData(window.dataArray);
-        gl.uniform1fv(progDraw.iFftBins, window.dataArray);
-    }
-    gl.viewport( 0, 0, canvas.width, canvas.height );
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-    gl.uniform1f(progDraw.iTime, delta_milliseconds/1000.0);
-    gl.uniform2f(progDraw.iResolution, canvas.width, canvas.height);
-    gl.uniform2f(progDraw.iMouse, mousepos[0], mousepos[1]);
-    gl.drawElements( gl.TRIANGLES, bufObj.inx.len, gl.UNSIGNED_SHORT, 0 );    
-    requestAnimationFrame(render);
-}  
-
-initScene();
-
-})();    
-
-</script>
-
-
-    
+            function render_scene(delta_milliseconds) {
+                if (analyzer !== null) {
+                    analyzer.getFloatFrequencyData(fft_bins);
+                    webgl_context.uniform1fv(shader_program.iFftBins, fft_bins);
+                }
+                webgl_context.viewport(0, 0, canvas.width, canvas.height);
+                webgl_context.clear(webgl_context.COLOR_BUFFER_BIT | webgl_context.DEPTH_BUFFER_BIT);
+                webgl_context.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
+                webgl_context.uniform2f(shader_program.iResolution, canvas.width, canvas.height);
+                webgl_context.uniform2f(shader_program.iMouse, mouse_position[0], mouse_position[1]);
+                webgl_context.drawElements(webgl_context.TRIANGLES, webgl_buffer_object.inx.len, webgl_context.UNSIGNED_SHORT, 0);    
+                requestAnimationFrame(render_scene);
+            }  
+            
+            create_scene();
+        })();    
+    </script>
     <script>
         var message_callback_buffer = "";
         var csound_message_callback = function(message) {
@@ -502,11 +492,11 @@ initScene();
                     csound_message_callback("CompileCsdText returned: " + result);
                     await csound.Start();
                     await csound.Perform();
-                    window.analyzer = audioContext.createAnalyser();
-                    window.analyzer.fftSize = 256;
+                    analyzer = audioContext.createAnalyser();
+                    analyzer.fftSize = 256;
                     const bufferLength = analyzer.frequencyBinCount;
                     console.log("FFT buffer length: " + bufferLength);
-                    window.dataArray = new Float32Array(bufferLength);                   
+                    fft_bins = new Float32Array(bufferLength);                   
                     csound_message_callback("Csound is playing...\n");
                 } else {
                     await csound.Stop();
