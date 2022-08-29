@@ -297,7 +297,10 @@ e
     uniform float iTime;
     uniform float iTimeDelta;
     uniform float iFrame;
-
+    /**
+     * Here we put custom uniforms for music visualization.
+     */
+    uniform float iFftBins[128];
      /**
      * Theoretically, fragment shader code shown in the ShaderToy editor can 
      * replace the mainImage function below. Of course the uniforms and 
@@ -319,8 +322,9 @@ e
     void mainImage( out vec4 fragColor, in vec2 fragCoord ){	
         vec2 p = fragCoord.xy/iResolution.y - vec2(.9,.5);
         vec3 cl = vec3(0.);
-        float d = 2.5;
-        for(int i=0; i<=15; i++)	{
+        ///float d = 2.5;
+        float d = -1. * iFftBins[10] / 90.;
+        for(int i=0; i<=5; i++)	{
             vec3 p = vec3(0,0,5.) + normalize(vec3(p, -1.))*d;
             float rz = map(p);
             float f =  clamp((rz - map(p+.1))*0.5, -.1, 1. );
@@ -346,10 +350,13 @@ e
 </script>
     
    <script> 
+window.analyzer = null;
+window.dataArray = null;
+
 (function loadscene() {    
 
 var canvas, gl, vp_size, prog, bufObj = {}, mousepos = [0, 0];
-
+    
 function initScene() {
 
     canvas = document.getElementById( "display");
@@ -381,6 +388,7 @@ function initScene() {
     progDraw.iTime = gl.getUniformLocation(progDraw, "iTime");
     progDraw.iTimeDelta = gl.getUniformLocation(progDraw, "iTimeDelta");
     progDraw.iFrame = gl.getUniformLocation(progDraw, "iFrame");
+    progDraw.iFftBins = gl.getUniformLocation(progDraw, "iFftBins");
     
     gl.useProgram(progDraw);
 
@@ -413,6 +421,10 @@ function resize() {
 }
 
 function render(delta_milliseconds) {
+    if (window.analyzer !== null) {
+        window.analyzer.getFloatFrequencyData(window.dataArray);
+        gl.uniform1fv(progDraw.iFftBins, window.dataArray);
+    }
     gl.viewport( 0, 0, canvas.width, canvas.height );
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
     gl.uniform1f(progDraw.iTime, delta_milliseconds/1000.0);
@@ -490,6 +502,11 @@ initScene();
                     csound_message_callback("CompileCsdText returned: " + result);
                     await csound.Start();
                     await csound.Perform();
+                    window.analyzer = audioContext.createAnalyser();
+                    window.analyzer.fftSize = 256;
+                    const bufferLength = analyzer.frequencyBinCount;
+                    console.log("FFT buffer length: " + bufferLength);
+                    window.dataArray = new Float32Array(bufferLength);                   
                     csound_message_callback("Csound is playing...\n");
                 } else {
                     await csound.Stop();
