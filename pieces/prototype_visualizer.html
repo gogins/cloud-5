@@ -302,45 +302,45 @@ e
          * generation.
          */
         uniform float iFftBins[128];
+        /** 
+         * The FFT bin amplituded are in [-100, -30], rescale to unity.
+         */
+        float rescale_bin(float amplitude) {
+            amplitude = amplitude + 100.;
+            amplitude = amplitude / 70.;
+            return amplitude;
+        }
          /**
          * Theoretically, fragment shader code shown in the ShaderToy editor can 
-         * replace the mainImage function below. Of course the uniforms and 
-         * channels from ShaderToy have to be implemented here.
+         * replace the mainImage function below. Of course any uniforms and 
+         * channels used by ShaderToy have to be implemented here.
          */
+         
         // Ether by nimitz 2014 (twitter: @stormoid)
         // https://www.shadertoy.com/view/MsjSW3
         // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
         // Contact the author for other licensing options
-
-        #define t iTime
         mat2 m(float a){float c=cos(a), s=sin(a);return mat2(c,-s,s,c);}
         float map(vec3 p){
+            float t_factor = rescale_bin(iFftBins[12]) * .5;
+            float t = iTime * t_factor;
             p.xz*= m(t*0.4);p.xy*= m(t*0.3);
             vec3 q = p*2.+t;
             return length(p+vec3(sin(t*0.7)))*log(length(p)+1.) + sin(q.x+sin(q.z+sin(q.y)))*0.5 - 1.;
         }
         
-        /** 
-         * Rescales FFT bin amplitude to positive normal.
-         */
-        float rescale_bin(float amplitude) {
-            amplitude = -1. * amplitude;
-            amplitude = amplitude - 30.;
-            amplitude = amplitude / 100.;
-            return amplitude;
-        }
-
         void mainImage( out vec4 fragColor, in vec2 fragCoord ) {	
             vec2 p = fragCoord.xy/iResolution.y - vec2(.9,.5);
             vec3 cl = vec3(0.);
             //float d = 2.5;
-            float d = rescale_bin(iFftBins[5]) * 3.;
+            float d = rescale_bin(iFftBins[10]) * 3.;
+            float c1 = rescale_bin(iFftBins[60]) * 1.;
             ///float d = -1. / iFftBins[10];
             for(int i=0; i<=5; i++)	{
                 vec3 p = vec3(0,0,5.) + normalize(vec3(p, -1.))*d;
                 float rz = map(p);
                 float f =  clamp((rz - map(p+.1))*0.5, -.1, 1. );
-                vec3 l = vec3(0.1,0.3,.4) + vec3(5., 2.5, 3.)*f;
+                vec3 l = vec3(0.1,0.3,.4) + vec3(5., c1 /* 2.5 */, 3.)*f;
                 cl = cl*l + smoothstep(2.5, .0, rz)*.7*l;
                 d += min(rz, 1.);
             }
