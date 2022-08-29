@@ -14,6 +14,7 @@
 <script src="silencio/js/TrackballControls.js"></script>
 <script src="silencio/js/tinycolor.js"></script>
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="icon" href="data:,">
 <style>
 </style>
 </head>
@@ -153,7 +154,7 @@ aoutr       poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
 ;       uses a modified FM synthesis technique. This is joined
 ;       by an additional plucked-string instrument
 ;       (instruments 1 and 2).
-
+t 0 10
 ;   The Function Tables
 ;   -------------------
 ;All functions are post-normalized (max value is 1) if p4 is
@@ -318,11 +319,22 @@ e
             vec3 q = p*2.+t;
             return length(p+vec3(sin(t*0.7)))*log(length(p)+1.) + sin(q.x+sin(q.z+sin(q.y)))*0.5 - 1.;
         }
+        
+        /** 
+         * Rescales FFT bin amplitude to positive normal.
+         */
+        float rescale_bin(float amplitude) {
+            amplitude = -1. * amplitude;
+            amplitude = amplitude - 30.;
+            amplitude = amplitude / 100.;
+            return amplitude;
+        }
 
         void mainImage( out vec4 fragColor, in vec2 fragCoord ) {	
             vec2 p = fragCoord.xy/iResolution.y - vec2(.9,.5);
             vec3 cl = vec3(0.);
-            float d = 2.5;
+            //float d = 2.5;
+            float d = rescale_bin(iFftBins[5]) * 3.;
             ///float d = -1. / iFftBins[10];
             for(int i=0; i<=5; i++)	{
                 vec3 p = vec3(0,0,5.) + normalize(vec3(p, -1.))*d;
@@ -349,7 +361,7 @@ e
     </script>
     
    <script> 
-        var analyzer = null;
+        var analyser = null;
         var fft_bins = null;
         (function loadscene() {    
             var canvas;
@@ -416,8 +428,8 @@ e
             }
 
             function render_scene(delta_milliseconds) {
-                if (analyzer !== null) {
-                    analyzer.getFloatFrequencyData(fft_bins);
+                if (analyser !== null) {
+                    analyser.getFloatFrequencyData(fft_bins);
                     webgl_context.uniform1fv(shader_program.iFftBins, fft_bins);
                 }
                 webgl_context.viewport(0, 0, canvas.width, canvas.height);
@@ -463,7 +475,6 @@ e
             csound_message_callback(CM.information_debug(-1));
         }());
             
-        
         window.onload = function() {
             $("#about_view").css("display", "none");         
             $("#menu_item_play").click(async function(event) {
@@ -492,11 +503,12 @@ e
                     csound_message_callback("CompileCsdText returned: " + result);
                     await csound.Start();
                     await csound.Perform();
-                    analyzer = audioContext.createAnalyser();
-                    analyzer.fftSize = 256;
-                    const bufferLength = analyzer.frequencyBinCount;
+                    analyser = new AnalyserNode(audioContext);
+                    analyser.fftSize = 256;
+                    const bufferLength = analyser.frequencyBinCount;
                     console.log("FFT buffer length: " + bufferLength);
-                    fft_bins = new Float32Array(bufferLength);                   
+                    fft_bins = new Float32Array(bufferLength);             
+                    csound.connect(analyser);
                     csound_message_callback("Csound is playing...\n");
                 } else {
                     await csound.Stop();
