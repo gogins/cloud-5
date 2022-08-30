@@ -154,7 +154,7 @@ aoutr       poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
 ;       uses a modified FM synthesis technique. This is joined
 ;       by an additional plucked-string instrument
 ;       (instruments 1 and 2).
-t 0 10
+t 0 12
 ;   The Function Tables
 ;   -------------------
 ;All functions are post-normalized (max value is 1) if p4 is
@@ -290,20 +290,35 @@ e
     <script id="draw-shader-fs" type="x-shader/x-fragment">
         precision mediump float;
         /**
-         * These are "standard" ShaderToy uniforms.
-         */
-        uniform vec2 iResolution;
-        uniform vec2 iMouse;
+         * These are all of the standard ShaderToy inputs. If any of these are 
+         * used in this shader, they must be created and initialized in the 
+         * JavaScript code.
+        uniform vec3      iResolution;           // viewport resolution (in pixels)
+        uniform float     iTime;                 // shader playback time (in seconds)
+        uniform float     iTimeDelta;            // render time (in seconds)
+        uniform int       iFrame;                // shader playback frame
+        uniform float     iChannelTime[4];       // channel playback time (in seconds)
+        uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
+        uniform vec4      iMouse;                // mouse pixel coords. xy: current (if MLB down), zw: click
+        uniform sampler2D iChannel0;             // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel1;             // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel2;             // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel3;             // input channel. XX = 2D/Cube
+        uniform vec4      iDate;                 // (year, month, day, time in seconds)
+        uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
+        */
+        uniform vec3 iResolution;
+        uniform vec4 iMouse;
         uniform float iTime;
         uniform float iTimeDelta;
         uniform float iFrame;
         /**
-         * These are custom uniforms for music visualization or score 
+         * These are custom inputs/outputs for music visualization or score 
          * generation.
          */
         uniform float iFftBins[128];
         /** 
-         * The FFT bin amplituded are in [-100, -30], rescale to unity.
+         * The FFT bin amplitudes are in [-100, -30], rescale to unity.
          */
         float rescale_bin(float amplitude) {
             amplitude = amplitude + 100.;
@@ -311,9 +326,9 @@ e
             return amplitude;
         }
          /**
-         * Theoretically, fragment shader code shown in the ShaderToy editor can 
-         * replace the mainImage function below. Of course any uniforms and 
-         * channels used by ShaderToy have to be implemented here.
+         * Theoretically, any fragment shader copied from the ShaderToy 
+         * editor can replace the mainImage function below, if all of the 
+         * shader's inputs are defined. https://soundcloud.com/michael-gogins/porphyry-v5?si=1fdbdce77bda4376aabe6e62c28450de
          */
          
         // Ether by nimitz 2014 (twitter: @stormoid)
@@ -365,57 +380,87 @@ e
         var fft_bins = null;
         (function loadscene() {    
             var canvas;
-            var webgl_context;
+            var gl;
             var webgl_viewport_size;
             var webgl_buffer_object = {};
             var mouse_position = [0, 0];
             function create_scene() {
                 canvas = document.getElementById( "display");
-                webgl_context = canvas.getContext( "experimental-webgl" );
-                if (!webgl_context) {
+                gl = canvas.getContext( "webgl2" );
+                if (!gl) {
                   return;
                 }
                 canvas.addEventListener('mousemove', (e) => {
                     mouse_position = [e.clientX, e.clientY];
                 });
-                shader_program = webgl_context.createProgram();
+                shader_program = gl.createProgram();
                 for (let i = 0; i < 2; ++i) {
                     let shader_code = document.getElementById(i==0 ? "draw-shader-vs" : "draw-shader-fs").text;
-                    let shader_object = webgl_context.createShader(i==0 ? webgl_context.VERTEX_SHADER : webgl_context.FRAGMENT_SHADER);
-                    webgl_context.shaderSource(shader_object, shader_code);
-                    webgl_context.compileShader(shader_object);
-                    let status = webgl_context.getShaderParameter(shader_object, webgl_context.COMPILE_STATUS);
+                    let shader_object = gl.createShader(i==0 ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER);
+                    gl.shaderSource(shader_object, shader_code);
+                    gl.compileShader(shader_object);
+                    let status = gl.getShaderParameter(shader_object, gl.COMPILE_STATUS);
                     if (!status) {
-                        alert(webgl_context.getShaderInfoLog(shader_object));
+                        alert(gl.getShaderInfoLog(shader_object));
                     }
-                    webgl_context.attachShader(shader_program, shader_object);
-                    webgl_context.linkProgram(shader_program);
+                    gl.attachShader(shader_program, shader_object);
+                    gl.linkProgram(shader_program);
                 }
-                status = webgl_context.getProgramParameter(shader_program, webgl_context.LINK_STATUS);
+                status = gl.getProgramParameter(shader_program, gl.LINK_STATUS);
                 if ( !status ) {
-                    alert(webgl_context.getProgramInfoLog(shader_program));
+                    alert(gl.getProgramInfoLog(shader_program));
                 }
-                shader_program.inPos = webgl_context.getAttribLocation(shader_program, "inPos");
-                shader_program.iMouse = webgl_context.getUniformLocation(shader_program, "iMouse");
-                shader_program.iResolution = webgl_context.getUniformLocation(shader_program, "iResolution");
-                shader_program.iTime = webgl_context.getUniformLocation(shader_program, "iTime");
-                shader_program.iTimeDelta = webgl_context.getUniformLocation(shader_program, "iTimeDelta");
-                shader_program.iFrame = webgl_context.getUniformLocation(shader_program, "iFrame");
-                shader_program.iFftBins = webgl_context.getUniformLocation(shader_program, "iFftBins");
-                webgl_context.useProgram(shader_program);
+                shader_program.inPos = gl.getAttribLocation(shader_program, "inPos");
+                shader_program.iMouse = gl.getUniformLocation(shader_program, "iMouse");
+                shader_program.iResolution = gl.getUniformLocation(shader_program, "iResolution");
+                shader_program.iTime = gl.getUniformLocation(shader_program, "iTime");
+                shader_program.iTimeDelta = gl.getUniformLocation(shader_program, "iTimeDelta");
+                shader_program.iFrame = gl.getUniformLocation(shader_program, "iFrame");
+                shader_program.iChannel0 = gl.getUniformLocation(shader_program, "iChannel0");
+                shader_program.iChannel1 = gl.getUniformLocation(shader_program, "iChannel1");
+                shader_program.iChannel2 = gl.getUniformLocation(shader_program, "iChannel2");
+                shader_program.iChannel3 = gl.getUniformLocation(shader_program, "iChannel3");
+                shader_program.iFftBins = gl.getUniformLocation(shader_program, "iFftBins");
+                /**
+                 * We create 4 textures for 4 channels, to implement the 
+                 * ShaderToy channels. The fastest way to get data into and 
+                 * out of the shader is to write to and read from the elements 
+                 * of the textures in the samplers, using whole arrays or 
+                 * element indices (texels). Normally, a loaded image or other 
+                 * data is bound to the texture. But here, the textures are 
+                 * one-pixel images that can be filled with data later. 
+                 */
+                const level = 0;
+                const internalFormat = gl.RGBA32F;
+                const width = 1;
+                const height = 1;
+                const border = 0;
+                const srcFormat = gl.RGBA;
+                const srcType = gl.FLOAT;
+                const pixel = new Float32Array([0, 0, 255, 255]);  // opaque blue
+                let active_texture = gl.getParameter(gl.ACTIVE_TEXTURE);
+                const texture0 = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, texture0);
+                gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
+                ///gl.activeTexture(texture0);
+                const channel0 = gl.createSampler();
+                gl.bindSampler(texture0, channel0);
+                active_texture = gl.getParameter(gl.ACTIVE_TEXTURE);
+                
+                gl.useProgram(shader_program);
                 var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
                 var inx = [ 0, 1, 2, 0, 2, 3 ];
-                webgl_buffer_object.pos = webgl_context.createBuffer();
-                webgl_context.bindBuffer( webgl_context.ARRAY_BUFFER, webgl_buffer_object.pos );
-                webgl_context.bufferData( webgl_context.ARRAY_BUFFER, new Float32Array( pos ), webgl_context.STATIC_DRAW );
-                webgl_buffer_object.inx = webgl_context.createBuffer();
+                webgl_buffer_object.pos = gl.createBuffer();
+                gl.bindBuffer( gl.ARRAY_BUFFER, webgl_buffer_object.pos );
+                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW );
+                webgl_buffer_object.inx = gl.createBuffer();
                 webgl_buffer_object.inx.len = inx.length;
-                webgl_context.bindBuffer( webgl_context.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
-                webgl_context.bufferData( webgl_context.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), webgl_context.STATIC_DRAW );
-                webgl_context.enableVertexAttribArray( shader_program.inPos );
-                webgl_context.vertexAttribPointer( shader_program.inPos, 2, webgl_context.FLOAT, false, 0, 0 ); 
-                webgl_context.enable( webgl_context.DEPTH_TEST );
-                webgl_context.clearColor( 0.0, 0.0, 0.0, 1.0 );
+                gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
+                gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW );
+                gl.enableVertexAttribArray( shader_program.inPos );
+                gl.vertexAttribPointer( shader_program.inPos, 2, gl.FLOAT, false, 0, 0 ); 
+                gl.enable( gl.DEPTH_TEST );
+                gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
                 window.onresize = resize;
                 resize();
                 requestAnimationFrame(render_scene);
@@ -430,14 +475,14 @@ e
             function render_scene(delta_milliseconds) {
                 if (analyser !== null) {
                     analyser.getFloatFrequencyData(fft_bins);
-                    webgl_context.uniform1fv(shader_program.iFftBins, fft_bins);
+                    gl.uniform1fv(shader_program.iFftBins, fft_bins);
                 }
-                webgl_context.viewport(0, 0, canvas.width, canvas.height);
-                webgl_context.clear(webgl_context.COLOR_BUFFER_BIT | webgl_context.DEPTH_BUFFER_BIT);
-                webgl_context.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
-                webgl_context.uniform2f(shader_program.iResolution, canvas.width, canvas.height);
-                webgl_context.uniform2f(shader_program.iMouse, mouse_position[0], mouse_position[1]);
-                webgl_context.drawElements(webgl_context.TRIANGLES, webgl_buffer_object.inx.len, webgl_context.UNSIGNED_SHORT, 0);    
+                gl.viewport(0, 0, canvas.width, canvas.height);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                gl.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
+                gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
+                gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
+                gl.drawElements(gl.TRIANGLES, webgl_buffer_object.inx.len, gl.UNSIGNED_SHORT, 0);    
                 requestAnimationFrame(render_scene);
             }  
             
