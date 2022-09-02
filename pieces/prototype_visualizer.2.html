@@ -354,7 +354,6 @@ e
         void mainImage( out vec4 fragColor, in vec2 fragCoord )
         {
             vec2 uv = (fragCoord.xy*2.-iResolution.xy) / iResolution.yy;
-            
             vec3 color = vec3(0.);
             color = mix(vec3(0.325, 0.431, 0.364), color, abs(uv.x)*0.25);
             
@@ -389,12 +388,7 @@ e
 //~ // output final color
 //~ fragColor = vec4(col,1.0);
 
-                float soundWave = 0.42;
-                //float soundWave = 100.5*texture2D(iChannel0, vec2(0.10, 0.2)).x;
-                if (uv.x > .25) {
-                    // = 15000.5*texture2D( iChannel0, vec2(uv.x,0.75) ).x;
-                    soundWave = .4 + texture2D(iChannel0, vec2(uv.x, 0.75) ).x;
-                }
+                float soundWave = .4+texture2D(iChannel0, vec2(uv.x, 0.25)).x;
                 color += mix(lineColor, vec3(0.), smoothstep(0., 1.0, pow(dist/size, soundWave*(0.5+0.5*sin(iTime*2.+size+lineColor.x*140.))*0.20) ));
             }
             
@@ -470,7 +464,8 @@ e
                  * of the textures in the samplers, using whole arrays or 
                  * element indices (texels). Normally, a loaded image or other 
                  * data is bound to the texture. But here, the textures are 
-                 * that can be filled with data later. 
+                 * created with just one pixel and can be filled with data 
+                 * later. 
                  */
                 /*                
                  // Initial program setup.
@@ -503,28 +498,27 @@ e
                 const border = 0;
                 const srcFormat = gl.RGBA;
                 const srcType = gl.FLOAT;
-                const pixels = new Float32Array([0, 0, 255, 255]);  // opaque blue
-                let texture0 = gl.createTexture();
+                const pixels = new Float32Array([0, 0, 255, 255]);  
                 gl.activeTexture(gl.TEXTURE0 + texture_unit_0);
+                let texture0 = gl.createTexture();
                 gl.bindTexture(gl.TEXTURE_2D, texture0);
                 gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixels);
                 const channel0 = gl.createSampler();
                 gl.uniform1i(shader_program.iChannel0, texture_unit_0);
                 gl.bindSampler(texture_unit_0, channel0);
-                
                 var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
                 var inx = [ 0, 1, 2, 0, 2, 3 ];
                 webgl_buffer_object.pos = gl.createBuffer();
                 gl.bindBuffer( gl.ARRAY_BUFFER, webgl_buffer_object.pos );
-                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW );
+                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW);
                 webgl_buffer_object.inx = gl.createBuffer();
                 webgl_buffer_object.inx.len = inx.length;
-                gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
-                gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW );
-                gl.enableVertexAttribArray( shader_program.inPos );
-                gl.vertexAttribPointer( shader_program.inPos, 2, gl.FLOAT, false, 0, 0 ); 
-                gl.enable( gl.DEPTH_TEST );
-                gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW);
+                gl.enableVertexAttribArray(shader_program.inPos);
+                gl.vertexAttribPointer(shader_program.inPos, 2, gl.FLOAT, false, 0, 0); 
+                gl.enable(gl.DEPTH_TEST);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 window.onresize = resize;
                 resize();
                 requestAnimationFrame(render_scene);
@@ -547,7 +541,8 @@ e
                     //gl.uniform1fv(shader_program.iFftBins, frequency_domain_data);
                     //gl.uniform1fv(shader_program.iChannel0, audio_data);
                     gl.activeTexture(gl.TEXTURE0 + texture_unit_0);
-                    gl.texImage2D(gl.TEXTURE_2D, 1, gl.R32F, time_domain_data.length, 2, 0, gl.RED, gl.FLOAT, audio_data);
+                    // Like: gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, numSamples, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, audioData);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RED32F, time_domain_data.length, 2, 0, gl.RED, gl.FLOAT, audio_data);
                 }
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -557,7 +552,6 @@ e
                 gl.drawElements(gl.TRIANGLES, webgl_buffer_object.inx.len, gl.UNSIGNED_SHORT, 0);    
                 requestAnimationFrame(render_scene);
             }  
-            
             create_scene();
         })();    
     </script>
@@ -624,10 +618,11 @@ e
                     analyser.fftSize = 1024;
                     const analyzer_buffer_size = analyser.frequencyBinCount;
                     console.log("Analyzer buffer size: " + analyzer_buffer_size);
-                    frequency_domain_data = new Float32Array(analyzer_buffer_size);      
+                    frequency_domain_data = new Float32Array(analyzer_buffer_size);    
                     time_domain_data = new Float32Array(analyzer_buffer_size);    
                     csound.connect(analyser);
                     csound_message_callback("Csound is playing...\n");
+
                 } else {
                     await csound.Stop();
                     await csound.Cleanup();

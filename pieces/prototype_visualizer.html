@@ -284,7 +284,7 @@ i1 45.4 . . 10.11   ;B
 i1 45.5 . . 11.04   ;E
 e
 </CsScore>
-</CsoundSynthesizer>    
+</CsoundSynthesizer>
     </textarea>
 
     <script id="draw-shader-fs" type="x-shader/x-fragment">
@@ -293,25 +293,33 @@ e
          * These are all of the standard ShaderToy inputs. If any of these are 
          * used in this shader, they must be created and initialized in the 
          * JavaScript code.
-        uniform vec3      iResolution;           // viewport resolution (in pixels)
-        uniform float     iTime;                 // shader playback time (in seconds)
-        uniform float     iTimeDelta;            // render time (in seconds)
-        uniform int       iFrame;                // shader playback frame
-        uniform float     iChannelTime[4];       // channel playback time (in seconds)
-        uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
-        uniform vec4      iMouse;                // mouse pixel coords. xy: current (if MLB down), zw: click
-        uniform sampler2D iChannel0;             // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel1;             // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel2;             // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel3;             // input channel. XX = 2D/Cube
-        uniform vec4      iDate;                 // (year, month, day, time in seconds)
-        uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
-        */
+         */
         uniform vec3 iResolution;
-        uniform vec4 iMouse;
+        // viewport resolution (in pixels)
         uniform float iTime;
+        // shader playback time (in seconds)
         uniform float iTimeDelta;
-        uniform float iFrame;
+        // render time (in seconds)
+        uniform int iFrame;
+        // shader playback frame
+        uniform float iChannelTime[4];
+        // channel playback time (in seconds)
+        uniform vec3 iChannelResolution[4];
+        // channel resolution (in pixels)
+        uniform vec4 iMouse;
+        // mouse pixel coords. xy: current (if MLB down), zw: click
+        uniform sampler2D iChannel0;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel1;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel2;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel3;
+        // input channel. XX = 2D/Cube
+        uniform vec4 iDate;
+        // (year, month, day, time in seconds)
+        uniform float iSampleRate;
+        // sound sample rate (i.e., 44100)
         /**
          * These are custom inputs/outputs for music visualization or score 
          * generation.
@@ -331,36 +339,61 @@ e
          * shader's inputs are defined. https://soundcloud.com/michael-gogins/porphyry-v5?si=1fdbdce77bda4376aabe6e62c28450de
          */
          
-        // Ether by nimitz 2014 (twitter: @stormoid)
-        // https://www.shadertoy.com/view/MsjSW3
-        // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
-        // Contact the author for other licensing options
-        mat2 m(float a){float c=cos(a), s=sin(a);return mat2(c,-s,s,c);}
-        float map(vec3 p){
-            float t_factor = rescale_bin(iFftBins[12]) * .5;
-            float t = iTime * t_factor;
-            p.xz*= m(t*0.4);p.xy*= m(t*0.3);
-            vec3 q = p*2.+t;
-            return length(p+vec3(sin(t*0.7)))*log(length(p)+1.) + sin(q.x+sin(q.z+sin(q.y)))*0.5 - 1.;
+        float hash(int x) { return fract(sin(float(x))*7.847); } 
+
+        float dSegment(vec2 a, vec2 b, vec2 c)
+        {
+            vec2 ab = b-a;
+            vec2 ac = c-a;
+
+            float h = clamp(dot(ab, ac)/dot(ab, ab), 0., 1.);
+            vec2 point = a+ab*h;
+            return length(c-point);
         }
-        
-        void mainImage( out vec4 fragColor, in vec2 fragCoord ) {	
-            vec2 p = fragCoord.xy/iResolution.y - vec2(.9,.5);
-            vec3 cl = vec3(0.);
-            //float d = 2.5;
-            float d = rescale_bin(iFftBins[10]) * 3.;
-            float c1 = rescale_bin(iFftBins[60]) * 1.;
-            ///float d = -1. / iFftBins[10];
-            for(int i=0; i<=5; i++)	{
-                vec3 p = vec3(0,0,5.) + normalize(vec3(p, -1.))*d;
-                float rz = map(p);
-                float f =  clamp((rz - map(p+.1))*0.5, -.1, 1. );
-                vec3 l = vec3(0.1,0.3,.4) + vec3(5., c1 /* 2.5 */, 3.)*f;
-                cl = cl*l + smoothstep(2.5, .0, rz)*.7*l;
-                d += min(rz, 1.);
+
+        void mainImage( out vec4 fragColor, in vec2 fragCoord )
+        {
+            vec2 uv = (fragCoord.xy*2.-iResolution.xy) / iResolution.yy;
+            vec3 color = vec3(0.);
+            color = mix(vec3(0.325, 0.431, 0.364), color, abs(uv.x)*0.25);
+            
+            for(int i=0; i < 190; ++i)
+            {
+                vec2 a = vec2(hash(i)*2.-1., hash(i+1)*2.-1.);
+                vec2 b = vec2(hash(10*i+1)*2.-1., hash(11*i+2)*2.-1.);
+                vec3 lineColor = vec3(hash(10+i), hash(18+i*3), hash(5+i*10));
+                float speed = b.y*0.15;
+                float size = (0.005 + 0.3*hash(5+i*i*2)) + (0.5+0.5*sin(a.y*5.+iTime*speed))*0.1;
+                
+                a += vec2(sin(a.x*20.+iTime*speed), sin(a.y*15.+iTime*0.4*speed)*0.5);
+                b += vec2(b.x*5.+cos(iTime*speed), cos(b.y*10.+iTime*2.0*speed)*0.5);
+                float dist = dSegment(a, b, uv);
+
+//~ // From https://www.shadertoy.com/view/Xds3Rr. I just need to create and feed this texture.
+//~ // create pixel coordinates
+//~ vec2 uv = fragCoord.xy / iResolution.xy;
+
+//~ // first texture row is frequency data
+//~ float fft  = texture( iChannel0, vec2(uv.x,0.25) ).x; 
+
+//~ // second texture row is the sound wave
+//~ float wave = texture( iChannel0, vec2(uv.x,0.75) ).x;
+
+//~ // convert frequency to colors
+//~ vec3 col = vec3( fft, 4.0*fft*(1.0-fft), 1.0-fft ) * fft;
+
+//~ // add wave form on top	
+//~ col += 1.0 -  smoothstep( 0.0, 0.15, abs(wave - uv.y) );
+
+//~ // output final color
+//~ fragColor = vec4(col,1.0);
+
+                float soundWave = .4+texture2D(iChannel0, vec2(uv.x, 0.25)).x;
+                color += mix(lineColor, vec3(0.), smoothstep(0., 1.0, pow(dist/size, soundWave*(0.5+0.5*sin(iTime*2.+size+lineColor.x*140.))*0.20) ));
             }
-            fragColor = vec4(cl, 1.);
-        }
+            
+            fragColor = vec4(color,1.0);
+        }        
         // The main function is just a shim that calls mainImage above.
         void main() 
         {
@@ -377,13 +410,15 @@ e
     
    <script> 
         var analyser = null;
-        var fft_bins = null;
+        var frequency_domain_data = null;
+        var time_domain_data = null;
+        const texture_unit_0 = 0;
         (function loadscene() {    
             var canvas;
             var gl;
             var webgl_viewport_size;
             var webgl_buffer_object = {};
-            var mouse_position = [0, 0];
+            var mouse_position = [0, 0, 0, 0];
             function create_scene() {
                 canvas = document.getElementById( "display");
                 gl = canvas.getContext( "webgl2" );
@@ -401,14 +436,14 @@ e
                     gl.compileShader(shader_object);
                     let status = gl.getShaderParameter(shader_object, gl.COMPILE_STATUS);
                     if (!status) {
-                        alert(gl.getShaderInfoLog(shader_object));
+                        console.warn(gl.getShaderInfoLog(shader_object));
                     }
                     gl.attachShader(shader_program, shader_object);
                     gl.linkProgram(shader_program);
                 }
                 status = gl.getProgramParameter(shader_program, gl.LINK_STATUS);
-                if ( !status ) {
-                    alert(gl.getProgramInfoLog(shader_program));
+                if (!status) {
+                    console.warn(gl.getProgramInfoLog(shader_program));
                 }
                 shader_program.inPos = gl.getAttribLocation(shader_program, "inPos");
                 shader_program.iMouse = gl.getUniformLocation(shader_program, "iMouse");
@@ -421,15 +456,41 @@ e
                 shader_program.iChannel2 = gl.getUniformLocation(shader_program, "iChannel2");
                 shader_program.iChannel3 = gl.getUniformLocation(shader_program, "iChannel3");
                 shader_program.iFftBins = gl.getUniformLocation(shader_program, "iFftBins");
+                gl.useProgram(shader_program);
                 /**
-                 * We create 4 textures for 4 channels, to implement the 
+                 * We create 4 textures for 4 samplers, to implement the 
                  * ShaderToy channels. The fastest way to get data into and 
                  * out of the shader is to write to and read from the elements 
                  * of the textures in the samplers, using whole arrays or 
                  * element indices (texels). Normally, a loaded image or other 
                  * data is bound to the texture. But here, the textures are 
-                 * one-pixel images that can be filled with data later. 
+                 * created with just one pixel and can be filled with data 
+                 * later. 
                  */
+                /*                
+                 // Initial program setup.
+                glLinkProgram(program); // Initial link
+
+                GLint baseImageLoc = glGetUniformLocation(program, "baseImage");
+                GLint normalMapLoc = glGetUniformLocation(program, "normalMap");
+                GLint shadowMapLoc = glGetUniformLocation(program, "shadowMap");
+
+                glUseProgram(program);
+                glUniform1i(baseImageLoc, 0); // Texture unit 0 is for base images.
+                glUniform1i(normalMapLoc, 2); // Texture unit 2 is for normal maps.
+                glUniform1i(shadowMapLoc, 4); // Texture unit 4 is for shadow maps.
+
+                // When rendering an object with this program.
+                glActiveTexture(GL_TEXTURE0 + 0);
+                glBindTexture(GL_TEXTURE_2D, object1BaseImage);
+                glBindSampler(0, linearFiltering);
+                glActiveTexture(GL_TEXTURE0 + 2);
+                glBindTexture(GL_TEXTURE_2D, object1NormalMap);
+                glBindSampler(2, linearFiltering); // Same filtering as before
+                glActiveTexture(GL_TEXTURE0 + 4);
+                glBindTexture(GL_TEXTURE_2D, shadowMap);
+                glBindSampler(4, depthComparison); // Special sampler for depth comparisons.
+                */
                 const level = 0;
                 const internalFormat = gl.RGBA32F;
                 const width = 1;
@@ -437,30 +498,27 @@ e
                 const border = 0;
                 const srcFormat = gl.RGBA;
                 const srcType = gl.FLOAT;
-                const pixel = new Float32Array([0, 0, 255, 255]);  // opaque blue
-                let active_texture = gl.getParameter(gl.ACTIVE_TEXTURE);
-                const texture0 = gl.createTexture();
+                const pixels = new Float32Array([0, 0, 255, 255]);  
+                gl.activeTexture(gl.TEXTURE0 + texture_unit_0);
+                let texture0 = gl.createTexture();
                 gl.bindTexture(gl.TEXTURE_2D, texture0);
-                gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
-                ///gl.activeTexture(texture0);
+                gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixels);
                 const channel0 = gl.createSampler();
-                gl.bindSampler(texture0, channel0);
-                active_texture = gl.getParameter(gl.ACTIVE_TEXTURE);
-                
-                gl.useProgram(shader_program);
+                gl.uniform1i(shader_program.iChannel0, texture_unit_0);
+                gl.bindSampler(texture_unit_0, channel0);
                 var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
                 var inx = [ 0, 1, 2, 0, 2, 3 ];
                 webgl_buffer_object.pos = gl.createBuffer();
                 gl.bindBuffer( gl.ARRAY_BUFFER, webgl_buffer_object.pos );
-                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW );
+                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW);
                 webgl_buffer_object.inx = gl.createBuffer();
                 webgl_buffer_object.inx.len = inx.length;
-                gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
-                gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW );
-                gl.enableVertexAttribArray( shader_program.inPos );
-                gl.vertexAttribPointer( shader_program.inPos, 2, gl.FLOAT, false, 0, 0 ); 
-                gl.enable( gl.DEPTH_TEST );
-                gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW);
+                gl.enableVertexAttribArray(shader_program.inPos);
+                gl.vertexAttribPointer(shader_program.inPos, 2, gl.FLOAT, false, 0, 0); 
+                gl.enable(gl.DEPTH_TEST);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 window.onresize = resize;
                 resize();
                 requestAnimationFrame(render_scene);
@@ -471,11 +529,20 @@ e
                 canvas.width = webgl_viewport_size[0];
                 canvas.height = webgl_viewport_size[1];
             }
-
-            function render_scene(delta_milliseconds) {
+             function render_scene(delta_milliseconds) {
                 if (analyser !== null) {
-                    analyser.getFloatFrequencyData(fft_bins);
-                    gl.uniform1fv(shader_program.iFftBins, fft_bins);
+                    analyser.getFloatFrequencyData(frequency_domain_data);
+                    //console.log("frequency_domain_data size: " + frequency_domain_data.length);
+                    analyser.getFloatTimeDomainData(time_domain_data);
+                    //console.log("time_domain_data: " + time_domain_data);
+                    let audio_data = new Float32Array(frequency_domain_data.length + time_domain_data.length);
+                    audio_data.set(frequency_domain_data);
+                    audio_data.set(time_domain_data, frequency_domain_data.length);
+                    //gl.uniform1fv(shader_program.iFftBins, frequency_domain_data);
+                    //gl.uniform1fv(shader_program.iChannel0, audio_data);
+                    gl.activeTexture(gl.TEXTURE0 + texture_unit_0);
+                    // Like: gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, numSamples, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, audioData);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RED32F, time_domain_data.length, 2, 0, gl.RED, gl.FLOAT, audio_data);
                 }
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -485,7 +552,6 @@ e
                 gl.drawElements(gl.TRIANGLES, webgl_buffer_object.inx.len, gl.UNSIGNED_SHORT, 0);    
                 requestAnimationFrame(render_scene);
             }  
-            
             create_scene();
         })();    
     </script>
@@ -549,10 +615,11 @@ e
                     await csound.Start();
                     await csound.Perform();
                     analyser = new AnalyserNode(audioContext);
-                    analyser.fftSize = 256;
-                    const bufferLength = analyser.frequencyBinCount;
-                    console.log("FFT buffer length: " + bufferLength);
-                    fft_bins = new Float32Array(bufferLength);             
+                    analyser.fftSize = 1024;
+                    const analyzer_buffer_size = analyser.frequencyBinCount;
+                    console.log("Analyzer buffer size: " + analyzer_buffer_size);
+                    frequency_domain_data = new Float32Array(analyzer_buffer_size);    
+                    time_domain_data = new Float32Array(analyzer_buffer_size);    
                     csound.connect(analyser);
                     csound_message_callback("Csound is playing...\n");
                 } else {
