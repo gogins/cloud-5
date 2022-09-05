@@ -380,8 +380,12 @@ e
     
     <script> 
         var analyser = null;
+        // Set up for high-resolution displays.
+        var devicePixelRatio_ = window.devicePixelRatio || 1
         var canvas = document.getElementById( "display");
-        var gl = canvas.getContext( "webgl2" );
+        canvas.width = canvas.clientWidth * devicePixelRatio_;
+        canvas.height = canvas.clientHeight * devicePixelRatio_;
+        var gl = canvas.getContext("webgl2");
         if (!gl) {
           alert("Could not create webgl2 context.");
         }
