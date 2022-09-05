@@ -358,7 +358,7 @@ e
                 b += vec2(b.x*5.+cos(iTime*speed), cos(b.y*10.+iTime*2.0*speed)*0.5);
                 float dist = dSegment(a, b, uv);
                 ///float soundWave = 1.5*texture2D(iChannel0, vec2(0.10, 0.2)).x;
-                float soundWave = .5 + texture2D(iChannel0, vec2(0.80, 0.25)).x;
+                float soundWave = .5 + texture2D(iChannel0, vec2(uv.x, 0.25)).x;
                 ///float soundWave = 1.5 * texture2D(iChannel0, vec2(uv.x, 0.25)).x;
                 color += mix(lineColor, vec3(0.), smoothstep(0., 1.0, pow(dist/size, soundWave*(0.5+0.5*sin(iTime*2.+size+lineColor.x*140.))*0.20) ));
             }
@@ -475,9 +475,11 @@ e
                 gl.enable(gl.DEPTH_TEST);
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.activeTexture(gl.TEXTURE0 + texture_unit_0);
-                let texture0 = gl.createTexture();
+                //gl.enable(gl.TEXTURE_2D);
+                texture0 = gl.createTexture();
                 gl.bindTexture(gl.TEXTURE_2D, texture0);
                 gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
+                gl.uniform1i(shader_program.iChannel0, texture_unit_0);
                 const channel0 = gl.createSampler();
                 gl.bindSampler(texture_unit_0, channel0);
 
@@ -501,7 +503,6 @@ e
                 gl.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
-                gl.uniform1i(shader_program.iChannel0, texture_unit_0);
                 gl.drawElements(gl.TRIANGLES, webgl_buffer_object.inx.len, gl.UNSIGNED_SHORT, 0);    
                 requestAnimationFrame(render_scene);
             }  
