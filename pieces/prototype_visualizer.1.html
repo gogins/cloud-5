@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 1</title>
+<title>Prototype Visualizer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.1/dat.gui.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;">
     </canvas>
     <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgba(102,205,170,.5);">
-<h1>Cloud Music No. 1</h1>
+<h1>Prototype Visualizer</h1>
 <h3>Michael Gogins<br>
-August 2022</h3>
+September 2022</h3>
     
 This is an online piece of electroacoustic music. It will play indefinitely, always changing. Visuals accompany the music. There are controls you can play with. If you like your settings, save them.
     
@@ -154,7 +154,7 @@ aoutr       poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
 ;       uses a modified FM synthesis technique. This is joined
 ;       by an additional plucked-string instrument
 ;       (instruments 1 and 2).
-t 0 12
+t 0 10
 ;   The Function Tables
 ;   -------------------
 ;All functions are post-normalized (max value is 1) if p4 is
@@ -284,113 +284,173 @@ i1 45.4 . . 10.11   ;B
 i1 45.5 . . 11.04   ;E
 e
 </CsScore>
-</CsoundSynthesizer>    
+</CsoundSynthesizer>
     </textarea>
 
-    <script id="draw-shader-fs" type="x-shader/x-fragment">
+    <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
         precision mediump float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
          * used in this shader, they must be created and initialized in the 
-         * JavaScript code. Inputs that are not used in this shader are null 
-         * in the JavaScript program.
-        uniform vec3      iResolution;           // viewport resolution (in pixels)
-        uniform float     iTime;                 // shader playback time (in seconds)
-        uniform float     iTimeDelta;            // render time (in seconds)
-        uniform int       iFrame;                // shader playback frame
-        uniform float     iChannelTime[4];       // channel playback time (in seconds)
-        uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
-        uniform vec4      iMouse;                // mouse pixel coords. xy: current (if MLB down), zw: click
-        uniform sampler2D iChannel0;             // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel1;             // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel2;             // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel3;             // input channel. XX = 2D/Cube
-        uniform vec4      iDate;                 // (year, month, day, time in seconds)
-        uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
-        */
+         * JavaScript code.
+         */
         uniform vec3 iResolution;
-        uniform vec4 iMouse;
-        uniform float iTime;
-        uniform float iTimeDelta;
-        uniform float iFrame;
-        /**
-         * These are custom inputs/outputs for music visualization or score 
-         * generation.
-         */
-        uniform float iFftBins[128];
-        /** 
-         * The FFT bin amplitudes are in [-100, -30], rescale to unity.
-         */
-        float rescale_bin(float amplitude) {
-            amplitude = amplitude + 100.;
-            amplitude = amplitude / 70.;
-            return amplitude;
-        }
-         /**
-         * Theoretically, any fragment shader copied from the ShaderToy 
-         * editor can replace the mainImage function below, if all of the 
-         * shader's inputs are defined. https://soundcloud.com/michael-gogins/porphyry-v5?si=1fdbdce77bda4376aabe6e62c28450de
-         */
-         
-        // Ether by nimitz 2014 (twitter: @stormoid)
-        // https://www.shadertoy.com/view/MsjSW3
-        // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
-        // Contact the author for other licensing options
-        mat2 m(float a){float c=cos(a), s=sin(a);return mat2(c,-s,s,c);}
-        float map(vec3 p){
-            float t_factor = rescale_bin(iFftBins[12]) * .5;
-            float t = iTime * t_factor;
-            p.xz*= m(t*0.4);p.xy*= m(t*0.3);
-            vec3 q = p*2.+t;
-            return length(p+vec3(sin(t*0.7)))*log(length(p)+1.) + sin(q.x+sin(q.z+sin(q.y)))*0.5 - 1.;
+        //~ // viewport resolution (in pixels)
+        //~ uniform float iTime;
+        //~ // shader playback time (in seconds)
+        //~ uniform float iTimeDelta;
+        //~ // render time (in seconds)
+        //~ uniform int iFrame;
+        //~ // shader playback frame
+        //~ uniform float iChannelTime[4];
+        //~ // channel playback time (in seconds)
+        //~ uniform vec3 iChannelResolution[4];
+        //~ // channel resolution (in pixels)
+        //~ uniform vec4 iMouse;
+        //~ // mouse pixel coords. xy: current (if MLB down), zw: click
+        uniform sampler2D iChannel0;
+        //~ // input channel. XX = 2D/Cube
+        //~ uniform sampler2D iChannel1;
+        //~ // input channel. XX = 2D/Cube
+        //~ uniform sampler2D iChannel2;
+        //~ // input channel. XX = 2D/Cube
+        //~ uniform sampler2D iChannel3;
+        //~ // input channel. XX = 2D/Cube
+        //~ uniform vec4 iDate;
+        //~ // (year, month, day, time in seconds)
+        //~ uniform float iSampleRate;
+        //~ // sound sample rate (i.e., 44100)
+        // Created by inigo quilez - iq/2013
+        // https://www.youtube.com/c/InigoQuilez
+        // https://iquilezles.org/
+
+
+        // See also:
+        //
+        // Input - Keyboard    : https://www.shadertoy.com/view/lsXGzf
+        // Input - Microphone  : https://www.shadertoy.com/view/llSGDh
+        // Input - Mouse       : https://www.shadertoy.com/view/Mss3zH
+        // Input - Sound       : https://www.shadertoy.com/view/Xds3Rr
+        // Input - SoundCloud  : https://www.shadertoy.com/view/MsdGzn
+        // Input - Time        : https://www.shadertoy.com/view/lsXGz8
+        // Input - TimeDelta   : https://www.shadertoy.com/view/lsKGWV
+        // Inout - 3D Texture  : https://www.shadertoy.com/view/4llcR4
+        out vec4 output_color;
+
+        void mainImage( out vec4 fragColor, in vec2 fragCoord )
+        {
+            // create pixel coordinates
+            vec2 uv = fragCoord.xy / iResolution.xy;
+
+            // the sound texture is 512x2
+            int tx = int(uv.x*512.0);
+            
+            // first row is frequency data (48Khz/4 in 512 texels, meaning 23 Hz per texel)
+            float fft  = texelFetch( iChannel0, ivec2(tx,0), 0 ).x;
+
+            // second row is the sound wave, one texel is one mono sample
+            float wave = texelFetch( iChannel0, ivec2(tx,1), 0 ).x;
+            
+            // convert frequency to colors
+            vec3 col = vec3( fft, 4.0*fft*(1.0-fft), 1.0-fft ) * fft;
+
+            // add wave form on top
+            col += 1.0 -  smoothstep( 0.0, 0.15, abs(wave - uv.y) );
+            
+            // output final color
+            fragColor = vec4(col,1.0);
         }
         
-        void mainImage( out vec4 fragColor, in vec2 fragCoord ) {	
-            vec2 p = fragCoord.xy/iResolution.y - vec2(.9,.5);
-            vec3 cl = vec3(0.);
-            //float d = 2.5;
-            float d = rescale_bin(iFftBins[10]) * 3.;
-            float c1 = rescale_bin(iFftBins[60]) * 1.;
-            ///float d = -1. / iFftBins[10];
-            for(int i=0; i<=5; i++)	{
-                vec3 p = vec3(0,0,5.) + normalize(vec3(p, -1.))*d;
-                float rz = map(p);
-                float f =  clamp((rz - map(p+.1))*0.5, -.1, 1. );
-                vec3 l = vec3(0.1,0.3,.4) + vec3(5., c1 /* 2.5 */, 3.)*f;
-                cl = cl*l + smoothstep(2.5, .0, rz)*.7*l;
-                d += min(rz, 1.);
-            }
-            fragColor = vec4(cl, 1.);
-        }
         // The main function is just a shim that calls mainImage above.
+
         void main() 
         {
-            mainImage( gl_FragColor, gl_FragCoord.xy );
+            vec4 fragColor = vec4(0,0,0,0);
+            mainImage(fragColor, gl_FragCoord.xy );
+            output_color = vec4(fragColor.xyz, 1.);
         }
     </script>
 
-    <script id="draw-shader-vs" type="x-shader/x-vertex">
-        attribute vec2 inPos;
+    <script id="draw-shader-vs" type="x-shader/x-vertex">#version 300 es
+        precision mediump float;
+        // Created by inigo quilez - iq/2013
+        // https://www.youtube.com/c/InigoQuilez
+        // https://iquilezles.org/
+        ///attribute vec2 inPos;
+        in vec2 inPos;
         void main() {
             gl_Position = vec4(inPos, 0.0, 1.0);
         }
     </script>
     
-   <script> 
+    <script> 
         var analyser = null;
-        var fft_bins = null;
+        // Set up for high-resolution displays.
+        var devicePixelRatio_ = window.devicePixelRatio || 1
+        var canvas = document.getElementById( "display");
+        canvas.width = canvas.clientWidth * devicePixelRatio_;
+        canvas.height = canvas.clientHeight * devicePixelRatio_;
+        var gl = canvas.getContext("webgl2");
+        if (!gl) {
+          alert("Could not create webgl2 context.");
+        }
+        const channel0_texture_unit = 0;
+        var channel0_texture = null;
+        var channel0_sampler = null;
+        const audio_texture_level = 0;
+        const audio_texture_internalFormat = gl.R32F;
+        const audio_texture_width = 512;
+        const audio_data_size = audio_texture_width * 2;
+        const audio_texture_height = 2;
+        const audio_texture_border = 0;
+        const audio_texture_srcFormat = gl.RED;
+        const audio_texture_srcType = gl.FLOAT;
+        var frequency_domain_data = new Uint8Array(audio_texture_width);
+        var time_domain_data = new Uint8Array(audio_texture_width);
+        //var audio_data = new Uint8Array(audio_texture_width * 2);
+ 
+        let audio_data = new Float32Array(audio_texture_width * 2);
+        function set_audio_texture(analyser, texture_unit, texture, sampler) {
+            if (analyser !== null) {
+                analyser.getByteFrequencyData(frequency_domain_data);
+                analyser.getByteTimeDomainData(time_domain_data);
+                for (let i = 0; i < audio_texture_width; ++i) {
+                    // Map frequency magnitudes to [0, 1].
+                    let sample = frequency_domain_data[i];
+                    ///sample = sample / 255.;
+                    audio_data[i] = sample;
+                }
+                for (let i = 0; i < audio_texture_width; ++i) {
+                    // Map time amplitudes to [-1, 1].
+                    let sample = time_domain_data[i];
+                    //sample = sample / 255.;
+                    //sample = sample * 2.;
+                    //sample = sample - 1;
+                    audio_data[audio_texture_width + i] = sample; 
+                }
+                gl.activeTexture(gl.TEXTURE0 + texture_unit);
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+
+                gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat,audio_texture_srcType, audio_data);
+                ///gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_BASE_LEVEL, 0);
+                ///gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 0);
+                gl.samplerParameteri(sampler, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.samplerParameteri(sampler, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.bindSampler(texture_unit, sampler);
+              }
+        }
+
         (function loadscene() {    
-            var canvas;
-            var gl;
             var webgl_viewport_size;
             var webgl_buffer_object = {};
-            var mouse_position = [0, 0];
+            var mouse_position = [0, 0, 0, 0];
             function create_scene() {
-                canvas = document.getElementById( "display");
-                gl = canvas.getContext( "webgl2" );
-                if (!gl) {
-                  return;
-                }
+                console.log("VENDOR: " + gl.getParameter(gl.VENDOR));
+                console.log("RENDERER: " + gl.getParameter(gl.RENDERER));
+                console.log("GL_VERSION: " + gl.getParameter(gl.VERSION));
+                console.log("SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
                 canvas.addEventListener('mousemove', (e) => {
                     mouse_position = [e.clientX, e.clientY];
                 });
@@ -402,14 +462,14 @@ e
                     gl.compileShader(shader_object);
                     let status = gl.getShaderParameter(shader_object, gl.COMPILE_STATUS);
                     if (!status) {
-                        alert(gl.getShaderInfoLog(shader_object));
+                        console.warn(gl.getShaderInfoLog(shader_object));
                     }
                     gl.attachShader(shader_program, shader_object);
                     gl.linkProgram(shader_program);
                 }
                 status = gl.getProgramParameter(shader_program, gl.LINK_STATUS);
-                if ( !status ) {
-                    alert(gl.getProgramInfoLog(shader_program));
+                if (!status) {
+                    console.warn(gl.getProgramInfoLog(shader_program));
                 }
                 shader_program.inPos = gl.getAttribLocation(shader_program, "inPos");
                 shader_program.iMouse = gl.getUniformLocation(shader_program, "iMouse");
@@ -421,47 +481,37 @@ e
                 shader_program.iChannel1 = gl.getUniformLocation(shader_program, "iChannel1");
                 shader_program.iChannel2 = gl.getUniformLocation(shader_program, "iChannel2");
                 shader_program.iChannel3 = gl.getUniformLocation(shader_program, "iChannel3");
-                shader_program.iFftBins = gl.getUniformLocation(shader_program, "iFftBins");
+                shader_program.iSampleRate = gl.getUniformLocation(shader_program, "iSampleRate");
+                //shader_program.iFftBins = gl.getUniformLocation(shader_program, "iFftBins");
                 gl.useProgram(shader_program);
-                /**
-                 * We create 4 textures for 4 channels, to implement the 
-                 * ShaderToy channels. The fastest way to get data into and 
-                 * out of the shader is to write to and read from the elements 
-                 * of the textures in the samplers, using whole arrays or 
-                 * element indices (texels). Normally, a loaded image or other 
-                 * data is bound to the texture. But here, the textures are 
-                 * one-pixel images that can be filled with data later. 
-                 */
-                const level = 0;
-                const internalFormat = gl.RGBA32F;
-                const width = 1;
-                const height = 1;
-                const border = 0;
-                const srcFormat = gl.RGBA;
-                const srcType = gl.FLOAT;
-                const pixel = new Float32Array([0, 0, 255, 255]);  // opaque blue
-                let active_texture = gl.getParameter(gl.ACTIVE_TEXTURE);
-                const texture0 = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, texture0);
-                gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
-                ///gl.activeTexture(texture0);
-                const channel0 = gl.createSampler();
-                gl.bindSampler(1, channel0);
-                active_texture = gl.getParameter(gl.ACTIVE_TEXTURE);
-                
+               
+                gl.uniform1f(shader_program.iSampleRate, 48000.);
+                gl.uniform1i(shader_program.iChannel0, channel0_texture_unit);
                 var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
                 var inx = [ 0, 1, 2, 0, 2, 3 ];
                 webgl_buffer_object.pos = gl.createBuffer();
                 gl.bindBuffer( gl.ARRAY_BUFFER, webgl_buffer_object.pos );
-                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW );
+                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW);
                 webgl_buffer_object.inx = gl.createBuffer();
                 webgl_buffer_object.inx.len = inx.length;
-                gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
-                gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW );
-                gl.enableVertexAttribArray( shader_program.inPos );
-                gl.vertexAttribPointer( shader_program.inPos, 2, gl.FLOAT, false, 0, 0 ); 
-                gl.enable( gl.DEPTH_TEST );
-                gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW);
+                gl.enableVertexAttribArray(shader_program.inPos);
+                gl.vertexAttribPointer(shader_program.inPos, 2, gl.FLOAT, false, 0, 0); 
+                gl.enable(gl.DEPTH_TEST);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                channel0_texture = gl.createTexture();
+                gl.activeTexture(gl.TEXTURE0 + channel0_texture_unit);
+                gl.bindTexture(gl.TEXTURE_2D, channel0_texture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                let audio_data = new Float32Array(audio_texture_width * 2);
+                gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
+                channel0_sampler = gl.createSampler();
+                gl.bindSampler(channel0_texture_unit, channel0_sampler);
+
                 window.onresize = resize;
                 resize();
                 requestAnimationFrame(render_scene);
@@ -472,11 +522,10 @@ e
                 canvas.width = webgl_viewport_size[0];
                 canvas.height = webgl_viewport_size[1];
             }
-
+            
             function render_scene(delta_milliseconds) {
                 if (analyser !== null) {
-                    analyser.getFloatFrequencyData(fft_bins);
-                    gl.uniform1fv(shader_program.iFftBins, fft_bins);
+                    set_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 }
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -486,7 +535,6 @@ e
                 gl.drawElements(gl.TRIANGLES, webgl_buffer_object.inx.len, gl.UNSIGNED_SHORT, 0);    
                 requestAnimationFrame(render_scene);
             }  
-            
             create_scene();
         })();    
     </script>
@@ -550,11 +598,11 @@ e
                     await csound.Start();
                     await csound.Perform();
                     analyser = new AnalyserNode(audioContext);
-                    analyser.fftSize = 256;
-                    const bufferLength = analyser.frequencyBinCount;
-                    console.log("FFT buffer length: " + bufferLength);
-                    fft_bins = new Float32Array(bufferLength);             
+                    analyser.fftSize = 1024;
+                    const analyzer_buffer_size = analyser.frequencyBinCount;
+                    console.log("Analyzer buffer size: " + analyzer_buffer_size);
                     csound.connect(analyser);
+                    //analyser.connect(audioContext.destination);
                     csound_message_callback("Csound is playing...\n");
                 } else {
                     await csound.Stop();
