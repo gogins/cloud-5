@@ -359,8 +359,13 @@ e
                 b += vec2(b.x*5.+cos(iTime*speed), cos(b.y*10.+iTime*2.0*speed)*0.5);
                 float dist = dSegment(a, b, uv);
                 ///float soundWave = 1.5*texture(iChannel0, vec2(0.10, 0.2)).x;
-                float soundWave = .5 + texture(iChannel0, vec2(uv.x, 0.25)).x;
-                ///float soundWave = 1.5 * texture(iChannel0, vec2(uv.x, 0.25)).x;
+                float sampled_from_ichannel0 = texture(iChannel0, vec2(0.10, 0.2)).x;
+                float soundWave = 0.0;
+                if (sampled_from_ichannel0 == 0.0) {
+                    soundWave = .2;
+                } else {
+                    soundWave = .5 + texture(iChannel0, vec2(0.10, 0.2)).x;
+                }
                 color += mix(lineColor, vec3(0.), smoothstep(0., 1.0, pow(dist/size, soundWave*(0.5+0.5*sin(iTime*2.+size+lineColor.x*140.))*0.20) ));
             }
             fragColor = vec4(color,1.0);
@@ -376,9 +381,10 @@ e
     </script>
 
     <script id="draw-shader-vs" type="x-shader/x-vertex">#version 300 es
+        #line 384
         in vec2 inPos;
         void main() {
-            gl_Position = vec4(inPos, 0.0, 1.0);
+            gl_Position = vec4(inPos.x, inPos.y, 0.0, 1.0);
         }
     </script>
     
@@ -389,11 +395,10 @@ e
         var canvas = document.getElementById( "display");
         canvas.width = canvas.clientWidth * devicePixelRatio_;
         canvas.height = canvas.clientHeight * devicePixelRatio_;
-        var gl = canvas.getContext("webgl2");
+        var gl = canvas.getContext("webgl2", { antialias: true });
         if (!gl) {
           alert("Could not create webgl2 context.");
         }
-        const texture_unit_0 = 0;
         const audio_texture_level = 0;
         const audio_texture_internalFormat = gl.R32F;
         const audio_texture_width = 512;
@@ -401,30 +406,40 @@ e
         const audio_texture_border = 0;
         const audio_texture_srcFormat = gl.RED;
         const audio_texture_srcType = gl.FLOAT;
-        var frequency_domain_data = new Uint8Array(audio_texture_width * 4);
-        var time_domain_data = new Uint8Array(audio_texture_width * 4);
+        var frequency_domain_data = new Uint8Array(audio_texture_width);
+        var time_domain_data = new Uint8Array(audio_texture_width);
         var audio_data = new Float32Array(audio_texture_width * 2);
+        const texture_unit_0 = 0;
+        var channel0 = null;
+        var texture0 = null;
  
-        function set_audio_texture(analyser, texture_unit) {
-            if (analyser !== null) {
+        function set_audio_texture(analyser, texture_unit, texture, sampler) {
+           if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
                 analyser.getByteTimeDomainData(time_domain_data);
-                // Copy the first 1/4 of each data buffer into the audio texture as row 0 and row 1.
-                let i = 0;
-                for (i = 0; i < audio_texture_width; ++i) {
-                    // Frequency magnitudes should be in [0, 1].
-                    audio_data[i] = frequency_domain_data / 255.;
+                for (let i = 0; i < audio_texture_width; ++i) {
+                    // Map frequency magnitudes to [0, 1].
+                    let sample = frequency_domain_data[i];
+                    sample = sample / 255.;
+                    audio_data[i] = sample;
                 }
-                for (     ; i < (audio_texture_width * 2); ++i) {
-                    // Time magnitudes should be in [-1, 1].
-                    audio_data[i] = (time_domain_data / 255.) - .5 * 2.; 
+                for (let i = 0; i < audio_texture_width; ++i) {
+                    // Map time amplitudes to [-1, 1].
+                    let sample = time_domain_data[i];
+                    sample = sample / 255.;
+                    sample = sample * 2.;
+                    sample = sample - 1;
+                    audio_data[audio_texture_width + i] = sample; 
                 }
                 gl.activeTexture(gl.TEXTURE0 + texture_unit);
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat,audio_texture_srcType, audio_data);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                 gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
+                gl.bindSampler(texture_unit, sampler);
             }
         }
 
@@ -433,6 +448,9 @@ e
             var webgl_buffer_object = {};
             var mouse_position = [0, 0, 0, 0];
             function create_scene() {
+                console.log("VENDOR: " + gl.getParameter(gl.VENDOR));
+                console.log("RENDERER: " + gl.getParameter(gl.RENDERER));
+                console.log("GL_VERSION: " + gl.getParameter(gl.VERSION));
                 console.log("SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
                 canvas.addEventListener('mousemove', (e) => {
                     mouse_position = [e.clientX, e.clientY];
@@ -487,10 +505,14 @@ e
                 texture0 = gl.createTexture();
                 gl.bindTexture(gl.TEXTURE_2D, texture0);
                 gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
                 gl.uniform1i(shader_program.iChannel0, texture_unit_0);
-                const channel0 = gl.createSampler();
+                channel0 = gl.createSampler();
                 gl.bindSampler(texture_unit_0, channel0);
-
                 window.onresize = resize;
                 resize();
                 requestAnimationFrame(render_scene);
@@ -504,7 +526,7 @@ e
             
             function render_scene(delta_milliseconds) {
                 if (analyser !== null) {
-                    set_audio_texture(analyser, texture_unit_0);
+                    set_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 }
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

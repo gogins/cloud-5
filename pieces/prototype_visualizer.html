@@ -385,7 +385,7 @@ e
         var canvas = document.getElementById( "display");
         canvas.width = canvas.clientWidth * devicePixelRatio_;
         canvas.height = canvas.clientHeight * devicePixelRatio_;
-        var gl = canvas.getContext("webgl2");
+        var gl = canvas.getContext("webgl2", { antialias: true });
         if (!gl) {
           alert("Could not create webgl2 context.");
         }
@@ -397,8 +397,8 @@ e
         const audio_texture_border = 0;
         const audio_texture_srcFormat = gl.RED;
         const audio_texture_srcType = gl.FLOAT;
-        var frequency_domain_data = new Uint8Array(audio_texture_width * 4);
-        var time_domain_data = new Uint8Array(audio_texture_width * 4);
+        var frequency_domain_data = new Uint8Array(audio_texture_width);
+        var time_domain_data = new Uint8Array(audio_texture_width);
         var audio_data = new Float32Array(audio_texture_width * 2);
  
         function set_audio_texture(analyser, texture_unit) {
@@ -461,7 +461,6 @@ e
                 shader_program.iChannel2 = gl.getUniformLocation(shader_program, "iChannel2");
                 shader_program.iChannel3 = gl.getUniformLocation(shader_program, "iChannel3");
                 shader_program.iSampleRate = gl.getUniformLocation(shader_program, "iSampleRate");
-                //shader_program.iFftBins = gl.getUniformLocation(shader_program, "iFftBins");
                 gl.useProgram(shader_program);
                
                 gl.uniform1f(shader_program.iSampleRate, 48000.);
