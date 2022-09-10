@@ -288,7 +288,7 @@ e
     </textarea>
 
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-        #line 292 // Makes the GLSL line numbers match the line numbers in this code.
+        #line 292
         precision mediump float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -321,9 +321,10 @@ e
         // (year, month, day, time in seconds)
         uniform float iSampleRate;
         // sound sample rate (i.e., 44100)
+        
         /**
          * Theoretically, any fragment shader copied from the ShaderToy 
-         * editor can replace the body of the _umainImage function below, 
+         * editor can replace the body of the mainImage function below, 
          * if all inputs actually used in the shader are defined and bound.
          */
 
@@ -368,7 +369,7 @@ e
     <script id="draw-shader-vs" type="x-shader/x-vertex">#version 300 es
         in vec2 inPos;
         void main() {
-            gl_Position = vec4(inPos.x, inPos.y, 0.0, 1.0);
+            gl_Position = vec4(inPos.xy, 0.0, 1.0);
         }
     </script>
     
@@ -387,6 +388,7 @@ e
         let extensions = gl.getSupportedExtensions();
         console.log("Supported extensions:\n" + extensions);
         gl.getExtension("EXT_color_buffer_float");
+        var WEBGL_debug_shaders = gl.getExtension("WEBGL_debug_shaders");
         const audio_texture_level = 0;
         const audio_texture_internalFormat = gl.RGBA32F;
         const audio_texture_width = 512;
@@ -409,7 +411,7 @@ e
                 analyser.getByteFrequencyData(frequency_domain_data);
                 analyser.getByteTimeDomainData(time_domain_data);
                 for (let i = 0; i < audio_texture_width; i += 4) {
-                    // Map frequency magnitudes to [0, 1].
+                    // Map frequency domain magnitudes to [0, 1].
                     let sample = frequency_domain_data[i];
                     sample = sample / 255.;
                     audio_data[i + 0] = sample;
@@ -419,7 +421,7 @@ e
                 }
                 let audio_data_width = audio_texture_width * 2;
                 for (let i = audio_texture_width; i < audio_data_width; i += 4) {
-                    // Map time amplitudes to [-1, 1].
+                    // Map time domain amplitudes to [-1, 1].
                     let sample = time_domain_data[i];
                     sample = sample / 255.;
                     sample = sample * 2.;
@@ -434,11 +436,17 @@ e
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.bindSampler(texture_unit, sampler);
             gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat,audio_texture_srcType, audio_data);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            if (false) { // For debugging.
+            gl.samplerParameteri(sampler, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.samplerParameteri(sampler, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_MODE, gl.NONE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
+            fb = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+            if (true && analyser) { // For debugging.
                 let is_texture = gl.isTexture(texture);
                 let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
                 let uniform_index;
@@ -447,31 +455,33 @@ e
                     console.log(uniform_info);
                     const location = gl.getUniformLocation(shader_program, uniform_info.name);
                     const value = gl.getUniform(shader_program, location);
-                    console.log(location);
-                    console.log(value);
+                    console.log("Uniform location: " + location);
+                    console.log("Uniform value: " + value);
                 }
                 const unit = gl.getUniform(shader_program, shader_program.iChannel0);
-                gl.activeTexture(gl.TEXTURE0 + unit);
-                let texture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);      
-                console.log(texture2D);              
-                // Create a framebuffer backed by the texture
-                var framebuffer = gl.createFramebuffer();
-                gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+                console.log("Sampler texture unit: " + unit);
+                console.log("Texture unit: " + texture_unit);
+                gl.activeTexture(gl.TEXTURE0 + texture_unit);
+                let texture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+                console.log("Texture binding 2D " + texture2D);
+                var debug_framebuffer = gl.createFramebuffer();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, debug_framebuffer);
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture2D, 0);
                 if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
                     console.log("These attachments don't work.");
-                }                    
-                // Read the contents of the framebuffer (data stores the pixel data)
+                }
+                // Read the contents of the debug_framebuffer (data stores the pixel data).
                 var data = new Float32Array(1024 * 4);
+                // What comes out, should be what went in.
                 gl.readPixels(0, 0, 512, 2, gl.RGBA, gl.FLOAT, data);
-                gl.deleteFramebuffer(framebuffer);                
-            }                
+                console.log("data[64]: " + data[64]);
+                console.log("data[576]: " + data[576]);
+                gl.deleteFramebuffer(debug_framebuffer);
+            }
+            gl.deleteFramebuffer(fb);
         }
         
-        function getUniformBindings(texture_unit_number) {
-        }
-
-        (function loadscene() {    
+        (function loadscene() {
             var webgl_viewport_size;
             var webgl_buffers = {};
             var mouse_position = [0, 0, 0, 0];
@@ -495,6 +505,7 @@ e
                     }
                     gl.attachShader(shader_program, shader_object);
                     gl.linkProgram(shader_program);
+                    console.log("shader:" + WEBGL_debug_shaders.getTranslatedShaderSource(shader_object));
                 }
                 status = gl.getProgramParameter(shader_program, gl.LINK_STATUS);
                 if (!status) {
@@ -548,8 +559,8 @@ e
                 gl.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
-                gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
+                gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 requestAnimationFrame(render_scene);
             }  
             create_scene();
