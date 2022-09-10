@@ -353,16 +353,27 @@ e
           }
           (_ushadertoy_out_color = vec4(_ucolor.xyz, 1.0));
         }
-        void _umainImage(out vec4 _ufragColor, in vec2 _ufragCoord){
-          vec2 _uuv = (_ufragCoord.xy / iResolution.xy);
-          int _utx = int((_uuv.x * 512.0));
-          float _ufft = texelFetch(iChannel0, ivec2(_utx, 0), 0).r;
-          ///_ufft = _uuv.x;
-          float _uwave = texelFetch(iChannel0, ivec2(_utx, 1), 0).r;
-          ///_uwave = _uuv.y;
-          vec3 _ucol = (vec3(_ufft, ((4.0 * _ufft) * (1.0 - _ufft)), (1.0 - _ufft)) * _ufft);
-          (_ucol += (1.0 - smoothstep(0.0, 0.1500001, abs((_uwave - _uuv.y)))));
-          (_ufragColor = vec4(_ucol, 1.0));
+        void _umainImage(out vec4 fragColor, in vec2 fragCoord){
+            // create pixel coordinates
+            vec2 uv = fragCoord.xy / iResolution.xy;
+
+            // the sound texture is 512x2
+            int tx = int(uv.x*512.0);
+            
+            // first row is frequency data (48Khz/4 in 512 texels, meaning 23 Hz per texel)
+            float fft  = texelFetch( iChannel0, ivec2(tx,0), 0 ).x; 
+
+            // second row is the sound wave, one texel is one mono sample
+            float wave = texelFetch( iChannel0, ivec2(tx,1), 0 ).x;
+            
+            // convert frequency to colors
+            vec3 col = vec3( fft, 4.0*fft*(1.0-fft), 1.0-fft ) * fft;
+
+            // add wave form on top	
+            col += 1.0 -  smoothstep( 0.0, 0.15, abs(wave - uv.y) );
+            
+            // output final color
+            fragColor = vec4(col,1.0);
         }
     </script>
 
@@ -424,8 +435,8 @@ e
                     // Map time domain amplitudes to [-1, 1].
                     let sample = time_domain_data[i];
                     sample = sample / 255.;
-                    sample = sample * 2.;
-                    sample = sample - 1;
+                    sample = sample * 2.0;
+                    sample = sample - 1.0;
                     audio_data[i + 0] = sample;
                     audio_data[i + 1] = sample;
                     audio_data[i + 2] = sample;
@@ -444,8 +455,6 @@ e
             gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_MODE, gl.NONE);
             gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
             fb = gl.createFramebuffer();
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
             if (true && analyser) { // For debugging.
                 let is_texture = gl.isTexture(texture);
                 let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
@@ -474,12 +483,11 @@ e
                 var data = new Float32Array(1024 * 4);
                 // What comes out, should be what went in.
                 gl.readPixels(0, 0, 512, 2, gl.RGBA, gl.FLOAT, data);
-                console.log("data[64]: " + data[64]);
-                console.log("data[576]: " + data[576]);
+                console.log("\nfrequency domain: \n" + data.slice(0, 512 * 4));
+                console.log("time domain: \n" + data.slice(512 * 4));
                 gl.deleteFramebuffer(debug_framebuffer);
             }
-            gl.deleteFramebuffer(fb);
-        }
+         }
         
         (function loadscene() {
             var webgl_viewport_size;
