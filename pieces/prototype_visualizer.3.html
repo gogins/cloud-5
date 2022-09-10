@@ -432,8 +432,6 @@ e
                     // Map time domain amplitudes to [-1, 1].
                     let sample = time_domain_data[j];
                     sample = sample / 255.;
-                    //sample = sample + .5;
-                    //sample = sample * 2.0;
                     audio_data[audio_texture_width + j] = sample;
                 }
             }
@@ -448,8 +446,8 @@ e
             gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
             gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_MODE, gl.NONE);
             gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
-            fb = gl.createFramebuffer();
-            if (true && analyser) { // For debugging.
+            ///fb = gl.createFramebuffer();
+            if (false && analyser) { // For debugging.
                 let is_texture = gl.isTexture(texture);
                 let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
                 let uniform_index;
