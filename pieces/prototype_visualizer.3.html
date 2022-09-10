@@ -401,15 +401,15 @@ e
         gl.getExtension("EXT_color_buffer_float");
         var WEBGL_debug_shaders = gl.getExtension("WEBGL_debug_shaders");
         const audio_texture_level = 0;
-        const audio_texture_internalFormat = gl.RGBA32F;
+        const audio_texture_internalFormat = gl.R32F;
         const audio_texture_width = 512;
         const audio_texture_height = 2;
         const audio_texture_border = 0;
-        const audio_texture_srcFormat = gl.RGBA;
+        const audio_texture_srcFormat = gl.RED;
         const audio_texture_srcType = gl.FLOAT;
-        var frequency_domain_data = new Uint8Array(audio_texture_width * 4);
-        var time_domain_data = new Uint8Array(audio_texture_width * 4);
-        var audio_data = new Float32Array(audio_texture_width * 8);
+        var frequency_domain_data = new Uint8Array(audio_texture_width);
+        var time_domain_data = new Uint8Array(audio_texture_width);
+        var audio_data = new Float32Array(audio_texture_width * 2);
         
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
@@ -421,26 +421,20 @@ e
            if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
                 analyser.getByteTimeDomainData(time_domain_data);
-                for (let i = 0; i < audio_texture_width; i += 4) {
+                for (let i = 0; i < audio_texture_width; ++i) {
                     // Map frequency domain magnitudes to [0, 1].
                     let sample = frequency_domain_data[i];
                     sample = sample / 255.;
-                    audio_data[i + 0] = sample;
-                    audio_data[i + 1] = sample;
-                    audio_data[i + 2] = sample;
-                    audio_data[i + 3] = 1.0;
-                }
+                    audio_data[i] = sample;
+                 }
                 let audio_data_width = audio_texture_width * 2;
-                for (let i = audio_texture_width; i < audio_data_width; i += 4) {
+                for (let j = 0; j < audio_texture_width; ++j) {
                     // Map time domain amplitudes to [-1, 1].
-                    let sample = time_domain_data[i];
+                    let sample = time_domain_data[j];
                     sample = sample / 255.;
-                    sample = sample * 2.0;
-                    sample = sample - 1.0;
-                    audio_data[i + 0] = sample;
-                    audio_data[i + 1] = sample;
-                    audio_data[i + 2] = sample;
-                    audio_data[i + 3] = 1.0;
+                    //sample = sample + .5;
+                    //sample = sample * 2.0;
+                    audio_data[audio_texture_width + j] = sample;
                 }
             }
             gl.activeTexture(gl.TEXTURE0 + texture_unit);
@@ -480,11 +474,11 @@ e
                     console.log("These attachments don't work.");
                 }
                 // Read the contents of the debug_framebuffer (data stores the pixel data).
-                var data = new Float32Array(1024 * 4);
+                var data = new Float32Array(1024);
                 // What comes out, should be what went in.
-                gl.readPixels(0, 0, 512, 2, gl.RGBA, gl.FLOAT, data);
-                console.log("\nfrequency domain: \n" + data.slice(0, 512 * 4));
-                console.log("time domain: \n" + data.slice(512 * 4));
+                gl.readPixels(0, 0, 512, 2, gl.RED, gl.FLOAT, data);
+                //console.log("\nfrequency domain: \n" + data.slice(0, 512));
+                //console.log("time domain: \n" + data.slice(512));
                 gl.deleteFramebuffer(debug_framebuffer);
             }
          }
@@ -636,8 +630,7 @@ e
                     await csound.Perform();
                     analyser = new AnalyserNode(audioContext);
                     analyser.fftSize = 1024;
-                    const analyzer_buffer_size = analyser.frequencyBinCount;
-                    console.log("Analyzer buffer size: " + analyzer_buffer_size);
+                    console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
                     csound.connect(analyser);
                     //analyser.connect(audioContext.destination);
                     csound_message_callback("Csound is playing...\n");
