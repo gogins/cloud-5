@@ -407,8 +407,9 @@ e
         const audio_texture_border = 0;
         const audio_texture_srcFormat = gl.RED;
         const audio_texture_srcType = gl.FLOAT;
-        var frequency_domain_data = new Uint8Array(audio_texture_width);
-        var time_domain_data = new Uint8Array(audio_texture_width);
+        // Only sample the frequency domain up to Nyquist / 2.
+        var frequency_domain_data = new Uint8Array(audio_texture_width * 2);
+        var time_domain_data = new Uint8Array(audio_texture_width * 2);
         var audio_data = new Float32Array(audio_texture_width * 2);
         
         var channel0_texture_unit = 0;
@@ -627,7 +628,7 @@ e
                     await csound.Start();
                     await csound.Perform();
                     analyser = new AnalyserNode(audioContext);
-                    analyser.fftSize = 1024;
+                    analyser.fftSize = 2048;
                     console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
                     csound.connect(analyser);
                     //analyser.connect(audioContext.destination);

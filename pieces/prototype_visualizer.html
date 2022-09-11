@@ -29,18 +29,44 @@
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;">
     </canvas>
-    <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgba(102,205,170,.5);">
+    <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgba(102,205,170,.75);">
 <h1>Prototype Visualizer</h1>
 <h3>Michael Gogins<br>
 September 2022</h3>
-    
-This is an online piece of electroacoustic music. It will play indefinitely, always changing. Visuals accompany the music. There are controls you can play with. If you like your settings, save them.
-    
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><br/>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License</a>
+
+<p>This is an online piece of electroacoustic music, rendered in high-resolution audio. It will play indefinitely, never ending, always changing. Animated visuals influenced by the music, adapted from <a href="https://www.shadertoy.com/view/ls3Sz4"><b>Neon Music Reaction</b></a> by <a href="https://www.shadertoy.com/user/ciberxtrem">ciberextrem</a>, which has the same license, accompany my music. There are controls you can play with. If you like your settings, save them.
+
 <ul>
 <li>To view Csound and JavaScript notifications, use your browser menu to view the JavaScript console.
 <li>To view the source code of this piece, use your browser menu to view the page source.
 <li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer tools.
 </ul>
+
+<p>This piece can be used as a template for creating new pieces of this type.
+
+<p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a href="https://github.com/gogins/cloud-music/issues">cloud-music issues></a>.
+<p>
+<a href="http://michaelgogins.tumblr.com">
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+     width="36" height="36" viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
+<g>
+    <g>
+        <g>
+            <rect x="0.24" y="0.167" fill="#314358" width="255.52" height="256"/>
+        </g>
+    </g>
+    <g>
+        <path fill="#FFFFFF" d="M168.08,170.918c-2.969,1.416-8.647,2.648-12.881,2.754c-12.783,0.342-15.264-8.979-15.367-15.736v-49.705
+            h32.065V84.055h-31.954V43.382c0,0-23.008,0-23.383,0c-0.385,0-1.057,0.337-1.152,1.192c-1.368,12.448-7.192,34.296-31.416,43.032
+            v20.624h16.16v52.167c0,17.863,13.176,43.24,47.959,42.641c11.736-0.201,24.77-5.113,27.648-9.354L168.08,170.918"/>
+    </g>
+</g>
+</svg>
+
+</a>
     </div>
     <textarea id="csd" cols=80 rows=24 style="display:none;">
 <CsoundSynthesizer>
@@ -287,7 +313,8 @@ e
 </CsoundSynthesizer>
     </textarea>
 
-    <script id="draw-shader-fs" type="x-shader/x-fragment">
+    <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
+        #line 292
         precision mediump float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -320,17 +347,38 @@ e
         // (year, month, day, time in seconds)
         uniform float iSampleRate;
         // sound sample rate (i.e., 44100)
-        /**
-         * These are custom inputs/outputs for music visualization or score 
-         * generation.
-         */
-        uniform float iFftBins[128];
+        
         /**
          * Theoretically, any fragment shader copied from the ShaderToy 
-         * editor can replace the mainImage function below, if all of the 
-         * shader's inputs are defined. https://soundcloud.com/michael-gogins/porphyry-v5?si=1fdbdce77bda4376aabe6e62c28450de
+         * editor can replace the body of the mainImage function below, 
+         * if all inputs actually used in the shader are defined and bound.
          */
-         
+
+        void mainImage(out vec4 _ufragColor, in vec2 _ufragCoord);
+        out vec4 _ushadertoy_out_color;
+        void main(){
+          (_ushadertoy_out_color = vec4(0.0, 0.0, 0.0, 0.0));
+          (_ushadertoy_out_color = vec4(1.0, 1.0, 1.0, 1.0));
+          vec4 _ucolor = vec4(0.0, 0.0, 0.0, 1.0);
+          mainImage(_ucolor, gl_FragCoord.xy);
+          if ((_ushadertoy_out_color.x < 0.0))
+          {
+            (_ucolor = vec4(1.0, 0.0, 0.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.y < 0.0))
+          {
+            (_ucolor = vec4(0.0, 1.0, 0.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.z < 0.0))
+          {
+            (_ucolor = vec4(0.0, 0.0, 1.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.w < 0.0))
+          {
+            (_ucolor = vec4(1.0, 1.0, 0.0, 1.0));
+          }
+          (_ushadertoy_out_color = vec4(_ucolor.xyz, 1.0));
+        }
         float hash(int x) { return fract(sin(float(x))*7.847); } 
 
         float dSegment(vec2 a, vec2 b, vec2 c)
@@ -357,28 +405,22 @@ e
                 a += vec2(sin(a.x*20.+iTime*speed), sin(a.y*15.+iTime*0.4*speed)*0.5);
                 b += vec2(b.x*5.+cos(iTime*speed), cos(b.y*10.+iTime*2.0*speed)*0.5);
                 float dist = dSegment(a, b, uv);
-                ///float soundWave = 1.5*texture2D(iChannel0, vec2(0.10, 0.2)).x;
-                float soundWave = .5 + texture2D(iChannel0, vec2(uv.x, 0.25)).x;
-                ///float soundWave = 1.5 * texture2D(iChannel0, vec2(uv.x, 0.25)).x;
+                float soundWave = .3+.3*texture(iChannel0, vec2(0.10, 0.2)).x;
                 color += mix(lineColor, vec3(0.), smoothstep(0., 1.0, pow(dist/size, soundWave*(0.5+0.5*sin(iTime*2.+size+lineColor.x*140.))*0.20) ));
             }
             fragColor = vec4(color,1.0);
         }        
-        // The main function is just a shim that calls mainImage above.
-        void main() 
-        {
-            mainImage( gl_FragColor, gl_FragCoord.xy );
-        }
     </script>
 
-    <script id="draw-shader-vs" type="x-shader/x-vertex">
-        attribute vec2 inPos;
+    <script id="draw-shader-vs" type="x-shader/x-vertex">#version 300 es
+        in vec2 inPos;
         void main() {
-            gl_Position = vec4(inPos, 0.0, 1.0);
+            gl_Position = vec4(inPos.xy, 0.0, 1.0);
         }
     </script>
     
     <script> 
+        var shader_program = null;
         var analyser = null;
         // Set up for high-resolution displays.
         var devicePixelRatio_ = window.devicePixelRatio || 1
@@ -387,9 +429,15 @@ e
         canvas.height = canvas.clientHeight * devicePixelRatio_;
         var gl = canvas.getContext("webgl2", { antialias: true });
         if (!gl) {
-          alert("Could not create webgl2 context.");
+            alert("Could not create webgl2 context.");
         }
-        const texture_unit_0 = 0;
+        let extensions = gl.getSupportedExtensions();
+        console.log("Supported extensions:\n" + extensions);
+        var EXT_color_buffer_float = gl.getExtension("EXT_color_buffer_float");
+        if (!EXT_color_buffer_float) {
+            alert("EXT_color_buffer_float is not available on this platform.");
+        }
+        var WEBGL_debug_shaders = gl.getExtension("WEBGL_debug_shaders");
         const audio_texture_level = 0;
         const audio_texture_internalFormat = gl.R32F;
         const audio_texture_width = 512;
@@ -397,38 +445,87 @@ e
         const audio_texture_border = 0;
         const audio_texture_srcFormat = gl.RED;
         const audio_texture_srcType = gl.FLOAT;
-        var frequency_domain_data = new Uint8Array(audio_texture_width);
-        var time_domain_data = new Uint8Array(audio_texture_width);
+        var frequency_domain_data = new Uint8Array(audio_texture_width * 2);
+        var time_domain_data = new Uint8Array(audio_texture_width * 2);
         var audio_data = new Float32Array(audio_texture_width * 2);
+        
+        var channel0_texture_unit = 0;
+        var channel0_texture = gl.createTexture();
+        channel0_texture.name = "channel0_texture";
+        var channel0_sampler = gl.createSampler();
+        channel0_sampler.name - "channel0_sampler";
  
-        function set_audio_texture(analyser, texture_unit) {
-            if (analyser !== null) {
+        function write_audio_texture(analyser, texture_unit, texture, sampler) {
+           if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
                 analyser.getByteTimeDomainData(time_domain_data);
-                // Copy the first 1/4 of each data buffer into the audio texture as row 0 and row 1.
-                let i = 0;
-                for (i = 0; i < audio_texture_width; ++i) {
-                    // Frequency magnitudes should be in [0, 1].
-                    audio_data[i] = frequency_domain_data / 255.;
+                for (let i = 0; i < audio_texture_width; ++i) {
+                    // Map frequency domain magnitudes to [0, 1].
+                    let sample = frequency_domain_data[i];
+                    sample = sample / 255.;
+                    audio_data[i] = sample;
+                 }
+                let audio_data_width = audio_texture_width * 2;
+                for (let j = 0; j < audio_texture_width; ++j) {
+                    // Map time domain amplitudes to [-1, 1].
+                    let sample = time_domain_data[j];
+                    sample = sample / 255.;
+                    audio_data[audio_texture_width + j] = sample;
                 }
-                for (     ; i < (audio_texture_width * 2); ++i) {
-                    // Time magnitudes should be in [-1, 1].
-                    audio_data[i] = (time_domain_data / 255.) - .5 * 2.; 
-                }
-                gl.activeTexture(gl.TEXTURE0 + texture_unit);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
             }
-        }
-
-        (function loadscene() {    
+            gl.activeTexture(gl.TEXTURE0 + texture_unit);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.bindSampler(texture_unit, sampler);
+            gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat,audio_texture_srcType, audio_data);
+            gl.samplerParameteri(sampler, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.samplerParameteri(sampler, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_MODE, gl.NONE);
+            gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
+            if (false && analyser) { // For debugging.
+                let is_texture = gl.isTexture(texture);
+                let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
+                let uniform_index;
+                for (let uniform_index = 0; uniform_index < uniform_count; ++uniform_index) {
+                    uniform_info = gl.getActiveUniform(shader_program, uniform_index);
+                    console.log(uniform_info);
+                    const location = gl.getUniformLocation(shader_program, uniform_info.name);
+                    const value = gl.getUniform(shader_program, location);
+                    console.log("Uniform location: " + location);
+                    console.log("Uniform value: " + value);
+                }
+                const unit = gl.getUniform(shader_program, shader_program.iChannel0);
+                console.log("Sampler texture unit: " + unit);
+                console.log("Texture unit: " + texture_unit);
+                gl.activeTexture(gl.TEXTURE0 + texture_unit);
+                let texture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+                console.log("Texture binding 2D " + texture2D);
+                var debug_framebuffer = gl.createFramebuffer();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, debug_framebuffer);
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture2D, 0);
+                if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+                    console.log("These attachments don't work.");
+                }
+                // Read the contents of the debug_framebuffer (data stores the pixel data).
+                var data = new Float32Array(1024);
+                // What comes out, should be what went in.
+                gl.readPixels(0, 0, 512, 2, gl.RED, gl.FLOAT, data);
+                //console.log("\nfrequency domain: \n" + data.slice(0, 512));
+                //console.log("time domain: \n" + data.slice(512));
+                gl.deleteFramebuffer(debug_framebuffer);
+            }
+         }
+        
+        (function loadscene() {
             var webgl_viewport_size;
-            var webgl_buffer_object = {};
+            var webgl_buffers = {};
             var mouse_position = [0, 0, 0, 0];
             function create_scene() {
+                console.log("VENDOR: " + gl.getParameter(gl.VENDOR));
+                console.log("RENDERER: " + gl.getParameter(gl.RENDERER));
+                console.log("GL_VERSION: " + gl.getParameter(gl.VERSION));
                 console.log("SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
                 canvas.addEventListener('mousemove', (e) => {
                     mouse_position = [e.clientX, e.clientY];
@@ -445,6 +542,7 @@ e
                     }
                     gl.attachShader(shader_program, shader_object);
                     gl.linkProgram(shader_program);
+                    console.log("shader:" + WEBGL_debug_shaders.getTranslatedShaderSource(shader_object));
                 }
                 status = gl.getProgramParameter(shader_program, gl.LINK_STATUS);
                 if (!status) {
@@ -464,28 +562,23 @@ e
                 gl.useProgram(shader_program);
                
                 gl.uniform1f(shader_program.iSampleRate, 48000.);
-                var pos = [ -1, -1, 1, -1, 1, 1, -1, 1 ];
+                var pos = [ -1, -1, 
+                             1, -1, 
+                             1,  1, 
+                            -1,  1 ];
                 var inx = [ 0, 1, 2, 0, 2, 3 ];
-                webgl_buffer_object.pos = gl.createBuffer();
-                gl.bindBuffer( gl.ARRAY_BUFFER, webgl_buffer_object.pos );
+                webgl_buffers.pos = gl.createBuffer();
+                gl.bindBuffer( gl.ARRAY_BUFFER, webgl_buffers.pos );
                 gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW);
-                webgl_buffer_object.inx = gl.createBuffer();
-                webgl_buffer_object.inx.len = inx.length;
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_buffer_object.inx );
+                webgl_buffers.inx = gl.createBuffer();
+                webgl_buffers.inx.len = inx.length;
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_buffers.inx );
                 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW);
                 gl.enableVertexAttribArray(shader_program.inPos);
                 gl.vertexAttribPointer(shader_program.inPos, 2, gl.FLOAT, false, 0, 0); 
                 gl.enable(gl.DEPTH_TEST);
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
-                gl.activeTexture(gl.TEXTURE0 + texture_unit_0);
-                //gl.enable(gl.TEXTURE_2D);
-                texture0 = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, texture0);
-                gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
-                gl.uniform1i(shader_program.iChannel0, texture_unit_0);
-                const channel0 = gl.createSampler();
-                gl.bindSampler(texture_unit_0, channel0);
-
+                write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 window.onresize = resize;
                 resize();
                 requestAnimationFrame(render_scene);
@@ -493,24 +586,23 @@ e
 
             function resize() {
                 webgl_viewport_size = [window.innerWidth, window.innerHeight];
-                canvas.width = webgl_viewport_size[0];
-                canvas.height = webgl_viewport_size[1];
+                canvas.width = webgl_viewport_size[0] * window.devicePixelRatio;
+                canvas.height = webgl_viewport_size[1] * window.devicePixelRatio;
             }
             
             function render_scene(delta_milliseconds) {
-                if (analyser !== null) {
-                    set_audio_texture(analyser, texture_unit_0);
-                }
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
                 gl.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
-                gl.drawElements(gl.TRIANGLES, webgl_buffer_object.inx.len, gl.UNSIGNED_SHORT, 0);    
+                write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
+                gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 requestAnimationFrame(render_scene);
             }  
             create_scene();
         })();    
+    
     </script>
     <script>
         var message_callback_buffer = "";
@@ -572,9 +664,8 @@ e
                     await csound.Start();
                     await csound.Perform();
                     analyser = new AnalyserNode(audioContext);
-                    analyser.fftSize = 1024;
-                    const analyzer_buffer_size = analyser.frequencyBinCount;
-                    console.log("Analyzer buffer size: " + analyzer_buffer_size);
+                    analyser.fftSize = 2048;
+                    console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
                     csound.connect(analyser);
                     //analyser.connect(audioContext.destination);
                     csound_message_callback("Csound is playing...\n");
