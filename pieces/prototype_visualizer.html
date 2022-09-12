@@ -619,6 +619,7 @@ e
         var csound = null;
         (async function() { 
             CsoundAC = await createCsoundAC(); 
+            //CsoundAC.CHORD_SPACE_DEBUGGING(false);
             var txt = "Browser CodeName: " + navigator.appCodeName + "\n";
             txt += "Browser Name: " + navigator.appName + "\n";
             txt += "Browser Version: " + navigator.appVersion + "\n";
