@@ -427,12 +427,20 @@ e
         var canvas = document.getElementById( "display");
         canvas.width = canvas.clientWidth * devicePixelRatio_;
         canvas.height = canvas.clientHeight * devicePixelRatio_;
+        console.log("canvas.height: " + canvas.height);
+        console.log("canvas.width:  " + canvas.width);
         var gl = canvas.getContext("webgl2", { antialias: true });
         if (!gl) {
             alert("Could not create webgl2 context.");
         }
         let extensions = gl.getSupportedExtensions();
         console.log("Supported extensions:\n" + extensions);
+        if ("gpu" in navigator) {
+            var gpu_adapter = navigator.gpu.requestAdapter();
+            console.log("WebGPU adapter: " + gpu_adapter);
+        } else {
+            console.warn("WebGPU is not available on this platform.");
+        }
         var EXT_color_buffer_float = gl.getExtension("EXT_color_buffer_float");
         if (!EXT_color_buffer_float) {
             alert("EXT_color_buffer_float is not available on this platform.");
@@ -448,6 +456,7 @@ e
         var frequency_domain_data = new Uint8Array(audio_texture_width * 2);
         var time_domain_data = new Uint8Array(audio_texture_width * 2);
         var audio_data = new Float32Array(audio_texture_width * 2);
+        var image_sample_buffer = new Uint8ClampedArray();
         
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
@@ -518,7 +527,7 @@ e
             }
          }
         
-        (function loadscene() {
+        (function load_scene() {
             var webgl_viewport_size;
             var webgl_buffers = {};
             var mouse_position = [0, 0, 0, 0];
@@ -588,6 +597,81 @@ e
                 webgl_viewport_size = [window.innerWidth, window.innerHeight];
                 canvas.width = webgl_viewport_size[0] * window.devicePixelRatio;
                 canvas.height = webgl_viewport_size[1] * window.devicePixelRatio;
+                image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
+                console.info("resize: image_sample_buffer.length: " + image_sample_buffer.length);
+            }
+            
+             function clientWaitAsync(sync, flags, interval_ms) {
+              return new Promise((resolve, reject) => {
+                function test() {
+                  const result = gl.clientWaitSync(sync, flags, 0);
+                  if (result === gl.WAIT_FAILED) {
+                    reject();
+                    return;
+                  }
+                  // This is the workaround for platforms where maximum 
+                  // timeout is always 0.
+                  if (result === gl.TIMEOUT_EXPIRED) {
+                    setTimeout(test, interval_ms);
+                    return;
+                  }
+                  resolve();
+                }
+                test();
+              });
+            }
+
+            async function getBufferSubDataAsync(target, buffer, srcByteOffset, dstBuffer,
+                /* optional */ dstOffset, /* optional */ length) {
+              const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+              gl.flush();
+              await clientWaitAsync(sync, 0, 10);
+              gl.deleteSync(sync);
+              gl.bindBuffer(target, buffer);
+              gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
+              gl.bindBuffer(target, null);
+              return dest;
+            }
+
+            async function readPixelsAsync(x, y, w, h, format, type, dest) {
+              const buf = gl.createBuffer();
+              gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buf);
+              gl.bufferData(gl.PIXEL_PACK_BUFFER, dest.byteLength, gl.STREAM_READ);
+              gl.readPixels(x, y, w, h, format, type, 0);
+              gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+              await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buf, 0, dest);
+              gl.deleteBuffer(buf);
+              return dest;
+            }      
+
+            /**
+             * Translate one row of RGBA pixels, the width of the WebGL canvas, 
+             * to Csound events. These are normally "note on" and "note off" 
+             * events. The pixel width is divided by the maximum number of 
+             * simultaneous instrument instances; the average color of each 
+             * division represents one event. These RGBA pixels are translated 
+             * to HSV, and then division index is MIDI key, hue is instrument 
+             * number, value is loudness, and saturation is available for other 
+             * pfields such as pan. Typically a note goes "on" when the value 
+             * goes above a threshold, and "off" when its value falls below 
+             * that threshold.
+             */
+            async function translate_sample_to_csound_events(maximum_events, threshold) {
+                
+            }
+
+            /** 
+             * As the last step in rendering the scene, this function reads 
+             * one row of the canvas (the sample) into an array of pixels, 
+             * then translates that row into a set of Csound events, the 
+             * mapping determined by a separate function. An attempt is made 
+             * to avoid stalling the WebGL rendering pipeline by reading the 
+             * pixels from the canvas only when a memory fence around 
+             * the pipeline becomes passable.
+             */
+            function sample_canvas() {
+                console.info("frame_sample_to_score.");
+                await translate_sample_to_csound_events();
             }
             
             function render_scene(delta_milliseconds) {
@@ -598,6 +682,7 @@ e
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
+                sample_canvas();
                 requestAnimationFrame(render_scene);
             }  
             create_scene();
