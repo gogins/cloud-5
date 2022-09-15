@@ -420,6 +420,21 @@ e
     </script>
     
     <script> 
+        /**
+         * Encapsulates the combination of Csound with a GLSL fragment shader 
+         * as a music visualizer or score generator. Csound passes audio data 
+         * in both the time and the frequency domains to the shader for 
+         * visualization, and the shader may compute Csound events and pass 
+         * them to Csound for rendering by Csound instruments.
+         */
+        class ShaderAdapter {
+            constructor(csound, canvas) {
+                this.csound = csound;
+                this.canvas = canvas;
+                
+            };
+        };
+        
         var shader_program = null;
         var analyser = null;
         // Set up for high-resolution displays.
@@ -456,7 +471,8 @@ e
         var frequency_domain_data = new Uint8Array(audio_texture_width * 2);
         var time_domain_data = new Uint8Array(audio_texture_width * 2);
         var audio_data = new Float32Array(audio_texture_width * 2);
-        var image_sample_buffer = new Uint8ClampedArray();
+        var current_image_sample_buffer = new Uint8ClampedArray();
+        var prior_image_sample_buffer = new Uint8ClampedArray();
         
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
@@ -597,28 +613,29 @@ e
                 webgl_viewport_size = [window.innerWidth, window.innerHeight];
                 canvas.width = webgl_viewport_size[0] * window.devicePixelRatio;
                 canvas.height = webgl_viewport_size[1] * window.devicePixelRatio;
-                image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
-                console.info("resize: image_sample_buffer.length: " + image_sample_buffer.length);
+                current_image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
+                prior_image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
+                console.info("resize: current_image_sample_buffer.length: " + current_image_sample_buffer.length);
             }
             
-             function clientWaitAsync(sync, flags, interval_ms) {
-              return new Promise((resolve, reject) => {
-                function test() {
-                  const result = gl.clientWaitSync(sync, flags, 0);
-                  if (result === gl.WAIT_FAILED) {
-                    reject();
-                    return;
-                  }
-                  // This is the workaround for platforms where maximum 
-                  // timeout is always 0.
-                  if (result === gl.TIMEOUT_EXPIRED) {
-                    setTimeout(test, interval_ms);
-                    return;
-                  }
-                  resolve();
-                }
-                test();
-              });
+            function clientWaitAsync(sync, flags, interval_ms) {
+                return new Promise((resolve, reject) => {
+                    function test() {
+                        const result = gl.clientWaitSync(sync, flags, 0);
+                        if (result === gl.WAIT_FAILED) {
+                            reject();
+                            return;
+                        }
+                        // This is the workaround for platforms where maximum 
+                        // timeout is always 0.
+                        if (result === gl.TIMEOUT_EXPIRED) {
+                            setTimeout(test, interval_ms);
+                            return;
+                        }
+                        resolve();
+                    }
+                    test();
+                });
             }
 
             async function getBufferSubDataAsync(target, buffer, srcByteOffset, dstBuffer,
@@ -630,18 +647,19 @@ e
               gl.bindBuffer(target, buffer);
               gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
               gl.bindBuffer(target, null);
-              return dest;
+              ///return dest;
             }
 
-            async function readPixelsAsync(x, y, w, h, format, type, dest) {
-              const buf = gl.createBuffer();
-              gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buf);
-              gl.bufferData(gl.PIXEL_PACK_BUFFER, dest.byteLength, gl.STREAM_READ);
+            async function readPixelsAsync(x, y, w, h, format, type, sample) {
+              const buffer = gl.createBuffer();
+              gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+              gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
               gl.readPixels(x, y, w, h, format, type, 0);
               gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-              await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buf, 0, dest);
-              gl.deleteBuffer(buf);
-              return dest;
+              await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
+              gl.deleteBuffer(buffer);
+              console.log(x, y, w, h, format, type, sample);
+              ///return dest;
             }      
 
             /**
@@ -657,7 +675,19 @@ e
              * that threshold.
              */
             async function translate_sample_to_csound_events(maximum_events, threshold) {
-                
+                let x = 0;
+                // TODO: Make this the bottom of the canvas.
+                let y = canvas.height / 2;
+                let width = canvas.width;
+                let height = 1;
+                let format = gl.RGBA;
+                let type = gl.UNSIGNED_BYTE;
+                let events = new Float32Array();
+               let temp = prior_image_sample_buffer;
+                prior_image_sample_buffer = current_image_sample_buffer;
+                current_image_sample_buffer = temp;
+                readPixelsAsync(x, y, width, height, format, type, current_image_sample_buffer);
+                return events;
             }
 
             /** 
@@ -669,9 +699,9 @@ e
              * pixels from the canvas only when a memory fence around 
              * the pipeline becomes passable.
              */
-            function sample_canvas() {
+            async function sample_canvas() {
                 console.info("frame_sample_to_score.");
-                await translate_sample_to_csound_events();
+                 await translate_sample_to_csound_events(16, 128);
             }
             
             function render_scene(delta_milliseconds) {
