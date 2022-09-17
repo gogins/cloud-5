@@ -769,7 +769,7 @@ endin
         var audio_data = new Float32Array(audio_texture_width * 2);
         var image_sample_buffer = new Uint8ClampedArray();
         var current_events = new Map();
-        var event_value_threshold = .33333;
+        var event_value_threshold = .6666667;
         
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
@@ -978,7 +978,6 @@ endin
                 return new Float32Array([h, s, v]);
             }
 
-
             async function readPixelsAsync(x, y, w, h, format, type, sample) {
               const buffer = gl.createBuffer();
               gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
@@ -987,7 +986,7 @@ endin
               gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
               await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
               gl.deleteBuffer(buffer);
-              console.log(x, y, w, h, format, type, sample);
+              //console.info(x, y, w, h, format, type, sample);
               ///return dest;
             }      
 
@@ -1004,6 +1003,12 @@ endin
              * p1, p2, p3, p4, p5, p6].
              */
             async function translate_sample_to_csound_events(maximum_events, threshold) {
+                if (csound == null) {
+                    return;
+                }
+                if (!csound.is_playing) {
+                    return;
+                }
                 let x = 0;
                 // TODO: Make this the bottom of the canvas.
                 let y = canvas.height / 2;
@@ -1044,7 +1049,7 @@ endin
                     if (hsv[2] >= threshold) {
                         if (!current_events.has(midi_key)) {
                             //                            state p1              p2 p3  p4        p5      p6 
-                            current_events.set(midi_key, [1,    hsv[0] * 4 + 1, 0, -1, midi_key, hsv[2], hsv[1] * 2 - 1]);
+                            current_events.set(midi_key, [1,    (hsv[0] * 4) + 1, 0, -1, midi_key, hsv[2] * 60, hsv[1] * 2 - 1]);
                         }
                     }
                     // If the MIDI key state is playing and the pixel value falls 
@@ -1053,6 +1058,7 @@ endin
                         if (current_events.has(midi_key)) {
                             current_event = current_events.get(midi_key);
                             current_event[0] = 3;
+                            current_event[1]  *= -1;
                         }
                     }
                 }
@@ -1069,14 +1075,16 @@ endin
                         score.push(score_line);
                     // State is off, turn off and remove.
                     } else if (event[0] === 3) {
-                        let score_line = `i ${event[1] * -1} ${event[2]} ${event[3]} ${event[4]} ${event[5]} ${event[6]}`;
+                        let score_line = `i ${event[1]} ${event[2]} ${event[3]} ${event[4]} ${event[5]} ${event[6]}`;
                         score.push(score_line);
-                        current_events.remove(key);
+                        current_events.delete(key);
                     }
                 }
-                let score_text = score.join("\n");
-                console.info("score_text");
-                console.info(score_text);
+                if (score.length > 0) {
+                    let score_text = score.join("\n");
+                    console.info(score_text);
+                    csound.ReadScore(score_text);
+                }
             }
 
             /** 
@@ -1089,7 +1097,7 @@ endin
              * the GPU pipeline becomes passable.
              */
             async function sample_canvas() {
-                console.info("frame_sample_to_score.");
+                //console.info("frame_sample_to_score.");
                 await translate_sample_to_csound_events(16, event_value_threshold);
             }
             
