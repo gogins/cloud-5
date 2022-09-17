@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Prototype Visualizer</title>
+<title>Prototype Score Generator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.1/dat.gui.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
@@ -31,7 +31,7 @@
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;">
     </canvas>
     <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgba(102,205,170,.75);">
-<h1>Prototype Visualizer</h1>
+<h1>Prototype Score Generator</h1>
 <h3>Michael Gogins<br>
 September 2022</h3>
 
@@ -610,7 +610,7 @@ endin
     </textarea>
 
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-        #line 292
+        #line 614
         precision mediump float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -686,26 +686,61 @@ endin
             return length(c-point);
         }
 
-        void mainImage( out vec4 fragColor, in vec2 fragCoord )
-        {
-            vec2 uv = (fragCoord.xy*2.-iResolution.xy) / iResolution.yy;
-            vec3 color = vec3(0.);
-            color = mix(vec3(0.325, 0.431, 0.364), color, abs(uv.x)*0.25);
-            for(int i=0; i < 190; ++i)
-            {
-                vec2 a = vec2(hash(i)*2.-1., hash(i+1)*2.-1.);
-                vec2 b = vec2(hash(10*i+1)*2.-1., hash(11*i+2)*2.-1.);
-                vec3 lineColor = vec3(hash(10+i), hash(18+i*3), hash(5+i*10));
-                float speed = b.y*0.15;
-                float size = (0.005 + 0.3*hash(5+i*i*2)) + (0.5+0.5*sin(a.y*5.+iTime*speed))*0.1;
-                a += vec2(sin(a.x*20.+iTime*speed), sin(a.y*15.+iTime*0.4*speed)*0.5);
-                b += vec2(b.x*5.+cos(iTime*speed), cos(b.y*10.+iTime*2.0*speed)*0.5);
-                float dist = dSegment(a, b, uv);
-                float soundWave = .3+.3*texture(iChannel0, vec2(0.10, 0.2)).x;
-                color += mix(lineColor, vec3(0.), smoothstep(0., 1.0, pow(dist/size, soundWave*(0.5+0.5*sin(iTime*2.+size+lineColor.x*140.))*0.20) ));
-            }
-            fragColor = vec4(color,1.0);
-        }        
+vec2 triangle_wave(vec2 a){
+    return abs(fract((a+vec2(1.,0.5))*1.5)-.5);
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    fragColor = vec4(0.0);
+    vec3 col = vec3(0.);
+    float t1 = 8.*8.;
+    vec2 uv = (fragCoord)/iResolution.y/t1/2.0;
+    uv.y += iTime/t1/12.0;
+    float scale = 1.5;
+    vec2 t2 = vec2(0.);
+    vec3 col1 = col;
+
+    for(int k = 0; k < 12; k++){
+        bool c1 = t2.x < uv.x;
+        uv = (uv+t2)/scale;
+        t2 = triangle_wave(uv-.5);
+        uv = t2-triangle_wave(uv.yx);
+        float z1 =
+            //Several interesting variants here:
+            abs(uv.x-uv.y)-t2.x-t2.y;
+            //length(uv-t2);
+            //max(abs(t2.y),abs(uv.y));
+            //max(abs(t2.x),abs(uv.x));
+            //abs(uv.y)-t2.y;
+            //abs(uv.x)-t2.x;
+            //max(abs(uv.x-t2.x),abs(uv.y-t2.y));
+            //uv.x-t2.x;
+            //t2.y;
+            //abs(uv.x+uv.y)-t2.x-t2.y;
+            //t2.x+uv.x;
+            //uv.x+t2.x;
+            
+            //max(abs(t2.y-uv.y),abs(t2.x-uv.x));
+
+            //max(abs(uv.y),abs(uv.x));
+
+        col.x = max((abs(z1))/3.,col.x);
+        col =
+            abs(col-(1.-col.x));
+            //abs(col.yzx-(1.-col.x));
+        col1 =
+            abs(col1-col-1.).yzx;
+            //col1 = abs(abs(col1-1.)-col).yzx;
+
+        
+        //if(c1) col =
+            //col.yzx;
+            //abs(col.yzx-col);
+    }
+    fragColor = vec4(col1/2.,1.0);
+}
+              
     </script>
 
     <script id="draw-shader-vs" type="x-shader/x-vertex">#version 300 es
@@ -1048,7 +1083,7 @@ endin
                     // value exceeds the threshold, create a "note on" event.
                     if (hsv[2] >= threshold) {
                         if (!current_events.has(midi_key)) {
-                            //                            state p1              p2 p3  p4        p5      p6 
+                            //                            state p1                p2 p3  p4        p5           p6 
                             current_events.set(midi_key, [1,    (hsv[0] * 4) + 1, 0, -1, midi_key, hsv[2] * 60, hsv[1] * 2 - 1]);
                         }
                     }
