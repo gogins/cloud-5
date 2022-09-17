@@ -804,7 +804,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         var audio_data = new Float32Array(audio_texture_width * 2);
         var image_sample_buffer = new Uint8ClampedArray();
         var current_events = new Map();
-        var event_value_threshold = .6666667;
+        var event_value_threshold = .75;
         
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
@@ -1055,8 +1055,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
                 // Iterate over MIDI key numbers, over pixels per MIDI key, over bytes per pixel.
                 // The average HSV of the MIDI key "lane" of pixels is the value of that lane.
-                let midi_key_begin = 24;
-                let midi_key_range = 88;
+                let midi_key_begin = 36;
+                let midi_key_range = 60;
                 let midi_key_end = midi_key_begin + midi_key_range;
                 let pixels_per_midi_key = width / midi_key_range;
                 let bytes_per_pixel = 4;
