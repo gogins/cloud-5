@@ -1036,8 +1036,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 if (threshold >= data.length || threshold === 0) {
                     return data; // Nothing to do
                 }
-                var sampled = [],
-                    sampled_index = 0;
+                var sampled_data = [],
+                    sampled_data_index = 0;
                 // Bucket size. Leave room for start and end data points
                 var every = (data.length - 2) / (threshold - 2);
                 // Triangles are points {a, b, c}.
@@ -1046,7 +1046,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     max_area,
                     area,
                     next_a;
-                sampled[sampled_index++] = data[a]; // Always add the first point
+                sampled_data[sampled_data_index++] = data[a]; // Always add the first point
                 for (var i = 0; i < threshold - 2; i++) {
                     // Calculate point average for next bucket (containing c)
                     var avg_x = 0,
@@ -1079,11 +1079,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                             next_a = range_offs; // Next a is this b
                         }
                     }
-                    sampled[sampled_index++] = max_area_point; // Pick this point from the bucket
+                    sampled_data[sampled_data_index++] = max_area_point; // Pick this point from the bucket
                     a = next_a; // This a is the next a (chosen b)
                 }
-                sampled[sampled_index++] = data[data.length - 1]; // Always add last
-                return sampled;
+                sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last
+                return sampled_data;
             }
             
             /**
