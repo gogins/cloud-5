@@ -754,9 +754,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         /**
          * Encapsulates the combination of Csound with a GLSL fragment shader 
          * as a music visualizer or score generator. Csound passes audio data 
-         * in both the time and the frequency domains to the shader for 
-         * visualization, and the shader may compute Csound events and pass 
-         * them to Csound for rendering by Csound instruments.
+         * in both the time domain and the frequency domain to the shader for 
+         * visualization, and the canvas may be sampled to generate Csound 
+         * events and pass them to Csound for rendering by Csound instruments.
          */
         class ShaderAdapter {
             constructor(csound, canvas) {
@@ -803,8 +803,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         var time_domain_data = new Uint8Array(audio_texture_width * 2);
         var audio_data = new Float32Array(audio_texture_width * 2);
         var image_sample_buffer = new Uint8ClampedArray();
-        var current_events = new Map();
-        var event_value_threshold = .75;
         
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
@@ -812,6 +810,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         var channel0_sampler = gl.createSampler();
         channel0_sampler.name - "channel0_sampler";
  
+        var current_events = new Map();
+        var prior_events = current_events;
+        var event_value_threshold = .866667;
+        var rendering_iterations_per_sample = 5;
+        var rendering_frame = 0;
+        
         function write_audio_texture(analyser, texture_unit, texture, sampler) {
            if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
@@ -972,21 +976,20 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
             async function getBufferSubDataAsync(target, buffer, srcByteOffset, dstBuffer,
                 /* optional */ dstOffset, /* optional */ length) {
-              const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
-              gl.flush();
-              await clientWaitAsync(sync, 0, 10);
-              gl.deleteSync(sync);
-              gl.bindBuffer(target, buffer);
-              gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
-              gl.bindBuffer(target, null);
-              ///return dest;
-            }
+                const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+                gl.flush();
+                await clientWaitAsync(sync, 0, 10);
+                gl.deleteSync(sync);
+                gl.bindBuffer(target, buffer);
+                gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
+                gl.bindBuffer(target, null);
+             }
             
             /**
              * Converts an RGB color value to HSV. Conversion formula
              * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
              * Assumes r, g, and b are in [0, 255] and
-             * returns h, s, and v in [0, 1].
+             * returns h, s, and v in [0., 1.].
              */
             var rgb_to_hsv = function(rgb){
                 r = rgb[0] / 255;
@@ -1014,112 +1017,131 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             }
 
             async function readPixelsAsync(x, y, w, h, format, type, sample) {
-              const buffer = gl.createBuffer();
-              gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
-              gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
-              gl.readPixels(x, y, w, h, format, type, 0);
-              gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-              await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
-              gl.deleteBuffer(buffer);
-              //console.info(x, y, w, h, format, type, sample);
-              ///return dest;
-            }      
-
+                const buffer = gl.createBuffer();
+                gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+                gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
+                gl.readPixels(x, y, w, h, format, type, 0);
+                gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+                await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
+                gl.deleteBuffer(buffer);
+            }   
+            
             /**
-             * Translate one row of RGBA pixels, the width of the WebGL canvas, 
-             * to Csound events. These are normally "note on" and "note off" 
-             * events. The pixel width is divided by the maximum number of 
-             * simultaneous instrument instances; the average color of each 
-             * division represents one event. These RGBA pixels are translated 
-             * to HSV, and then division index is MIDI key, hue is instrument 
-             * number, value is loudness, and saturation is available for other 
-             * pfields such as pan. Csound events have the states {unscheduled, 
-             * on = 1, playing = 2, off = 3}. Events are float arrays: [state, 
-             * p1, p2, p3, p4, p5, p6].
+             * Adapts https://github.com/pingec/downsample-lttb from time series data 
+             * to arrays of float HSV pixels. Our data is not 
+             * [[time, value], [time, value],...]; rather, our data is 
+             * [[pixel index, hsv[2], [pixel index, hsv[2], ...].
              */
-            async function translate_sample_to_csound_events(maximum_events, threshold) {
+            function downsample_lttb(data, threshold) {
+
+                var data_length = data.length;
+                if (threshold >= data_length || threshold === 0) {
+                    return data; // Nothing to do
+                }
+
+                var sampled = [],
+                    sampled_index = 0;
+
+                // Bucket size. Leave room for start and end data points
+                var every = (data_length - 2) / (threshold - 2);
+
+                var a = 0,  // Initially a is the first point in the triangle
+                    max_area_point,
+                    max_area,
+                    area,
+                    next_a;
+
+                sampled[ sampled_index++ ] = data[ a ]; // Always add the first point
+
+                for (var i = 0; i < threshold - 2; i++) {
+
+                    // Calculate point average for next bucket (containing c)
+                    var avg_x = 0,
+                        avg_y = 0,
+                        avg_range_start  = floor( ( i + 1 ) * every ) + 1,
+                        avg_range_end    = floor( ( i + 2 ) * every ) + 1;
+                    avg_range_end = avg_range_end < data_length ? avg_range_end : data_length;
+
+                    var avg_range_length = avg_range_end - avg_range_start;
+
+                    for ( ; avg_range_start<avg_range_end; avg_range_start++ ) {
+                      avg_x += data[ avg_range_start ][ 0 ] * 1; // * 1 enforces Number (value may be Date)
+                      avg_y += data[ avg_range_start ][ 1 ] * 1;
+                    }
+                    avg_x /= avg_range_length;
+                    avg_y /= avg_range_length;
+
+                    // Get the range for this bucket
+                    var range_offs = floor( (i + 0) * every ) + 1,
+                        range_to   = floor( (i + 1) * every ) + 1;
+
+                    // Point a
+                    var point_a_x = data[ a ][ 0 ] * 1, // enforce Number (value may be Date)
+                        point_a_y = data[ a ][ 1 ] * 1;
+
+                    max_area = area = -1;
+
+                    for ( ; range_offs < range_to; range_offs++ ) {
+                        // Calculate triangle area over three buckets
+                        area = abs( ( point_a_x - avg_x ) * ( data[ range_offs ][ 1 ] - point_a_y ) -
+                                    ( point_a_x - data[ range_offs ][ 0 ] ) * ( avg_y - point_a_y )
+                                  ) * 0.5;
+                        if ( area > max_area ) {
+                            max_area = area;
+                            max_area_point = data[ range_offs ];
+                            next_a = range_offs; // Next a is this b
+                        }
+                    }
+
+                    sampled[ sampled_index++ ] = max_area_point; // Pick this point from the bucket
+                    a = next_a; // This a is the next a (chosen b)
+                }
+
+                sampled[ sampled_index++ ] = data[ data_length - 1 ]; // Always add last
+
+                return sampled;
+            }
+            
+            /**
+             * Translates one row of RGBA pixels, the width of the WebGL 
+             * canvas, to Csound events. 
+             *
+             * https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf
+             */
+            var unscheduled_events = new Array();
+            var on_events = new Array();
+            var playing_events = new Array();
+            var off_events = new Array();
+            var loudness_mid_key_count = 80;
+            var frame_translation_rate = 1;
+            var frame_translation_count = 0;
+            var midi_key_begin = 36;
+            var midi_key_range = 60;
+            var midi_key_end = midi_key_begin + midi_key_range;
+            async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
                 if (csound == null) {
                     return;
                 }
                 if (!csound.is_playing) {
                     return;
                 }
-                let x = 0;
-                // TODO: Make this the bottom of the canvas.
+                // Sample the middle row of the canvas.
                 let y = canvas.height / 2;
                 let width = canvas.width;
                 let height = 1;
                 let format = gl.RGBA;
                 let type = gl.UNSIGNED_BYTE;
-                let events = new Float32Array();
                 readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
-                // Iterate over MIDI key numbers, over pixels per MIDI key, over bytes per pixel.
-                // The average HSV of the MIDI key "lane" of pixels is the value of that lane.
-                let midi_key_begin = 36;
-                let midi_key_range = 60;
-                let midi_key_end = midi_key_begin + midi_key_range;
-                let pixels_per_midi_key = width / midi_key_range;
-                let bytes_per_pixel = 4;
-                let bytes_per_midi_key = pixels_per_midi_key * bytes_per_pixel;
-                let hsv;
-                // For every MIDI key that is mapped to the canvas...
-                for (let midi_key = midi_key_begin; midi_key < midi_key_end; midi_key++) {
-                    let byte_begin = (midi_key - midi_key_begin) * bytes_per_pixel;
-                    let byte_end = byte_begin + bytes_per_midi_key;
-                    // For every pixel that is mapped to that MIDI key...
-                    let sample_pixel = new Float32Array(3);
-                    for (let byte = byte_begin; byte < byte_end; byte = byte + bytes_per_pixel) {
-                        // Average the pixels that are mapped to the MIDI key. Alpha is ignored.
-                        let rgb = image_sample_buffer.slice(byte, byte + 3);
-                        sample_pixel[0] += rgb[0];
-                        sample_pixel[1] += rgb[1];
-                        sample_pixel[2] += rgb[2];
-                    }
-                    sample_pixel[0] /= pixels_per_midi_key;
-                    sample_pixel[1] /= pixels_per_midi_key;
-                    sample_pixel[2] /= pixels_per_midi_key;
-                    hsv = rgb_to_hsv(sample_pixel);
-                    // If the MIDI key state is unscheduled and and the pixel 
-                    // value exceeds the threshold, create a "note on" event.
-                    if (hsv[2] >= threshold) {
-                        if (!current_events.has(midi_key)) {
-                            //                            state p1                p2 p3  p4        p5           p6 
-                            current_events.set(midi_key, [1,    (hsv[0] * 4) + 1, 0, -1, midi_key, hsv[2] * 60, hsv[1] * 2 - 1]);
-                        }
-                    }
-                    // If the MIDI key state is playing and the pixel value falls 
-                    // below the threshold, create a "note off" event.
-                    if (hsv[2] < threshold) {
-                        if (current_events.has(midi_key)) {
-                            current_event = current_events.get(midi_key);
-                            current_event[0] = 3;
-                            current_event[1]  *= -1;
-                        }
-                    }
+                // Translate the sample from byte RGBA to float HSV.
+                let hsv_image_sample = new Float32Array();
+                for (let byte_i = 0; byte_i < image_sample_buffer_length; byte_i = byte_i + 4) {
+                    let rgb = image_sample_buffer.slice(byte_i, byte_i + 3);
+                    let hsv = rgb_to_hsv(rgb[0], rgb[1], rgb[2]);
+                    hsv_image_sample.push(hsv);
                 }
-                // For "on" events, create a Csound "i" statement with a held 
-                // duration, and change the event state to "playing." For 
-                // "off" events, create a Csound "i" statement with a negative 
-                // p1, and remove the event from the list.
-                let score = [];
-                for (const [key, event] of current_events) {
-                    // State is on, play and set to playing.
-                    if (event[0] === 1) {
-                        let score_line = `i ${event[1]} ${event[2]} ${event[3]} ${event[4]} ${event[5]} ${event[6]}`;
-                        event[0] == 2;
-                        score.push(score_line);
-                    // State is off, turn off and remove.
-                    } else if (event[0] === 3) {
-                        let score_line = `i ${event[1]} ${event[2]} ${event[3]} ${event[4]} ${event[5]} ${event[6]}`;
-                        score.push(score_line);
-                        current_events.delete(key);
-                    }
-                }
-                if (score.length > 0) {
-                    let score_text = score.join("\n");
-                    console.info(score_text);
-                    csound.ReadScore(score_text);
-                }
+                // Downsample the HSV sample.
+                let downsampled_events = downsample_lttb(hsv_image_sample, midi_key_range);
+                 
             }
 
             /** 
@@ -1131,12 +1153,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              * pixels from the canvas only when a memory fence around 
              * the GPU pipeline becomes passable.
              */
-            async function sample_canvas() {
+            async function sample_canvas(current_rendering_frame) {
                 //console.info("frame_sample_to_score.");
-                await translate_sample_to_csound_events(16, event_value_threshold);
+                await translate_sample_to_csound_events(16, event_value_threshold, current_rendering_frame);
             }
             
             function render_scene(delta_milliseconds) {
+                rendering_frame++;
+                console.info(`render_scene:                      time: ${performance.now() / 1000} frame: ${rendering_frame}`);
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
                 gl.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
@@ -1144,7 +1168,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 //write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
-                sample_canvas();
+                sample_canvas(rendering_frame);
                 requestAnimationFrame(render_scene);
             }  
             create_scene();
