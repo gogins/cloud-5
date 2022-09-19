@@ -1028,19 +1028,18 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             
             /**
              * Adapts https://github.com/pingec/downsample-lttb from time 
-             * series data to arrays of float HSV pixels. Our data is not 
+             * series data to vectors of float HSV pixels. Our data is not 
              * [[time, value], [time, value],...]; rather, our data is 
-             * [[pixel index0, hsv0[2], [pixel index1, hsv1[2], ...].
+             * [[pixel index0, hsv0[2]], [pixel index1, hsv1[2]], ...].
              */
             function downsample_lttb(data, threshold) {
-                var data_length = data.length;
-                if (threshold >= data_length || threshold === 0) {
+                if (threshold >= data.length || threshold === 0) {
                     return data; // Nothing to do
                 }
                 var sampled = [],
                     sampled_index = 0;
                 // Bucket size. Leave room for start and end data points
-                var every = (data_length - 2) / (threshold - 2);
+                var every = (data.length - 2) / (threshold - 2);
                 // Triangles are points {a, b, c}.
                 var a = 0,  // Initially a is the first point in the triangle
                     max_area_point,
@@ -1054,7 +1053,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                         avg_y = 0,
                         avg_range_start  = floor( ( i + 1 ) * every ) + 1,
                         avg_range_end    = floor( ( i + 2 ) * every ) + 1;
-                    avg_range_end = avg_range_end < data_length ? avg_range_end : data_length;
+                    avg_range_end = avg_range_end < data.length ? avg_range_end : data.length;
                     var avg_range_length = avg_range_end - avg_range_start;
                     for ( ; avg_range_start<avg_range_end; avg_range_start++ ) {
                       avg_x += data[ avg_range_start ][ 0 ] * 1; // * 1 enforces Number (value may be Date)
@@ -1083,7 +1082,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     sampled[sampled_index++] = max_area_point; // Pick this point from the bucket
                     a = next_a; // This a is the next a (chosen b)
                 }
-                sampled[sampled_index++] = data[data_length - 1]; // Always add last
+                sampled[sampled_index++] = data[data.length - 1]; // Always add last
                 return sampled;
             }
             
