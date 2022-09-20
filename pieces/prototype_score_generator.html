@@ -1013,7 +1013,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     }
                     h /= 6;
                 }
-                return new Float32Array([h, s, v]);
+                return [h, s, v];
             }
 
             async function readPixelsAsync(x, y, w, h, format, type, sample) {
@@ -1051,8 +1051,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     // Calculate point average for next bucket (containing c)
                     var avg_x = 0,
                         avg_y = 0,
-                        avg_range_start  = floor( ( i + 1 ) * every ) + 1,
-                        avg_range_end    = floor( ( i + 2 ) * every ) + 1;
+                        avg_range_start  = Math.floor( ( i + 1 ) * every ) + 1,
+                        avg_range_end    = Math.floor( ( i + 2 ) * every ) + 1;
                     avg_range_end = avg_range_end < data.length ? avg_range_end : data.length;
                     var avg_range_length = avg_range_end - avg_range_start;
                     for ( ; avg_range_start<avg_range_end; avg_range_start++ ) {
@@ -1062,15 +1062,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     avg_x /= avg_range_length;
                     avg_y /= avg_range_length;
                     // Get the range for this bucket
-                    var range_offs = floor( (i + 0) * every ) + 1,
-                        range_to   = floor( (i + 1) * every ) + 1;
+                    var range_offs = Math.floor( (i + 0) * every ) + 1,
+                        range_to   = Math.floor( (i + 1) * every ) + 1;
                     // Point a
                     var point_a_x = data[ a ][ 0 ] * 1, // enforce Number (value may be Date)
                         point_a_y = data[ a ][ 1 ] * 1;
                     max_area = area = -1;
                     for ( ; range_offs < range_to; range_offs++ ) {
                         // Calculate triangle area over three buckets
-                        area = abs( ( point_a_x - avg_x ) * ( data[ range_offs ][ 1 ] - point_a_y ) -
+                        area = Math.abs( ( point_a_x - avg_x ) * ( data[ range_offs ][ 1 ] - point_a_y ) -
                                     ( point_a_x - data[ range_offs ][ 0 ] ) * ( avg_y - point_a_y )
                                   ) * 0.5;
                         if ( area > max_area ) {
@@ -1083,7 +1083,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     a = next_a; // This a is the next a (chosen b)
                 }
                 sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last
-                return sampled_data;
+                return data; ///sampled_data;
             }
             
             /**
@@ -1101,6 +1101,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var frame_translation_count = 0;
             var midi_key_begin = 36;
             var midi_key_range = 60;
+            var instrument_count = 4;
+            var maximum_voices = 10;
             var midi_key_end = midi_key_begin + midi_key_range;
             async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
                 if (csound == null) {
@@ -1110,22 +1112,80 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     return;
                 }
                 // Sample the middle row of the canvas.
+                let x = 0;
                 let y = canvas.height / 2;
                 let width = canvas.width;
                 let height = 1;
                 let format = gl.RGBA;
                 let type = gl.UNSIGNED_BYTE;
                 readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
-                // Translate the sample from byte RGBA to float HSV.
-                let hsv_image_sample = new Float32Array();
-                for (let byte_i = 0; byte_i < image_sample_buffer_length; byte_i = byte_i + 4) {
+                // Translate the sample format from byte RGBA to float HSV.
+                let hsv_image_sample = [];
+                for (let byte_i = 0; byte_i < image_sample_buffer.length; byte_i = byte_i + 4) {
                     let rgb = image_sample_buffer.slice(byte_i, byte_i + 3);
-                    let hsv = rgb_to_hsv(rgb[0], rgb[1], rgb[2]);
+                    let hsv = rgb_to_hsv(rgb);
                     hsv_image_sample.push(hsv);
                 }
-                // Downsample the HSV sample.
-                let downsampled_events = downsample_lttb(hsv_image_sample, midi_key_range);
-                 
+                // Downsample the HSV samples.
+                let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
+                unscheduled_events.length = 0;
+                on_events.length = 0;
+                off_events.length = 0;
+                for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
+                    let hsv = downsampled_pixels[downsampled_pixel_i];
+                    let instrument_number = hsv[0] * instrument_count;
+                    let time = 0;
+                    let duration = -1;
+                    let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
+                    let midi_velocity = hsv[1] * 128;
+                    let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
+                    unscheduled_events.push(event_for_pixel);
+                }
+                // Sort from loudest to softest.
+                unscheduled_events.sort((a, b) => { 
+                    if (a[4] > b[4]) {
+                        return 1;
+                    } else if (b[4] > a[4]) {
+                        return -1;
+                    } 
+                    return 0;
+                });
+                for (let i = 0; i < unscheduled_events.length; i++) {
+                    let unscheduled_event = unscheduled_events[i];
+                    if (unscheduled_event[4] < threshold) {
+                        break;
+                    }
+                    if (playing_events.length == 0) {
+                        on_events.push(unscheduled_event);
+                    } else {
+                        for (let j = 0; j < playing_events.length; j++) {
+                            let playing_event = playing_events[j];
+                            if (playing_event[4] < unscheduled_event[4]) {
+                                playing_events.splice(j, 1);
+                                on_events.push(unscheduled_event);
+                                off_events.push(playing_event);
+                            }  
+                        }
+                    }
+                    if (playing_events.length >= maximum_voices) {
+                        break;
+                    }
+                }
+                let csound_score = [];
+                for (let i = 0; i < off_events.length; i++) {
+                    let off_event = off_events[i];
+                    let i_statement = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f", off_event[0] * -1, off_event[1], off_event[2], off_event[3], off_event[4]);
+                    csound_score.push(i_statement);
+                }
+                for (let i = 0; i < on_events.length; i++) {
+                    let on_event = on_events[i];
+                    let i_statement = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f", on_event[0], on_event[1], on_event[2], on_event[3], on_event[4]);
+                    csound_score.push(i_statement);
+                }
+                if (csound_score.length > 0) {
+                    let score_text = csound_score.join("\n");
+                    csound.ReadScore(score_text);
+                }
             }
 
             /** 
