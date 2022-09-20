@@ -132,14 +132,9 @@ giwtsin ftgen 0, 0, 65536, 10, 1
 instr ZakianFlute
 ; Author: Lee Zakian
 ; Adapted by: Michael Gogins
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
 i_instrument = p1
 i_time = p2
-i_duration = p3
+i_duration = 1000
 i_midi_key = p4
 i_midi_velocity = p5
 k_space_front_to_back = p6
@@ -150,9 +145,8 @@ i_overall_amps = 65
 i_amplitude ampmidicurve i_midi_velocity, gi_ampmidicurve_dynamic_range, gi_ampmidicurve_exponent
 k_gain = ampdb(gk_ZakianFlute_level)
 iattack = .002
-isustain = p3
+isustain = i_duration
 irelease = .3
-xtratim iattack + isustain + irelease
 iHz = cpsmidinn(i_midi_key)
 kHz = k(iHz)
 aenvelope transeg 1.0, 20.0, -10.0, 0.05
@@ -348,14 +342,9 @@ endin
 gk_Guitar_level init 8
 instr Guitar
 ; Michael Gogins
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
 i_instrument = p1
 i_time = p2
-i_duration = p3
+i_duration = 100
 i_midi_key = p4
 i_midi_velocity = p5
 k_space_front_to_back = p6
@@ -406,14 +395,9 @@ instr YiString
  // Original by Steven Yi.
  // Adapted by Michael Gogins.
  //////////////////////////////////////////////
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
 i_instrument = p1
 i_time = p2
-i_duration = p3
+i_duration = 1000
 i_midi_key = p4
 i_midi_velocity = p5
 k_space_front_to_back = p6
@@ -424,10 +408,9 @@ i_frequency = cpsmidinn(i_midi_key)
 i_amplitude ampmidicurve i_midi_velocity, gi_ampmidicurve_dynamic_range, gi_ampmidicurve_exponent
 k_gain = ampdb(gk_YiString_level)
 iattack = gi_YiString_overlap
-isustain = p3
+isustain = i_duration
 idecay = gi_YiString_overlap
-p3 = iattack + isustain + idecay
-aenvelope transeg 0.0, iattack / 2.0, 1.5, i_amplitude / 2.0, iattack / 2.0, -1.5, i_amplitude, isustain, 0.0, i_amplitude, idecay / 2.0, 1.5, i_amplitude / 2.0, idecay / 2.0, -1.5, 0
+aenvelope transegr 0.0, iattack / 2.0, 1.5, i_amplitude / 2.0, iattack / 2.0, -1.5, i_amplitude, isustain, 0.0, i_amplitude, idecay / 2.0, 1.5, i_amplitude / 2.0, idecay / 2.0, -1.5, 0
 ;ampenv = madsr:a(1, 0.1, 0.95, 0.5)
 asignal = vco2(1, i_frequency)
 asignal = moogladder(asignal, 6000, 0.1)
@@ -458,14 +441,9 @@ gk_Bower_level init 20
 gk_Bower_pressure init 4.2
 gisine ftgen 0,0,65536,10,1
 instr Bower
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
 insno = p1
 istart = p2
-iduration = p3
+iduration = 1000
 ikey = p4
 ivelocity = p5
 iphase = p6
@@ -473,9 +451,8 @@ ipan = (4 / 7 - .5)
 iamp ampmidicurve ivelocity, gi_ampmidicurve_dynamic_range, gi_ampmidicurve_exponent
 iattack = i(gk_overlap)
 idecay = i(gk_overlap)
-isustain = p3 - i(gk_overlap)
-p3 = iattack + isustain + idecay
-kenvelope transeg 0.0, iattack / 2.0, 1.5, iamp / 2.0, iattack / 2.0, -1.5, iamp, isustain, 0.0, iamp, idecay / 2.0, 1.5, iamp / 2.0, idecay / 2.0, -1.5, 0
+isustain = iduration
+kenvelope transegr 0.0, iattack / 2.0, 1.5, iamp / 2.0, iattack / 2.0, -1.5, iamp, isustain, 0.0, iamp, idecay / 2.0, 1.5, iamp / 2.0, idecay / 2.0, -1.5, 0
 ihertz = cpsmidinn(ikey)
 kamp = kenvelope
 kfreq = ihertz
@@ -501,11 +478,6 @@ gk_Harpsichord_reflection init .75
 gk_Harpsichord_pluck init .5
 giharptable ftgen 0, 0, 65536, 7, -1, 1024, 1, 1024, -1
 instr Harpsichord
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
 i_instrument = p1
 i_time = p2
 i_duration = p3
@@ -526,9 +498,8 @@ aharp poscil 1, kHz, giharptable
 aharp2 balance apluck, aharp
 a_signal	= (apluck + aharp2)
 i_attack = .002
-i_sustain = p3
+i_sustain = i_duration
 i_release = 0.01
-p3 = i_attack + i_sustain + i_release
 a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
 a_signal = a_signal * i_amplitude * a_declicking * k_gain
 #ifdef USE_SPATIALIZATION
@@ -753,10 +724,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     <script> 
         /**
          * Encapsulates the combination of Csound with a GLSL fragment shader 
-         * as a music visualizer or score generator. Csound passes audio data 
-         * in both the time domain and the frequency domain to the shader for 
-         * visualization, and the canvas may be sampled to generate Csound 
+         * as a music visualizer or score generator. Csound may pass audio 
+         * data in both the time domain and the frequency domain to the shader 
+         * for visualization, and the canvas may be sampled to generate Csound 
          * events and pass them to Csound for rendering by Csound instruments.
+         *
+         * Many fragment shaders from Shadertoy.com will run more or less out 
+         * of the box in this code. Other shaders may of course also be used 
+         * or written.
          */
         class ShaderAdapter {
             constructor(csound, canvas) {
@@ -812,7 +787,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
  
         var current_events = new Map();
         var prior_events = current_events;
-        var event_value_threshold = .866667;
         var rendering_iterations_per_sample = 5;
         var rendering_frame = 0;
         
@@ -1093,17 +1067,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              *
              * https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf
              */
-            var unscheduled_events = new Array();
+            var sampled_events = new Array();
             var on_events = new Array();
-            var playing_events = new Array();
+            var playing_events = new Map();
             var off_events = new Array();
-            var loudness_mid_key_count = 80;
             var frame_translation_rate = 1;
             var frame_translation_count = 0;
             var midi_key_begin = 36;
             var midi_key_range = 60;
             var instrument_count = 4;
             var maximum_voices = 10;
+            var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
             async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
                 if (csound == null) {
@@ -1114,7 +1088,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 }
                 // Sample the middle row of the canvas.
                 let x = 0;
-                let y = canvas.height / 2;
+                let y = canvas.height - 1;
                 let width = canvas.width;
                 let height = 1;
                 let format = gl.RGBA;
@@ -1129,63 +1103,58 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 }
                 // Downsample the HSV samples.
                 let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
-                unscheduled_events.length = 0;
+                sampled_events.length = 0;
                 on_events.length = 0;
                 off_events.length = 0;
+                // Translate the HSV samples to Csound event vectors.
                 for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
                     let hsv = downsampled_pixels[downsampled_pixel_i][2];
-                    let instrument_number = hsv[0] * instrument_count;
+                    let instrument_number = 1 + (hsv[0] * instrument_count) ;
                     let time = 0;
                     let duration = -1;
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
-                    let midi_velocity = hsv[1] * 128;
+                    let midi_velocity = hsv[2] * 128;
                     let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
-                    unscheduled_events.push(event_for_pixel);
+                    sampled_events.push(event_for_pixel);
                 }
-                // Sort from loudest to softest.
-                unscheduled_events.sort((a, b) => { 
-                    if (a[4] > b[4]) {
-                        return 1;
-                    } else if (b[4] > a[4]) {
-                        return -1;
-                    } 
-                    return 0;
-                });
-                for (let i = 0; i < unscheduled_events.length; i++) {
-                    let unscheduled_event = unscheduled_events[i];
-                    if (unscheduled_event[4] < threshold) {
-                        break;
+                for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                    let sampled_event = sampled_events[sampled_event_i];
+                    let key = Math.floor(sampled_event[3]);
+                    // Events that are loud enough but not playing, are turned on.
+                    if ((sampled_event[4] >= event_velocity_threshold) && (playing_events.has(key) == false)) {
+                        playing_events.set(key, sampled_event);
+                        on_events.push(sampled_event);
                     }
-                    TODO: this is wrong, we get all 60 events.
-                    if (playing_events.length == 0) {
-                        on_events.push(unscheduled_event);
-                    } else {
-                        for (let j = 0; j < playing_events.length; j++) {
-                            let playing_event = playing_events[j];
-                            if (playing_event[4] < unscheduled_event[4]) {
-                                playing_events.splice(j, 1);
-                                on_events.push(unscheduled_event);
-                                off_events.push(playing_event);
-                            }  
-                        }
-                    }
-                    if (playing_events.length >= maximum_voices) {
-                        break;
+                    // Events that are playing but not loud enough, are turned off.
+                    if ((sampled_event[4] < event_velocity_threshold) && (playing_events.has(key) == true)) {
+                        let off_event = playing_events.get(key);
+                        playing_events.delete(key);
+                        off_events.push(off_event);
                     }
                 }
                 let csound_score = [];
+                // 0 is p1 insno, tagged by MIDI key.
+                // 1 is p2 time always 0
+                // 2 is p3 duration either -1 or 0
+                // 3 is p4 MIDI key 
+                // 4 is p5 MIDI velocity
                 for (let i = 0; i < off_events.length; i++) {
                     let off_event = off_events[i];
-                    let i_statement = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f", off_event[0] * -1, off_event[1], off_event[2], off_event[3], off_event[4]);
+                    let instrument_number = Math.floor(off_event[0]);
+                    // The 'd' opcode seems to assume a whole insno, so we use 
+                    // the 'i' opcode with a negative insno.
+                    let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", -instrument_number, off_event[3], off_event[1], 0, off_event[3], off_event[4]);
                     csound_score.push(i_statement);
                 }
                 for (let i = 0; i < on_events.length; i++) {
                     let on_event = on_events[i];
-                    let i_statement = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f", on_event[0], on_event[1], on_event[2], on_event[3], on_event[4]);
+                    let instrument_number = Math.floor(on_event[0]);
+                    let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", instrument_number, on_event[3], on_event[1], on_event[2], on_event[3], on_event[4]);
                     csound_score.push(i_statement);
                 }
                 if (csound_score.length > 0) {
-                    let score_text = csound_score.join("\n");
+                    let score_text = csound_score.join("");
+                    console.log(score_text);
                     csound.ReadScore(score_text);
                 }
             }
@@ -1201,7 +1170,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              */
             async function sample_canvas(current_rendering_frame) {
                 //console.info("frame_sample_to_score.");
-                await translate_sample_to_csound_events(16, event_value_threshold, current_rendering_frame);
+                await translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
             }
             
             function render_scene(delta_milliseconds) {
