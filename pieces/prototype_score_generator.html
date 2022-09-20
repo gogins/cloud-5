@@ -989,7 +989,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              * Converts an RGB color value to HSV. Conversion formula
              * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
              * Assumes r, g, and b are in [0, 255] and
-             * returns h, s, and v in [0., 1.].
+             * returns h, s, and v in [0, 1].
              */
             var rgb_to_hsv = function(rgb){
                 r = rgb[0] / 255;
@@ -1032,29 +1032,30 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              * [[time, value], [time, value],...]; rather, our data is 
              * [[pixel index0, hsv0[2]], [pixel index1, hsv1[2]], ...].
              */
-            function downsample_lttb(data, threshold) {
-                if (threshold >= data.length || threshold === 0) {
+            // TODO: Change the data layout from [h, s, v] to [i, v, [h, s, v]]
+            function downsample_lttb(data, buckets) {
+                if (buckets >= data.length || buckets === 0) {
                     return data; // Nothing to do
                 }
-                var sampled_data = [],
+                let sampled_data = [],
                     sampled_data_index = 0;
                 // Bucket size. Leave room for start and end data points
-                var every = (data.length - 2) / (threshold - 2);
+                let bucket_size = (data.length - 2) / (buckets - 2);
                 // Triangles are points {a, b, c}.
-                var a = 0,  // Initially a is the first point in the triangle
+                let a = 0,  // Initially a is the first point in the triangle
                     max_area_point,
                     max_area,
                     area,
                     next_a;
                 sampled_data[sampled_data_index++] = data[a]; // Always add the first point
-                for (var i = 0; i < threshold - 2; i++) {
+                for (let i = 0; i < buckets - 2; i++) {
                     // Calculate point average for next bucket (containing c)
-                    var avg_x = 0,
+                    let avg_x = 0,
                         avg_y = 0,
-                        avg_range_start  = Math.floor( ( i + 1 ) * every ) + 1,
-                        avg_range_end    = Math.floor( ( i + 2 ) * every ) + 1;
+                        avg_range_start  = Math.floor( ( i + 1 ) * bucket_size ) + 1,
+                        avg_range_end    = Math.floor( ( i + 2 ) * bucket_size ) + 1;
                     avg_range_end = avg_range_end < data.length ? avg_range_end : data.length;
-                    var avg_range_length = avg_range_end - avg_range_start;
+                    let avg_range_length = avg_range_end - avg_range_start;
                     for ( ; avg_range_start<avg_range_end; avg_range_start++ ) {
                       avg_x += data[ avg_range_start ][ 0 ] * 1; // * 1 enforces Number (value may be Date)
                       avg_y += data[ avg_range_start ][ 1 ] * 1;
@@ -1062,10 +1063,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     avg_x /= avg_range_length;
                     avg_y /= avg_range_length;
                     // Get the range for this bucket
-                    var range_offs = Math.floor( (i + 0) * every ) + 1,
-                        range_to   = Math.floor( (i + 1) * every ) + 1;
+                    let range_offs = Math.floor( (i + 0) * bucket_size ) + 1,
+                        range_to   = Math.floor( (i + 1) * bucket_size ) + 1;
                     // Point a
-                    var point_a_x = data[ a ][ 0 ] * 1, // enforce Number (value may be Date)
+                    let point_a_x = data[ a ][ 0 ] * 1, // enforce Number (value may be Date)
                         point_a_y = data[ a ][ 1 ] * 1;
                     max_area = area = -1;
                     for ( ; range_offs < range_to; range_offs++ ) {
@@ -1083,7 +1084,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     a = next_a; // This a is the next a (chosen b)
                 }
                 sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last
-                return data; ///sampled_data;
+                return sampled_data; ///sampled_data;
             }
             
             /**
@@ -1124,7 +1125,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 for (let byte_i = 0; byte_i < image_sample_buffer.length; byte_i = byte_i + 4) {
                     let rgb = image_sample_buffer.slice(byte_i, byte_i + 3);
                     let hsv = rgb_to_hsv(rgb);
-                    hsv_image_sample.push(hsv);
+                    hsv_image_sample.push([hsv_image_sample.length + 1, hsv[2], hsv]);
                 }
                 // Downsample the HSV samples.
                 let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
@@ -1132,7 +1133,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 on_events.length = 0;
                 off_events.length = 0;
                 for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
-                    let hsv = downsampled_pixels[downsampled_pixel_i];
+                    let hsv = downsampled_pixels[downsampled_pixel_i][2];
                     let instrument_number = hsv[0] * instrument_count;
                     let time = 0;
                     let duration = -1;
@@ -1155,6 +1156,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     if (unscheduled_event[4] < threshold) {
                         break;
                     }
+                    TODO: this is wrong, we get all 60 events.
                     if (playing_events.length == 0) {
                         on_events.push(unscheduled_event);
                     } else {
