@@ -81,7 +81,7 @@ Arranged for Csound by Michael Gogins
 </CsOptions>
 <CsInstruments>
 
-sr = 48000
+sr = 44100
 ksmps = 128
 nchnls = 2
 0dbfs = 1
@@ -114,11 +114,11 @@ alwayson "MasterOutput"
 gk_overlap init .0125
 
 gk_Guitar_midi_dynamic_range chnexport "gk_Guitar_midi_dynamic_range", 3 ; 127
-gk_Guitar_midi_dynamic_range init 40
+gk_Guitar_midi_dynamic_range init 30
 gk_Guitar_level chnexport "gk_Guitar_level", 3
 gk_Guitar_level init 0
 gk_Guitar_space_left_to_right chnexport "gk_Guitar_space_left_to_right", 3
-gk_Guitar_space_left_to_right init -1
+gk_Guitar_space_left_to_right init .5
 
 instr Guitar
 ; Michael Gogins
@@ -139,8 +139,8 @@ i_midi_key = p4
 i_midi_dynamic_range = i(gk_Guitar_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
 k_space_front_to_back = p6
-if gk_Guitar_space_left_to_right == -1 then
-k_space_left_to_right = .5
+if p7 ==0 then
+k_space_left_to_right = gk_Guitar_space_left_to_right
 else
 k_space_left_to_right = p7
 endif
@@ -197,16 +197,17 @@ outleta "outright", a_out_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-
 gk_ZakianFlute_midi_dynamic_range chnexport "gk_ZakianFlute_midi_dynamic_range", 3 ;  20
 gk_ZakianFlute_level chnexport "gk_ZakianFlute_level", 3 ;  0
 gk_ZakianFlute_pan chnexport "gk_ZakianFlute_pan", 3 ;  .5
 gi_ZakianFLute_seed chnexport "gi_ZakianFLute_seed", 3 ;  .5
+gi_ZakianFLute_space_left_to_front chnexport "gi_ZakianFLute_space_left_to_front", 3 ;  .5
 
 gk_ZakianFlute_midi_dynamic_range init 20
 gk_ZakianFlute_level init 0
 gk_ZakianFlute_pan init .5
 gi_ZakianFLute_seed init .5
+gi_ZakianFLute_space_left_to_front init .5
 
 gi_ZakianFLute_f2  ftgen 0, 0, 16, -2, 40, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 10240
 gi_ZakianFlute_f26 ftgen 0, 0, 65537, -10, 2000, 489, 74, 219, 125, 9, 33, 5, 5
@@ -228,11 +229,19 @@ instr ZakianFlute
 ; Adapted by: Michael Gogins
 i_instrument = p1
 i_time = p2
+if p3 == -1 then
+i_duration = 1000
+else
 i_duration = p3
+endif
 i_midi_key = p4
 i_midi_velocity = p5
 k_space_front_to_back = p6
+if p7 == 0 then
+k_space_left_to_right = gi_ZakianFLute_space_left_to_front
+else
 k_space_left_to_right = p7
+endif
 k_space_bottom_to_top = p8
 i_phase = p9
 i_overall_amps = 65.2
@@ -241,16 +250,13 @@ i_midi_dynamic_range = i(gk_ZakianFlute_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
 i_amplitude = ampdb(i_midi_velocity) * i_normalization
 k_gain = ampdb(gk_ZakianFlute_level)
-;;;iattack = .002
-;;;isustain = p3
-;;;irelease = .3
 ;;;xtratim iattack + irelease
 iHz = cpsmidinn(i_midi_key)
 kHz = k(iHz)
 // Bug?
 // aenvelope transeg 1.0, 20.0, -10.0, 0.05
 aenvelope transegr 1.0, 20.0, -10.0, 0.05
-ip3 = (p3 < 3.0 ? p3 : 3.0)
+ip3 = 3;;; (p3 < 3.0 ? p3 : 3.0)
 ; parameters
 ; p4 overall amplitude scaling factor
 ip4 init i_amplitude
@@ -283,8 +289,8 @@ gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
 ifiltcut tablei ip9, gi_ZakianFLute_f2 ; lowpass filter cutoff frequency
 iattack = (iattack < 6/kr ? 6/kr : iattack) ; minimal attack length
 idecay = (idecay < 6/kr ? 6/kr : idecay) ; minimal decay length
-isustain = p3 - iattack - idecay
-p3 = (isustain < 5/kr ? iattack+idecay+5/kr : p3) ; minimal sustain length
+isustain = i_duration - iattack - idecay
+;;;p3 = (isustain < 5/kr ? iattack+idecay+5/kr : i_duration) ; minimal sustain length
 isustain = (isustain < 5/kr ? 5/kr : isustain)
 iatt = iattack/6
 isus = isustain/4
@@ -303,12 +309,12 @@ gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
 ivibr2 = gi_ZakianFLute_seed
 gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
 if ip6 < 0 goto vibrato1
-kvibrate linseg 2.5+ivibr1, p3, 4.5+ivibr2 ; if p6 positive vibrato gets faster
+kvibrate linseg 2.5+ivibr1, isustain, 4.5+ivibr2 ; if p6 positive vibrato gets faster
 goto vibrato2
 vibrato1:
 ivibr3 = gi_ZakianFLute_seed
 gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
-kvibrate linseg 3.5+ivibr1, .1, 4.5+ivibr2, p3-.1, 2.5+ivibr3 ; if p6 negative vibrato gets slower
+kvibrate linseg 3.5+ivibr1, .1, 4.5+ivibr2,isustain-.1, 2.5+ivibr3 ; if p6 negative vibrato gets slower
 vibrato2:
 kvibrater randi .1*kvibrate, 5, gi_ZakianFLute_seed ; up to 10% vibrato rate variation
 gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
@@ -420,11 +426,18 @@ kcut linseg 0, iattack, ifiltcut, isustain, ifiltcut, idecay, 0 ; lowpass filter
 afilt tone asig, kcut
 a_signal balance afilt, asig
 i_attack = .002
-i_sustain = p3
+i_sustain = i_duration
 i_release = 0.01
-;;;xtratim i_attack + i_release
-a_declicking linsegr 0, i_attack, 1, 1000, 1, i_release, 0
-a_signal = a_signal * i_amplitude * a_declicking * k_gain
+xtratim 1
+
+i_declick_attack = i_attack
+i_declick_release = i_declick_attack * 2
+; The end of the note must be extended _past_ the end of the release segment.
+xtratim 1
+a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
+; That envelope is then low-pass filtered to remove most discontinuities.
+a_filtered_envelope tonex a_declicking_envelope, 40, 4
+a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
 
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
@@ -441,46 +454,55 @@ outleta "outright", a_out_right
 #endif
 endin
 
-gk_YiString_level init 6
-gk_YiString_reverb_send init .5
-gk_YiString_chorus_send init .5
-gi_YiString_overlap init .1
-instr YiString
- //////////////////////////////////////////////
- // Original by Steven Yi.
- // Adapted by Michael Gogins.
- //////////////////////////////////////////////
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
+gk_Bower_midi_dynamic_range chnexport "gk_Bower_midi_dynamic_range", 3
+gk_Bower_attack chnexport "gk_Bower_attack", 3
+gk_Bower_release chnexport "gk_Bower_release", 3
+gk_Bower_level chnexport "gk_Bower_level", 3
+gk_Bower_pressure chnexport "gk_Bower_pressure", 3
+
+gk_Bower_midi_dynamic_range init 20
+gk_Bower_attack init .125
+gk_Bower_release init .125
+gk_Bower_level init 0
+gk_Bower_pressure init 0.25
+
+gi_Bower_sine ftgen 0,0,65537,10,1
+
+instr Bower
 i_instrument = p1
 i_time = p2
 i_duration = p3
 i_midi_key = p4
-i_midi_velocity = p5
+i_midi_dynamic_range = i(gk_Bower_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
 k_space_front_to_back = p6
-k_space_left_to_right = p1/6
+k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
-i_amplitude ampmidicurve i_midi_velocity, gi_ampmidicurve_dynamic_range, gi_ampmidicurve_exponent
-k_gain = ampdb(gk_YiString_level)
-iattack = gi_YiString_overlap
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 66
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_Bower_level)
+iattack = i(gk_Bower_attack)
+idecay = i(gk_Bower_release)
 isustain = p3
-idecay = gi_YiString_overlap
-p3 = iattack + isustain + idecay
-aenvelope transeg 0.0, iattack / 2.0, 1.5, i_amplitude / 2.0, iattack / 2.0, -1.5, i_amplitude, isustain, 0.0, i_amplitude, idecay / 2.0, 1.5, i_amplitude / 2.0, idecay / 2.0, -1.5, 0
-;ampenv = madsr:a(1, 0.1, 0.95, 0.5)
-asignal = vco2(1, i_frequency)
-asignal = moogladder(asignal, 6000, 0.1)
-a_signal = asignal * aenvelope
-i_attack = .002
-i_release = 0.01
-i_sustain = p3 - (i_attack + i_release)
-a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
-a_signal = a_signal * i_amplitude * a_declicking * k_gain
+iamp = i_amplitude
+xtratim iattack + idecay
+kenvelope transegr 0.0, iattack / 2.0, 1.5, iamp / 2.0, iattack / 2.0, -1.5, iamp, isustain, 0.0, iamp, idecay / 2.0, 1.5, iamp / 2.0, idecay / 2.0, -1.5, 0
+ihertz = cpsmidinn(i_midi_key)
+kamp = kenvelope
+kfreq = ihertz
+kpres = 0.25
+krat rspline 0.006,0.988,1,4
+kvibf = 4.5
+kvibamp = 0
+iminfreq = i(kfreq) / 2
+aSig wgbow kamp,kfreq,gk_Bower_pressure,krat,kvibf,kvibamp,gi_Bower_sine,iminfreq
+a_signal = aSig * kenvelope * k_gain
+
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -488,93 +510,215 @@ a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_s
 outletv "outbformat", a_bsignal
 outleta "out", a_spatial_reverb_send
 #else
-a_out_left, a_out_right pan2 a_signal, p1/6
-outleta "outleft", a_out_left * gk_YiString_reverb_send
-outleta "outright", a_out_right * gk_YiString_reverb_send
-outleta "chorusleft", a_out_left * gk_YiString_chorus_send
-outleta "chorusright", a_out_right * gk_YiString_chorus_send
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+#endif
+;printks "Blower         i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(a_out_left)), dbamp(rms(a_out_right))
+endin
+
+
+//////////////////////////////////////////////
+// Original by Steven Yi.
+// Adapted by Michael Gogins.
+//////////////////////////////////////////////
+gk_FMWaterBell_level chnexport "gk_FMWaterBell_level", 3 ; 0
+gi_FMWaterBell_attack chnexport "gi_FMWaterBell_attack", 3 ; 0.002
+gi_FMWaterBell_release chnexport "gi_FMWaterBell_release", 3 ; 0.01
+gi_FMWaterBell_sustain chnexport "gi_FMWaterBell_sustain", 3 ; 20
+gi_FMWaterBell_sustain_level chnexport "gi_FMWaterBell_sustain_level", 3 ; .1
+gk_FMWaterBell_index chnexport "gk_FMWaterBell_index", 3 ; .5
+gk_FMWaterBell_crossfade chnexport "gk_FMWaterBell_crossfade", 3 ; .5
+gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
+gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
+gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
+
+gk_FMWaterBell_level init 0
+gi_FMWaterBell_attack init 0.002
+gi_FMWaterBell_release init 0.01
+gi_FMWaterBell_sustain init 20
+gi_FMWaterBell_sustain_level init .1
+gk_FMWaterBell_index init .5
+gk_FMWaterBell_crossfade init .5
+gk_FMWaterBell_vibrato_depth init 0.05
+gk_FMWaterBell_vibrato_rate init 6
+gk_FMWaterBell_midi_dynamic_range init 20
+
+gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
+
+instr FMWaterBell
+i_instrument = p1
+i_time = p2
+i_duration = p3
+; One of the envelopes in this instrument should be releasing, and use this:
+i_sustain = 1000
+xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
+i_midi_key = p4
+i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+k_space_left_to_right = p7
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 80
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
+k_gain = ampdb(gk_FMWaterBell_level)
+i_releasing_attack = 3 / min(i_frequency, 256)
+i_releasing_release = .01
+a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
+a_envelope transeg 0, gi_FMWaterBell_attack, 6,  1, gi_FMWaterBell_sustain, -6,  0
+a_declicking cossegr 0, i_releasing_attack, 1, gi_FMWaterBell_sustain - 1, 1, i_releasing_release, 0
+;;;a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
+a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+gk_YiString_midi_dynamic_range chnexport "gk_YiString_midi_dynamic_range", 3 ;  127
+gk_YiString_level chnexport "gk_YiString_level", 3 ;  0
+gk_YiString_reverb_send chnexport "gk_YiString_reverb_send", 3 ;  .5
+gk_YiString_chorus_send chnexport "gk_YiString_chorus_send", 3 ;  .5
+gi_YiString_overlap chnexport "gi_YiString_overlap", 3 ;  .1
+
+gk_YiString_midi_dynamic_range init 20
+gk_YiString_level init 0
+gk_YiString_reverb_send init .5
+gk_YiString_chorus_send init .5
+gi_YiString_overlap init .1
+
+gk_YiString_space_left_to_right chnexport "gk_YiString_space_left_to_right", 3
+gk_YiString_space_left_to_right init .5
+
+instr YiString
+//////////////////////////////////////////////
+// Original by Steven Yi.
+// Adapted by Michael Gogins.
+//////////////////////////////////////////////
+i_instrument = p1
+i_time = p2
+; Make indefinite notes last no longer than the physical decay.
+i_physical_duration = 20000
+if p3 == -1 then
+i_duration = i_physical_duration
+else
+i_duration = p3
+endif
+i_midi_key = p4
+i_midi_dynamic_range = i(gk_YiString_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+k_space_left_to_right = p7
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 62.25
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_YiString_level)
+iattack = gi_YiString_overlap
+isustain = i_duration
+idecay = gi_YiString_overlap
+xtratim 1
+a_physical_envelope transeg 0.0, iattack / 2.0, 1.5, i_amplitude / 2.0, iattack / 2.0, -1.5, i_amplitude, isustain, 0.0, i_amplitude, idecay / 2.0, 1.5, i_amplitude / 2.0, idecay / 2.0, -1.5, 0
+;ampenv = madsr:a(1, 0.1, 0.95, 0.5)
+a_signal = vco2(1, i_frequency)
+a_signal = moogladder(a_signal, 6000, 0.1)
+
+; The de-clicking envelope must have attack and release segments that damp 
+; artifacts in the signal. The duration of these segments depends on 
+; the behavior of the instrument, and may vary as a function of frequency.
+i_declick_attack = iattack
+i_declick_release = i_declick_attack * 2
+; The end of the note must be extended _past_ the end of the release segment.
+xtratim 1
+a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
+; The envelope of the instrument is the product of the physical envelope times 
+; the declicking envelope. 
+a_envelope = a_physical_envelope * a_declicking_envelope
+; That envelope is then low-pass filtered to remove most discontinuities.
+a_filtered_envelope tonex a_envelope, 40, 4
+a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
+a_signal_reverb = a_signal * gk_YiString_reverb_send
+a_signal_chorus = a_signal * gk_YiString_chorus_send
+a_out_left, a_out_right pan2 a_signal_reverb, p7
+outleta "outleft", a_out_left
+outleta "outright",  a_out_right
+a_out_left, a_out_right pan2 a_signal_chorus, p7
+outleta "chorusleft", a_out_left 
+outleta "chorusright", a_out_right 
 ;printks "YiString         %9.4f  %9.4f\n", 0.5, a_out_left, a_out_right
 #endif
-prints  "YiString       i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-gk_Bower_level init 20
-gk_Bower_pressure init 4.2
-gisine ftgen 0,0,65536,10,1
-instr Bower
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
-insno = p1
-istart = p2
-iduration = p3
-ikey = p4
-ivelocity = p5
-iphase = p6
-ipan = (4 / 7 - .5)
-iamp ampmidicurve ivelocity, gi_ampmidicurve_dynamic_range, gi_ampmidicurve_exponent
-iattack = i(gk_overlap)
-idecay = i(gk_overlap)
-isustain = p3 - i(gk_overlap)
-p3 = iattack + isustain + idecay
-kenvelope transeg 0.0, iattack / 2.0, 1.5, iamp / 2.0, iattack / 2.0, -1.5, iamp, isustain, 0.0, iamp, idecay / 2.0, 1.5, iamp / 2.0, idecay / 2.0, -1.5, 0
-ihertz = cpsmidinn(ikey)
-kamp = kenvelope
-kfreq = ihertz
-kpres = 0.25
-krat rspline 0.006,0.988,1,2
-kvibf = 4.5
-kvibamp = 0
-iminfreq = 30
-aSig wgbow kamp,kfreq,gk_Bower_pressure,krat,kvibf,kvibamp,gisine,iminfreq
-aleft, aright pan2 aSig / 7, p1/6
-adamping linseg 0, 0.03, 1, p3 - 0.1, 1, 0.07, 0
-aleft = adamping * aleft
-aright = adamping * aright
-kgain = ampdb(gk_Bower_level)
-outleta "outleft", aleft * kgain
-outleta "outright", aright * kgain
-prints "Bower          i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
-endin
+gk_Harpsichord_level chnexport "gk_Harpsichord_level", 3
+gk_Harpsichord_pick chnexport "gk_Harpsichord_pick", 3
+gk_Harpsichord_reflection chnexport "gk_Harpsichord_reflection", 3
+gk_Harpsichord_pluck chnexport "gk_Harpsichord_pluck", 3
+gk_Harpsichord_midi_dynamic_range chnexport "gk_Harpsichord_midi_dynamic_range", 3
 
 gk_Harpsichord_level init 0
-gk_Harpsichord_pick init .275
-gk_Harpsichord_reflection init .75
-gk_Harpsichord_pluck init .5
-giharptable ftgen 0, 0, 65536, 7, -1, 1024, 1, 1024, -1
+gk_Harpsichord_pick init .075
+gk_Harpsichord_reflection init .5
+gk_Harpsichord_pluck init .75
+gk_Harpsichord_midi_dynamic_range init 20
+
+gi_Harpsichord_harptable ftgen 0, 0, 65537, 7, -1, 1024, 1, 1024, -1
+
 instr Harpsichord
-if p3 == -1 goto indefinite
-goto non_indefinite
-indefinite:
-  p3 = 1000000
-non_indefinite:
 i_instrument = p1
 i_time = p2
 i_duration = p3
 i_midi_key = p4
-i_midi_velocity = p5
+i_midi_dynamic_range = i(gk_Harpsichord_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
 k_space_front_to_back = p6
-k_space_left_to_right = .2
+k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
-i_amplitude ampmidicurve i_midi_velocity, gi_ampmidicurve_dynamic_range, gi_ampmidicurve_exponent
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 100
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
 k_gain = ampdb(gk_Harpsichord_level)
 iHz = cpsmidinn(i_midi_key)
 kHz = k(iHz)
-aenvelope transeg 1.0, 20.0, -10.0, 0.05
-k_amplitude = 1
-apluck pluck 1, kHz, iHz, 0, 1
-aharp poscil 1, kHz, giharptable
+aenvelope transeg 1.0, 40.0, -25.0, 0.0
+apluck pluck i_amplitude * k_gain, kHz, iHz, 0, 1
+aharp poscil aenvelope, kHz, gi_Harpsichord_harptable
 aharp2 balance apluck, aharp
 a_signal	= (apluck + aharp2)
-i_attack = .002
+i_attack = .0005
 i_sustain = p3
 i_release = 0.01
-p3 = i_attack + i_sustain + i_release
+xtratim i_attack + i_release
 a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
-a_signal = a_signal * i_amplitude * a_declicking * k_gain
+a_signal = a_signal * a_declicking * .2
+
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -582,25 +726,12 @@ a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_s
 outletv "outbformat", a_bsignal
 outleta "out", a_spatial_reverb_send
 #else
-a_out_left, a_out_right pan2 a_signal, p1/6
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-; printks "Harpsichord      %9.4f   %9.4f\n", 0.5, a_out_left, a_out_right
-prints "Harpsichord    i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
-kpbend    pchbend   2
-printks2 "pchbend %9.4f\n", kpbend
-kmodw     midictrl  1
-printks2 "kmodw   %9.4f\n", kmodw
-kctl6     midictrl  6
-printks2 "kctl6   %9.4f\n", kctl6
-kctl4     midictrl  4
-printks2 "kctl4   %9.4f\n", kctl4
-kctl5     midictrl  5
-printks2 "kctl5   %9.4f\n", kctl5
-kafter    aftouch   1
-printks2 "kafter  %9.4f\n", kafter
-
+;printks "Harpsichord      %9.4f   %9.4f\n", 0.5, a_out_left, a_out_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_Reverb_feedback init 0.85
@@ -1153,7 +1284,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var midi_key_range = 60;
             var instrument_count = 4;
             var maximum_voices = 10;
-            var event_velocity_threshold = 110;
+            var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
             async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
                 if (csound == null) {
@@ -1216,13 +1347,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 // 4 is p5 MIDI velocity.
                 for (let i = 0; i < off_events.length; i++) {
                     let off_event = off_events[i];
-                    let instrument_number = 2;//Math.floor(off_event[0]);
+                    let instrument_number = Math.floor(off_event[0]);
                     let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", -instrument_number, off_event[3], off_event[1], 0, off_event[3], off_event[4]);
                     csound_score.push(i_statement);
                 }
                 for (let i = 0; i < on_events.length; i++) {
                     let on_event = on_events[i];
-                    let instrument_number = 2;//Math.floor(on_event[0]);
+                    let instrument_number = Math.floor(on_event[0]);
                     let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", instrument_number, on_event[3], on_event[1], on_event[2], on_event[3], on_event[4]);
                     csound_score.push(i_statement);
                 }
@@ -1255,7 +1386,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 //write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
-                console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
+                //console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 if ((rendering_frame % rendering_frame_rate) === 0) {
                     sample_canvas(rendering_frame);
                 }
