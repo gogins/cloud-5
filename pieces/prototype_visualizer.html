@@ -180,7 +180,7 @@ aoutr       poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
 ;       uses a modified FM synthesis technique. This is joined
 ;       by an additional plucked-string instrument
 ;       (instruments 1 and 2).
-t 0 10
+t 0 3
 ;   The Function Tables
 ;   -------------------
 ;All functions are post-normalized (max value is 1) if p4 is
@@ -314,7 +314,7 @@ e
     </textarea>
 
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-        #line 292
+        #line 317
         precision mediump float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -400,7 +400,8 @@ e
                 vec2 a = vec2(hash(i)*2.-1., hash(i+1)*2.-1.);
                 vec2 b = vec2(hash(10*i+1)*2.-1., hash(11*i+2)*2.-1.);
                 vec3 lineColor = vec3(hash(10+i), hash(18+i*3), hash(5+i*10));
-                float speed = b.y*0.15;
+                ///float speed = b.y*0.15;
+                float speed = b.y*0.25;
                 float size = (0.005 + 0.3*hash(5+i*i*2)) + (0.5+0.5*sin(a.y*5.+iTime*speed))*0.1;
                 a += vec2(sin(a.x*20.+iTime*speed), sin(a.y*15.+iTime*0.4*speed)*0.5);
                 b += vec2(b.x*5.+cos(iTime*speed), cos(b.y*10.+iTime*2.0*speed)*0.5);
