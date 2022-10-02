@@ -75,18 +75,22 @@ September 2022</h3>
 </CsOptions>
 <CsInstruments> 
 ; These must all match the host as printed when Csound starts.
-sr          =           44100
+sr          =           48000
 ksmps       =           128
 nchnls      =           2
 nchnls_i    =           1
+0dbfs       =           100000
+
+ga_instruments_left_out init 0
+ga_instruments_right_out init 0
 
 ;--------------------------------------------------------
 ;Instrument 1 : plucked strings chorused left/right and
 ;       pitch-shifted and delayed taps thru exponential
 ;       functions, and delayed.
 ;--------------------------------------------------------
-
-            instr       1
+            instr 1
+            ;;;setksmps    1
 ishift      =           .00666667               ;shift it 8/1200.
 ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
@@ -106,14 +110,19 @@ atap2       deltap3     af2                     ;tap delay line with kf2 func.
 ad1         deltap3     2.0                     ;delay 2 sec.
 ad2         deltap3     1.1                     ;delay 1.1 sec.
             delayw      ag                      ;put ag signal into delay line.
-            outs        agleft+atap1+ad1, agright+atap2+ad2
+a_left      =           agleft+atap1+ad1
+a_right     =           agright+atap2+ad2
+            ga_instruments_left_out += a_left
+            ga_instruments_right_out += a_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
             endin
+            
 ;-------------------------------------------------------------
 ;Instrument 2 : plucked strings chorused left/right and
 ;       pitch-shifted with fixed delayed taps.
 ;------------------------------------------------------------
-
-            instr       2
+            instr 2
+            ;;;setksmps    1
 ishift      =           .00666667               ;shift it 8/1200.
 ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
@@ -129,13 +138,19 @@ adump       delayr      0.3                     ;set delay line of 0.3 sec
 ad1         deltap3     0.1                     ;delay 100 msec.
 ad2         deltap3     0.2                     ;delay 200 msec.
             delayw      ag                      ;put ag sign into del line.
-            outs        agleft+ad1, agright+ad2
+a_left      =           agleft+ad1
+a_right     =           agright+ad2
+            ga_instruments_left_out += a_left
+            ga_instruments_right_out += a_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
             endin
+            
 ;-----------------------------------------------------------
 ;Instrument 3 : New FM algorithm, modified to produce large timbre
 ;               shifts using modulation of I and r. Detuned chorusing employed.
 ;-----------------------------------------------------------
-            instr       3
+            instr 3
+            ;;;setksmps    1
 ishift      =           .00666667               ;shift it 8/1200.
 ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
@@ -149,10 +164,28 @@ a3          tablei      a1ndx, 3, 1             ;lookup tbl in f3, normal index
 ao1         poscil      a1, ipch, 2             ;cosine
 a4          =           exp(-0.5*a3+ao1)
 ao2         poscil      a2*ipch, ipch, 2        ;cosine
-aoutl       poscil      1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
-aoutr       poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
-            outs        aoutl, aoutr
+a_left      poscil      1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
+a_right     poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
+            ga_instruments_left_out += a_left 
+            ga_instruments_right_out += a_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
             endin
+            
+gk_Reverb_feedback init 0.93
+gi_Reverb_delay_modulation init 0.02
+gk_Reverb_frequency_cutoff init 12000
+instr ReverbSC
+aleftout init 0
+arightout init 0
+; aoutL, aoutR reverbsc ainL, ainR, kfblvl, kfco[, israte[, ipitchm[, iskip]]]
+aleftout, arightout reverbsc ga_instruments_left_out, ga_instruments_right_out, gk_Reverb_feedback, gk_Reverb_frequency_cutoff, sr, gi_Reverb_delay_modulation
+outs aleftout, arightout
+ga_instruments_left_out = 0
+ga_instruments_right_out = 0
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+alwayson "ReverbSC"
 
 </CsInstruments>
 <CsScore>
@@ -180,7 +213,7 @@ aoutr       poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
 ;       uses a modified FM synthesis technique. This is joined
 ;       by an additional plucked-string instrument
 ;       (instruments 1 and 2).
-t 0 3
+t 0 5
 ;   The Function Tables
 ;   -------------------
 ;All functions are post-normalized (max value is 1) if p4 is
@@ -195,7 +228,9 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
 ;----- This section comprises all the new FM sounds -----------
 
 ;F#7addB chord on a guitar
-i3 0 15 0 7.06 2.0 0.2  ;F#
+i3 0 15 0 4.06 2.0 0.2  ;F#
+i3 0 15 0 4.06 2.0 0.2  ;F#
+i3 0 15 0 5.06 2.0 0.2  ;F#
 i3 . . . 8.01 . .   ;C# above
 i3 . . . 8.06 . .   ;F# octave above 1st one
 i3 . . . 8.10 . .   ;Bb next one up
@@ -203,7 +238,8 @@ i3 . . . 8.11 . .   ;B
 i3 . . . 9.04 . .   ;E
 
 ;D6add9 chord on a guitar
-i3 7.5 15 0 6.02 1.7 0.5    ;D
+i3 7.5 15 0 5.02 1.7 0.5    ;D
+i3 7.5 15 0 5.02 1.7 0.5    ;D
 i3 . . . 6.09 . .   ;A above
 i3 . . . 7.02 . .   ;D octave above 1st one
 i3 . . . 7.06 . .   ;F# next one up
@@ -211,7 +247,7 @@ i3 . . . 6.11 . .   ;B
 i3 . . . 7.04 . .   ;E
 
 ;Bmajadd11 chord on a guitar
-i3 15 15 0 7.11 1.4 0.8 ;B
+i3 15 15 0 6.11 1.4 0.8 ;B
 i3 . . . 8.06 . .   ;F# above
 i3 . . . 8.11 . .   ;B octave above 1st one
 i3 . . . 9.03 . .   ;D# next one up
@@ -219,7 +255,8 @@ i3 . . . 8.11 . .   ;B
 i3 . . . 9.04 . .   ;E;
 
 ;Amajadd9 chord on a guitar
-i3 22.5 15 0 6.09 1.1 1.1   ;A
+i3 22.5 15 0 5.09 1.1 1.1   ;A
+i3 22.5 15 0 5.09 1.1 1.1   ;A
 i3 . . . 7.04 . .   ;E above
 i3 . . . 8.09 . .   ;A octave above 1st one
 i3 . . . 8.01 . .   ;C# next one up
@@ -227,7 +264,7 @@ i3 . . . 7.11 . .   ;B
 i3 . . . 8.04 . .   ;E
 
 ;Bmajadd11 chord on a guitar
-i3 30 15 0 6.11 0.8 1.4 ;B
+i3 30 15 0 5.11 0.8 1.4 ;B
 i3 . . . 7.06 . .   ;F# above
 i3 . . . 7.11 . .   ;B octave above 1st one
 i3 . . . 8.03 . .   ;D# next one up
@@ -243,7 +280,7 @@ i3 . . . 6.11 . .   ;B
 i3 . . . 7.04 . .   ;E
 
 ;F#7addB chord on a guitar
-i3 45 15 0 7.06 0.2 2.0 ;F#
+i3 45 15 0 6.06 0.2 2.0 ;F#
 i3 . . . 8.01 . .   ;C# above
 i3 . . . 8.06 . .   ;F# octave above 1st one
 i3 . . . 8.10 . .   ;Bb next one up
@@ -302,19 +339,22 @@ i2 37.9 . . 9.11    ;B
 i2 38.0 . . 10.04   ;E
 
 ;F#7addB chord on a guitar
-i1 45 10 0 9.06     ;F#
+i1 45 10 0 7.06     ;F#
+i1 45 10 0 7.06     ;F#
+i1 45 10 0 7.06     ;F#
 i1 45.1 . . 10.01   ;C# above
 i1 45.2 . . 10.06   ;F# octave above 1st one
 i1 45.3 . . 10.10   ;Bb next one up
 i1 45.4 . . 10.11   ;B
 i1 45.5 . . 11.04   ;E
 e
+
 </CsScore>
 </CsoundSynthesizer>
     </textarea>
 
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-        #line 317
+        #line 354
         precision mediump float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -669,7 +709,6 @@ e
                     analyser.fftSize = 2048;
                     console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
                     csound.connect(analyser);
-                    //analyser.connect(audioContext.destination);
                     csound_message_callback("Csound is playing...\n");
                 } else {
                     await csound.Stop();
