@@ -144,7 +144,30 @@ a_right     =           agright+ad2
             ga_instruments_right_out += a_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
             endin
-            
+            instr 12
+            ;;;setksmps    1
+ishift      =           .00666667               ;shift it 8/1200.
+ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
+ioct        =           octpch(p5)              ;convert parameter 5 to oct.
+kvib        poscil      1/120, ipch/50, 1       ;vibrato
+ag          pluck       1000, cpsoct(ioct+kvib), 1000, 1, 1
+agleft      pluck       1000, cpsoct(ioct+ishift), 1000, 1, 1
+agright     pluck       1000, cpsoct(ioct-ishift), 1000, 1, 1
+adamping    linsegr     0.0, 0.006, 1.0, p3 - 0.066, 1.0, 0.06, 0.0
+ag          =           adamping * ag
+agleft      =           adamping * agleft
+agright     =           adamping * agright
+adump       delayr      0.3                     ;set delay line of 0.3 sec
+ad1         deltap3     0.1                     ;delay 100 msec.
+ad2         deltap3     0.2                     ;delay 200 msec.
+            delayw      ag                      ;put ag sign into del line.
+a_left      =           agleft+ad1
+a_right     =           agright+ad2
+            ga_instruments_left_out += a_left
+            ga_instruments_right_out += a_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+            endin
+           
 ;-----------------------------------------------------------
 ;Instrument 3 : New FM algorithm, modified to produce large timbre
 ;               shifts using modulation of I and r. Detuned chorusing employed.
@@ -170,9 +193,30 @@ a_right     poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
             ga_instruments_right_out += a_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
             endin
+            instr 13
+            ;;;setksmps    1
+ishift      =           .00666667               ;shift it 8/1200.
+ipch        =           cpsmidinn(p5)              ;convert parameter 5 to cps.
+ioct        =           octmidinn(p5)              ;convert parameter 5 to oct.
+aadsr       linsegr     0, p3/3, 1.0, p3/3, 1.0, p3/3, 0 ;ADSR envelope
+amodi       linseg      0, p3/3, 5, p3/3, 3, p3/3, 0 ;ADSR envelope for I
+amodr       linseg      p6, p3, p7              ;r moves from p6->p7 in p3 sec.
+a1          =           amodi*(amodr-1/amodr)/2
+a1ndx       =           abs(a1*2/20)            ;a1*2 is normalized from 0-1.
+a2          =           amodi*(amodr+1/amodr)/2
+a3          tablei      a1ndx, 3, 1             ;lookup tbl in f3, normal index
+ao1         poscil      a1, ipch, 2             ;cosine
+a4          =           exp(-0.5*a3+ao1)
+ao2         poscil      a2*ipch, ipch, 2        ;cosine
+a_left      poscil      1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
+a_right     poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
+            ga_instruments_left_out += a_left 
+            ga_instruments_right_out += a_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+            endin
             
-gk_Reverb_feedback init 0.93
-gi_Reverb_delay_modulation init 0.02
+gk_Reverb_feedback init 0.8
+gi_Reverb_delay_modulation init 0.015
 gk_Reverb_frequency_cutoff init 12000
 instr ReverbSC
 aleftout init 0
@@ -213,7 +257,7 @@ alwayson "ReverbSC"
 ;       uses a modified FM synthesis technique. This is joined
 ;       by an additional plucked-string instrument
 ;       (instruments 1 and 2).
-t 0 5
+t 0 10
 ;   The Function Tables
 ;   -------------------
 ;All functions are post-normalized (max value is 1) if p4 is

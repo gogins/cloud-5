@@ -1353,11 +1353,36 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 // 2 is p3 duration, -1 for on or 0 for off.
                 // 3 is p4 MIDI key.
                 // 4 is p5 MIDI velocity.
+                /**
+void csound::Score::add	(	double 	time,
+double 	duration,
+double 	status,
+double 	instrument,
+double 	key,
+double 	velocity,
+double 	phase = 0,
+double 	pan = 0,
+double 	depth = 0,
+double 	height = 0,
+double 	pitches = 4095 
+)		
+                */
                 for (let i = 0; i < off_events.length; i++) {
                     let off_event = off_events[i];
+                    let time = 0;
+                    let duration = 0;
+                    let status = 144;
                     let instrument_number = Math.floor(off_event[0]);
+                    let key = off_event[3];
+                    let velocity = 0;
+                    let phase = 0;
+                    let pan = 0;
+                    let depth = 0;
+                    let height = 0;
+                    let pitches = 4095;
                     let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", -instrument_number, off_event[3], off_event[1], 0, off_event[3], off_event[4]);
                     csound_score.push(i_statement);
+                    csoundac_score.add(time, duration, status, -(instrument_number + 1000/key), key, velocity, phase, pan, depth, height, pitches);
                 }
                 // Limit number of on events, play N loudest only. Could also pick at random.
                 on_events.sort(function(a, b) {
@@ -1372,13 +1397,26 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 let voices = Math.min(on_events.length, maximum_voices);
                 for (let i = 0; i < voices; i++) {
                     let on_event = on_events[i];
+                    let time = 0;
+                    let duration = -1;
+                    let status = 144;
                     let instrument_number = Math.floor(on_event[0]);
+                    let key = on_event[3];
+                    let velocity = on_event[4];
+                    let phase = 0;
+                    let pan = 0;
+                    let depth = 0;
+                    let height = 0;
+                    let pitches = 4095;
                     let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", instrument_number, on_event[3], on_event[1], on_event[2], on_event[3], on_event[4]);
                     csound_score.push(i_statement);
+                    csoundac_score.add(time, duration, status, (instrument_number + 1000/key), key, velocity, phase, pan, depth, height, pitches);
                 }
                 if (csound_score.length > 0) {
                     let score_text = csound_score.join("");
                     csound.ReadScore(score_text);
+                    score_text = csoundac_score.getCsoundScore(12., true);
+                    console.log(score_text);
                 }
             }
 
