@@ -749,7 +749,7 @@ outleta "outright", arightout
 prints "ReverbSC       i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", p1, p2, p3, p4, p5, p1/6, active(p1)
 endin
 
-gk_MasterOutput_level init -40
+gk_MasterOutput_level init -30
 gS_MasterOutput_filename init ""
 instr MasterOutput
 aleft inleta "inleft"
@@ -1347,26 +1347,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 // TODO: Change this to CsoundAC.Score, so that we can apply 
                 // harmony and voice-leading.
                 let csoundac_score = new CsoundAC.Score();
+                CsoundAC.setCorrectNegativeDurations(false);
                 let csound_score = [];
                 // 0 is p1 insno, tagged by MIDI key, positive for on or negative for off.
                 // 1 is p2 time always 0.
                 // 2 is p3 duration, -1 for on or 0 for off.
                 // 3 is p4 MIDI key.
                 // 4 is p5 MIDI velocity.
-                /**
-void csound::Score::add	(	double 	time,
-double 	duration,
-double 	status,
-double 	instrument,
-double 	key,
-double 	velocity,
-double 	phase = 0,
-double 	pan = 0,
-double 	depth = 0,
-double 	height = 0,
-double 	pitches = 4095 
-)		
-                */
                 for (let i = 0; i < off_events.length; i++) {
                     let off_event = off_events[i];
                     let time = 0;
@@ -1380,9 +1367,7 @@ double 	pitches = 4095
                     let depth = 0;
                     let height = 0;
                     let pitches = 4095;
-                    let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", -instrument_number, off_event[3], off_event[1], 0, off_event[3], off_event[4]);
-                    csound_score.push(i_statement);
-                    csoundac_score.add(time, duration, status, -(instrument_number + 1000/key), key, velocity, phase, pan, depth, height, pitches);
+                    csoundac_score.add(time, duration, status, -(instrument_number + key/1000), key, velocity, phase, pan, depth, height, pitches);
                 }
                 // Limit number of on events, play N loudest only. Could also pick at random.
                 on_events.sort(function(a, b) {
@@ -1408,14 +1393,11 @@ double 	pitches = 4095
                     let depth = 0;
                     let height = 0;
                     let pitches = 4095;
-                    let i_statement = sprintf("i %d.%d %9.4f %9.4f %9.4f %9.4f\n", instrument_number, on_event[3], on_event[1], on_event[2], on_event[3], on_event[4]);
-                    csound_score.push(i_statement);
-                    csoundac_score.add(time, duration, status, (instrument_number + 1000/key), key, velocity, phase, pan, depth, height, pitches);
+                    csoundac_score.add(time, duration, status, (instrument_number + key/1000), key, velocity, phase, pan, depth, height, pitches);
                 }
                 if (csound_score.length > 0) {
-                    let score_text = csound_score.join("");
+                    let score_text = csoundac_score.getCsoundScore(12., true);
                     csound.ReadScore(score_text);
-                    score_text = csoundac_score.getCsoundScore(12., true);
                     console.log(score_text);
                 }
             }
