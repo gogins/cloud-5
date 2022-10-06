@@ -30,6 +30,52 @@
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;">
     </canvas>
+    <div id="settings_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgb(255, 255, 200, 67%);">
+    <h1>Settings</h1>
+    <form id='persist'>
+    <table>
+    <col width="2*">
+    <col width="5*">
+    <col width="100px">
+    <tr>
+    <td>
+    <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_ReverbSC_feedback step=.001>
+    <td>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.89</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
+    <td>
+    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>12000</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gi_ReverbSC_delay_modulation>Reverb delay modulation</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=10 value=.05 id=gi_ReverbSC_delay_modulation step=.001>
+    <td>
+    <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_MasterOutput_level>Master output level (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-30 id=gk_MasterOutput_level step=.001>
+    <td>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-6</output>
+    </tr>
+    </table>
+    <p>
+    <input type="button" id='save' value="Save" />
+    <input type="button" id='restore' value="Restore" />
+    </form>   
+    
+    </div>
     <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgb(255, 255, 200, 67%);">
 <h1>Prototype Score Generator</h1>
 <h3>Michael Gogins<br>
@@ -745,48 +791,55 @@ outleta "outright", a_out_right
 #endif
 endin
 
-gk_Reverb_feedback init 0.85
-gi_Reverb_delay_modulation init 0.05
-gk_Reverb_frequency_cutoff init 15000
+gk_ReverbSC_feedback chnexport "gk_ReverbSC_feedback", 3
+gk_ReverbSC_wet chnexport "gk_ReverbSC_wet", 3
+gi_ReverbSC_delay_modulation chnexport "gi_ReverbSC_delay_modulation", 3
+gk_ReverbSC_frequency_cutoff chnexport "gk_ReverbSC_frequency_cutoff", 3
+
+gk_ReverbSC_feedback init 0.875
+gk_ReverbSC_wet init 0.5
+gi_ReverbSC_delay_modulation init 0.0075
+gk_ReverbSC_frequency_cutoff init 15000
+
 instr ReverbSC
+gk_ReverbSC_dry = 1.0 - gk_ReverbSC_wet
+aleftin init 0
+arightin init 0
 aleftout init 0
 arightout init 0
-aleft inleta "inleft"
-aright inleta "inright"
-; aoutL, aoutR reverbsc ainL, ainR, kfblvl, kfco[, israte[, ipitchm[, iskip]]]
-aleftout, arightout reverbsc aleft, aright, gk_Reverb_feedback, gk_Reverb_frequency_cutoff, sr, gi_Reverb_delay_modulation
-outleta "outleft", aleftout
-outleta "outright", arightout
-prints "ReverbSC       i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+aleftin inleta "inleft"
+arightin inleta "inright"
+aleftout, arightout reverbsc aleftin, arightin, gk_ReverbSC_feedback, gk_ReverbSC_frequency_cutoff, sr, gi_ReverbSC_delay_modulation
+aleftoutmix = aleftin * gk_ReverbSC_dry + aleftout * gk_ReverbSC_wet
+arightoutmix = arightin * gk_ReverbSC_dry + arightout * gk_ReverbSC_wet
+outleta "outleft", aleftoutmix
+outleta "outright", arightoutmix
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-gk_MasterOutput_level init -30
+gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
+gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
+
+gk_MasterOutput_level init 0
 gS_MasterOutput_filename init ""
+
 instr MasterOutput
 aleft inleta "inleft"
 aright inleta "inright"
 k_gain = ampdb(gk_MasterOutput_level)
 printks2 "Master gain: %f\n", k_gain
 iamp init 1
-iattack init .01
-idecay init 10
-isustain = 2400 - (iattack + idecay)
-aenvelope transeg 0.0, iattack / 2.0, 1.5, iamp / 2.0, iattack / 2.0, -1.5, iamp, isustain, 0.0, iamp, idecay / 2.0, 1.5, iamp / 2.0, idecay / 2.0, -1.5, 0
 aleft butterlp aleft, 18000
 aright butterlp aright, 18000
-outs aleft * k_gain * aenvelope, aright * k_gain * aenvelope
+outs aleft * k_gain, aright * k_gain
 ; We want something that will play on my phone.
 i_amplitude_adjustment = ampdbfs(-3) / 32767
 i_filename_length strlen gS_MasterOutput_filename
-if i_filename_length > 0 goto has_filename
-goto non_has_filename
-has_filename:
+if i_filename_length > 0 then
 prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
 fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
-non_has_filename:
-prints "MasterOutput   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
-kstatus, kchan, kdata1, kdata2 midiin
-;printf "          midi in s %4d c %4d %4d %4d\n", kdata2, kstatus, kchan, kdata1, kdata2
+endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 </CsInstruments>
@@ -1496,6 +1549,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         }());
             
         window.onload = function() {
+            $("#settings_view").css("display", "none");         
             $("#about_view").css("display", "none");         
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
@@ -1522,6 +1576,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let result = await csound.CompileCsdText(csd);
                     csound_message_callback("CompileCsdText returned: " + result);
                     await csound.Start();
+                    $('#restore').trigger('click');
                     await csound.Perform();
                     analyser = new AnalyserNode(audioContext);
                     analyser.fftSize = 2048;
@@ -1550,6 +1605,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             });
             $("#menu_item_settings").click(function(event) {
                 console.log("menu_item_settings click...");
+                $("#settings_view").toggle();            
             });
             $("#menu_item_code").click(function(event) {
                 console.log("menu_item_code click...");
@@ -1566,6 +1622,29 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 if (event.keyCode === 'F11') {
                     $("#menu_item_fullscreen").trigger("click");
                 }
+            });
+            $('input').on('input', async function(event) {
+                var slider_value = parseFloat(event.target.value);
+                if (csound) {
+                    csound.SetControlChannel(event.target.id, slider_value);
+                }
+                var output_selector = '#' + event.target.id + '_output';
+                $(output_selector).val(slider_value);
+            });
+            $('#save').on('click', function() {
+                $('.persistent-element').each(function() {
+                    localStorage.setItem(this.id, this.value);
+                });
+            });
+            $('#restore').on('click', async function() {
+                $('.persistent-element').each(function() {
+                    this.value = localStorage.getItem(this.id);
+                    if (csound) {
+                        csound.SetControlChannel(this.id, parseFloat(this.value));
+                    }
+                    var output_selector = '#' + this.id + '_output';
+                    $(output_selector).val(this.value);
+                });
             });
         };
     </script>
