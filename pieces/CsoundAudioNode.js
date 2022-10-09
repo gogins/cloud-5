@@ -214,6 +214,9 @@ class CsoundAudioNode extends AudioWorkletNode {
     IsScorePending() {
         this.port.postMessage(["IsScorePending"]);
     };
+    KillInstance(p1, insname, mode, release) {
+        this.port.postMessage(["KillInstance", p1, insname, mode, release]);
+    };
     Message(text) {
         this.port.postMessage(["Message", text]);
     };
