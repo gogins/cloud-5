@@ -1776,6 +1776,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             if (message_callback_buffer.endsWith("\n")) {
                 console.log(message_callback_buffer);
                 let lines = console_editor.getSession().getLength();
+                // Keeps the console editor from hogging memory.
+                if (lines > 5000) {
+                    console_editor.getSession().removeFullLines(0, 2500);
+                    lines = console_editor.getSession().getLength();
+                }
                 console_editor.moveCursorTo(lines, 0);
                 console_editor.scrollToLine(lines);
                 console_editor.insert(message_callback_buffer);      
