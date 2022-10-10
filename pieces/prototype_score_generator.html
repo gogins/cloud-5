@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/91/three.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js" integrity="sha512-czfWedq9cnMibaqVP2Sw5Aw1PTTabHxMuTOkYkL15cbCYiatPIbxdV0zwhfBZKNODg0zFqmbz8f7rKmd6tfR/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tinycolor/1.4.2/tinycolor.js" integrity="sha512-lFoTu1RScb5+1ossorzeg5Ny23ak1W44WSkETDK8z5uX7r0uBRvK73XHZl5pE0XoOF1ET36BET/5FLcuiCUhhQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.11.2/ace.js" integrity="sha512-AhCq6G80Ge/e6Pl3QTNGI2Je+6ixVVDmmE4Nui8/dHRBKxMUvjJxn6CYEcMQdTSxHreC3USOxTDrvUPLtN5J7w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
@@ -36,12 +37,13 @@
             <li id="menu_item_play" class="w3-btn">Play/stop</li>
             <li id="menu_item_fullscreen" class="w3-btn">Full screen</li>
             <li id="menu_item_settings" class="w3-btn">Settings</li>
+            <li id="menu_item_console" class="w3-btn">Console</li>
             <li id="menu_item_about" class="w3-btn">About</li>
         </ul>
     </div>
-    <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;">
+    <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
-    <div id="settings_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgb(255, 255, 200, 67%);">
+    <div id="settings_view" class="w3-container" style="position:absolute;top:70px;z-index:2;background:transparent;color:rgb(255, 255, 200, 67%);">
     <h1>Settings</h1>
     <form id='persist'>
     <table>
@@ -68,7 +70,7 @@
     <td>
     <label for=gi_ReverbSC_delay_modulation>Reverb delay modulation</label>
     <td>
-    <input class=persistent-element type=range min=0 max=10 value=.05 id=gi_ReverbSC_delay_modulation step=.001>
+    <input class=persistent-element type=range min=0 max=2 value=.05 id=gi_ReverbSC_delay_modulation step=.001>
     <td>
     <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
     </tr>
@@ -85,9 +87,12 @@
     <input type="button" id='save' value="Save" />
     <input type="button" id='restore' value="Restore" />
     </form>   
-    
     </div>
-    <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgb(255, 255, 200, 67%);">
+    <!-- <div id="console_view" class="w3-container" style="position:absolute;top:70px;height:300;z-index:4;background:transparent;">    
+    </div> -->
+    <div id='console_view' style="position:absolute;top:80px;z-index:4;width:98vw;height:90vh;background:transparent;opacity:.5;">
+    </div
+    <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
 <h1>Prototype Score Generator</h1>
 <h3>Michael Gogins<br>
 September 2022</h3>
@@ -176,6 +181,8 @@ connect "Plucked", "outleft", "ReverbSC", "inleft"
 connect "Plucked", "outright", "ReverbSC", "inright"
 connect "Kung2", "outleft", "ReverbSC", "inleft"
 connect "Kung2", "outright", "ReverbSC", "inright"
+connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
+connect "FMWaterBell", "outright", "ReverbSC", "inright"
 connect "ReverbSC", "outleft", "MasterOutput", "inleft"
 connect "ReverbSC", "outright", "MasterOutput", "inright"
 
@@ -270,7 +277,6 @@ outleta "outright", a_out_right
 #endif
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
-
 
 gi_Kung3_detune_cents chnexport "gk_Kung3_detune_cents", 3
 gi_Kung3_detune_cents init 8
@@ -1708,7 +1714,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                      if (sample_count % 4 == 0) {
                         root_progression = Math.floor(Math.random() * 7);
                         chord = scale.transpose_degrees(chord, root_progression, 3)
-                        console.info("chord: " + chord.toString());
+                        console.info("chord: " + chord.eOP().name());
                     }
                     CsoundAC.apply(score, chord, 0, 1000000, true);
                     let score_text = score.getCsoundScore(12., true);
@@ -1760,12 +1766,19 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         var scale = null;
         var chord = null;
         var message_callback_buffer = "";
+        var console_editor = ace.edit("console_view");
+        console_editor.setTheme("ace/theme/gob");
+        console_editor.setReadOnly(true);
         var csound_message_callback = function(message) {
             // Split in case the newline is in the middle of the message but 
             // not at the end?
             message_callback_buffer = message_callback_buffer + message;
             if (message_callback_buffer.endsWith("\n")) {
                 console.log(message_callback_buffer);
+                let lines = console_editor.getSession().getLength();
+                console_editor.moveCursorTo(lines, 0);
+                console_editor.scrollToLine(lines);
+                console_editor.insert(message_callback_buffer);      
                 message_callback_buffer = "";
             }
         };
@@ -1795,6 +1808,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         window.onload = function() {
             $("#settings_view").css("display", "none");         
             $("#about_view").css("display", "none");         
+            $("#console_view").css("display", "none");      
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
                 if (csound == null) {
@@ -1817,6 +1831,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 }
                 if (csound.is_playing == false) {
                     let csd = await document.getElementById('csd').value;
+                    console_editor.setValue("");
                     let result = await csound.CompileCsdText(csd);
                     csound_message_callback("CompileCsdText returned: " + result);
                     await csound.Start();
@@ -1850,15 +1865,30 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             $("#menu_item_settings").click(function(event) {
                 console.log("menu_item_settings click...");
                 $("#about_view").hide();            
+                $("#console_view").hide();            
                 if ($("#settings_view").is(":visible")){
                     $("#settings_view").hide();            
                 } else {
-                    $("#settings_view").show();            
+                    $("#settings_view").show();        
+                }
+            });
+            $("#menu_item_console").click(function(event) {
+                console.log("menu_item_console click...");
+                $("#settings_view").hide();            
+                $("#about_view").hide();            
+                let v = document.getElementById("console_view");
+                if ($("#console_view").is(":visible")){
+                    $("#console_view").hide();          
+                } else {
+                    $("#console_view").show();    
+                    // Needed to make visible in place.
+                    console_editor.resize(true);
                 }
             });
             $("#menu_item_about").click(function(event) {
                 console.log("menu_item_about click...");
                 $("#settings_view").hide();            
+                $("#console_view").hide();            
                 if ($("#about_view").is(":visible")){
                     $("#about_view").hide();            
                 } else {
