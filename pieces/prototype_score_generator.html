@@ -90,7 +90,7 @@
     </div>
     <!-- <div id="console_view" class="w3-container" style="position:absolute;top:70px;height:300;z-index:4;background:transparent;">    
     </div> -->
-    <div id='console_view' style="position:absolute;top:80px;z-index:4;width:100vw;height:90vh;background:transparent;opacity:.5;">
+    <div id='console_view' style="position:absolute;top:80px;z-index:4;width:100vw;height:90vh;background:transparent;color:rgb(255, 255, 200, 67%)">
     </div>
     <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
 <h1>Prototype Score Generator</h1>
@@ -1614,6 +1614,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var off_events = new Array();
             var playing_events = new Map();
             var event_tag = 0;
+            var root_progressions = [2, 3, -4, 5, -1, 3];
+
 
             async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
                 if (csound == null) {
@@ -1711,10 +1713,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
                 }
                 if (score.size() > 0) {
-                     if (sample_count % 4 == 0) {
-                        root_progression = Math.floor(Math.random() * 7);
+                    if (sample_count % 4 == 0) {
+                        if (sample_count % 24 == 0) {
+                            let scales = scale.modulations(chord);
+                            if (scales.size() > 1) {
+                                scale = scales[Math.floor(Math.random()*scales.length)];           
+                                csound_message_callback(sprintf("\n%s\n\n", scale.name()));           
+                            }     
+                        }                            
+                        let root_progression = root_progressions[Math.floor(Math.random()*root_progressions.length)];             
+                        csound_message_callback(sprintf("\n%s\n\n", chord.eOP().name()));
                         chord = scale.transpose_degrees(chord, root_progression, 3)
-                        console.info("chord: " + chord.eOP().name());
                     }
                     CsoundAC.apply(score, chord, 0, 1000000, true);
                     let score_text = score.getCsoundScore(12., true);
@@ -1767,7 +1776,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         var chord = null;
         var message_callback_buffer = "";
         var console_editor = ace.edit("console_view");
-        console_editor.setTheme("ace/theme/gob");
+        //console_editor.setTheme("ace/theme/gob");
         console_editor.setReadOnly(true);
         var csound_message_callback = function(message) {
             // Split in case the newline is in the middle of the message but 
@@ -1776,7 +1785,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             if (message_callback_buffer.endsWith("\n")) {
                 console.log(message_callback_buffer);
                 let lines = console_editor.getSession().getLength();
-                // Keeps the console editor from hogging memory.
+                // Prevent the console editor from hogging memory.
                 if (lines > 5000) {
                     console_editor.getSession().removeFullLines(0, 2500);
                     lines = console_editor.getSession().getLength();
