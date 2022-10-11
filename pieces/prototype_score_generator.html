@@ -32,7 +32,7 @@
     all events from the user interface. Most of this code requires little or 
     no change when writing a new piece.
     ------------------------------------------------------------------------->
-    <div class="w3-bar w3-dark-grey" style="position:fixed;">    
+    <div class="w3-bar w3-text-yellow" style="position:fixed;background:transparent;">    
         <ul class = "menu">
             <li id="menu_item_play" class="w3-btn">Play/stop</li>
             <li id="menu_item_fullscreen" class="w3-btn">Full screen</li>
@@ -88,9 +88,7 @@
     <input type="button" id='restore' value="Restore" />
     </form>   
     </div>
-    <!-- <div id="console_view" class="w3-container" style="position:absolute;top:70px;height:300;z-index:4;background:transparent;">    
-    </div> -->
-    <div id='console_view' style="position:absolute;top:80px;z-index:4;width:100vw;height:90vh;background:transparent;color:rgb(255, 255, 200, 67%)">
+    <div id='console_view' style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color:rgba(255, 255, 200, 100%);margin-left:10px;">
     </div>
     <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
 <h1>Prototype Score Generator</h1>
@@ -102,7 +100,6 @@ September 2022</h3>
 <p>This is an online piece of electroacoustic music, rendered in your Web browser using high-resolution audio. It will play indefinitely, never ending, always changing. Animated visuals influenced by the music, adapted from <a href="https://www.shadertoy.com/view/ls3Sz4"><b>Neon Music Reaction</b></a> by <a href="https://www.shadertoy.com/user/ciberxtrem">ciberextrem</a>, which has the same license, accompany my music. There are controls you can play with. If you like your settings, save them.
 
 <ul>
-<li>To view Csound and JavaScript notifications, use your browser menu to view the JavaScript console.
 <li>To view the source code of this piece, use your browser menu to view the page source.
 <li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer tools.
 </ul>
@@ -188,8 +185,6 @@ connect "ReverbSC", "outright", "MasterOutput", "inright"
 
 alwayson "ReverbSC"
 alwayson "MasterOutput"
-
-gk_overlap init .0125
 
 gk_Plucked_midi_dynamic_range chnexport "gk_Plucked_midi_dynamic_range", 3 ; 127
 gk_Plucked_midi_dynamic_range init 30
@@ -1204,7 +1199,7 @@ endin
 
 vec2 triangle_wave(vec2 a){
     ///return abs(fract((a+vec2(1.,0.5))*1.5)-.5);
-    return abs(fract((a+vec2(1.,0.75))*1.75)-.325);
+    return abs(fract((a*.9+vec2(1.,0.75))*1.75)-.325);
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -1616,7 +1611,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var event_tag = 0;
             var root_progressions = [2, 3, -4, 5, -1, 3];
 
-
             async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
                 if (csound == null) {
                     return;
@@ -1646,17 +1640,19 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 off_events.length = 0;
                 score.clear();
                 // Translate the HSV samples to Csound event vectors.
-                // 0 is p1 insno, tagged by downsampled pixel, positive for on or negative for off.
+                // 0 is p1 insno (hsv[0](, tagged by downsampled pixel, 
+                //   positive for on or negative for off.
                 // 1 is p2 time always 0.
-                // 2 is p3 duration, -1 for on or 0 for off.
-                // 3 is p4 MIDI key.
-                // 4 is p5 MIDI velocity.
+                // 2 is p3 duration (either hsv[1] or -1, must be 0 for off
+//                   events).
+                // 3 is p4 MIDI key (downsampled pixel).
+                // 4 is p5 MIDI velocity (hsv[2]).
                 for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
                     let hsv = downsampled_pixels[downsampled_pixel_i][2];
                     let instrument_number = 1 + (hsv[0] * instrument_count);
                     // The instrument number must have a unique fractional tag.
                     let time = 0;
-                    let duration = -1;
+                    let duration = hsv[1] * 20;
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
                     let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
                     instrument_number = parseFloat(insno);
@@ -1700,7 +1696,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 for (let i = 0; i < voices; i++) {
                     let on_event = on_events[i];
                     let time = 0;
-                    let duration = -1;
+                    let duration = on_event[2];
                     let status = 144;
                     let instrument_number = on_event[0];
                     let key = on_event[3];
@@ -1717,7 +1713,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                         if (sample_count % 24 == 0) {
                             let scales = scale.modulations(chord);
                             if (scales.size() > 1) {
-                                scale = scales[Math.floor(Math.random()*scales.length)];           
+                                scale = scales.get(Math.floor(Math.random()*scales.size()));           
                                 csound_message_callback(sprintf("\n%s\n\n", scale.name()));           
                             }     
                         }                            
@@ -1778,6 +1774,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         var console_editor = ace.edit("console_view");
         //console_editor.setTheme("ace/theme/gob");
         console_editor.setReadOnly(true);
+        console_editor.renderer.setOption("showGutter", false);
+        console_editor.renderer.setOption("showLineNumbers", true);
         var csound_message_callback = function(message) {
             // Split in case the newline is in the middle of the message but 
             // not at the end?
