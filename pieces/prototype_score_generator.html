@@ -27,7 +27,7 @@
     program notes. These are the parts that need to be written to create a new
     piece.
      
-    There is also "infrastructure" code that sets up the user interface, 
+    There is also much "infrastructure" code that sets up the user interface, 
     compiles the Csound orchestra, compiles any GLSL shaders, and handles 
     all events from the user interface. Most of this code requires little or 
     no change when writing a new piece.
@@ -37,7 +37,7 @@
             <li id="menu_item_play" class="w3-btn w3-hover-text-lime">Play/stop</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-lime">Full screen</li>
             <li id="menu_item_settings" class="w3-btn w3-hover-text-lime">Settings</li>
-            <li id="menu_item_console" class="w3-btn w3-hover-text-lime">Console</li>
+            <li id="menu_item_console" class="w3-btn w3-hover-text-lime">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-lime">About</li>
         </ul>
     </div>
@@ -143,14 +143,14 @@ September 2022</h3>
 
 <CsoundSynthesizer>
 <CsOptions>
--+msg_color=0 -odac -m0 -d
+-+msg_color=0 -odac -m34 -d
 </CsOptions>
 <CsInstruments>
 
 sr = 48000
 ksmps = 128
 nchnls = 2
-0dbfs = 1
+0dbfs = 4
 
 gi_ampmidicurve_dynamic_range init .375
 gi_ampmidicurve_exponent init 5
@@ -164,6 +164,8 @@ maxalloc 6, 8
 maxalloc 7, 8
 maxalloc 8, 8
 
+connect "Plucked", "outleft", "ReverbSC", "inleft"
+connect "Plucked", "outright", "ReverbSC", "inright"
 connect "Guitar", "outleft", "ReverbSC", "inleft"
 connect "Guitar", "outleft", "ReverbSC", "inleft"
 connect "ZakianFlute", "outleft", "ReverbSC", "inleft"
@@ -174,8 +176,6 @@ connect "YiString", "outleft", "ReverbSC", "inleft"
 connect "YiString", "outright", "ReverbSC", "inright"
 connect "Kung4", "outleft", "ReverbSC", "inleft"
 connect "Kung4", "outright", "ReverbSC", "inright"
-connect "Plucked", "outleft", "ReverbSC", "inleft"
-connect "Plucked", "outright", "ReverbSC", "inright"
 connect "Kung2", "outleft", "ReverbSC", "inleft"
 connect "Kung2", "outright", "ReverbSC", "inright"
 connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
@@ -186,12 +186,98 @@ connect "ReverbSC", "outright", "MasterOutput", "inright"
 alwayson "ReverbSC"
 alwayson "MasterOutput"
 
+gk_Guitar_midi_dynamic_range chnexport "gk_Guitar_midi_dynamic_range", 3 ; 127
+gk_Guitar_midi_dynamic_range init 30
+gk_Guitar_level chnexport "gk_Guitar_level", 3
+gk_Guitar_level init 0
+gk_Guitar_space_left_to_right chnexport "gk_Guitar_space_left_to_right", 3
+gk_Guitar_space_left_to_right init .5
+
+instr Guitar
+; Michael Gogins
+; Simple emulation of a Spanish guitar.
+; Considerably cleaned up after close listening and systematic testing. 
+; But I think the plain `pluck` opcode is inherently a bit noisy. The 
+; waveform is just jagged at first.
+i_instrument = p1
+i_time = p2
+; Make indefinite notes last no longer than the physical decay.
+i_physical_decay = 20
+if p3 == -1 then
+i_duration = i_physical_decay
+else
+i_duration = p3
+endif
+i_midi_key = p4
+i_midi_dynamic_range = i(gk_Guitar_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+if p7 ==0 then
+k_space_left_to_right = gk_Guitar_space_left_to_right
+else
+k_space_left_to_right = p7
+endif
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 73
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_Guitar_level)
+i_frequency2 = i_frequency
+a_signal pluck 1.0, i_frequency, i_frequency2, 0, 6
+a_top_body reson a_signal, 110, 80
+a_bottom_body reson a_signal, 220, 100
+a_whole_body reson a_signal, 440, 80
+a_signal = (.6 * a_top_body + .8 * a_bottom_body + .6 * a_whole_body + .4 * a_signal) 
+; For testing envelopes with a simple signal that lacks confounding artifacts.
+; a_signal oscils .1, i_frequency2, 0
+; For testing envelopes with a DC signal (shows only the envelope).
+; a_signal = .25
+
+; As with most software instruments that are modeled on an impulse exciting a 
+; resonator, there should be two envelopes. The "physical" envelope must have a 
+; fixed decay ending at zero.
+i_declick_minimum = .003
+i_attack = .001 / i_frequency + i_declick_minimum
+i_exponent = 7
+a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
+; The de-clicking envelope must have attack and release segments that damp 
+; artifacts in the signal. The duration of these segments depends on 
+; the behavior of the instrument, and may vary as a function of frequency.
+i_declick_attack = i_attack
+i_declick_release = i_declick_minimum * 2
+; The end of the note must be extended _past_ the end of the release segment.
+xtratim 1
+a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
+; The envelope of the instrument is the product of the physical envelope times 
+; the declicking envelope. 
+a_envelope = a_physical_envelope * a_declicking_envelope
+; That envelope is then low-pass filtered to remove most discontinuities.
+a_filtered_envelope tonex a_envelope, 40, 4
+a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
 gk_Plucked_midi_dynamic_range chnexport "gk_Plucked_midi_dynamic_range", 3 ; 127
 gk_Plucked_midi_dynamic_range init 30
 gk_Plucked_space_left_to_right chnexport "gk_Plucked_space_left_to_right", 3
 gk_Plucked_space_left_to_right init .5
 gk_Plucked_level chnexport "gk_Plucked_level", 3
-gk_Plucked_level init 0
+gk_Plucked_level init 50
 
 gi_Plucked_sine ftgen 0, 0, 65537, 10, 1
 
@@ -288,7 +374,7 @@ gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
 gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
 gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
 
-gk_FMWaterBell_level init 0
+gk_FMWaterBell_level init -8
 gi_FMWaterBell_attack init 0.002
 gi_FMWaterBell_release init 0.01
 gi_FMWaterBell_sustain init 20
@@ -353,7 +439,7 @@ endin
 gi_Kung2_detune_cents chnexport "gk_Kung2_detune_cents", 3
 gi_Kung2_detune_cents init 8
 gk_Kung2_level chnexport "gk_Kung2_level", 3
-gk_Kung2_level init 0
+gk_Kung2_level init -17
 gk_Kung2_midi_dynamic_range chnexport "gk_Kung2_midi_dynamic_range", 3
 gk_Kung2_midi_dynamic_range init 30
 gk_Kung2_space_left_to_right chnexport "gk_Kung2_space_left_to_right", 3
@@ -497,7 +583,7 @@ gk_YiString_chorus_send chnexport "gk_YiString_chorus_send", 3 ;  .5
 gi_YiString_overlap chnexport "gi_YiString_overlap", 3 ;  .1
 
 gk_YiString_midi_dynamic_range init 20
-gk_YiString_level init 0
+gk_YiString_level init 30
 gk_YiString_reverb_send init .5
 gk_YiString_chorus_send init .5
 gi_YiString_overlap init .1
@@ -582,7 +668,7 @@ gk_Harpsichord_reflection chnexport "gk_Harpsichord_reflection", 3
 gk_Harpsichord_pluck chnexport "gk_Harpsichord_pluck", 3
 gk_Harpsichord_midi_dynamic_range chnexport "gk_Harpsichord_midi_dynamic_range", 3
 
-gk_Harpsichord_level init 0
+gk_Harpsichord_level init -9
 gk_Harpsichord_pick init .075
 gk_Harpsichord_reflection init .5
 gk_Harpsichord_pluck init .75
@@ -643,7 +729,7 @@ gi_ZakianFLute_seed chnexport "gi_ZakianFLute_seed", 3 ;  .5
 gi_ZakianFLute_space_left_to_front chnexport "gi_ZakianFLute_space_left_to_front", 3 ;  .5
 
 gk_ZakianFlute_midi_dynamic_range init 20
-gk_ZakianFlute_level init 0
+gk_ZakianFlute_level init -16
 gk_ZakianFlute_pan init .5
 gi_ZakianFLute_seed init .5
 gi_ZakianFLute_space_left_to_front init .5
@@ -894,7 +980,7 @@ endin
 gi_Kung4_detune_cents chnexport "gk_Kung4_detune_cents", 3
 gi_Kung4_detune_cents init 8
 gk_Kung4_level chnexport "gk_Kung4_level", 3
-gk_Kung4_level init 0
+gk_Kung4_level init -20
 gk_Kung4_midi_dynamic_range chnexport "gk_Kung4_midi_dynamic_range", 3
 gk_Kung4_midi_dynamic_range init 30
 gk_Kung4_space_left_to_right chnexport "gk_Kung4_space_left_to_right", 3
@@ -921,7 +1007,6 @@ i_duration = i_instrument_duration
 else
 i_duration = p3
 endif
-print i_duration
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Kung4_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
@@ -951,7 +1036,6 @@ i_instrument_attack = 1 / 3
 else
 i_instrument_attack = i_duration / 3
 endif
-print i_instrument_attack
 ;i_instrument_duration -= (2 * i_instrument_attack)
 aadsr linsegr 0, i_instrument_attack, 1.0, i_duration, 1.0, i_instrument_attack, 0 ;ADSR envelope
 amodi linseg 0, i_instrument_attack, 5, i_duration, 3, i_instrument_attack, 0 ;ADSR envelope for I
@@ -976,9 +1060,6 @@ i_declick_attack = i_attack
 i_declick_release = i_declick_minimum * 2
 ; The end of the note must be extended _past_ the end of the release segment.
 xtratim 5
-print i_declick_attack
-print i_declick_release
-print i_duration
 a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
 ; The envelope of the instrument is the product of the physical envelope times 
 ; the declicking envelope. 
@@ -1525,13 +1606,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              *
              * https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf
              */
+            var instrument_count = 9;
             var sampled_events = new Array();
             var playlist = new Map();
             var rendering_frame_rate = 25;
             var frame_translation_count = 0;
             var midi_key_begin = 36;
             var midi_key_range = 60;
-            var instrument_count = 7;
             var maximum_voices = 8;
             var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
