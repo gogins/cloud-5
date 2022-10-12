@@ -18,7 +18,7 @@
 <style>
 </style>
 </head>
-<body id="body" class="w3-medium" style="height:100vh;">
+<body id="body" class="w3-medium w3-text-sand" style="height:100vh;">
     <!------------------------------------------------------------------------
     This piece consists of an actual composition, which may include a Csound 
     orchestra, WebGL, a GLSL shader, JavaScript for generating scores (perhaps
@@ -32,7 +32,7 @@
     all events from the user interface. Most of this code requires little or 
     no change when writing a new piece.
     ------------------------------------------------------------------------->
-    <div class="w3-bar w3-text-yellow" style="position:fixed;background:transparent;">    
+    <div class="w3-bar " style="position:fixed;background:transparent;">    
         <ul class = "menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-lime">Play/stop</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-lime">Full screen</li>
@@ -43,7 +43,7 @@
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
-    <div id="settings_view" class="w3-container w3-text-yellow" style="position:absolute;top:70px;z-index:2;background:transparent;">
+    <div id="settings_view" class="w3-container " style="position:absolute;top:70px;z-index:2;background:transparent;">
     <h1>Settings</h1>
     <form id='persist'>
     <table>
@@ -88,9 +88,9 @@
     <input type="button" id='restore' value="Restore" />
     </form>   
     </div>
-    <div id='console_view' class = "w3-text-yellow" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:15px;">
+    <div id='console_view' class = "w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:15px;">
     </div>
-    <div id="about_view" class="w3-container w3-text-yellow" style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
+    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
 <h1>Prototype Score Generator</h1>
 <h3>Michael Gogins<br>
 September 2022</h3>
