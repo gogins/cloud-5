@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Prototype Visualizer</title>
+<title>Prototype Score Visualizer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.1/dat.gui.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
@@ -9,45 +9,106 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.js" integrity="sha512-dY9NsJoe4eisOR4ZtU0WaFNOxGcGZMfaviwSYHoiiEXvC6QLBsOOVsv3uY+5lEvuRtGTATg7usKQGajlDWSo7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/91/three.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js" integrity="sha512-czfWedq9cnMibaqVP2Sw5Aw1PTTabHxMuTOkYkL15cbCYiatPIbxdV0zwhfBZKNODg0zFqmbz8f7rKmd6tfR/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinycolor/1.4.2/tinycolor.js" integrity="sha512-lFoTu1RScb5+1ossorzeg5Ny23ak1W44WSkETDK8z5uX7r0uBRvK73XHZl5pE0XoOF1ET36BET/5FLcuiCUhhQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.11.2/ace.js" integrity="sha512-AhCq6G80Ge/e6Pl3QTNGI2Je+6ixVVDmmE4Nui8/dHRBKxMUvjJxn6CYEcMQdTSxHreC3USOxTDrvUPLtN5J7w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
-<script src="silencio/js/TrackballControls.js"></script>
-<script src="silencio/js/tinycolor.js"></script>
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="icon" href="data:,">
 <style>
 </style>
 </head>
-<body id="body" class="w3-medium" style="height:100vh;">
-    <div class="w3-bar w3-dark-grey" style="position:fixed;">    
+<body id="body" class="w3-medium w3-text-sand" style="height:100vh;">
+    <!------------------------------------------------------------------------
+    This piece consists of an actual composition, which may include a Csound 
+    orchestra, WebGL, a GLSL shader, JavaScript for generating scores (perhaps
+    using the CsoundAC library), controls for the user to adjust the settings 
+    of the piece or to control it in real time,, license information, and 
+    program notes. These are the parts that need to be written to create a new
+    piece.
+     
+    There is also much "infrastructure" code that sets up the user interface, 
+    compiles the Csound orchestra, compiles any GLSL shaders, and handles 
+    all events from the user interface. Most of this code requires little or 
+    no change when writing a new piece.
+    ------------------------------------------------------------------------->
+    <div class="w3-bar " style="position:fixed;background:transparent;">    
         <ul class = "menu">
-            <li id="menu_item_play" class="w3-btn">Play/stop</li>
-            <li id="menu_item_fullscreen" class="w3-btn">Full screen</li>
-            <li id="menu_item_settings" class="w3-btn">Settings</li>
-            <li id="menu_item_about" class="w3-btn">About</li>
+            <li id="menu_item_play" class="w3-btn w3-hover-text-lime">Play/stop</li>
+            <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-lime">Full screen</li>
+            <li id="menu_item_settings" class="w3-btn w3-hover-text-lime">Settings</li>
+            <li id="menu_item_console" class="w3-btn w3-hover-text-lime">Log</li>
+            <li id="menu_item_about" class="w3-btn w3-hover-text-lime">About</li>
         </ul>
     </div>
-    <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;">
+    <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
-    <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:3;background:transparent;color:rgba(102,205,170,.75);">
-<h1>Prototype Visualizer</h1>
+    <div id="settings_view" class="w3-container " style="position:absolute;top:70px;z-index:2;background:transparent;">
+    <h1>Settings</h1>
+    <form id='persist'>
+    <table>
+    <col width="2*">
+    <col width="5*">
+    <col width="100px">
+    <tr>
+    <td>
+    <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_ReverbSC_feedback step=.001>
+    <td>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.89</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
+    <td>
+    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>12000</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gi_ReverbSC_delay_modulation>Reverb delay modulation</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=2 value=.05 id=gi_ReverbSC_delay_modulation step=.001>
+    <td>
+    <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_MasterOutput_level>Master output level (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-30 id=gk_MasterOutput_level step=.001>
+    <td>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-6</output>
+    </tr>
+    </table>
+    <p>
+    <input type="button" id='save' value="Save" />
+    <input type="button" id='restore' value="Restore" />
+    </form>   
+    </div>
+    <div id='console_view' class = "w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:15px;">
+    </div>
+    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
+<h1>Prototype Score Visualizer</h1>
 <h3>Michael Gogins<br>
-September 2022</h3>
+October 2022</h3>
 
-<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><br/>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License</a>
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><br/>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This is an online piece of electroacoustic music, rendered in high-resolution audio. It will play indefinitely, never ending, always changing. Animated visuals influenced by the music, adapted from <a href="https://www.shadertoy.com/view/ls3Sz4"><b>Neon Music Reaction</b></a> by <a href="https://www.shadertoy.com/user/ciberxtrem">ciberextrem</a>, which has the same license, accompany my music. There are controls you can play with. If you like your settings, save them.
+<p>This is an online piece of electroacoustic music, rendered in your Web browser using high-resolution audio. It will play indefinitely, never ending, always changing. Animated visuals influenced by the music, adapted from <a href="https://www.shadertoy.com/view/ls3Sz4"><b>Neon Music Reaction</b></a> by <a href="https://www.shadertoy.com/user/ciberxtrem">ciberextrem</a>, which has the same license, accompany my music. There are controls you can play with. If you like your settings, save them.
 
 <ul>
-<li>To view Csound and JavaScript notifications, use your browser menu to view the JavaScript console.
 <li>To view the source code of this piece, use your browser menu to view the page source.
 <li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer tools.
 </ul>
 
-<p>This piece can be used as a template for creating new pieces of this type.
+<p>Feel free to use this piece as a template for creating new pieces of this type, as long as it doesn't sound too much like this one!
 
 <p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a href="https://github.com/gogins/cloud-music/issues">cloud-music issues></a>.
 <p>
+
 <a href="http://michaelgogins.tumblr.com">
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
@@ -65,9 +126,19 @@ September 2022</h3>
     </g>
 </g>
 </svg>
-
 </a>
+
+<a href="https://github.com/gogins">
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <svg width="36" height="36" viewBox="0 0 256 250" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+        <g>
+            <path d="M128.00106,0 C57.3172926,0 0,57.3066942 0,128.00106 C0,184.555281 36.6761997,232.535542 87.534937,249.460899 C93.9320223,250.645779 96.280588,246.684165 96.280588,243.303333 C96.280588,240.251045 96.1618878,230.167899 96.106777,219.472176 C60.4967585,227.215235 52.9826207,204.369712 52.9826207,204.369712 C47.1599584,189.574598 38.770408,185.640538 38.770408,185.640538 C27.1568785,177.696113 39.6458206,177.859325 39.6458206,177.859325 C52.4993419,178.762293 59.267365,191.04987 59.267365,191.04987 C70.6837675,210.618423 89.2115753,204.961093 96.5158685,201.690482 C97.6647155,193.417512 100.981959,187.77078 104.642583,184.574357 C76.211799,181.33766 46.324819,170.362144 46.324819,121.315702 C46.324819,107.340889 51.3250588,95.9223682 59.5132437,86.9583937 C58.1842268,83.7344152 53.8029229,70.715562 60.7532354,53.0843636 C60.7532354,53.0843636 71.5019501,49.6441813 95.9626412,66.2049595 C106.172967,63.368876 117.123047,61.9465949 128.00106,61.8978432 C138.879073,61.9465949 149.837632,63.368876 160.067033,66.2049595 C184.49805,49.6441813 195.231926,53.0843636 195.231926,53.0843636 C202.199197,70.715562 197.815773,83.7344152 196.486756,86.9583937 C204.694018,95.9223682 209.660343,107.340889 209.660343,121.315702 C209.660343,170.478725 179.716133,181.303747 151.213281,184.472614 C155.80443,188.444828 159.895342,196.234518 159.895342,208.176593 C159.895342,225.303317 159.746968,239.087361 159.746968,243.303333 C159.746968,246.709601 162.05102,250.70089 168.53925,249.443941 C219.370432,232.499507 256,184.536204 256,128.00106 C256,57.3066942 198.691187,0 128.00106,0 Z M47.9405593,182.340212 C47.6586465,182.976105 46.6581745,183.166873 45.7467277,182.730227 C44.8183235,182.312656 44.2968914,181.445722 44.5978808,180.80771 C44.8734344,180.152739 45.876026,179.97045 46.8023103,180.409216 C47.7328342,180.826786 48.2627451,181.702199 47.9405593,182.340212 Z M54.2367892,187.958254 C53.6263318,188.524199 52.4329723,188.261363 51.6232682,187.366874 C50.7860088,186.474504 50.6291553,185.281144 51.2480912,184.70672 C51.8776254,184.140775 53.0349512,184.405731 53.8743302,185.298101 C54.7115892,186.201069 54.8748019,187.38595 54.2367892,187.958254 Z M58.5562413,195.146347 C57.7719732,195.691096 56.4895886,195.180261 55.6968417,194.042013 C54.9125733,192.903764 54.9125733,191.538713 55.713799,190.991845 C56.5086651,190.444977 57.7719732,190.936735 58.5753181,192.066505 C59.3574669,193.22383 59.3574669,194.58888 58.5562413,195.146347 Z M65.8613592,203.471174 C65.1597571,204.244846 63.6654083,204.03712 62.5716717,202.981538 C61.4524999,201.94927 61.1409122,200.484596 61.8446341,199.710926 C62.5547146,198.935137 64.0575422,199.15346 65.1597571,200.200564 C66.2704506,201.230712 66.6095936,202.705984 65.8613592,203.471174 Z M75.3025151,206.281542 C74.9930474,207.284134 73.553809,207.739857 72.1039724,207.313809 C70.6562556,206.875043 69.7087748,205.700761 70.0012857,204.687571 C70.302275,203.678621 71.7478721,203.20382 73.2083069,203.659543 C74.6539041,204.09619 75.6035048,205.261994 75.3025151,206.281542 Z M86.046947,207.473627 C86.0829806,208.529209 84.8535871,209.404622 83.3316829,209.4237 C81.8013,209.457614 80.563428,208.603398 80.5464708,207.564772 C80.5464708,206.498591 81.7483088,205.631657 83.2786917,205.606221 C84.8005962,205.576546 86.046947,206.424403 86.046947,207.473627 Z M96.6021471,207.069023 C96.7844366,208.099171 95.7267341,209.156872 94.215428,209.438785 C92.7295577,209.710099 91.3539086,209.074206 91.1652603,208.052538 C90.9808515,206.996955 92.0576306,205.939253 93.5413813,205.66582 C95.054807,205.402984 96.4092596,206.021919 96.6021471,207.069023 Z" fill="#161614"></path>
+        </g>
+    </svg>
+</a>
+
     </div>
+
     <textarea id="csd" cols=80 rows=24 style="display:none;">
 <CsoundSynthesizer>
 <CsOptions>
@@ -396,7 +467,7 @@ e
 </CsScore>
 </CsoundSynthesizer>
     </textarea>
-
+    
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
         #line 354
         precision mediump float;
@@ -505,6 +576,7 @@ e
     </script>
     
     <script> 
+        
         var shader_program = null;
         var analyser = null;
         // Set up for high-resolution displays.
@@ -512,12 +584,20 @@ e
         var canvas = document.getElementById( "display");
         canvas.width = canvas.clientWidth * devicePixelRatio_;
         canvas.height = canvas.clientHeight * devicePixelRatio_;
+        console.log("canvas.height: " + canvas.height);
+        console.log("canvas.width:  " + canvas.width);
         var gl = canvas.getContext("webgl2", { antialias: true });
         if (!gl) {
             alert("Could not create webgl2 context.");
         }
         let extensions = gl.getSupportedExtensions();
         console.log("Supported extensions:\n" + extensions);
+        if ("gpu" in navigator) {
+            var gpu_adapter = navigator.gpu.requestAdapter();
+            console.log("WebGPU adapter: " + gpu_adapter);
+        } else {
+            console.warn("WebGPU is not available on this platform.");
+        }
         var EXT_color_buffer_float = gl.getExtension("EXT_color_buffer_float");
         if (!EXT_color_buffer_float) {
             alert("EXT_color_buffer_float is not available on this platform.");
@@ -533,6 +613,7 @@ e
         var frequency_domain_data = new Uint8Array(audio_texture_width * 2);
         var time_domain_data = new Uint8Array(audio_texture_width * 2);
         var audio_data = new Float32Array(audio_texture_width * 2);
+        var image_sample_buffer = new Uint8ClampedArray();
         
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
@@ -540,6 +621,10 @@ e
         var channel0_sampler = gl.createSampler();
         channel0_sampler.name - "channel0_sampler";
  
+        var current_events = new Map();
+        var prior_events = current_events;
+        var rendering_frame = 0;
+        
         function write_audio_texture(analyser, texture_unit, texture, sampler) {
            if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
@@ -603,7 +688,7 @@ e
             }
          }
         
-        (function loadscene() {
+        (function load_scene() {
             var webgl_viewport_size;
             var webgl_buffers = {};
             var mouse_position = [0, 0, 0, 0];
@@ -673,37 +758,356 @@ e
                 webgl_viewport_size = [window.innerWidth, window.innerHeight];
                 canvas.width = webgl_viewport_size[0] * window.devicePixelRatio;
                 canvas.height = webgl_viewport_size[1] * window.devicePixelRatio;
+                image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
+                prior_image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
+                console.info("resize: image_sample_buffer.length: " + image_sample_buffer.length);
             }
             
-            function render_scene(delta_milliseconds) {
+            function clientWaitAsync(sync, flags, interval_ms) {
+                return new Promise((resolve, reject) => {
+                    function test() {
+                        const result = gl.clientWaitSync(sync, flags, 0);
+                        if (result === gl.WAIT_FAILED) {
+                            reject();
+                            return;
+                        }
+                        // This is the workaround for platforms where maximum 
+                        // timeout is always 0.
+                        if (result === gl.TIMEOUT_EXPIRED) {
+                            setTimeout(test, interval_ms);
+                            return;
+                        }
+                        resolve();
+                    }
+                    test();
+                });
+            }
+
+            async function getBufferSubDataAsync(target, buffer, srcByteOffset, dstBuffer,
+                /* optional */ dstOffset, /* optional */ length) {
+                const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+                gl.flush();
+                await clientWaitAsync(sync, 0, 10);
+                gl.deleteSync(sync);
+                gl.bindBuffer(target, buffer);
+                gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
+                gl.bindBuffer(target, null);
+             }
+            
+            /**
+             * Converts an RGB color value to HSV. The formula is 
+             * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+             * Assumes r, g, and b are in [0, 255] and
+             * returns h, s, and v in [0, 1].
+             */
+            var rgb_to_hsv = function(rgb){
+                r = rgb[0] / 255;
+                g = rgb[1] / 255;
+                b = rgb[2] / 255;
+                var max = Math.max(r, g, b);
+                var min = Math.min(r, g, b);
+                var h, s, v = max;
+                var d = max - min;
+                s = max === 0 ? 0 : d / max;
+                if (max == min){
+                    h = 0;
+                } else {
+                    // More efficient than switch?
+                    if        (max == r) {
+                        h = (g - b) / d + (g < b ? 6 : 0);
+                    } else if (max == g) {
+                        h = (b - r) / d + 2;
+                    } else if (max == b) {
+                        h = (r - g) / d + 4;
+                    }
+                    h /= 6;
+                }
+                return [h, s, v];
+            }
+
+            async function readPixelsAsync(x, y, w, h, format, type, sample) {
+                const buffer = gl.createBuffer();
+                gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+                gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
+                gl.readPixels(x, y, w, h, format, type, 0);
+                gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+                await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
+                gl.deleteBuffer(buffer);
+            }   
+            
+            /**
+             * Adapts https://github.com/pingec/downsample-lttb from time 
+             * series data to vectors of float HSV pixels. Our data is not 
+             * [[time, value], [time, value],...], but rather 
+             * [[pixel index0, hsv0[2]], [pixel index1, hsv1[2]], ...].
+             */
+            function downsample_lttb(data, buckets) {
+                if (buckets >= data.length || buckets === 0) {
+                    return data; // Nothing to do
+                }
+                let sampled_data = [],
+                    sampled_data_index = 0;
+                // Bucket size. Leave room for start and end data points
+                let bucket_size = (data.length - 2) / (buckets - 2);
+                // Triangles are points {a, b, c}.
+                let a = 0,  // Initially a is the first point in the triangle
+                    max_area_point,
+                    max_area,
+                    area,
+                    next_a;
+                sampled_data[sampled_data_index++] = data[a]; // Always add the first point
+                for (let i = 0; i < buckets - 2; i++) {
+                    // Calculate point average for next bucket (containing c)
+                    let avg_x = 0,
+                        avg_y = 0,
+                        avg_range_start  = Math.floor( ( i + 1 ) * bucket_size ) + 1,
+                        avg_range_end    = Math.floor( ( i + 2 ) * bucket_size ) + 1;
+                    avg_range_end = avg_range_end < data.length ? avg_range_end : data.length;
+                    let avg_range_length = avg_range_end - avg_range_start;
+                    for ( ; avg_range_start<avg_range_end; avg_range_start++ ) {
+                      avg_x += data[ avg_range_start ][ 0 ] * 1; // * 1 enforces Number (value may be Date)
+                      avg_y += data[ avg_range_start ][ 1 ] * 1;
+                    }
+                    avg_x /= avg_range_length;
+                    avg_y /= avg_range_length;
+                    // Get the range for this bucket
+                    let range_offs = Math.floor( (i + 0) * bucket_size ) + 1,
+                        range_to   = Math.floor( (i + 1) * bucket_size ) + 1;
+                    // Point a
+                    let point_a_x = data[ a ][ 0 ] * 1, // enforce Number (value may be Date)
+                        point_a_y = data[ a ][ 1 ] * 1;
+                    max_area = area = -1;
+                    for ( ; range_offs < range_to; range_offs++ ) {
+                        // Calculate triangle area over three buckets
+                        area = Math.abs( ( point_a_x - avg_x ) * ( data[ range_offs ][ 1 ] - point_a_y ) -
+                                    ( point_a_x - data[ range_offs ][ 0 ] ) * ( avg_y - point_a_y )
+                                  ) * 0.5;
+                        if ( area > max_area ) {
+                            max_area = area;
+                            max_area_point = data[ range_offs ];
+                            next_a = range_offs; // Next a is this b
+                        }
+                    }
+                    sampled_data[sampled_data_index++] = max_area_point; // Pick this point from the bucket
+                    a = next_a; // This a is the next a (chosen b)
+                }
+                sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last
+                return sampled_data; ///sampled_data;
+            }
+            
+            /**
+             * Translates one row of RGBA pixels, the width of the WebGL 
+             * canvas, to Csound events. 
+             *
+             * https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf
+             */
+            var instrument_count = 9;
+            var sampled_events = new Array();
+            var playlist = new Map();
+            var rendering_frame_rate = 25;
+            var frame_translation_count = 0;
+            var midi_key_begin = 36;
+            var midi_key_range = 60;
+            var maximum_voices = 8;
+            var event_velocity_threshold = 100;
+            var midi_key_end = midi_key_begin + midi_key_range;
+            var sample_count = 0;
+            var root_progression = 0;
+            var on_events = new Array();
+            var off_events = new Array();
+            var playing_events = new Map();
+            var event_tag = 0;
+            var root_progressions = [2, 3, -4, 5, -1, 3];
+
+            async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
+                if (csound == null) {
+                    return;
+                }
+                if (!csound.is_playing) {
+                    return;
+                }
+                let x = 0;
+                // y is zero at the bottom of the canvas.
+                let y = 0;
+                let width = canvas.width;
+                let height = 1;
+                let format = gl.RGBA;
+                let type = gl.UNSIGNED_BYTE;
+                readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
+                // Translate the sample format from byte RGBA to float HSV.
+                let hsv_image_sample = [];
+                for (let byte_i = 0; byte_i < image_sample_buffer.length; byte_i = byte_i + 4) {
+                    let rgb = image_sample_buffer.slice(byte_i, byte_i + 3);
+                    let hsv = rgb_to_hsv(rgb);
+                    hsv_image_sample.push([hsv_image_sample.length + 1, hsv[2], hsv]);
+                }
+                // Downsample the HSV samples.
+                let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
+                sampled_events.length = 0;
+                on_events.length = 0;
+                off_events.length = 0;
+                score.clear();
+                // Translate the HSV samples to Csound event vectors.
+                // 0 is p1 insno (hsv[0](, tagged by downsampled pixel, 
+                //   positive for on or negative for off.
+                // 1 is p2 time always 0.
+                // 2 is p3 duration (either hsv[1] or -1, must be 0 for off
+                //   events).
+                // 3 is p4 MIDI key (downsampled pixel).
+                // 4 is p5 MIDI velocity (hsv[2]).
+                for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
+                    let hsv = downsampled_pixels[downsampled_pixel_i][2];
+                    let instrument_number = 1 + (hsv[0] * instrument_count);
+                    // The instrument number must have a unique fractional tag.
+                    let time = 0;
+                    let duration = 2 + (hsv[1] * 20);
+                    let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
+                    let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
+                    instrument_number = parseFloat(insno);
+                    let midi_velocity = hsv[2] * 128;
+                    let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
+                    sampled_events.push(event_for_pixel);
+                }
+                // Events that are playing but not loud enough, are turned off.
+                for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                    let sampled_event = sampled_events[sampled_event_i];
+                    let key = sampled_event[0];
+                    if ((sampled_event[4] < event_velocity_threshold) && (playing_events.has(key) == true)) {
+                        let off_event = playing_events.get(key);
+                        let instrument_number = off_event[0];
+                        csound.KillInstance(instrument_number, "", 4, true);
+                        //console.info("Turned off instrument number: " + instrument_number + ".");
+                        playing_events.delete(key);
+                    }
+                }
+                // Events that are loud enough but not playing, are turned on.
+                for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                    let sampled_event = sampled_events[sampled_event_i];
+                    let key = sampled_event[0];
+                    if ((sampled_event[4] >= event_velocity_threshold) && (playing_events.has(key) == false)) {
+                        playing_events.set(key, sampled_event);
+                        on_events.push(sampled_event);
+                    }
+                }
+                CsoundAC.setCorrectNegativeDurations(false);
+                // Limit number of on events, play N loudest only. Could also pick at random.
+                on_events.sort(function(a, b) {
+                    if (a[5] < b[5]) {
+                        return 1;
+                    }
+                    if (b[5] < a[5]) {
+                        return -1;
+                    }
+                    return 0;
+                });
+                let voices = Math.min(on_events.length, maximum_voices);
+                for (let i = 0; i < voices; i++) {
+                    let on_event = on_events[i];
+                    let time = 0;
+                    let duration = on_event[2];
+                    let status = 144;
+                    let instrument_number = on_event[0];
+                    let key = on_event[3];
+                    let velocity = on_event[4];
+                    let phase = 0;
+                    let pan = 0;
+                    let depth = 0;
+                    let height = 0;
+                    let pitches = 4095;
+                    score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
+                }
+                if (score.size() > 0) {
+                    if (sample_count % 4 == 0) {
+                        if (sample_count % 24 == 0) {
+                            let scales = scale.modulations(chord);
+                            if (scales.size() > 1) {
+                                scale = scales.get(Math.floor(Math.random()*scales.size()));           
+                                csound_message_callback(sprintf("\n%s\n\n", scale.name()));           
+                            }     
+                        }                            
+                        let root_progression = root_progressions[Math.floor(Math.random()*root_progressions.length)];             
+                        csound_message_callback(sprintf("\n%s\n\n", chord.eOP().name()));
+                        chord = scale.transpose_degrees(chord, root_progression, 3)
+                    }
+                    CsoundAC.apply(score, chord, 0, 1000000, true);
+                    let score_text = score.getCsoundScore(12., true);
+                    csound.ReadScore(score_text);
+                    // console.info(score_text);
+                }
+                sample_count++;
+            }
+
+            /** 
+             * As the last step in rendering the scene, this function reads 
+             * one row of the canvas (the sample) into an array of pixels, 
+             * then translates that row into a set of Csound events, the 
+             * mapping determined by a separate function. An attempt is made 
+             * to avoid stalling the WebGL rendering pipeline by reading the 
+             * pixels from the canvas only when a memory fence around 
+             * the GPU pipeline becomes passable.
+             */
+            async function sample_canvas(current_rendering_frame) {
+                //console.info("frame_sample_to_score.");
+                await translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
+            }
+            
+            function render_scene(milliseconds) {
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-                gl.uniform1f(shader_program.iTime, delta_milliseconds / 1000.0);
+                let tyme = milliseconds / 1000;
+                gl.uniform1f(shader_program.iTime, tyme);
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
+                //console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
+                if ((rendering_frame % rendering_frame_rate) === 0) {
+                    //sample_canvas(rendering_frame);
+                }
+                rendering_frame++;
                 requestAnimationFrame(render_scene);
             }  
             create_scene();
         })();    
-    
+            
     </script>
+    
     <script>
+        var CsoundAC = null;
+        var csound = null;
+        var score = null;
+        var scale = null;
+        var chord = null;
         var message_callback_buffer = "";
+        var console_editor = ace.edit("console_view");
+        //console_editor.setTheme("ace/theme/gob");
+        console_editor.setReadOnly(true);
+        console_editor.renderer.setOption("showGutter", false);
+        console_editor.renderer.setOption("showLineNumbers", true);
         var csound_message_callback = function(message) {
             // Split in case the newline is in the middle of the message but 
             // not at the end?
             message_callback_buffer = message_callback_buffer + message;
             if (message_callback_buffer.endsWith("\n")) {
                 console.log(message_callback_buffer);
+                let lines = console_editor.getSession().getLength();
+                // Prevent the console editor from hogging memory.
+                if (lines > 5000) {
+                    console_editor.getSession().removeFullLines(0, 2500);
+                    lines = console_editor.getSession().getLength();
+                }
+                console_editor.moveCursorTo(lines, 0);
+                console_editor.scrollToLine(lines);
+                console_editor.insert(message_callback_buffer);      
                 message_callback_buffer = "";
             }
         };
-        var CsoundAC;
-        var csound = null;
+
         (async function() { 
             CsoundAC = await createCsoundAC(); 
+            score = new CsoundAC.Score();
+            scale = new CsoundAC.Scale("F major");
+            chord = scale.chord(1, 5, 3);
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
             var txt = "Browser CodeName: " + navigator.appCodeName + "\n";
             txt += "Browser Name: " + navigator.appName + "\n";
@@ -715,14 +1119,16 @@ e
             txt += "User-agent header: " + navigator.userAgent + "\n";
             csound_message_callback(txt);
             csound_message_callback(CsoundAC.chord_space_version() + "\n");
-            let CM = CsoundAC.chordForName("C+");
+            let CM = CsoundAC.chordForName("CM");
             CM = CM.T(-4.);
             csound_message_callback(CM.information());
             csound_message_callback(CM.information_debug(-1));
         }());
             
         window.onload = function() {
+            $("#settings_view").css("display", "none");         
             $("#about_view").css("display", "none");         
+            $("#console_view").css("display", "none");      
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
                 if (csound == null) {
@@ -732,27 +1138,31 @@ e
                         var audioContext = new AudioContext();
                         await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function() {
                             csound_message_callback("Creating CsoundAudioNode...\n");
-                            csound_audio_node = new CsoundAudioNode(audioContext, csound_message_callback);
+                            csound = new CsoundAudioNode(audioContext, csound_message_callback);
                             csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
-                            csound = csound_audio_node;
                             console.log("csound: " + csound);
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });
+                        csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
                     } catch (e) {
                         csound_message_callback(e + '\n');
                     }
                 }
                 if (csound.is_playing == false) {
                     let csd = await document.getElementById('csd').value;
+                    console_editor.setValue("");
                     let result = await csound.CompileCsdText(csd);
                     csound_message_callback("CompileCsdText returned: " + result);
                     await csound.Start();
+                    $('#restore').trigger('click');
                     await csound.Perform();
                     analyser = new AnalyserNode(audioContext);
                     analyser.fftSize = 2048;
                     console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
                     csound.connect(analyser);
+                    //analyser.connect(audioContext.destination);
+                    scale = new CsoundAC.Scale("F major");
                     csound_message_callback("Csound is playing...\n");
                 } else {
                     await csound.Stop();
@@ -774,22 +1184,65 @@ e
             });
             $("#menu_item_settings").click(function(event) {
                 console.log("menu_item_settings click...");
+                $("#about_view").hide();            
+                $("#console_view").hide();            
+                if ($("#settings_view").is(":visible")){
+                    $("#settings_view").hide();            
+                } else {
+                    $("#settings_view").show();        
+                }
             });
-            $("#menu_item_code").click(function(event) {
-                console.log("menu_item_code click...");
-             });
-            $("#menu_item_notifications").click(function(event) {
-                console.log("menu_item_notifications click...");
+            $("#menu_item_console").click(function(event) {
+                console.log("menu_item_console click...");
+                $("#settings_view").hide();            
+                $("#about_view").hide();            
+                let v = document.getElementById("console_view");
+                if ($("#console_view").is(":visible")){
+                    $("#console_view").hide();          
+                } else {
+                    $("#console_view").show();    
+                    // Needed to make visible in place.
+                    console_editor.resize(true);
+                }
             });
             $("#menu_item_about").click(function(event) {
                 console.log("menu_item_about click...");
-                $("#about_view").toggle();            
-            });
+                $("#settings_view").hide();            
+                $("#console_view").hide();            
+                if ($("#about_view").is(":visible")){
+                    $("#about_view").hide();            
+                } else {
+                    $("#about_view").show();            
+                }
+             });
             $(document).keydown(function(event) {
                 console.log("document keydown...");
                 if (event.keyCode === 'F11') {
                     $("#menu_item_fullscreen").trigger("click");
                 }
+            });
+            $('input').on('input', async function(event) {
+                var slider_value = parseFloat(event.target.value);
+                if (csound) {
+                    csound.SetControlChannel(event.target.id, slider_value);
+                }
+                var output_selector = '#' + event.target.id + '_output';
+                $(output_selector).val(slider_value);
+            });
+            $('#save').on('click', function() {
+                $('.persistent-element').each(function() {
+                    localStorage.setItem(this.id, this.value);
+                });
+            });
+            $('#restore').on('click', async function() {
+                $('.persistent-element').each(function() {
+                    this.value = localStorage.getItem(this.id);
+                    if (csound) {
+                        csound.SetControlChannel(this.id, parseFloat(this.value));
+                    }
+                    var output_selector = '#' + this.id + '_output';
+                    $(output_selector).val(this.value);
+                });
             });
         };
     </script>
