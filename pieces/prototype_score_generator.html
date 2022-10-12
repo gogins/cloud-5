@@ -34,16 +34,16 @@
     ------------------------------------------------------------------------->
     <div class="w3-bar w3-text-yellow" style="position:fixed;background:transparent;">    
         <ul class = "menu">
-            <li id="menu_item_play" class="w3-btn">Play/stop</li>
-            <li id="menu_item_fullscreen" class="w3-btn">Full screen</li>
-            <li id="menu_item_settings" class="w3-btn">Settings</li>
-            <li id="menu_item_console" class="w3-btn">Console</li>
-            <li id="menu_item_about" class="w3-btn">About</li>
+            <li id="menu_item_play" class="w3-btn w3-hover-text-lime">Play/stop</li>
+            <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-lime">Full screen</li>
+            <li id="menu_item_settings" class="w3-btn w3-hover-text-lime">Settings</li>
+            <li id="menu_item_console" class="w3-btn w3-hover-text-lime">Console</li>
+            <li id="menu_item_about" class="w3-btn w3-hover-text-lime">About</li>
         </ul>
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
-    <div id="settings_view" class="w3-container" style="position:absolute;top:70px;z-index:2;background:transparent;color:rgb(255, 255, 200, 67%);">
+    <div id="settings_view" class="w3-container w3-text-yellow" style="position:absolute;top:70px;z-index:2;background:transparent;">
     <h1>Settings</h1>
     <form id='persist'>
     <table>
@@ -88,9 +88,9 @@
     <input type="button" id='restore' value="Restore" />
     </form>   
     </div>
-    <div id='console_view' style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color:rgba(255, 255, 200, 100%);margin-left:10px;">
+    <div id='console_view' class = "w3-text-yellow" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:15px;">
     </div>
-    <div id="about_view" class="w3-container" style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
+    <div id="about_view" class="w3-container w3-text-yellow" style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
 <h1>Prototype Score Generator</h1>
 <h3>Michael Gogins<br>
 September 2022</h3>
@@ -172,8 +172,8 @@ connect "Harpsichord", "outleft", "ReverbSC", "inleft"
 connect "Harpsichord", "outright", "ReverbSC", "inright"
 connect "YiString", "outleft", "ReverbSC", "inleft"
 connect "YiString", "outright", "ReverbSC", "inright"
-connect "Kung3", "outleft", "ReverbSC", "inleft"
-connect "Kung3", "outright", "ReverbSC", "inright"
+connect "Kung4", "outleft", "ReverbSC", "inleft"
+connect "Kung4", "outright", "ReverbSC", "inright"
 connect "Plucked", "outleft", "ReverbSC", "inleft"
 connect "Plucked", "outright", "ReverbSC", "inright"
 connect "Kung2", "outleft", "ReverbSC", "inleft"
@@ -273,108 +273,6 @@ outleta "outright", a_out_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-gi_Kung3_detune_cents chnexport "gk_Kung3_detune_cents", 3
-gi_Kung3_detune_cents init 8
-gk_Kung3_level chnexport "gk_Kung3_level", 3
-gk_Kung3_level init -6
-gk_Kung3_midi_dynamic_range chnexport "gk_Kung3_midi_dynamic_range", 3
-gk_Kung3_midi_dynamic_range init 30
-gk_Kung3_space_left_to_right chnexport "gk_Kung3_space_left_to_right", 3
-gk_Kung3_space_left_to_right init .5
-gi_Kung3_modulation_ratio_start chnexport "gi_Kung3_modulation_ratio_start", 3
-gi_Kung3_modulation_ratio_start init 1.7
-gi_Kung3_modulation_ratio_end chnexport "gi_Kung3_modulation_ratio_end", 3
-gi_Kung3_modulation_ratio_end init .5
-
-gi_Kung3_sine ftgen 0, 0, 65537, 10, 1
-gi_Kung3_cosine ftgen 0, 0, 65537, 11, 1
-gi_Kung3_ln ftgen 0, 9, 65537, -12, 20.0  ;unscaled ln(I(x)) from 0 to 20.0
-
-
-gk_Guitar_midi_dynamic_range chnexport "gk_Guitar_midi_dynamic_range", 3 ; 127
-gk_Guitar_midi_dynamic_range init 30
-gk_Guitar_level chnexport "gk_Guitar_level", 3
-gk_Guitar_level init 20
-gk_Guitar_space_left_to_right chnexport "gk_Guitar_space_left_to_right", 3
-gk_Guitar_space_left_to_right init .5
-
-instr Guitar
-; Michael Gogins
-; Simple emulation of a Spanish guitar.
-; Considerably cleaned up after close listening and systematic testing. 
-; But I think the plain `pluck` opcode is inherently a bit noisy. The 
-; waveform is just jagged at first.
-i_instrument = p1
-i_time = p2
-; Make indefinite notes last no longer than the physical decay.
-i_physical_decay = 20
-if p3 == -1 then
-i_duration = i_physical_decay
-else
-i_duration = p3
-endif
-i_midi_key = p4
-i_midi_dynamic_range = i(gk_Guitar_midi_dynamic_range)
-i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
-if p7 ==0 then
-k_space_left_to_right = gk_Guitar_space_left_to_right
-else
-k_space_left_to_right = p7
-endif
-k_space_bottom_to_top = p8
-i_phase = p9
-i_frequency = cpsmidinn(i_midi_key)
-; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 73
-i_normalization = ampdb(-i_level_correction) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(gk_Guitar_level)
-i_frequency2 = i_frequency
-a_signal pluck 1.0, i_frequency, i_frequency2, 0, 6
-a_top_body reson a_signal, 110, 80
-a_bottom_body reson a_signal, 220, 100
-a_whole_body reson a_signal, 440, 80
-a_signal = (.6 * a_top_body + .8 * a_bottom_body + .6 * a_whole_body + .4 * a_signal) 
-; For testing envelopes with a simple signal that lacks confounding artifacts.
-; a_signal oscils .2, i_frequency2, 0
-
-; As with most software instruments that are modeled on an impulse exciting a 
-; resonator, there should be two envelopes. The "physical" envelope must have a 
-; fixed decay ending at zero.
-i_declick_minimum = .003
-i_attack = .001 / i_frequency + i_declick_minimum
-i_exponent = 7
-a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
-; The de-clicking envelope must have attack and release segments that damp 
-; artifacts in the signal. The duration of these segments depends on 
-; the behavior of the instrument, and may vary as a function of frequency.
-i_declick_attack = i_attack
-i_declick_release = i_declick_minimum * 2
-; The end of the note must be extended _past_ the end of the release segment.
-xtratim 1
-a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
-; The envelope of the instrument is the product of the physical envelope times 
-; the declicking envelope. 
-a_envelope = a_physical_envelope * a_declicking_envelope
-; That envelope is then low-pass filtered to remove most discontinuities.
-a_filtered_envelope tonex a_envelope, 40, 4
-a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
-
-#ifdef USE_SPATIALIZATION
-a_spatial_reverb_send init 0
-a_bsignal[] init 16
-a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
-outletv "outbformat", a_bsignal
-outleta "out", a_spatial_reverb_send
-#else
-a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
-#endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-endin
-
 //////////////////////////////////////////////
 // Original by Steven Yi.
 // Adapted by Michael Gogins.
@@ -390,7 +288,7 @@ gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
 gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
 gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
 
-gk_FMWaterBell_level init 12
+gk_FMWaterBell_level init 0
 gi_FMWaterBell_attack init 0.002
 gi_FMWaterBell_release init 0.01
 gi_FMWaterBell_sustain init 20
@@ -400,6 +298,9 @@ gk_FMWaterBell_crossfade init .5
 gk_FMWaterBell_vibrato_depth init 0.05
 gk_FMWaterBell_vibrato_rate init 6
 gk_FMWaterBell_midi_dynamic_range init 20
+
+gk_FMWaterBell_space_left_to_right chnexport "gk_FMWaterBell_space_left_to_right", 3
+gk_FMWaterBell_space_left_to_right init .5
 
 gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
 
@@ -414,7 +315,11 @@ i_midi_key = p4
 i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
 k_space_front_to_back = p6
+if p7 ==0 then
+k_space_left_to_right = gk_FMWaterBell_space_left_to_right
+else
 k_space_left_to_right = p7
+endif
 k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
@@ -444,20 +349,6 @@ outleta "outright", a_out_right
 #endif
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
-
-gk_Bower_midi_dynamic_range chnexport "gk_Bower_midi_dynamic_range", 3
-gk_Bower_attack chnexport "gk_Bower_attack", 3
-gk_Bower_release chnexport "gk_Bower_release", 3
-gk_Bower_level chnexport "gk_Bower_level", 3
-gk_Bower_pressure chnexport "gk_Bower_pressure", 3
-
-gk_Bower_midi_dynamic_range init 20
-gk_Bower_attack init .125
-gk_Bower_release init .125
-gk_Bower_level init 0
-gk_Bower_pressure init 0.25
-
-gi_Bower_sine ftgen 0,0,65537,10,1
 
 gi_Kung2_detune_cents chnexport "gk_Kung2_detune_cents", 3
 gi_Kung2_detune_cents init 8
@@ -535,6 +426,20 @@ outleta "outleft", a_out_left
 outleta "outright", a_out_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
+
+gk_Bower_midi_dynamic_range chnexport "gk_Bower_midi_dynamic_range", 3
+gk_Bower_attack chnexport "gk_Bower_attack", 3
+gk_Bower_release chnexport "gk_Bower_release", 3
+gk_Bower_level chnexport "gk_Bower_level", 3
+gk_Bower_pressure chnexport "gk_Bower_pressure", 3
+
+gk_Bower_midi_dynamic_range init 20
+gk_Bower_attack init .125
+gk_Bower_release init .125
+gk_Bower_level init 0
+gk_Bower_pressure init 0.25
+
+gi_Bower_sine ftgen 0,0,65537,10,1
 
 instr Bower
 i_instrument = p1
@@ -764,7 +669,7 @@ instr ZakianFlute
 i_instrument = p1
 i_time = p2
 if p3 == -1 then
-i_duration = 200000
+i_duration = 1000
 else
 i_duration = p3
 endif
@@ -962,8 +867,6 @@ a_signal balance afilt, asig
 i_attack = .002
 i_sustain = i_duration
 i_release = 0.01
-xtratim 1
-
 i_declick_attack = i_attack
 i_declick_release = i_declick_attack * 2
 ; The end of the note must be extended _past_ the end of the release segment.
@@ -988,11 +891,27 @@ outleta "outright", a_out_right
 #endif
 endin
 
+gi_Kung4_detune_cents chnexport "gk_Kung4_detune_cents", 3
+gi_Kung4_detune_cents init 8
+gk_Kung4_level chnexport "gk_Kung4_level", 3
+gk_Kung4_level init 0
+gk_Kung4_midi_dynamic_range chnexport "gk_Kung4_midi_dynamic_range", 3
+gk_Kung4_midi_dynamic_range init 30
+gk_Kung4_space_left_to_right chnexport "gk_Kung4_space_left_to_right", 3
+gk_Kung4_space_left_to_right init .5
+gi_Kung4_modulation_ratio_start chnexport "gi_Kung4_modulation_ratio_start", 3
+gi_Kung4_modulation_ratio_start init 1.7
+gi_Kung4_modulation_ratio_end chnexport "gi_Kung4_modulation_ratio_end", 3
+gi_Kung4_modulation_ratio_end init .5
+
+gi_Kung4_sine ftgen 0, 0, 65537, 10, 1
+gi_Kung4_cosine ftgen 0, 0, 65537, 11, 1
+gi_Kung4_ln ftgen 0, 9, 65537, -12, 20.0  ;unscaled ln(I(x)) from 0 to 20.0
 /**
  * This is yet another attempt to adapt this beautiful sound for use in 
  * wider contexts.
  */
-instr Kung3
+instr Kung4
 i_instrument = p1
 i_time = p2
 ; Make indefinite notes last no longer than the physical decay.
@@ -1002,12 +921,13 @@ i_duration = i_instrument_duration
 else
 i_duration = p3
 endif
+print i_duration
 i_midi_key = p4
-i_midi_dynamic_range = i(gk_Kung3_midi_dynamic_range)
+i_midi_dynamic_range = i(gk_Kung4_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
 k_space_front_to_back = p6
 if p7 ==0 then
-k_space_left_to_right = gk_Kung3_space_left_to_right
+k_space_left_to_right = gk_Kung4_space_left_to_right
 else
 k_space_left_to_right = p7
 endif
@@ -1015,37 +935,50 @@ k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
 ; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 120
+i_level_correction = 130 + 8 + 6
 i_normalization = ampdb(-i_level_correction) / 2
 i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(gk_Kung3_level)
-ishift = gi_Kung3_detune_cents/12000
+k_gain = ampdb(gk_Kung4_level)
+ishift = gi_Kung4_detune_cents/12000
 ipch = cpsmidinn(i_midi_key)
 ioct = octmidinn(i_midi_key)
-kvib poscil 1/120, ipch/50, gi_Kung3_sine
-aadsr linseg 0, i_duration/3, 1.0, i_duration/3, 1.0, i_duration/3, 0 ;ADSR envelope
-amodi linseg 0, i_duration/3, 5, i_duration/3, 3, i_duration/3, 0 ;ADSR envelope for I
-amodr linseg gi_Kung3_modulation_ratio_start, i_duration, gi_Kung3_modulation_ratio_end ;r moves from p6->p7 in p3 sec.
+kvib poscil 1/120, ipch/50, gi_Kung4_sine
+; The instrument envelope should observe limits.
+if (i_duration > 10) then
+i_instrument_attack = 10 / 3
+elseif (i_duration < 1) then
+i_instrument_attack = 1 / 3
+else
+i_instrument_attack = i_duration / 3
+endif
+print i_instrument_attack
+;i_instrument_duration -= (2 * i_instrument_attack)
+aadsr linsegr 0, i_instrument_attack, 1.0, i_duration, 1.0, i_instrument_attack, 0 ;ADSR envelope
+amodi linseg 0, i_instrument_attack, 5, i_duration, 3, i_instrument_attack, 0 ;ADSR envelope for I
+amodr linseg gi_Kung4_modulation_ratio_start, i_duration, gi_Kung4_modulation_ratio_end ;r moves from p6->p7 in p3 sec.
 a1 = amodi*(amodr-1/amodr)/2
 a1ndx = abs(a1*2/20) ;a1*2 is normalized from 0-1.
 a2 = amodi*(amodr+1/amodr)/2
-a3 tablei a1ndx, gi_Kung3_ln, 1 ;lookup tbl in f3, normal index
-ao1 poscil a1, ipch, gi_Kung3_cosine ;cosine
+a3 tablei a1ndx, gi_Kung4_ln, 1 ;lookup tbl in f3, normal index
+ao1 poscil a1, ipch, gi_Kung4_cosine ;cosine
 a4 = exp(-0.5*a3+ao1)
-ao2 poscil a2*ipch, ipch, gi_Kung3_cosine ;cosine
-a_out_left poscil 1000*aadsr*a4, ao2+cpsoct(ioct+ishift), gi_Kung3_sine ;fnl outleft
-a_out_right poscil 1000*aadsr*a4, ao2+cpsoct(ioct-ishift), gi_Kung3_sine ;fnl outright
+ao2 poscil a2*ipch, ipch, gi_Kung4_cosine ;cosine
+a_out_left poscil 1000*aadsr*a4, ao2+cpsoct(ioct+ishift), gi_Kung4_sine ;fnl outleft
+a_out_right poscil 1000*aadsr*a4, ao2+cpsoct(ioct-ishift), gi_Kung4_sine ;fnl outright
 i_declick_minimum = .003
 i_attack = .001 / i_frequency + i_declick_minimum
 i_exponent = 7
-a_physical_envelope = aadsr; transeg 0,   i_attack, i_exponent,  1,   i_duration, -i_exponent,  0
+a_physical_envelope = aadsr ;  transeg 0,   i_attack, i_exponent,  1,   i_duration, -i_exponent,  0
 ; The de-clicking envelope must have attack and release segments that damp 
 ; artifacts in the signal. The duration of these segments depends on 
 ; the behavior of the instrument, and may vary as a function of frequency.
 i_declick_attack = i_attack
 i_declick_release = i_declick_minimum * 2
 ; The end of the note must be extended _past_ the end of the release segment.
-xtratim 1
+xtratim 5
+print i_declick_attack
+print i_declick_release
+print i_duration
 a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
 ; The envelope of the instrument is the product of the physical envelope times 
 ; the declicking envelope. 
@@ -1059,7 +992,6 @@ outleta "outleft", a_out_left
 outleta "outright", a_out_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
-
 
 gk_ReverbSC_feedback chnexport "gk_ReverbSC_feedback", 3
 gk_ReverbSC_wet chnexport "gk_ReverbSC_wet", 3
@@ -1599,7 +1531,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var frame_translation_count = 0;
             var midi_key_begin = 36;
             var midi_key_range = 60;
-            var instrument_count = 9;
+            var instrument_count = 7;
             var maximum_voices = 8;
             var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
@@ -1644,7 +1576,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 //   positive for on or negative for off.
                 // 1 is p2 time always 0.
                 // 2 is p3 duration (either hsv[1] or -1, must be 0 for off
-//                   events).
+                //   events).
                 // 3 is p4 MIDI key (downsampled pixel).
                 // 4 is p5 MIDI velocity (hsv[2]).
                 for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
@@ -1652,7 +1584,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let instrument_number = 1 + (hsv[0] * instrument_count);
                     // The instrument number must have a unique fractional tag.
                     let time = 0;
-                    let duration = hsv[1] * 20;
+                    let duration = 2 + (hsv[1] * 20);
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
                     let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
                     instrument_number = parseFloat(insno);
