@@ -1309,7 +1309,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         var shader_program = null;
         var analyser = null;
         // Set up for high-resolution displays.
-        var devicePixelRatio_ = window.devicePixelRatio || 1
+        var devicePixelRatio_ = 1;window.devicePixelRatio || 1
         var canvas = document.getElementById( "display");
         canvas.width = canvas.clientWidth * devicePixelRatio_;
         canvas.height = canvas.clientHeight * devicePixelRatio_;
