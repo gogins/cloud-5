@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Prototype Score Visualizer</title>
+<title>Cloud Music No. 2</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.1/dat.gui.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
@@ -34,17 +34,16 @@
     ------------------------------------------------------------------------->
     <div class="w3-bar " style="position:fixed;background:transparent;">    
         <ul class = "menu">
-            <li id="menu_item_play" class="w3-btn w3-hover-text-lime">Play/stop</li>
-            <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-lime">Full screen</li>
-            <li id="menu_item_settings" class="w3-btn w3-hover-text-lime">Settings</li>
-            <li id="menu_item_console" class="w3-btn w3-hover-text-lime">Log</li>
-            <li id="menu_item_about" class="w3-btn w3-hover-text-lime">About</li>
+            <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
+            <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
+            <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
+            <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
+            <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
         </ul>
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
-    <div id="settings_view" class="w3-container " style="position:absolute;top:70px;z-index:2;background:transparent;">
-    <h1>Settings</h1>
+    <div id="controls_view" class="w3-container " style="position:absolute;top:70px;z-index:2;background:transparent;">
     <form id='persist'>
     <table>
     <col width="2*">
@@ -88,16 +87,29 @@
     <input type="button" id='restore' value="Restore" />
     </form>   
     </div>
-    <div id='console_view' class = "w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:15px;">
+    <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
     <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
-<h1>Prototype Score Visualizer</h1>
+<h1>Cloud Music No. 2</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
-<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><br/>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This is an online piece of electroacoustic music, rendered in your Web browser using high-resolution audio. It will play indefinitely, never ending, always changing. Animated visuals influenced by the music, adapted from <a href="https://www.shadertoy.com/view/ls3Sz4"><b>Neon Music Reaction</b></a> by <a href="https://www.shadertoy.com/user/ciberxtrem">ciberextrem</a>, which has the same license, accompany my music. There are controls you can play with. If you like your settings, save them.
+<p>This is an online piece of electroacoustic music, rendered in your Web 
+browser using high-resolution audio. It will play indefinitely, never ending, 
+always changing. 
+
+<p>This piece is generated as a sort of musical dynamical system operating in 
+chord space. Generated notes are sent to Csound for rendering in real time. 
+The synthesized audio is then sampled to change the whiteness of the lines in 
+the visual scene, as a form of music visualization.
+
+<p>The notes are played by a Csound orchestra that is embedded in this Web 
+page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
+build of Csound</a>. This in turn includes my 
+<a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
+algorithmic composition.
 
 <ul>
 <li>To view the source code of this piece, use your browser menu to view the page source.
@@ -106,7 +118,7 @@ October 2022</h3>
 
 <p>Feel free to use this piece as a template for creating new pieces of this type, as long as it doesn't sound too much like this one!
 
-<p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a href="https://github.com/gogins/cloud-music/issues">cloud-music issues></a>.
+<p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a href="https://github.com/gogins/cloud-music/issues">cloud-music issues</a>.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -140,9 +152,10 @@ October 2022</h3>
     </div>
 
     <textarea id="csd" cols=80 rows=24 style="display:none;">
+
 <CsoundSynthesizer>
 <CsOptions>
--odac -d -m195
+-+msg_color=0 -m34 -d --sample-accurate -odac 
 </CsOptions>
 <CsInstruments> 
 ; These must all match the host as printed when Csound starts.
@@ -466,10 +479,11 @@ e
 
 </CsScore>
 </CsoundSynthesizer>
+
     </textarea>
     
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-        #line 354
+        #line 472
         precision highp float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -693,10 +707,6 @@ e
             var webgl_buffers = {};
             var mouse_position = [0, 0, 0, 0];
             function create_scene() {
-                console.log("VENDOR: " + gl.getParameter(gl.VENDOR));
-                console.log("RENDERER: " + gl.getParameter(gl.RENDERER));
-                console.log("GL_VERSION: " + gl.getParameter(gl.VERSION));
-                console.log("SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
                 canvas.addEventListener('mousemove', (e) => {
                     mouse_position = [e.clientX, e.clientY];
                 });
@@ -798,7 +808,7 @@ e
              * Converts an RGB color value to HSV. The formula is 
              * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
              * Assumes r, g, and b are in [0, 255] and
-             * returns h, s, and v in [0, 1].
+             * returns h, s, and v are in [0, 1].
              */
             var rgb_to_hsv = function(rgb){
                 r = rgb[0] / 255;
@@ -1011,7 +1021,7 @@ e
                     let key = on_event[3];
                     let velocity = on_event[4];
                     let phase = 0;
-                    let pan = 0;
+                    let pan = .01 + Math.random() * .8;
                     let depth = 0;
                     let height = 0;
                     let pitches = 4095;
@@ -1039,17 +1049,11 @@ e
             }
 
             /** 
-             * As the last step in rendering the scene, this function reads 
-             * one row of the canvas (the sample) into an array of pixels, 
-             * then translates that row into a set of Csound events, the 
-             * mapping determined by a separate function. An attempt is made 
-             * to avoid stalling the WebGL rendering pipeline by reading the 
-             * pixels from the canvas only when a memory fence around 
-             * the GPU pipeline becomes passable.
+             * At each Nth rendering frame, generate more notes.
+             * I.e. the score generator is a sort of dynamical system.
              */
-            async function sample_canvas(current_rendering_frame) {
-                //console.info("frame_sample_to_score.");
-                await translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
+            
+            function generate_score_fragment() {
             }
             
             function render_scene(milliseconds) {
@@ -1063,7 +1067,7 @@ e
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 //console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 if ((rendering_frame % rendering_frame_rate) === 0) {
-                    //sample_canvas(rendering_frame);
+                    generate_score_fragment();
                 }
                 rendering_frame++;
                 requestAnimationFrame(render_scene);
@@ -1083,6 +1087,7 @@ e
         var console_editor = ace.edit("console_view");
         //console_editor.setTheme("ace/theme/gob");
         console_editor.setReadOnly(true);
+        console_editor.setShowPrintMargin(false);
         console_editor.renderer.setOption("showGutter", false);
         console_editor.renderer.setOption("showLineNumbers", true);
         var csound_message_callback = function(message) {
@@ -1104,13 +1109,14 @@ e
             }
         };
 
-        (async function() { 
+        (async function() {
             CsoundAC = await createCsoundAC(); 
             score = new CsoundAC.Score();
             scale = new CsoundAC.Scale("F major");
             chord = scale.chord(1, 5, 3);
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
-            var txt = "Browser CodeName: " + navigator.appCodeName + "\n";
+            var txt = "\n";
+            txt += "Browser CodeName: " + navigator.appCodeName + "\n";
             txt += "Browser Name: " + navigator.appName + "\n";
             txt += "Browser Version: " + navigator.appVersion + "\n";
             txt += "Cookies Enabled: " + navigator.cookieEnabled + "\n";
@@ -1118,6 +1124,10 @@ e
             txt += "Browser Online: " + navigator.onLine + "\n";
             txt += "Platform: " + navigator.platform + "\n";
             txt += "User-agent header: " + navigator.userAgent + "\n";
+            txt += "gl.VENDOR: " + gl.getParameter(gl.VENDOR) + "\n";
+            txt += "gl.RENDERER: " + gl.getParameter(gl.RENDERER) + "\n";
+            txt += "gl.VERSION: " + gl.getParameter(gl.VERSION) + "\n";
+            txt += "gl.SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION) + "\n";
             csound_message_callback(txt);
             csound_message_callback(CsoundAC.chord_space_version() + "\n");
             let CM = CsoundAC.chordForName("CM");
@@ -1127,7 +1137,7 @@ e
         }());
             
         window.onload = function() {
-            $("#settings_view").css("display", "none");         
+            $("#controls_view").css("display", "none");         
             $("#about_view").css("display", "none");         
             $("#console_view").css("display", "none");      
             $("#menu_item_play").click(async function(event) {
@@ -1165,12 +1175,14 @@ e
                     //analyser.connect(audioContext.destination);
                     scale = new CsoundAC.Scale("F major");
                     csound_message_callback("Csound is playing...\n");
+                    $("#menu_item_play").html("Stop");
                 } else {
                     await csound.Stop();
                     await csound.Cleanup();
                     csound.Reset();
                     csound_message_callback("Csound is stopping...\n");
-                }
+                    $("#menu_item_play").html("Play");
+               }
              });
             $("#menu_item_fullscreen").click(function(event) {
                 console.log("menu_item_fullscreen click...");
@@ -1183,19 +1195,19 @@ e
                     display.msRequestFullscreen();
                 }
             });
-            $("#menu_item_settings").click(function(event) {
-                console.log("menu_item_settings click...");
+            $("#menu_item_controls").click(function(event) {
+                console.log("menu_item_controls click...");
                 $("#about_view").hide();            
                 $("#console_view").hide();            
-                if ($("#settings_view").is(":visible")){
-                    $("#settings_view").hide();            
+                if ($("#controls_view").is(":visible")){
+                    $("#controls_view").hide();            
                 } else {
-                    $("#settings_view").show();        
+                    $("#controls_view").show();        
                 }
             });
             $("#menu_item_console").click(function(event) {
                 console.log("menu_item_console click...");
-                $("#settings_view").hide();            
+                $("#controls_view").hide();            
                 $("#about_view").hide();            
                 let v = document.getElementById("console_view");
                 if ($("#console_view").is(":visible")){
@@ -1208,7 +1220,7 @@ e
             });
             $("#menu_item_about").click(function(event) {
                 console.log("menu_item_about click...");
-                $("#settings_view").hide();            
+                $("#controls_view").hide();            
                 $("#console_view").hide();            
                 if ($("#about_view").is(":visible")){
                     $("#about_view").hide();            
