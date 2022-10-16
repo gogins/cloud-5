@@ -1422,10 +1422,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var webgl_buffers = {};
             var mouse_position = [0, 0, 0, 0];
             function create_scene() {
-                console.log("VENDOR: " + gl.getParameter(gl.VENDOR));
-                console.log("RENDERER: " + gl.getParameter(gl.RENDERER));
-                console.log("GL_VERSION: " + gl.getParameter(gl.VERSION));
-                console.log("SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
                 canvas.addEventListener('mousemove', (e) => {
                     mouse_position = [e.clientX, e.clientY];
                 });
@@ -1839,13 +1835,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             }
         };
 
-        (async function() { 
+        (async function() {
             CsoundAC = await createCsoundAC(); 
             score = new CsoundAC.Score();
             scale = new CsoundAC.Scale("F major");
             chord = scale.chord(1, 5, 3);
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
-            var txt = "Browser CodeName: " + navigator.appCodeName + "\n";
+            var txt = "\nBrowser CodeName: " + navigator.appCodeName + "\n";
             txt += "Browser Name: " + navigator.appName + "\n";
             txt += "Browser Version: " + navigator.appVersion + "\n";
             txt += "Cookies Enabled: " + navigator.cookieEnabled + "\n";
@@ -1853,6 +1849,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             txt += "Browser Online: " + navigator.onLine + "\n";
             txt += "Platform: " + navigator.platform + "\n";
             txt += "User-agent header: " + navigator.userAgent + "\n";
+            txt += "VENDOR: " + gl.getParameter(gl.VENDOR) + "\n";
+            txt += "RENDERER: " + gl.getParameter(gl.RENDERER) + "\n";
+            txt += "GL_VERSION: " + gl.getParameter(gl.VERSION) + "\n";
+            txt += "SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION) + "\n";
             csound_message_callback(txt);
             csound_message_callback(CsoundAC.chord_space_version() + "\n");
             let CM = CsoundAC.chordForName("CM");
