@@ -8,11 +8,12 @@ This is real music. But it is not a streaming recording. It is not performed in 
 
 Each piece will play indefinitely. There may or may not be animated visuals along with the music. The listener may or may not be able to customize the piece -- perhaps quite a bit, amounting to a new piece, co-composed with me.
 
-All source code for these pieces is available in the GitHub repository.
+All source code for these pieces is available in my GitHub repository.
 
 The underlying technology is my WebAssembly build of Csound with CsoundAC. Some pieces may use third party libraries.
 
-[Cloud Music No. 1](cloud_music_no_1.html).
-[Cloud Music No. 2](cloud_music_no_2.html).
+- [Cloud Music No. 1](cloud_music_no_1.html).
+
+- [Cloud Music No. 2](cloud_music_no_2.html).
 
 
