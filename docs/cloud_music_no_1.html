@@ -83,8 +83,9 @@
     </tr>
     </table>
     <p>
-    <input type="button" id='save' value="Save" />
-    <input type="button" id='restore' value="Restore" />
+    <input type="button" id='save' value="Save" class="w3-btn w3-hover-text-light-green"/>
+    <input type="button" id='restore' value="Restore" class="w3-btn w3-hover-text-light-green"/>
+    <input type="button" id='default' value="Default" class="w3-btn w3-hover-text-light-green"/>
     </form>   
     </div>
     <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
@@ -1976,6 +1977,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             $('#restore').on('click', async function() {
                 $('.persistent-element').each(function() {
                     this.value = localStorage.getItem(this.id);
+                    if (csound) {
+                        csound.SetControlChannel(this.id, parseFloat(this.value));
+                    }
+                    var output_selector = '#' + this.id + '_output';
+                    $(output_selector).val(this.value);
+                });
+            });
+            $('#default').on('click', function() {
+                $('.persistent-element').each(function() {
+                   this.value = this.defaultValue;
                     if (csound) {
                         csound.SetControlChannel(this.id, parseFloat(this.value));
                     }
