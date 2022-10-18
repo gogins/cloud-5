@@ -1054,6 +1054,7 @@ e
              * I.e. the score generator is a sort of dynamical system.
              */
             var strange_attractor_initialized = false;
+            var pitv = null;
             function generate_score_fragment() {
                 if (strange_attractor != null) {
                     if (strange_attractor_initialized == false) {
@@ -1064,13 +1065,9 @@ e
                             let code = strange_attractor.getCode();
                             console.log("StrangeAttractor code: " + code);
                         };
-                        //strange_attractor.reinitialize();
+                        pitv = new CsoundAC.PITV();
+                        pitv.initialize(4, 60, 1, true);
                         strange_attractor_initialized = true;
-                        // The following lines work, which proves that my 
-                        // iteration code below is wrong somehow.
-                        //~ strange_attractor.generateLocally();
-                        //~ let score = strange_attractor.getScore();
-                        //~ console.log(score.getCsoundScore(12,false));
                     }
                     strange_attractor.iterate_without_rendering();
                     let n = strange_attractor.getIteration();
@@ -1085,7 +1082,30 @@ e
                     let diagnostic = sprintf("iteration: %9d x: %16.9f y: %16.9f y: %16.9f w: %16.9f", n, x, y, z, w);
                     console.log(diagnostic);
                     diagnostic = sprintf("                     x: %16.9f y: %16.9f y: %16.9f w: %16.9f", xn, yn, zn, wn);
-                    console.log(diagnostic);
+                    //~ TODO:
+                    //~ Translate PITV to notes, merging continuing pitches. The rendering must thus lag by one chord.
+                    let p = Math.floor(xn * pitv.countP);
+                    let i = Math.floor(yn * pitv.countI);
+                    let t = Math.floor(zn * pitv.countT);
+                    let v = Math.floor(wn * pitv.countV);
+                    let chord = pitv.toChord(p, i, t, v, false).get(0);
+                    // should work but does not:
+                    // CsoundAC.toScore(chord, score, 0, true);
+                    for (let voice = 0; voice < chord.voices(); voice++) {
+                        let instrument = voice + 1;
+                        let time = 0;
+                        let duration = 1;
+                        let key = chord.getPitch(voice);
+                        let velocity = 60;
+                        let pan = Math.random();
+                        console.log("key: " + key);
+                        let note = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f\n", instrument, time, duration, key, velocity, 0, pan);
+                        if (csound) {
+                            if (csound.is_playing) {
+                                csound.ReadScore(note);
+                            }
+                        }
+                    }
                 }
             }
             
