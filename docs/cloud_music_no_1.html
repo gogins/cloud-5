@@ -49,6 +49,106 @@
     <col width="2*">
     <col width="5*">
     <col width="100px">
+    
+    <tr>
+    <td>
+    <label for=gk_Composition_tempo>Tempo (animation frames/sample)</label>
+    <td>
+    <input class=persistent-element type=range min=50 max=500 value=0 id=gk_Composition_tempo=.001>
+    <td>
+    <output for=gk_Composition_tempo id=gk_Composition_tempo_output>150</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Composition_density>Density of notes (minimum value)</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=1 value=.7 id=gk_Composition_density=.001>
+    <td>
+    <output for=gk_Composition_tempo id=gk_Composition_density_output>.7</output>
+    </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Guitar_level>Guitar level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_Guitar_level step=.001>
+    <td>
+    <output for=gk_Guitar_level id=gk_Guitar_level_output>0</output>
+    </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Plucked_level>Plucked level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_Plucked_level step=.001>
+    <td>
+    <output for=gk_Plucked_level id=gk_Plucked_level_output>0</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_FMWaterBell_level>FMWaterBell level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_FMWaterBell_level step=.001>
+    <td>
+    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>0</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_YiString_level>YiString level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_YiString_level step=.001>
+    <td>
+    <output for=gk_YiString_level id=gk_YiString_level_output>0</output>
+    </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Harpsichord_level>Harpsichord level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_Harpsichord_level step=.001>
+    <td>
+    <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>0</output>
+    </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_ZakianFlute_level>ZakianFlute level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_ZakianFlute_level step=.001>
+    <td>
+    <output for=gk_ZakianFlute_level id=gk_ZakianFlute_level_output>0</output>
+    </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Kung4_level>Kung4 level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_Kung4_level step=.001>
+    <td>
+    <output for=gk_Kung4_level id=gk_Kung4_level_output>0</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Kung2_level>Kung2 level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_Kung2_level step=.001>
+    <td>
+    <output for=gk_Kung2_level id=gk_Kung2_level_output>0</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
     <tr>
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
@@ -73,6 +173,8 @@
     <td>
     <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
     </tr>
+    
+    <tr style="height:1em;"></tr>    
     <tr>
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
@@ -85,33 +187,49 @@
     <p>
     <input type="button" id='save' value="Save" class="w3-btn w3-hover-text-light-green"/>
     <input type="button" id='restore' value="Restore" class="w3-btn w3-hover-text-light-green"/>
+    <input type="button" id='copy' value="Copy" class="w3-btn w3-hover-text-light-green"/>
+    <input type="button" id='paste' value="Paste" class="w3-btn w3-hover-text-light-green"/>
     <input type="button" id='default' value="Default" class="w3-btn w3-hover-text-light-green"/>
     </form>   
     </div>
     <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
-    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);">
+    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);height:90vw;overflow-y:auto;">
 <h1>Cloud Music No. 1</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This is an online piece of electroacoustic music, rendered in your Web browser using high-resolution audio. It will play indefinitely, never ending, always changing. 
-
-<p>I created this piece by adapting Jarble's <a href="https://www.shadertoy.com/view/Nl3BWn"><i>Fractal mosaic 16</i></a>, which has an open-source license compatible with the license of this piece. The music is generated by sampling the bottom row of pixels from the moving image, downsampling that row into fewer pixels, and translating those pixels into musical notes from left (lowest) to right (highest).
+<p>This is an online piece of electroacoustic music, rendered in your Web 
+browser using high-resolution audio. It will play indefinitely, never ending, 
+always changing. 
 
 <p>The notes are played by a Csound orchestra that is embedded in this Web page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly build of Csound</a>. This in turn includes my 
 <a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for algorithmic composition, used in this piece to generate randomly selected but (I hope) musically sensible chord progressions and modulations that are applied to the generated notes.
+
+<p>The music is generated by sampling the bottom row of pixels from the moving image, downsampling that row into fewer pixels, and translating those pixels into musical notes from left (lowest) to right (highest). Hue is mapped to instrument, saturation is mapped to duration, and value is mapped to loudness,
 
 <ul>
 <li>To view the source code of this piece, use your browser menu to view the page source.
 <li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer tools.
 </ul>
 
-<p>Feel free to use this piece as a template for creating new pieces of this type, as long as it doesn't sound too much like this one!
+<p>Feel free to use this piece as a template for creating new pieces of this type... as long as it doesn't sound too much like this one!
 
 <p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a href="https://github.com/gogins/cloud-music/issues">cloud-music issues</a>.
+
+<h2>Credits</h2>
+
+<p>I created this piece by adapting Jarble's <a href="https://www.shadertoy.com/view/Nl3BWn"><i>Fractal mosaic 16</i></a>, which has an open-source license compatible with the license of this piece. 
+
+<p>My code in CsoundAC for working with chords, scales, and voice-leading implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri Tymoczko's work in music theory</a>.
+
+<p>Code for compiling and controlling shaders is adapted from <a href="https://www.shadertoy.com">ShaderToy.com</a>.
+
+<p>The algorithm for downsampling the video canvas is from <a href="https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf">Sveinn Steinarsson's MS thesis</a> with code from <a href="https://github.com/pingec/downsample-lttb">https://github.com/pingec/downsample-lttb</a>.
+
+<p>Csound instruments are adapted from <a href="https://kunstmusik.com/">Steven Yi</a> (YiString and FMWaterBell), Joseph T. Kung (Kung2 and Kung4), <a href ="http://www.jlpublishing.com/">Lee Zakian</a> (ZakianFlute), and others.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -1626,7 +1744,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              *
              * https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf
              */
-            var instrument_count = 7;
+            var instrument_count = 8;
             var sampled_events = new Array();
             var playlist = new Map();
             var rendering_frame_rate = 25;
@@ -1973,7 +2091,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 $('.persistent-element').each(function() {
                     localStorage.setItem(this.id, this.value);
                 });
-            });
+             });
             $('#restore').on('click', async function() {
                 $('.persistent-element').each(function() {
                     this.value = localStorage.getItem(this.id);
@@ -1984,7 +2102,29 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     $(output_selector).val(this.value);
                 });
             });
-            $('#default').on('click', function() {
+            $('#copy').on('click', function() {
+                let controls_json = JSON.stringify(localStorage);
+                navigator.clipboard.writeText(controls_json);
+                csound_message_callback("Copied controls state to system clipboard.\n");
+            });
+            $('#paste').on('click', async function() {
+                navigator.clipboard.readText().then(function(controls_json) {
+                    let controls_state = JSON.parse(controls_json);
+                    for (let [key, value] of Object.entries(controls_state)) {
+                        console.log(key, value);
+                    }                
+                    $('.persistent-element').each(function() {
+                        this.value = localStorage.getItem(this.id);
+                        if (csound) {
+                            csound.SetControlChannel(this.id, parseFloat(this.value));
+                        }
+                        var output_selector = '#' + this.id + '_output';
+                        $(output_selector).val(this.value);
+                    });
+                    csound_message_callback("Pasted controls state from system clipboard.\n");
+                });
+            });
+           $('#default').on('click', function() {
                 $('.persistent-element').each(function() {
                    this.value = this.defaultValue;
                     if (csound) {
