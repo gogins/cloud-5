@@ -52,6 +52,24 @@
     <col width="100px">
     <tr>
     <td>
+    <label for=gi_3_modr_start>Starting modulator ratio</label>
+    <td>
+    <input class=persistent-element type=range min=.2 max=2 value=1 id=gi_3_modr_start step=.001>
+    <td>
+    <output for=gi_3_modr_start id=gi_3_modr_start_output>1</output>
+    </tr>
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gi_3_modr_end>Ending modulator ratio</label>
+    <td>
+    <input class=persistent-element type=range min=.2 max=2 value=1 id=gi_3_modr_end step=.001>
+    <td>
+    <output for=gi_3_modr_end id=gi_3_modr_end_output>1</output>
+    </tr>
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
     <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_ReverbSC_feedback step=.001>
@@ -134,7 +152,7 @@ algorithmic composition.
 
 <p>The algorithm for downsampling the video canvas is from <a href="https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf">Sveinn Steinarsson's MS thesis</a> with code from <a href="https://github.com/pingec/downsample-lttb">https://github.com/pingec/downsample-lttb</a>.
 
-<p>Csound instruments are directly copied with minor alterations from <a href="https://github.com/csound/examples/blob/master/csd/xanadu-high-resolution.csd"> Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a> (Kung2 and Kung4).
+<p>Csound instruments are directly copied with minor alterations from <a href="https://github.com/csound/examples/blob/master/csd/xanadu-high-resolution.csd"> Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -193,7 +211,7 @@ ga_instruments_right_out init 0
 ishift      =           .00666667               ;shift it 8/1200.
 ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
-kvib        poscil      1/120, ipch/50, 1      ;vibrato
+kvib        poscil3     1/120, ipch/50, 1      ;vibrato
 ag          pluck       2000, cpsoct(ioct+kvib), 1000, 1, 1
 agleft      pluck       2000, cpsoct(ioct+ishift), 1000, 1, 1
 agright     pluck       2000, cpsoct(ioct-ishift), 1000, 1, 1
@@ -225,30 +243,7 @@ prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p
 ishift      =           .00666667               ;shift it 8/1200.
 ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
-kvib        poscil      1/120, ipch/50, 1       ;vibrato
-ag          pluck       1000, cpsoct(ioct+kvib), 1000, 1, 1
-agleft      pluck       1000, cpsoct(ioct+ishift), 1000, 1, 1
-agright     pluck       1000, cpsoct(ioct-ishift), 1000, 1, 1
-adamping    linsegr     0.0, 0.006, 1.0, p3 - 0.066, 1.0, 0.06, 0.0
-ag          =           adamping * ag
-agleft      =           adamping * agleft
-agright     =           adamping * agright
-adump       delayr      0.3                     ;set delay line of 0.3 sec
-ad1         deltap3     0.1                     ;delay 100 msec.
-ad2         deltap3     0.2                     ;delay 200 msec.
-            delayw      ag                      ;put ag sign into del line.
-a_left      =           agleft+ad1
-a_right     =           agright+ad2
-            ga_instruments_left_out += a_left
-            ga_instruments_right_out += a_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-            endin
-            instr 12
-            ;;;setksmps    1
-ishift      =           .00666667               ;shift it 8/1200.
-ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
-ioct        =           octpch(p5)              ;convert parameter 5 to oct.
-kvib        poscil      1/120, ipch/50, 1       ;vibrato
+kvib        poscil3     1/120, ipch/50, 1       ;vibrato
 ag          pluck       1000, cpsoct(ioct+kvib), 1000, 1, 1
 agleft      pluck       1000, cpsoct(ioct+ishift), 1000, 1, 1
 agright     pluck       1000, cpsoct(ioct-ishift), 1000, 1, 1
@@ -271,6 +266,11 @@ prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p
 ;Instrument 3 : New FM algorithm, modified to produce large timbre
 ;               shifts using modulation of I and r. Detuned chorusing employed.
 ;-----------------------------------------------------------
+gi_3_modr_start chnexport "gi_3_modr_start", 3
+gi_3_modr_start init 1
+gi_3_modr_end chnexport "gi_3_modr_end", 3
+gi_3_modr_end init 1
+
             instr 3
             ;;;setksmps    1
 ishift      =           .00666667               ;shift it 8/1200.
@@ -278,37 +278,16 @@ ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
 aadsr       linsegr     0, p3/3, 1.0, p3/3, 1.0, p3/3, 0 ;ADSR envelope
 amodi       linseg      0, p3/3, 5, p3/3, 3, p3/3, 0 ;ADSR envelope for I
-amodr       linseg      p6, p3, p7              ;r moves from p6->p7 in p3 sec.
+amodr       linseg      gi_3_modr_start, p3, gi_3_modr_end              ;r moves from p6->p7 in p3 sec.
 a1          =           amodi*(amodr-1/amodr)/2
 a1ndx       =           abs(a1*2/20)            ;a1*2 is normalized from 0-1.
 a2          =           amodi*(amodr+1/amodr)/2
 a3          tablei      a1ndx, 3, 1             ;lookup tbl in f3, normal index
-ao1         poscil      a1, ipch, 2             ;cosine
+ao1         poscil3     a1, ipch, 2             ;cosine
 a4          =           exp(-0.5*a3+ao1)
-ao2         poscil      a2*ipch, ipch, 2        ;cosine
-a_left      poscil      1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
-a_right     poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
-            ga_instruments_left_out += a_left 
-            ga_instruments_right_out += a_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-            endin
-            instr 13
-            ;;;setksmps    1
-ishift      =           .00666667               ;shift it 8/1200.
-ipch        =           cpsmidinn(p5)              ;convert parameter 5 to cps.
-ioct        =           octmidinn(p5)              ;convert parameter 5 to oct.
-aadsr       linsegr     0, p3/3, 1.0, p3/3, 1.0, p3/3, 0 ;ADSR envelope
-amodi       linseg      0, p3/3, 5, p3/3, 3, p3/3, 0 ;ADSR envelope for I
-amodr       linseg      p6, p3, p7              ;r moves from p6->p7 in p3 sec.
-a1          =           amodi*(amodr-1/amodr)/2
-a1ndx       =           abs(a1*2/20)            ;a1*2 is normalized from 0-1.
-a2          =           amodi*(amodr+1/amodr)/2
-a3          tablei      a1ndx, 3, 1             ;lookup tbl in f3, normal index
-ao1         poscil      a1, ipch, 2             ;cosine
-a4          =           exp(-0.5*a3+ao1)
-ao2         poscil      a2*ipch, ipch, 2        ;cosine
-a_left      poscil      1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
-a_right     poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
+ao2         poscil3     a2*ipch, ipch, 2        ;cosine
+a_left      poscil3     1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
+a_right     poscil3     1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
             ga_instruments_left_out += a_left 
             ga_instruments_right_out += a_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
@@ -366,132 +345,6 @@ t 0 10
 f1 0 65537  10 1      ;sine wave
 f2 0 65537  11 1      ;cosine wave
 f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
-
-//~ ;-----------------------------------------------------------
-
-//~ ;----- This section comprises all the new FM sounds -----------
-
-//~ ;F#7addB chord on a guitar
-//~ i3 0 15 0 4.06 2.0 0.2  ;F#
-//~ i3 0 15 0 4.06 2.0 0.2  ;F#
-//~ i3 0 15 0 5.06 2.0 0.2  ;F#
-//~ i3 . . . 8.01 . .   ;C# above
-//~ i3 . . . 8.06 . .   ;F# octave above 1st one
-//~ i3 . . . 8.10 . .   ;Bb next one up
-//~ i3 . . . 8.11 . .   ;B
-//~ i3 . . . 9.04 . .   ;E
-
-//~ ;D6add9 chord on a guitar
-//~ i3 7.5 15 0 5.02 1.7 0.5    ;D
-//~ i3 7.5 15 0 5.02 1.7 0.5    ;D
-//~ i3 . . . 6.09 . .   ;A above
-//~ i3 . . . 7.02 . .   ;D octave above 1st one
-//~ i3 . . . 7.06 . .   ;F# next one up
-//~ i3 . . . 6.11 . .   ;B
-//~ i3 . . . 7.04 . .   ;E
-
-//~ ;Bmajadd11 chord on a guitar
-//~ i3 15 15 0 6.11 1.4 0.8 ;B
-//~ i3 . . . 8.06 . .   ;F# above
-//~ i3 . . . 8.11 . .   ;B octave above 1st one
-//~ i3 . . . 9.03 . .   ;D# next one up
-//~ i3 . . . 8.11 . .   ;B
-//~ i3 . . . 9.04 . .   ;E;
-
-//~ ;Amajadd9 chord on a guitar
-//~ i3 22.5 15 0 5.09 1.1 1.1   ;A
-//~ i3 22.5 15 0 5.09 1.1 1.1   ;A
-//~ i3 . . . 7.04 . .   ;E above
-//~ i3 . . . 8.09 . .   ;A octave above 1st one
-//~ i3 . . . 8.01 . .   ;C# next one up
-//~ i3 . . . 7.11 . .   ;B
-//~ i3 . . . 8.04 . .   ;E
-
-//~ ;Bmajadd11 chord on a guitar
-//~ i3 30 15 0 5.11 0.8 1.4 ;B
-//~ i3 . . . 7.06 . .   ;F# above
-//~ i3 . . . 7.11 . .   ;B octave above 1st one
-//~ i3 . . . 8.03 . .   ;D# next one up
-//~ i3 . . . 7.11 . .   ;B
-//~ i3 . . . 8.04 . .   ;E;
-
-//~ ;Gmaj6 chord on a guitar
-//~ i3 37.5 15 0 5.07 0.5 1.7   ;G
-//~ i3 . . . 6.02 . .   ;D above
-//~ i3 . . . 6.07 . .   ;G octave above 1st one
-//~ i3 . . . 6.11 . .   ;B on G string
-//~ i3 . . . 6.11 . .   ;B
-//~ i3 . . . 7.04 . .   ;E
-
-//~ ;F#7addB chord on a guitar
-//~ i3 45 15 0 6.06 0.2 2.0 ;F#
-//~ i3 . . . 8.01 . .   ;C# above
-//~ i3 . . . 8.06 . .   ;F# octave above 1st one
-//~ i3 . . . 8.10 . .   ;Bb next one up
-//~ i3 . . . 8.11 . .   ;B
-//~ i3 . . . 9.04 . .   ;E
-
-//~ ; This section adds the plucked chords to the beginning of each
-//~ ; section.
-
-//~ ;F#7addB chord on a guitar
-//~ i1 0 10 0 8.06  ;F#
-//~ i1 0.1 . . 9.01 ;C# above
-//~ i1 0.2 . . 9.06 ;F# octave above 1st one
-//~ i1 0.3 . . 9.10 ;Bb next one up
-//~ i1 0.4 . . 9.11 ;B
-//~ i1 0.5 . . 10.04    ;E
-
-//~ ;D6add9 chord on a guitar
-//~ i2 7.5 10 0 8.02    ;D
-//~ i2 7.6 . . 8.09     ;A above
-//~ i2 7.7 . . 9.02     ;D octave above 1st one
-//~ i2 7.8 . . 9.06     ;F# next one up
-//~ i2 7.9 . . 9.11     ;B
-//~ i2 8.0 . . 10.04    ;E
-
-//~ ;Bmajadd11 chord on a guitar
-//~ i2 15 10 0 8.11     ;B
-//~ i2 15.1 . . 9.06    ;F# above
-//~ i2 15.2 . . 9.11    ;B octave above 1st one
-//~ i2 15.3 . . 10.03   ;D# next one up
-//~ i2 15.4 . . 9.11    ;B
-//~ i2 15.5 . . 10.04   ;E;
-
-//~ ;Amajadd9 chord on a guitar
-//~ i2 22.5 10 0 8.09   ;A
-//~ i2 22.6 . . 9.04    ;E above
-//~ i2 22.7 . . 10.09   ;A octave above 1st one
-//~ i2 22.8 . . 10.01   ;C# next one up
-//~ i2 22.9 . . 9.11    ;B
-//~ i2 23.0 . . 10.04   ;E
-
-//~ ;Bmajadd11 chord on a guitar
-//~ i2 30 10 0 8.11     ;B
-//~ i2 30.1 . . 9.06    ;F# above
-//~ i2 30.2 . . 9.11    ;B octave above 1st one
-//~ i2 30.3 . . 10.03   ;D# next one up
-//~ i2 30.4 . . 9.11    ;B
-//~ i2 30.5 . . 10.04   ;E;
-
-//~ ;Gmaj6 chord on a guitar
-//~ i2 37.5 10 0 8.07   ;G
-//~ i2 37.6 . . 9.02    ;D above
-//~ i2 37.7 . . 9.07    ;G octave above 1st one
-//~ i2 37.8 . . 9.11    ;B on G string
-//~ i2 37.9 . . 9.11    ;B
-//~ i2 38.0 . . 10.04   ;E
-
-//~ ;F#7addB chord on a guitar
-//~ i1 45 10 0 7.06     ;F#
-//~ i1 45 10 0 7.06     ;F#
-//~ i1 45 10 0 7.06     ;F#
-//~ i1 45.1 . . 10.01   ;C# above
-//~ i1 45.2 . . 10.06   ;F# octave above 1st one
-//~ i1 45.3 . . 10.10   ;Bb next one up
-//~ i1 45.4 . . 10.11   ;B
-//~ i1 45.5 . . 11.04   ;E
-//~ e
 
 </CsScore>
 </CsoundSynthesizer>
@@ -930,10 +783,10 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             var instrument_count = 9;
             var sampled_events = new Array();
             var playlist = new Map();
-            var rendering_frame_rate = 200;
+            var rendering_frame_rate = 400;
             var frame_translation_count = 0;
             var midi_key_begin = 36;
-            var midi_key_range = 60;
+            var midi_key_range = 48;
             var maximum_voices = 8;
             var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
@@ -1081,7 +934,7 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                             console.log("StrangeAttractor code: " + code);
                         };
                         pitv = new CsoundAC.PITV();
-                        pitv.initialize(4, 60, 1, true);
+                        pitv.initialize(4, 48, 1, true);
                         strange_attractor_initialized = true;
                     }
                     strange_attractor.iterate_without_rendering();
@@ -1097,8 +950,6 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     let diagnostic = sprintf("iteration: %9d x: %16.9f y: %16.9f y: %16.9f w: %16.9f", n, x, y, z, w);
                     console.log(diagnostic);
                     diagnostic = sprintf("                     x: %16.9f y: %16.9f y: %16.9f w: %16.9f", xn, yn, zn, wn);
-                    //~ TODO:
-                    //~ Translate PITV to notes, merging continuing pitches. The rendering must thus lag by one chord.
                     let p = Math.floor(xn * pitv.countP);
                     let i = Math.floor(yn * pitv.countI);
                     let t = Math.floor(zn * pitv.countT);
@@ -1118,15 +969,12 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                         let octave_pc = parseFloat(sprintf("%d.%d", octave, pc));
                         let velocity = 60;
                         let pan = Math.random();
-                        console.log("key: " + key);
-                        // The Kung orchestra uses these pfields:
+                         // The Kung orchestra uses these pfields:
                         // p1_1 p2_time p3_duration p4_dummy p5_oct_pc 
                         // p1_2 p2_time p3_duration p4_dummy p5_oct_pc 
-                        // Note: p6 and p7 can each range in [.2, 2].
+                        // Note: p6 and p7 can each range in [.2, 2]. But these are now global variables/channels.
                         // p1_3 p2_time p3_duration p4_dummy p5_oct_pc p6_modr_start p7_modr_end
-                        let modr_start = 1.1;
-                        let modr_end = 1.2;
-                        let note = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f", instrument, time, duration, dummy, octave_pc, modr_start, modr_end);
+                        let note = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f 1 1", instrument, time, duration, dummy, octave_pc);
                         notes.push(note)
                     }
                     let score_fragment = notes.join("\n");
@@ -1168,6 +1016,8 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
         var scale = null;
         var chord = null;
         var message_callback_buffer = "";
+        var gk_modr_start = 1;
+        var gk_modr_end = 1;
         var console_editor = ace.edit("console_view");
         //console_editor.setTheme("ace/theme/gob");
         console_editor.setReadOnly(true);
