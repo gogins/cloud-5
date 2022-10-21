@@ -61,11 +61,11 @@
     
     <tr>
     <td>
-    <label for=gi_Composition_density>Density of notes (minimum value)</label>
+    <label for=gi_Composition_density>Density of notes (minimum MIDI velocity)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.7 id=gi_Composition_density step=.001>
+    <input class=persistent-element type=range min=0 max=127 value=100 id=gi_Composition_density step=.001>
     <td>
-    <output for=gi_Composition_density id=gi_Composition_density_output>.7</output>
+    <output for=gi_Composition_density id=gi_Composition_density_output>100</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -1752,7 +1752,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var midi_key_begin = 36;
             var midi_key_range = 60;
             var maximum_voices = 8;
-            var event_velocity_threshold = 60;
+            var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
             var sample_count = 0;
             var root_progression = 0;
@@ -1812,27 +1812,35 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
                     sampled_events.push(event_for_pixel);
                 }
+                console.log(sprintf("sampled_events.length: %d\n", sampled_events.length));
                 // Events that are playing but not loud enough, are turned off.
                 for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
                     let sampled_event = sampled_events[sampled_event_i];
                     let key = sampled_event[0];
-                    if ((sampled_event[4] < event_velocity_threshold) && (playing_events.has(key) == true)) {
+                    if (playing_events.has(key) == true) {
                         let off_event = playing_events.get(key);
                         let instrument_number = off_event[0];
-                        csound.KillInstance(instrument_number, "", 4, true);
-                        console.info("Turned off instrument number: " + instrument_number + ".");
-                        playing_events.delete(key);
+                        if (threshold > sampled_event[4]) {
+                            csound.KillInstance(instrument_number, "", 4, true);
+                            console.log("Turned off instrument number: " + instrument_number + ".");
+                            playing_events.delete(key);
+                        }
                     }
                 }
+                console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
                 // Events that are loud enough but not playing, are turned on.
                 for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
                     let sampled_event = sampled_events[sampled_event_i];
                     let key = sampled_event[0];
-                    if ((sampled_event[4] >= event_velocity_threshold) && (playing_events.has(key) == false)) {
-                        playing_events.set(key, sampled_event);
-                        on_events.push(sampled_event);
+                    if (playing_events.has(key) == false) {
+                    if (sampled_event[4] >= threshold) {
+                            playing_events.set(key, sampled_event);
+                            on_events.push(sampled_event);
+                        }
                     }
                 }
+                console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
+                console.log(sprintf("on_events.length:      %d\n", on_events.length));
                 CsoundAC.setCorrectNegativeDurations(false);
                 // Limit number of on events, play N loudest only. Could also pick at random.
                 on_events.sort(function(a, b) {
@@ -1853,7 +1861,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let instrument_number = on_event[0];
                     let key = on_event[3];
                     let velocity = on_event[4];
-                    velocity = 60 + 15 * (velocity / 127);
                     let phase = 0;
                     let pan = .01 + Math.random() * .8;
                     let depth = 0;

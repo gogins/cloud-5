@@ -1141,10 +1141,12 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;
                     if (strange_attractor_initialized == false) {
+                        csound_message_callback("Please wait, searching for strange attractor...\n");
                         CsoundAC.Random.seed(30493);
                         strange_attractor.reset();
                         strange_attractor.setDimensionCount(4);
                         strange_attractor.setAttractorType(4);
+                        cs_random.sample();
                         while (true) {
                             let not_found = strange_attractor.searchForAttractor();
                             console.log("code: " + strange_attractor.getCode());
@@ -1152,7 +1154,7 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                                 break;
                             }
                         }
-                        csound_message_callback(sprintf("Found attractor code: %s\n", strange_attractor.getCode()));
+                        csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
                         pitv = new CsoundAC.PITV();
                         pitv.initialize(4, 48, 1, true);
                         strange_attractor_initialized = true;
