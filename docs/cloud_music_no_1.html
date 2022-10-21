@@ -52,20 +52,20 @@
     
     <tr>
     <td>
-    <label for=gk_Composition_tempo>Tempo (animation frames/sample)</label>
+    <label for=gi_Composition_tempo>Tempo (animation frames/beat)</label>
     <td>
-    <input class=persistent-element type=range min=50 max=500 value=0 id=gk_Composition_tempo=.001>
+    <input class=persistent-element type=range min=5 max=200 value=20 id=gi_Composition_tempo step=.001>
     <td>
-    <output for=gk_Composition_tempo id=gk_Composition_tempo_output>150</output>
+    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>20</output>
     </tr>
     
     <tr>
     <td>
-    <label for=gk_Composition_density>Density of notes (minimum value)</label>
+    <label for=gi_Composition_density>Density of notes (minimum value)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.7 id=gk_Composition_density=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.7 id=gi_Composition_density step=.001>
     <td>
-    <output for=gk_Composition_tempo id=gk_Composition_density_output>.7</output>
+    <output for=gi_Composition_density id=gi_Composition_density_output>.7</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -1752,7 +1752,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var midi_key_begin = 36;
             var midi_key_range = 60;
             var maximum_voices = 8;
-            var event_velocity_threshold = 100;
+            var event_velocity_threshold = 60;
             var midi_key_end = midi_key_begin + midi_key_range;
             var sample_count = 0;
             var root_progression = 0;
@@ -1771,7 +1771,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 }
                 let x = 0;
                 // y is zero at the bottom of the canvas.
-                let y = 0;
+                let y = 1;
                 let width = canvas.width;
                 let height = 1;
                 let format = gl.RGBA;
@@ -1803,7 +1803,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let instrument_number = 1 + (hsv[0] * instrument_count);
                     // The instrument number must have a unique fractional tag.
                     let time = 0;
-                    let duration = 2 + (hsv[1] * 20);
+                    let duration = .25 + (score_interval * hsv[1] * 2);
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
                     //instrument_number = 4;
                     let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
@@ -1820,7 +1820,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                         let off_event = playing_events.get(key);
                         let instrument_number = off_event[0];
                         csound.KillInstance(instrument_number, "", 4, true);
-                        //console.info("Turned off instrument number: " + instrument_number + ".");
+                        console.info("Turned off instrument number: " + instrument_number + ".");
                         playing_events.delete(key);
                     }
                 }
@@ -1853,13 +1853,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let instrument_number = on_event[0];
                     let key = on_event[3];
                     let velocity = on_event[4];
+                    velocity = 60 + 15 * (velocity / 127);
                     let phase = 0;
                     let pan = .01 + Math.random() * .8;
                     let depth = 0;
                     let height = 0;
                     let pitches = 4095;
-                    // void Score::add(double time_, double duration, double status, double instrument, double key, double velocity, double phase, double pan, double depth, double height, double pitches) 
-
                     score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
                 }
                 if (score.size() > 0) {
@@ -1895,8 +1894,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              * pixels from the canvas only when a memory fence around 
              * the GPU pipeline becomes passable.
              */
+            var score_interval;
+            var current_time;
+            var prior_time;
             async function sample_canvas(current_rendering_frame) {
-                //console.info("frame_sample_to_score.");
+                 //console.info("frame_sample_to_score.");
+                prior_time = current_time;
+                current_time = performance.now();
+                score_interval = current_time - prior_time;
+                score_interval /= 1000;
+                rendering_frame_rate = Math.floor(parseFloat(document.getElementById("gi_Composition_tempo").value));
+                event_velocity_threshold = parseFloat(document.getElementById("gi_Composition_density").value);
                 await translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
             }
             

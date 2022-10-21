@@ -52,6 +52,15 @@
     <col width="100px">
     <tr>
     <td>
+    <label for=gi_tempo>Tempo (chords/minute)</label>
+    <td>
+    <input class=persistent-element type=range min=.05 max=144 value=4 id=gi_tempo step=.001>
+    <td>
+    <output for=gi_tempo id=gi_tempo_output>4</output>
+    </tr>
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
     <label for=gi_3_modr_start>Starting modulator ratio</label>
     <td>
     <input class=persistent-element type=range min=.2 max=2 value=1 id=gi_3_modr_start step=.001>
@@ -92,6 +101,8 @@
     <td>
     <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
     </tr>
+    <tr style="height:1em;"></tr>    
+    <tr>
     <tr>
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
@@ -124,8 +135,9 @@ always changing.
 
 <p>This piece is generated as a sort of musical dynamical system operating in 
 chord space. Generated notes are sent to Csound for rendering in real time. 
-The synthesized audio is then sampled (using a WebAudio Analyzer) to change the 
-whiteness of the lines in the visual scene, as a form of music visualization.
+The synthesized audio is then sampled (using a WebAudio Analyzer) to change 
+the whiteness of the lines in the visual scene, as a form of music 
+visualization.
 
 <p>The notes are played by a Csound orchestra that is embedded in this Web 
 page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
@@ -134,25 +146,46 @@ build of Csound</a>. This in turn includes my
 algorithmic composition.
 
 <ul>
-<li>To view the source code of this piece, use your browser menu to view the page source.
-<li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer tools.
+<li>To view the source code of this piece, use your browser menu to view the 
+page source.
+<li>To inspect or debug the code of this piece as it runs, use your browser 
+menu to open the developer tools.
 </ul>
 
-<p>Feel free to use this piece as a template for creating new pieces of this type... as long as it doesn't sound too much like this one!
+<p>Feel free to use this piece as a template for creating new pieces of this 
+type... as long as it doesn't sound too much like this one!
 
-<p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a href="https://github.com/gogins/cloud-music/issues">cloud-music issues</a>.
+<p>Please report any problems you have playing this piece, or any ideas for 
+enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
+cloud-music issues</a>.
 
 <h2>Credits</h2>
 
-<p>Notes are generated using the StrangeAttractor class in CsoundAC. The 4-dimensional orbit of a system of 4 coupled ordinary differential equations, using code inspired by Julien C. Sprott's book <a href="https://sprott.physics.wisc.edu/fractals/booktext/SABOOK.PDF"><b><i>Strange Attractors</i></b></a>, is mapped to indices of set-type, inversion, pitch-class transposition, and octavewise revoicing. In short, the chaotic orbit of this system becomes an unceasing flow of chord progressions.
+<p>The StrangeAttractor class in CsoundAC, which computes the 4-dimensional 
+orbit of a system of 4 coupled ordinary differential equations, uses code 
+inspired by Julien C. Sprott's book <a 
+href="https://sprott.physics.wisc.edu/fractals/booktext/SABOOK.PDF"><b><i>
+Strange Attractors</i></b></a>. The state of the system is mapped to indices 
+of set-type, inversion, pitch-class transposition, and octavewise revoicing. 
+In short, the chaotic orbit of this system becomes an unceasing flow of chord p
+rogressions.
 
-<p>My code in CsoundAC for working with chords, scales, and voice-leading implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri Tymoczko's work in music theory</a>.
+<p>My code in CsoundAC for working with chords, scales, and voice-leading 
+implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri 
+Tymoczko's work in music theory</a>.
 
-<p>Code for compiling and controlling shaders is adapted from <a href="https://www.shadertoy.com">ShaderToy.com</a>.
+<p>Code for compiling and controlling shaders is adapted from <a 
+href="https://www.shadertoy.com">ShaderToy.com</a>.
 
-<p>The algorithm for downsampling the video canvas is from <a href="https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf">Sveinn Steinarsson's MS thesis</a> with code from <a href="https://github.com/pingec/downsample-lttb">https://github.com/pingec/downsample-lttb</a>.
+<p>The algorithm for downsampling the video canvas is from <a 
+href="https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf">Sveinn 
+Steinarsson's MS thesis</a> with code from <a 
+href="https://github.com/pingec/downsample-lttb">
+https://github.com/pingec/downsample-lttb</a>.
 
-<p>Csound instruments are directly copied with minor alterations from <a href="https://github.com/csound/examples/blob/master/csd/xanadu-high-resolution.csd"> Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
+<p>Csound instruments are directly copied with minor alterations from <a 
+href="https://github.com/csound/examples/blob/master/csd/xanadu-high-resolution.csd"> 
+Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -201,18 +234,48 @@ nchnls_i    =           1
 ga_instruments_left_out init 0
 ga_instruments_right_out init 0
 
+;-----------------------------------------------------------
+;Instrument 3 : New FM algorithm, modified to produce large timbre
+;               shifts using modulation of I and r. Detuned chorusing employed.
+;-----------------------------------------------------------
+gi_3_modr_start chnexport "gi_3_modr_start", 3
+gi_3_modr_start init 1
+gi_3_modr_end chnexport "gi_3_modr_end", 3
+gi_3_modr_end init 1
+
+            instr Kung3
+ishift      =           4/1200               ;shift it 8/1200.
+ipch        =           cpspch(p5)           ;convert parameter 5 to cps.
+; There seems to be something wrong here. Do it step by step.
+ioct       =           octpch(p5)       ;convert parameter 5 to oct.
+aadsr       linsegr     0, p3/3, 1.0, p3/3, 1.0, p3/3, 0 ;ADSR envelope
+amodi       linseg      0, p3/3, 5, p3/3, 3, p3/3, 0 ;ADSR envelope for I
+amodr       linseg      gi_3_modr_start, p3, gi_3_modr_end              ;r moves from p6->p7 in p3 sec.
+a1          =           amodi*(amodr-1/amodr)/2
+a1ndx       =           abs(a1*2/20)            ;a1*2 is normalized from 0-1.
+a2          =           amodi*(amodr+1/amodr)/2
+a3          tablei      a1ndx, 3, 1             ;lookup tbl in f3, normal index
+ao1         poscil3     a1, ipch, 2             ;cosine
+a4          =           exp(-0.5*a3+ao1)
+ao2         poscil3     a2*ipch, ipch, 2        ;cosine
+a_left      poscil3     1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
+a_right     poscil3     1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
+            ga_instruments_left_out += a_left 
+            ga_instruments_right_out += a_right
+prints "%-24s i %9.4f t %9.4f d %9.4f o %9.4f p6 %9.4f p7 %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p5, gi_3_modr_start, gi_3_modr_end, active(p1)
+            endin
+            
 ;--------------------------------------------------------
 ;Instrument 1 : plucked strings chorused left/right and
 ;       pitch-shifted and delayed taps thru exponential
 ;       functions, and delayed.
 ;--------------------------------------------------------
-            instr 1
-            ;;;setksmps    1
-ishift      =           .00666667               ;shift it 8/1200.
+            instr Kung1
+ishift      =           4/1200                  ;shift it.
 ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
 kvib        poscil3     1/120, ipch/50, 1      ;vibrato
-ag          pluck       2000, cpsoct(ioct+kvib), 1000, 1, 1
+ag          pluck       2000, cpsoct(ioct+kvib),   1000, 1, 1
 agleft      pluck       2000, cpsoct(ioct+ishift), 1000, 1, 1
 agright     pluck       2000, cpsoct(ioct-ishift), 1000, 1, 1
 adamping    linsegr     0.0, 0.006, 1.0, p3 - 0.066, 1.0, 0.06, 0.0
@@ -231,20 +294,19 @@ a_left      =           agleft+atap1+ad1
 a_right     =           agright+atap2+ad2
             ga_instruments_left_out += a_left
             ga_instruments_right_out += a_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f o %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p5, active(p1)
             endin
             
 ;-------------------------------------------------------------
 ;Instrument 2 : plucked strings chorused left/right and
 ;       pitch-shifted with fixed delayed taps.
 ;------------------------------------------------------------
-            instr 2
-            ;;;setksmps    1
-ishift      =           .00666667               ;shift it 8/1200.
+            instr Kung2
+ishift      =           4/1200                  ;shift it.
 ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
 ioct        =           octpch(p5)              ;convert parameter 5 to oct.
 kvib        poscil3     1/120, ipch/50, 1       ;vibrato
-ag          pluck       1000, cpsoct(ioct+kvib), 1000, 1, 1
+ag          pluck       1000, cpsoct(ioct+kvib),   1000, 1, 1
 agleft      pluck       1000, cpsoct(ioct+ishift), 1000, 1, 1
 agright     pluck       1000, cpsoct(ioct-ishift), 1000, 1, 1
 adamping    linsegr     0.0, 0.006, 1.0, p3 - 0.066, 1.0, 0.06, 0.0
@@ -259,40 +321,9 @@ a_left      =           agleft+ad1
 a_right     =           agright+ad2
             ga_instruments_left_out += a_left
             ga_instruments_right_out += a_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f o %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p5, active(p1)
             endin
            
-;-----------------------------------------------------------
-;Instrument 3 : New FM algorithm, modified to produce large timbre
-;               shifts using modulation of I and r. Detuned chorusing employed.
-;-----------------------------------------------------------
-gi_3_modr_start chnexport "gi_3_modr_start", 3
-gi_3_modr_start init 1
-gi_3_modr_end chnexport "gi_3_modr_end", 3
-gi_3_modr_end init 1
-
-            instr 3
-            ;;;setksmps    1
-ishift      =           .00666667               ;shift it 8/1200.
-ipch        =           cpspch(p5)              ;convert parameter 5 to cps.
-ioct        =           octpch(p5)              ;convert parameter 5 to oct.
-aadsr       linsegr     0, p3/3, 1.0, p3/3, 1.0, p3/3, 0 ;ADSR envelope
-amodi       linseg      0, p3/3, 5, p3/3, 3, p3/3, 0 ;ADSR envelope for I
-amodr       linseg      gi_3_modr_start, p3, gi_3_modr_end              ;r moves from p6->p7 in p3 sec.
-a1          =           amodi*(amodr-1/amodr)/2
-a1ndx       =           abs(a1*2/20)            ;a1*2 is normalized from 0-1.
-a2          =           amodi*(amodr+1/amodr)/2
-a3          tablei      a1ndx, 3, 1             ;lookup tbl in f3, normal index
-ao1         poscil3     a1, ipch, 2             ;cosine
-a4          =           exp(-0.5*a3+ao1)
-ao2         poscil3     a2*ipch, ipch, 2        ;cosine
-a_left      poscil3     1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
-a_right     poscil3     1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
-            ga_instruments_left_out += a_left 
-            ga_instruments_right_out += a_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-            endin
-            
 gk_Reverb_feedback init 0.8
 gi_Reverb_delay_modulation init 0.015
 gk_Reverb_frequency_cutoff init 12000
@@ -342,9 +373,9 @@ t 0 10
 ;All functions are post-normalized (max value is 1) if p4 is
 ;POSITIVE.
 
-f1 0 65537  10 1      ;sine wave
-f2 0 65537  11 1      ;cosine wave
-f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
+f1 0 524288  10 1      ;sine wave
+f2 0 524288  11 1      ;cosine wave
+f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
 
 </CsScore>
 </CsoundSynthesizer>
@@ -786,7 +817,7 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             var rendering_frame_rate = 400;
             var frame_translation_count = 0;
             var midi_key_begin = 36;
-            var midi_key_range = 48;
+            var midi_key_range = 60;
             var maximum_voices = 8;
             var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
@@ -917,76 +948,6 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                 sample_count++;
             }
 
-            /** 
-             * At each Nth rendering frame, generate more notes.
-             * I.e. the score generator is a sort of dynamical system.
-             */
-            var strange_attractor_initialized = false;
-            var pitv = null;
-            function generate_score_fragment() {
-                if (strange_attractor != null) {
-                    if (strange_attractor_initialized == false) {
-                        strange_attractor.reset();
-                        strange_attractor.setDimensionCount(4);
-                        strange_attractor.setAttractorType(4);
-                        while (strange_attractor.searchForAttractor() == true) {
-                            let code = strange_attractor.getCode();
-                            console.log("StrangeAttractor code: " + code);
-                        };
-                        pitv = new CsoundAC.PITV();
-                        pitv.initialize(4, 48, 1, true);
-                        strange_attractor_initialized = true;
-                    }
-                    strange_attractor.iterate_without_rendering();
-                    let n = strange_attractor.getIteration();
-                    let x = strange_attractor.getX();
-                    let y = strange_attractor.getY();
-                    let z = strange_attractor.getZ();
-                    let w = strange_attractor.getW();
-                    let xn = strange_attractor.getNormalizedX();
-                    let yn = strange_attractor.getNormalizedY();
-                    let zn = strange_attractor.getNormalizedZ();
-                    let wn = strange_attractor.getNormalizedW();
-                    let diagnostic = sprintf("iteration: %9d x: %16.9f y: %16.9f y: %16.9f w: %16.9f", n, x, y, z, w);
-                    console.log(diagnostic);
-                    diagnostic = sprintf("                     x: %16.9f y: %16.9f y: %16.9f w: %16.9f", xn, yn, zn, wn);
-                    let p = Math.floor(xn * pitv.countP);
-                    let i = Math.floor(yn * pitv.countI);
-                    let t = Math.floor(zn * pitv.countT);
-                    let v = Math.floor(wn * pitv.countV);
-                    let chord = pitv.toChord(p, i, t, v, false).get(0);
-                    // should work but does not:
-                    // CsoundAC.toScore(chord, score, 0, true);
-                    let notes = []
-                    for (let voice = 0; voice < chord.voices(); voice++) {
-                        let instrument = (voice % 3 )+ 1;
-                        let time = 0;
-                        let duration = 5;
-                        let key = 36 + chord.getPitch(voice);
-                        let dummy = 0;
-                        let octave = CsoundAC.Conversions.midiToRoundedOctave(key);
-                        let pc = CsoundAC.Conversions.midiToPitchClass(key);
-                        let octave_pc = parseFloat(sprintf("%d.%d", octave, pc));
-                        let velocity = 60;
-                        let pan = Math.random();
-                         // The Kung orchestra uses these pfields:
-                        // p1_1 p2_time p3_duration p4_dummy p5_oct_pc 
-                        // p1_2 p2_time p3_duration p4_dummy p5_oct_pc 
-                        // Note: p6 and p7 can each range in [.2, 2]. But these are now global variables/channels.
-                        // p1_3 p2_time p3_duration p4_dummy p5_oct_pc p6_modr_start p7_modr_end
-                        let note = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f 1 1", instrument, time, duration, dummy, octave_pc);
-                        notes.push(note)
-                    }
-                    let score_fragment = notes.join("\n");
-                    console.log(score_fragment);
-                    if (csound) {
-                        if (csound.is_playing) {
-                            csound.ReadScore(score_fragment);
-                        }
-                    }
-                }
-            }
-            
             function render_scene(milliseconds) {
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -997,9 +958,6 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                 write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 //console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
-                if ((rendering_frame % rendering_frame_rate) === 0) {
-                    generate_score_fragment();
-                }
                 rendering_frame++;
                 requestAnimationFrame(render_scene);
             }  
@@ -1015,6 +973,7 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
         var score = null;
         var scale = null;
         var chord = null;
+        var cs_random = null;
         var message_callback_buffer = "";
         var gk_modr_start = 1;
         var gk_modr_end = 1;
@@ -1044,6 +1003,72 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             }
         };
 
+       /** 
+         * At each beat, generate a new chord.
+         * I.e. the score generator is a sort of dynamical system.
+         */
+        var strange_attractor_initialized = false;
+        var pitv = null;
+        var tempo = 10 * 1000;
+        var interval_id = null;
+        function generate_score_fragment() {
+            let tempo = document.getElementById("gi_tempo").value;
+            let interval = 60 / tempo;
+            if (!csound) {
+                return;
+            }
+            if (csound.is_playing == false) {
+                return;
+            }
+            if (strange_attractor_initialized) {
+                strange_attractor.iterate_without_rendering();
+                let n = strange_attractor.getIteration();
+                let x = strange_attractor.getX();
+                let y = strange_attractor.getY();
+                let z = strange_attractor.getZ();
+                let w = strange_attractor.getW();
+                let xn = strange_attractor.getNormalizedX();
+                let yn = strange_attractor.getNormalizedY();
+                let zn = strange_attractor.getNormalizedZ();
+                let wn = strange_attractor.getNormalizedW();
+                let diagnostic = sprintf("iteration: %9d x:  %16.9f y:  %16.9f z:  %16.9f w:  %16.9f", n, x, y, z, w);
+                console.log(diagnostic);
+                diagnostic = sprintf("                     xn: %16.9f yn: %16.9f zn: %16.9f wn: %16.9f", xn, yn, zn, wn);
+                let p = Math.floor(xn * pitv.countP);
+                let i = Math.floor(yn * pitv.countI);
+                let t = Math.floor(zn * pitv.countT);
+                let v = Math.floor(wn * pitv.countV);
+                let chord = pitv.toChord(p, i, t, v, false).get(0);
+                csound_message_callback(sprintf("New chord: %s  %s\n", chord.toString(), chord.eOP().name()));
+                let notes = []
+                for (let voice = 0; voice < chord.voices(); voice++) {
+                    let instrument = (voice % 3 )+ 1;
+                    let time = 0;
+                    let duration = interval;
+                    let key = 24 + chord.getPitch(voice);
+                    let dummy = 0;
+                    // MIDI key 60 is octave 8.0.
+                    let octave = Math.floor(key / 12) + 5;
+                    let pc = Math.floor(key % 12) / 100;
+                    let octave_pc = octave + pc;
+                    let velocity = 60;
+                    let pan = Math.random();
+                    // The Kung orchestra uses these pfields:
+                    // p1_1 p2_time p3_duration p4_dummy p5_oct_pc 
+                    // p1_2 p2_time p3_duration p4_dummy p5_oct_pc 
+                    // Note: p6 and p7 can each range in [.2, 2]. But these are now global variables/channels.
+                    // p1_3 p2_time p3_duration p4_dummy p5_oct_pc p6_modr_start p7_modr_end
+                    let note = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f 1 1", instrument, time, duration, dummy, octave_pc);
+                    notes.push(note)
+                }
+                let score_fragment = notes.join("\n");
+                console.log(score_fragment);
+                csound.ReadScore(score_fragment);
+            }
+            let interval_milliseconds = interval * 1000;
+            setTimeout(generate_score_fragment, interval_milliseconds);
+        }
+        
         (async function() {
             CsoundAC = await createCsoundAC(); 
             strange_attractor = new CsoundAC.StrangeAttractor();
@@ -1051,6 +1076,7 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             score = new CsoundAC.Score();
             scale = new CsoundAC.Scale("F major");
             chord = scale.chord(1, 5, 3);
+            cs_random = new CsoundAC.Random();
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
             var txt = "\n";
             txt += "Browser CodeName: " + navigator.appCodeName + "\n";
@@ -1088,6 +1114,10 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                             csound_message_callback("Creating CsoundAudioNode...\n");
                             csound = new CsoundAudioNode(audioContext, csound_message_callback);
                             csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
+                            analyser = new AnalyserNode(audioContext);
+                            analyser.fftSize = 2048;
+                            console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
+                            csound.connect(analyser);
                             console.log("csound: " + csound);
                         }, function(error) {
                            csound_message_callback(error + '\n');
@@ -1105,15 +1135,32 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     await csound.Start();
                     $('#restore').trigger('click');
                     await csound.Perform();
-                    analyser = new AnalyserNode(audioContext);
-                    analyser.fftSize = 2048;
-                    console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
-                    csound.connect(analyser);
-                    //analyser.connect(audioContext.destination);
                     scale = new CsoundAC.Scale("F major");
                     csound_message_callback("Csound is playing...\n");
+                    let tempo = document.getElementById("gi_tempo").value;
+                    let interval = 1 / tempo;
+                    let interval_milliseconds = interval * 1000;
+                    if (strange_attractor_initialized == false) {
+                        CsoundAC.Random.seed(30493);
+                        strange_attractor.reset();
+                        strange_attractor.setDimensionCount(4);
+                        strange_attractor.setAttractorType(4);
+                        while (true) {
+                            let not_found = strange_attractor.searchForAttractor();
+                            console.log("code: " + strange_attractor.getCode());
+                            if (not_found === false) {
+                                break;
+                            }
+                        }
+                        csound_message_callback(sprintf("Found attractor code: %s\n", strange_attractor.getCode()));
+                        pitv = new CsoundAC.PITV();
+                        pitv.initialize(4, 48, 1, true);
+                        strange_attractor_initialized = true;
+                    }
+                    interval_id = setTimeout(generate_score_fragment, tempo);
                     $("#menu_item_play").html("Stop");
                 } else {
+                    await clearInterval(interval_id);
                     await csound.Stop();
                     await csound.Cleanup();
                     csound.Reset();
