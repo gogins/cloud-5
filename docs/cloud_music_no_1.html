@@ -3,14 +3,13 @@
 <head>
 <title>Cloud Music No. 1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.1/dat.gui.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js" integrity="sha512-4P0ZJ49OMXe3jXT+EsEaq82eNwFeyYL81LeHGzGcEhowFbTqeQ80q+NEkgsE8tHPs6aCqvi7U+XWliAjDmT5Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.js" integrity="sha512-dY9NsJoe4eisOR4ZtU0WaFNOxGcGZMfaviwSYHoiiEXvC6QLBsOOVsv3uY+5lEvuRtGTATg7usKQGajlDWSo7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/91/three.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js" integrity="sha512-czfWedq9cnMibaqVP2Sw5Aw1PTTabHxMuTOkYkL15cbCYiatPIbxdV0zwhfBZKNODg0zFqmbz8f7rKmd6tfR/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tinycolor/1.4.2/tinycolor.js" integrity="sha512-lFoTu1RScb5+1ossorzeg5Ny23ak1W44WSkETDK8z5uX7r0uBRvK73XHZl5pE0XoOF1ET36BET/5FLcuiCUhhQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.11.2/ace.js" integrity="sha512-AhCq6G80Ge/e6Pl3QTNGI2Je+6ixVVDmmE4Nui8/dHRBKxMUvjJxn6CYEcMQdTSxHreC3USOxTDrvUPLtN5J7w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="dat.gui.js"></script>
+<script src="jquery-3.6.1.js"></script>
+<script src="p5.js"></script>
+<script src="sprintf.js"></script>
+<script src="three.js"></script>
+<script src="ace.js"></script>
+<script src="tinycolor.js"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
@@ -52,11 +51,11 @@
     
     <tr>
     <td>
-    <label for=gi_Composition_tempo>Tempo (animation frames/beat)</label>
+    <label for=gi_Composition_tempo>Tempo (notes/minute)</label>
     <td>
-    <input class=persistent-element type=range min=5 max=200 value=20 id=gi_Composition_tempo step=.001>
+    <input class=persistent-element type=range min=2 max=480 value=120 id=gi_Composition_tempo step=.001>
     <td>
-    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>20</output>
+    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>120</output>
     </tr>
     
     <tr>
@@ -265,14 +264,14 @@ always changing.
 
 <CsoundSynthesizer>
 <CsOptions>
--+msg_color=0 -m34 -d --sample-accurate -odac 
+-+msg_color=0 -m34 -d --sample-accurate -f -odac 
 </CsOptions>
 <CsInstruments>
 
 sr = 48000
 ksmps = 128
 nchnls = 2
-0dbfs = 4
+0dbfs = 8
 
 gi_ampmidicurve_dynamic_range init .375
 gi_ampmidicurve_exponent init 5
@@ -1747,7 +1746,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             var instrument_count = 8;
             var sampled_events = new Array();
             var playlist = new Map();
-            var rendering_frame_rate = 25;
+            var gi_Composition_tempo = 25;
             var frame_translation_count = 0;
             var midi_key_begin = 36;
             var midi_key_range = 60;
@@ -1803,7 +1802,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let instrument_number = 1 + (hsv[0] * instrument_count);
                     // The instrument number must have a unique fractional tag.
                     let time = 0;
-                    let duration = .25 + (score_interval * hsv[1] * 2);
+                    let duration = .25 + (60 / gi_Composition_tempo * hsv[1] * 2);
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
                     //instrument_number = 4;
                     let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
@@ -1861,6 +1860,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let instrument_number = on_event[0];
                     let key = on_event[3];
                     let velocity = on_event[4];
+                    velocity = 60 + (velocity / 7);
                     let phase = 0;
                     let pan = .01 + Math.random() * .8;
                     let depth = 0;
@@ -1901,20 +1901,19 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
              * pixels from the canvas only when a memory fence around 
              * the GPU pipeline becomes passable.
              */
-            var score_interval;
-            var current_time;
-            var prior_time;
             async function sample_canvas(current_rendering_frame) {
                  //console.info("frame_sample_to_score.");
-                prior_time = current_time;
-                current_time = performance.now();
-                score_interval = current_time - prior_time;
-                score_interval /= 1000;
-                rendering_frame_rate = Math.floor(parseFloat(document.getElementById("gi_Composition_tempo").value));
+                gi_Composition_tempo = Math.floor(parseFloat(document.getElementById("gi_Composition_tempo").value));
                 event_velocity_threshold = parseFloat(document.getElementById("gi_Composition_density").value);
                 await translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
             }
             
+            /**
+             * The graphics rendering loop polls the current time and tempo in 
+             * order to compute when to sample notes from the canvas.
+             */
+            var current_time;
+            var next_time = 0;
             function render_scene(milliseconds) {
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1924,8 +1923,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 //write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
-                //console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
-                if ((rendering_frame % rendering_frame_rate) === 0) {
+                current_time = performance.now() / 1000;
+                if (current_time >= next_time) {
+                    next_time = current_time + (60 / gi_Composition_tempo);
                     sample_canvas(rendering_frame);
                 }
                 rendering_frame++;
@@ -2035,6 +2035,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     //analyser.connect(audioContext.destination);
                     scale = new CsoundAC.Scale("F major");
                     csound_message_callback("Csound is playing...\n");
+                    next_time = 0;
                     $("#menu_item_play").html("Stop");
                 } else {
                     await csound.Stop();
