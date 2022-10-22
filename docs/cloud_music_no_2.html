@@ -120,7 +120,7 @@
     </div>
     <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
-    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);height:90vw;overflow-y:scroll;">
+    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
 <h1>Cloud Music No. 2</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
@@ -134,7 +134,7 @@ always changing.
 <p>This piece is generated as a sort of musical dynamical system operating in 
 chord space. Generated notes are sent to Csound for rendering in real time. 
 The synthesized audio is then sampled (using a WebAudio Analyzer) to change 
-the whiteness of the lines in the visual scene, as a form of music 
+the brightness of the lines in the visual scene, as a form of music 
 visualization.
 
 <p>The notes are played by a Csound orchestra that is embedded in this Web 
@@ -143,19 +143,19 @@ build of Csound</a>. This in turn includes my
 <a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
 algorithmic composition.
 
-<ul>
-<li>To view the source code of this piece, use your browser menu to view the 
-page source.
-<li>To inspect or debug the code of this piece as it runs, use your browser 
-menu to open the developer tools.
-</ul>
-
 <p>Feel free to use this piece as a template for creating new pieces of this 
 type... as long as it doesn't sound too much like this one!
 
 <p>Please report any problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
 cloud-music issues</a>.
+
+<ul>
+<li>To view the source code of this piece, use your browser menu to view the 
+page source.
+<li>To inspect or debug the code of this piece as it runs, use your browser 
+menu to open the developer tools.
+</ul>
 
 <h2>Credits</h2>
 
@@ -165,8 +165,8 @@ inspired by Julien C. Sprott's book <a
 href="https://sprott.physics.wisc.edu/fractals/booktext/SABOOK.PDF"><b><i>
 Strange Attractors</i></b></a>. The state of the system is mapped to indices 
 of set-type, inversion, pitch-class transposition, and octavewise revoicing. 
-In short, the chaotic orbit of this system becomes an unceasing flow of chord p
-rogressions.
+In short, the chaotic orbit of this system becomes an unceasing flow of chord 
+progressions.
 
 <p>My code in CsoundAC for working with chords, scales, and voice-leading 
 implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri 
