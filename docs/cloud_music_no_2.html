@@ -115,7 +115,7 @@
     <input type="button" id='restore' value="Restore" class="w3-btn w3-hover-text-light-green"/>
     <input type="button" id='copy' value="Copy" class="w3-btn w3-hover-text-light-green"/>
     <input type="button" id='paste' value="Paste" class="w3-btn w3-hover-text-light-green"/>
-    <input type="button" id='default' value="Default" class="w3-btn w3-hover-text-light-green"/>
+    <input type="button" id='default' value="Defaults" class="w3-btn w3-hover-text-light-green"/>
     </form>   
     </div>
     <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
@@ -1133,13 +1133,13 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     await csound.Start();
                     $('#restore').trigger('click');
                     await csound.Perform();
-                    scale = new CsoundAC.Scale("F major");
                     csound_message_callback("Csound is playing...\n");
+                    scale = new CsoundAC.Scale("F major");
+                    alert("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
                     let tempo = document.getElementById("gi_tempo").value;
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;
                     if (strange_attractor_initialized == false) {
-                        csound_message_callback("Please wait, searching for strange attractor...\n");
                         CsoundAC.Random.seed(30493);
                         strange_attractor.reset();
                         strange_attractor.setDimensionCount(4);
