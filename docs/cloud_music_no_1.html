@@ -12,7 +12,7 @@
 <script src="tinycolor.js"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="w3.css">
 <link rel="icon" href="data:,">
 <style>
 </style>
@@ -193,7 +193,7 @@
     </div>
     <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
-    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);height:90vw;overflow-y:auto;">
+    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);height:90vw;overflow-y:scroll;">
 <h1>Cloud Music No. 1</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
@@ -1770,7 +1770,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 }
                 let x = 0;
                 // y is zero at the bottom of the canvas.
-                let y = 1;
+                let y = 0;
                 let width = canvas.width;
                 let height = 1;
                 let format = gl.RGBA;
@@ -2011,6 +2011,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                             csound_message_callback("Creating CsoundAudioNode...\n");
                             csound = new CsoundAudioNode(audioContext, csound_message_callback);
                             csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
+                            analyser = new AnalyserNode(audioContext);
+                            analyser.fftSize = 2048;
+                            console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
+                            csound.connect(analyser);
                             console.log("csound: " + csound);
                         }, function(error) {
                            csound_message_callback(error + '\n');
@@ -2028,11 +2032,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     await csound.Start();
                     $('#restore').trigger('click');
                     await csound.Perform();
-                    analyser = new AnalyserNode(audioContext);
-                    analyser.fftSize = 2048;
-                    console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
-                    csound.connect(analyser);
-                    //analyser.connect(audioContext.destination);
                     scale = new CsoundAC.Scale("F major");
                     csound_message_callback("Csound is playing...\n");
                     next_time = 0;
