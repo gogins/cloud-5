@@ -1131,7 +1131,13 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     let result = await csound.CompileCsdText(csd);
                     csound_message_callback("CompileCsdText returned: " + result);
                     await csound.Start();
-                    $('#restore').trigger('click');
+                    if (localStorage.length > 0) {
+                        $('#restore').trigger('click');
+                    } else {
+                        // Tricky! Otherwise we get _patch_ defaults, probably 
+                        // not correct; we need _html_ defaults.
+                        $('#default').trigger('click');
+                    }
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
                     scale = new CsoundAC.Scale("F major");
