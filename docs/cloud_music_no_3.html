@@ -468,7 +468,7 @@ void mainImage(out vec4 O, vec2 I)
 {    
     for(vec3 r=iResolution, p=vec3(I+I,1)-r;
         p.z++<5e2&&((int(r) ^ int(r.y) ^ int(r.z))&63)>0;
-        r=iTime/.1+p/O.x*.1)
+        r=iTime/.1+p/O.x*.02)
     O=1.-p.zzzz/5e2;
 }
               
@@ -915,7 +915,7 @@ void mainImage(out vec4 O, vec2 I)
                 for (let i = 0; i < voices; i++) {
                     let on_event = on_events[i];
                     let time = 0;
-                    let duration = on_event[2] * 1.5;
+                    let duration = on_event[2];
                     let status = 144;
                     let instrument_number = 1;
                     let key = on_event[3];
