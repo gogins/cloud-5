@@ -30,10 +30,7 @@
     compiles the Csound orchestra, compiles any GLSL shaders, and handles 
     all events from the user interface. Most of this code requires little or 
     no change when writing a new piece.
-    
-    Default control values:
-    {"gi_3_modr_start":"0.283","gi_3_modr_end":"0.386","gk_Guitar_level":"5.239","gk_Kung2_level":"-3.058","gi_Composition_tempo":"179.547","gk_MasterOutput_level":"5.928","gk_ReverbSC_feedback":"0.831","gk_Plucked_level":"-4.846","gk_Composition_density=.001":"1","gi_tempo":"11.219","gk_YiString_level":"1.109","gk_ReverbSC_frequency_cutoff":"7513.252","gi_ReverbSC_delay_modulation":"0.05","gi_Composition_density":"50.265","gk_FMWaterBell_level":"5.313","gk_Composition_tempo=.001":"275","gk_Harpsichord_level":"1.195","gk_Kung4_level":"9.603","gk_ZakianFlute_level":"10.838"}
-    ------------------------------------------------------------------------->
+------------------------------------------------------------------------->
     <div class="w3-bar " style="position:fixed;background:transparent;">    
         <ul class = "menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
@@ -56,18 +53,18 @@
     <td>
     <label for=gi_Composition_tempo>Tempo (notes/minute)</label>
     <td>
-    <input class=persistent-element type=range min=2 max=480 value=179.547 id=gi_Composition_tempo step=.001>
+    <input class=persistent-element type=range min=2 max=480 value=275 id=gi_Composition_tempo step=.001>
     <td>
-    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>179.547</output>
+    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>275</output>
     </tr>
     
     <tr>
     <td>
     <label for=gi_Composition_density>Density of notes (minimum MIDI velocity)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=127 value=50.265 id=gi_Composition_density step=.001>
+    <input class=persistent-element type=range min=0 max=127 value=110 id=gi_Composition_density step=.001>
     <td>
-    <output for=gi_Composition_density id=gi_Composition_density_output>50.265</output>
+    <output for=gi_Composition_density id=gi_Composition_density_output>110</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -75,9 +72,9 @@
     <td>
     <label for=gk_YiString_level>YiString level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=1.109 id=gk_YiString_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=2 id=gk_YiString_level step=.001>
     <td>
-    <output for=gk_YiString_level id=gk_YiString_level_output>1.109</output>
+    <output for=gk_YiString_level id=gk_YiString_level_output>2</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -85,17 +82,17 @@
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.831 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.831</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.89</output>
     </tr>
     <tr>
     <td>
     <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=20000 value=7513.252 id=gk_ReverbSC_frequency_cutoff step=.001>
+    <input class=persistent-element type=range min=0 max=20000 value=7000 id=gk_ReverbSC_frequency_cutoff step=.001>
     <td>
-    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>7513.252</output>
+    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>7000</output>
     </tr>
     <tr>
     <td>
@@ -111,9 +108,9 @@
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=5.928 id=gk_MasterOutput_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_MasterOutput_level step=.001>
     <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>5.928</output>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>6</output>
     </tr>
     </table>
     <p>
