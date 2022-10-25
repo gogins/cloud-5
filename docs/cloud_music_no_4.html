@@ -66,6 +66,16 @@
     <td>
     <output for=gi_Composition_density id=gi_Composition_density_output>50.265</output>
     </tr>
+        
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_FilteredSines_level>FilteredSines level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=5.239 id=gk_FilteredSines_level step=.001>
+    <td>
+    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>5.239</output>
+    </tr>
     
     <tr style="height:1em;"></tr>    
     <tr>
@@ -76,6 +86,27 @@
     <td>
     <output for=gk_Guitar_level id=gk_Guitar_level_output>5.239</output>
     </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Blower_level>Blower level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_Blower_level step=.001>
+    <td>
+    <output for=gk_Blower_level id=gk_Blower_level_output>6</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Sweeper_level>Sweeper level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_Sweeper_level step=.001>
+    <td>
+    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>6</output>
+    </tr>
+
     
     <tr style="height:1em;"></tr>    
     <tr>
@@ -313,8 +344,15 @@ maxalloc 6, 8
 maxalloc 7, 8
 maxalloc 8, 8
 
+connect "Blower", "outleft", "ReverbSC", "inleft"
+connect "Blower", "outright", "ReverbSC", "inright"
 connect "Bower", "outleft", "ReverbSC", "inleft"
 connect "Bower", "outright", "ReverbSC", "inright"
+connect "FilteredSines", "outleft", "ReverbSC", "inleft"
+connect "FilteredSines", "outright", "ReverbSC", "inright"
+connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
+connect "FMWaterBell", "outright", "ReverbSC", "inright"
+connect "Guitar", "outleft", "ReverbSC", "inleft"
 connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
 connect "FMWaterBell", "outright", "ReverbSC", "inright"
 connect "Guitar", "outleft", "ReverbSC", "inleft"
@@ -327,6 +365,8 @@ connect "Kung4", "outleft", "ReverbSC", "inleft"
 connect "Kung4", "outright", "ReverbSC", "inright"
 connect "Plucked", "outleft", "ReverbSC", "inleft"
 connect "Plucked", "outright", "ReverbSC", "inright"
+connect "Sweeper", "outleft", "ReverbSC", "inleft"
+connect "Sweeper", "outright", "ReverbSC", "inright"
 connect "YiString", "outleft", "ReverbSC", "inleft"
 connect "YiString", "outright", "ReverbSC", "inright"
 connect "ZakianFlute", "outleft", "ReverbSC", "inleft"
@@ -422,6 +462,304 @@ outleta "outright", a_out_right
 #endif
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
+
+gk_FilteredSines_level chnexport "gk_FilteredSines_level", 3
+gi_FilteredSines_attack chnexport "gi_FilteredSines_attack", 3
+gi_FilteredSines_release chnexport "gi_FilteredSines_release", 3
+
+gk_FilteredSines_level init 0
+gi_FilteredSines_attack init 1
+gi_FilteredSines_release init 1
+
+gi_FilteredSines_bergeman ftgen 0, 0, 65537, 10, .28, 1, .74, .66, .78, .48, .05, .33, 0.12, .08, .01, .54, 0.19, .08, .05, 0.16, .01, 0.11, .3, .02, 0.2 ; Bergeman f1
+
+instr FilteredSines
+; Author: Michael Bergeman
+; Modified by: Michael Gogins
+xtratim gi_FilteredSines_attack + gi_FilteredSines_release
+i_instrument = p1
+i_time = p2
+i_duration = p3
+i_midi_key = p4
+i_midi_velocity = p5
+k_space_front_to_back = p6
+k_space_left_to_right = p7
+k_space_bottom_to_top = p8
+i_phase = p9
+i_overall_amps = 166
+i_normalization = ampdb(-i_overall_amps) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+i_frequency = cpsmidinn(i_midi_key)
+k_gain = ampdb(gk_FilteredSines_level)
+kHz = k(i_frequency)
+koctave = octcps(kHz)
+iattack init gi_FilteredSines_attack
+isustain init p3
+irelease init gi_FilteredSines_release
+idb = 1.5
+ip5 = gi_FilteredSines_bergeman
+ip3 = 5.0
+ip6 = 0.9
+ip7 = 1.4
+kp8 = cpsoct(koctave - .01)
+kp9 = cpsoct(koctave + .01)
+isc = idb * .333
+k1 linseg 40, ip3, 800, p3, 800, 0.06, 0.0
+k2 linseg 440, ip3, 220, p3, 220, 0.06, 0.0
+k3 linseg 0.0, ip6, 800, ip7, 200.0, p3, 200, 0.06, 0.0
+k4 linseg 800, ip3, 40, p3, 40, 0.06, 0.0
+k5 linseg 220, ip3, 440, p3, 440, 0.06, 0.0
+k6 linseg isc, ip6, p3, ip7, p3, 0.06, 0.0
+k7 linseg 0.0, ip6, 1, ip7, .3, p3, .1, 0.06, 0.0
+a5 poscil k3, kp8, ip5
+a6 poscil k3, kp8 * 0.999, ip5
+a7 poscil k3, kp8 * 1.001, ip5
+a1 = a5 + a6 + a7
+a8 poscil k6, kp9, ip5
+a9 poscil k6, kp9 * 0.999, ip5
+a10 poscil k6, kp9 * 1.001, ip5
+a11 = a8 + a9 + a10
+a2 butterbp a1, k1, 40
+a3 butterbp a2, k5, k2 * 0.8
+a4 balance a3, a1
+a12 butterbp a11, k4, 40
+a13 butterbp a12, k2, k5 * 0.8
+a14 balance a13, a11
+a15 reverb2 a4, 5, 0.3
+a16 reverb2 a4, 4, 0.2
+a17 = (a15 + a4) * k7
+a18 = (a16 + a4) * k7
+a_signal = (a17 + a18)
+i_attack = .002
+i_sustain = p3
+i_release = 0.01
+xtratim (i_attack + i_release)
+a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
+a_signal = a_signal * i_amplitude * a_declicking * k_gain * 1.88
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+
+gk_Blower_grainDensity chnexport "gk_Blower_grainDensity", 3
+gk_Blower_grainDuration chnexport "gk_Blower_grainDuration", 3
+gk_Blower_grainAmplitudeRange chnexport "gk_Blower_grainAmplitudeRange", 3
+gk_Blower_grainFrequencyRange chnexport "gk_Blower_grainFrequencyRange", 3
+gk_Blower_level chnexport "gk_Blower_level", 3
+gk_Blower_midi_dynamic_range chnexport "gk_Blower_midi_dynamic_range", 3
+
+gk_Blower_grainDensity init 40
+gk_Blower_grainDuration init 0.2
+gk_Blower_grainAmplitudeRange init 100
+gk_Blower_grainFrequencyRange init 3
+gk_Blower_level init 0
+gk_Blower_midi_dynamic_range init 20
+
+gk_Blower_space_left_to_right chnexport "gk_Blower_space_left_to_right", 3
+gk_Blower_space_left_to_right init .5
+
+gi_Blower_grtab ftgen 0, 0, 65537, 10, 1, .3, .1, 0, .2, .02, 0, .1, .04
+gi_Blower_wintab ftgen 0, 0, 65537, 10, 1, 0, .5, 0, .33, 0, .25, 0, .2, 0, .167
+
+instr Blower
+//////////////////////////////////////////////
+// Original by Hans Mikelson.
+// Adapted by Michael Gogins.
+//////////////////////////////////////////////
+i_instrument = p1
+i_time = p2
+i_duration = p3
+i_midi_key = p4
+i_midi_dynamic_range = i(gk_Blower_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+if p7 ==0 then
+k_space_left_to_right = gk_Blower_space_left_to_right
+else
+k_space_left_to_right = p7
+endif
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 123
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_Blower_level)
+iHz = i_frequency
+ihertz = iHz
+ip4 = i_amplitude
+ip5 = iHz
+ip6 = gi_Blower_grtab
+ip7 = gi_Blower_wintab
+ip8 = 0.033
+ip8 = .002
+ip9 = 150
+ip9 = 100
+ip10 = 1.6
+ip10 = 3
+idur = p3
+iamp = i_amplitude ; p4
+ifqc = iHz ; cpspch(p5)
+igrtab = ip6
+iwintab = ip7
+ifrng = ip8
+idens = ip9
+ifade = ip10
+igdur = 0.2
+iattack = 0.5
+i_sustain = p3
+idecay = 1.5
+xtratim iattack + idecay
+kenvelope transegr 0.0, iattack / 2.0, 1.5, .5, iattack / 2.0, -1.5, 1, i_sustain, 0.0, 1, idecay / 2.0, 1.5, .5, idecay / 2.0, -1.5, 0
+; kamp linseg 0, ifade, 1, idur - 2 * ifade, 1, ifade, 0
+kamp = kenvelope
+; Amp Fqc Dense AmpOff PitchOff GrDur GrTable WinTable MaxGrDur
+aoutl grain ip4, ifqc, gk_Blower_grainDensity, gk_Blower_grainAmplitudeRange, gk_Blower_grainFrequencyRange, gk_Blower_grainDuration, igrtab, iwintab, 5
+aoutr grain ip4, ifqc, gk_Blower_grainDensity, gk_Blower_grainAmplitudeRange, gk_Blower_grainFrequencyRange, gk_Blower_grainDuration, igrtab, iwintab, 5
+a_signal = aoutl + aoutr
+i_attack = .002
+i_release = 0.01
+xtratim i_attack + i_release
+a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
+a_signal = a_signal * i_amplitude * a_declicking * k_gain
+
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+#endif
+;printks "Blower         i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(a_out_left)), dbamp(rms(a_out_right))
+endin
+
+gk_Sweeper_midi_dynamic_range chnexport "gk_Sweeper_midi_dynamic_range", 3 ;  127
+gk_Sweeper_attack chnexport "gk_Sweeper_attack", 3 ;  .125
+gk_Sweeper_release chnexport "gk_Sweeper_release", 3 ;  .25
+gk_Sweeper_britel chnexport "gk_Sweeper_britel", 3 ;  0.1
+gk_Sweeper_briteh chnexport "gk_Sweeper_briteh", 3 ;  2.9
+gk_Sweeper_britels chnexport "gk_Sweeper_britels", 3 ;  2
+gk_Sweeper_britehs chnexport "gk_Sweeper_britehs", 3 ;  1
+gk_Sweeper_level chnexport "gk_Sweeper_level", 3 ;  0
+
+gk_Sweeper_midi_dynamic_range init 20
+gk_Sweeper_attack init .125
+gk_Sweeper_release init .25
+gk_Sweeper_britel init .01
+gk_Sweeper_briteh init 5
+gk_Sweeper_britels init .5
+gk_Sweeper_britehs init .5
+gk_Sweeper_level init 0
+gk_Sweeper_space_left_to_right chnexport "gk_Sweeper_space_left_to_right", 3
+gk_Sweeper_space_left_to_right init .5
+
+gi_Sweeper_sine ftgen 0, 0, 65537, 10, 1
+gi_Sweeper_octfn ftgen 0, 0, 65537, -19, 1, 0.5, 270, 0.5
+
+instr Sweeper
+//////////////////////////////////////////////
+// Original by Iain McCurdy.
+// Adapted by Michael Gogins.
+//////////////////////////////////////////////
+i_instrument = p1
+i_time = p2
+i_duration = p3
+i_midi_key = p4
+i_midi_dynamic_range = i(gk_Sweeper_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+if p7 ==0 then
+k_space_left_to_right = gk_Sweeper_space_left_to_right
+else
+k_space_left_to_right = p7
+endif
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 34.2
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_Sweeper_level)
+
+iattack = i(gk_Sweeper_attack)
+irelease = i(gk_Sweeper_release)
+isustain = p3
+kenvelope transegr 0.0, iattack / 2.0, 1.5, i_amplitude / 2.0, iattack / 2.0, -1.5, i_amplitude, isustain, 0.0, i_amplitude, irelease / 2.0, 1.5, i_amplitude / 2.0, irelease / 2.0, -1.5, 0
+ihertz = i_frequency
+icps = ihertz
+kamp expseg 0.001,0.02,0.2,p3-0.01,0.001
+ktonemoddep jspline 0.01,0.05,0.2
+ktonemodrte jspline 6,0.1,0.2
+ktone poscil3 ktonemoddep, ktonemodrte, gi_Sweeper_sine
+kbrite rspline gk_Sweeper_britel, gk_Sweeper_briteh, gk_Sweeper_britels, gk_Sweeper_britehs
+ibasfreq init icps
+ioctcnt init 3
+iphs init 0
+a1 hsboscil kenvelope, ktone, kbrite, ibasfreq, gi_Sweeper_sine, gi_Sweeper_octfn, ioctcnt, iphs
+amod poscil3 0.25, ibasfreq*(1/3), gi_Sweeper_sine
+arm = a1*amod
+kmix expseg 0.001, 0.01, rnd(1), rnd(3)+0.3, 0.001
+kmix=.25
+a1 ntrpol a1, arm, kmix
+kpanrte jspline 5, 0.05, 0.1
+kpandep jspline 0.9, 0.2, 0.4
+kpan poscil3 kpandep, kpanrte, gi_Sweeper_sine
+;a1,a2 pan2 a1, kpan
+a1,a2 pan2 a1, k_space_left_to_right
+aleft delay a1, rnd(0.1)
+aright delay a2, rnd(0.11)
+a_signal = (aleft + aright)
+
+; As with most software instruments that are modeled on an impulse exciting a 
+; resonator, there should be two envelopes. The "physical" envelope must have a 
+; fixed decay ending at zero.
+i_declick_minimum = .003
+i_attack = .001 / i_frequency + i_declick_minimum
+i_declick_attack = i_attack
+i_declick_release = i_declick_minimum * 2
+; The end of the note must be extended _past_ the end of the release segment.
+xtratim 1
+a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
+; The envelope of the instrument is the product of the physical envelope times 
+; the declicking envelope. 
+a_envelope = a_declicking_envelope
+; That envelope is then low-pass filtered to remove most discontinuities.
+a_filtered_envelope tonex a_envelope, 40, 4
+a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
+
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+outs a_out_left, a_out_right
+#endif
+endin
+
 
 gk_Plucked_midi_dynamic_range chnexport "gk_Plucked_midi_dynamic_range", 3 ; 127
 gk_Plucked_midi_dynamic_range init 30
