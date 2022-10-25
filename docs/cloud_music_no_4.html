@@ -1800,12 +1800,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
                     let hsv = downsampled_pixels[downsampled_pixel_i][2];
                     let instrument_number = 1 + (hsv[0] * instrument_count);
-                    // The instrument number must have a unique fractional tag.
                     let time = 0;
-                    let duration = 2 + (hsv[1] * 20);
+                    let duration = -1;
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
                     let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
-                    //let insno = sprintf("%d.%d", Math.floor(1), midi_key);
                     instrument_number = parseFloat(insno);
                     let midi_velocity = hsv[2] * 128;
                     let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
@@ -1819,7 +1817,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                         let off_event = playing_events.get(key);
                         let instrument_number = off_event[0];
                         csound.KillInstance(instrument_number, "", 4, true);
-                        //console.info("Turned off instrument number: " + instrument_number + ".");
                         playing_events.delete(key);
                     }
                 }
@@ -1943,6 +1940,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         var pitv = null;
         var tempo = 10 * 1000;
         var interval_id = null;
+        var prior_time = null;
+        var current_time = null;
         function generate_score_fragment() {
             let tempo = document.getElementById("gi_Composition_tempo").value;
             let interval = 60 / tempo;
@@ -2085,6 +2084,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                             }
                         }
                         csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
+                        current_time = window.performance.now();
+                        prior_time = current_time;
                         strange_attractor_initialized = true;
                     }
                     interval_id = setTimeout(generate_score_fragment, tempo);

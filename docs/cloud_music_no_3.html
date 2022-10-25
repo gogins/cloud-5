@@ -53,9 +53,9 @@
     <td>
     <label for=gi_Composition_tempo>Tempo (notes/minute)</label>
     <td>
-    <input class=persistent-element type=range min=2 max=480 value=275 id=gi_Composition_tempo step=.001>
+    <input class=persistent-element type=range min=2 max=480 value=20 id=gi_Composition_tempo step=.001>
     <td>
-    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>275</output>
+    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>20</output>
     </tr>
     
     <tr>
@@ -82,9 +82,9 @@
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.93 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.89</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.93</output>
     </tr>
     <tr>
     <td>
@@ -108,9 +108,9 @@
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_MasterOutput_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_MasterOutput_level step=.001>
     <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>6</output>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>0</output>
     </tr>
     </table>
     <p>
@@ -859,7 +859,8 @@ void mainImage(out vec4 O, vec2 I)
                     let instrument_number = 1 + (hsv[0] * instrument_count);
                     // The instrument number must have a unique fractional tag.
                     let time = 0;
-                    let duration = .25 + (60 / gi_Composition_tempo * hsv[1] * 2);
+                    //let duration = .25 + (60 / gi_Composition_tempo * hsv[1] * 2);
+                    let duration = .25 + (60 / gi_Composition_tempo);
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
                     //instrument_number = 4;
                     let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
@@ -926,6 +927,7 @@ void mainImage(out vec4 O, vec2 I)
                     score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
                 }
                 if (score.size() > 0) {
+                    csound_message_callback("=====================================================================================================\n");
                     if (sample_count % 29 == 0) {
                         let scales = scale.modulations(chord);
                         if (scales.size() > 1) {
