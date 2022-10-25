@@ -1313,40 +1313,6 @@ endin
 </CsInstruments>
 <CsScore>
 f 0 1000000000
-;       Score for final project in Digital Audio Processing
-;       ---------------------------------------------------
-
-;           Piece entitled :  X A N A D U (short version)
-;                           Joseph T. Kung, 12/12/88
-;            Instruments modified for higher precision
-;                         Michael Gogins, 07/22/2006
-
-;           The first part of the score will specify all function
-;       tables used in the piece. The second part specifies
-;       the instruments and notes. The latter is divided into
-;       7 sections, each playing a chord on a different
-;                 instrument.
-;       The chords are uncommon guitar chords that use the open
-;       B and E strings often. These will be transposed by
-;       octaves on some chords.
-
-;       Each instrument will play a chord for 15 seconds. The
-;                 timbre
-;       of the instrument will change in that interval and join
-;       with the next instrument/chord sequence. Instrument 3
-;       uses a modified FM synthesis technique. This is joined
-;       by an additional plucked-string instrument
-;       (instruments 1 and 2).
-t 0 10
-;   The Function Tables
-;   -------------------
-;All functions are post-normalized (max value is 1) if p4 is
-;POSITIVE.
-
-f1 0 524288  10 1      ;sine wave
-f2 0 524288  11 1      ;cosine wave
-f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
-
 </CsScore>
 </CsoundSynthesizer>
 
@@ -2011,7 +1977,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     let instrument = voice + 1;
                     let time = 0;
                     let duration = interval;
-                    let key = 24 + chord.getPitch(voice);
+                    let key = 30 + chord.getPitch(voice);
                     let velocity = 60;
                     let pan = Math.random();
                     let note = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f", instrument, time, duration, key, velocity);
@@ -2096,6 +2062,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                         // not correct; we need _html_ defaults.
                         $('#default').trigger('click');
                     }
+                    pitv = new CsoundAC.PITV();
+                    pitv.initialize(4, 60, 1, true);
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
                     scale = new CsoundAC.Scale("F major");
@@ -2104,7 +2072,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;
                     if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(49993);
+                        CsoundAC.Random.seed(498993);
                         strange_attractor.reset();
                         strange_attractor.setDimensionCount(4);
                         strange_attractor.setAttractorType(4);
@@ -2117,8 +2085,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                             }
                         }
                         csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
-                        pitv = new CsoundAC.PITV();
-                        pitv.initialize(4, 48, 1, true);
                         strange_attractor_initialized = true;
                     }
                     interval_id = setTimeout(generate_score_fragment, tempo);
