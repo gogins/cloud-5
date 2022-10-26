@@ -393,7 +393,7 @@ instr Guitar
 i_instrument = p1
 i_time = p2
 ; Make indefinite notes last no longer than the physical decay.
-i_physical_decay = 20
+i_physical_decay = 60
 if p3 == -1 then
 i_duration = i_physical_decay
 else
@@ -2314,7 +2314,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     let instrument = voice + 1;
                     let time = 0;
                     let duration = interval;
-                    let key = 30 + chord.getPitch(voice);
+                    let key = 28 + chord.getPitch(voice);
                     let velocity = 60;
                     let pan = Math.random();
                     let note = sprintf("i %9.4f %9.4f %9.4f %9.4f %9.4f", instrument, time, duration, key, velocity);
@@ -2400,7 +2400,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                         $('#default').trigger('click');
                     }
                     pitv = new CsoundAC.PITV();
-                    pitv.initialize(4, 60, 1, true);
+                    pitv.initialize(4, 48, 1, true);
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
                     scale = new CsoundAC.Scale("F major");
@@ -2409,7 +2409,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;
                     if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(498993);
+                        CsoundAC.Random.seed(4989293);
                         strange_attractor.reset();
                         strange_attractor.setDimensionCount(4);
                         strange_attractor.setAttractorType(4);
