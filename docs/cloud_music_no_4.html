@@ -53,28 +53,19 @@
     <td>
     <label for=gi_Composition_tempo>Tempo (notes/minute)</label>
     <td>
-    <input class=persistent-element type=range min=2 max=480 value=179.547 id=gi_Composition_tempo step=.001>
+    <input class=persistent-element type=range min=2 max=480 value=2 id=gi_Composition_tempo step=.001>
     <td>
-    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>179.547</output>
+    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>2</output>
     </tr>
     
-    <tr>
-    <td>
-    <label for=gi_Composition_density>Density of notes (minimum MIDI velocity)</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=127 value=50.265 id=gi_Composition_density step=.001>
-    <td>
-    <output for=gi_Composition_density id=gi_Composition_density_output>50.265</output>
-    </tr>
-        
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
     <label for=gk_FilteredSines_level>FilteredSines level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=5.239 id=gk_FilteredSines_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=18 id=gk_FilteredSines_level step=.001>
     <td>
-    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>5.239</output>
+    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>18</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -82,9 +73,9 @@
     <td>
     <label for=gk_Guitar_level>Guitar level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=5.239 id=gk_Guitar_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=24 id=gk_Guitar_level step=.001>
     <td>
-    <output for=gk_Guitar_level id=gk_Guitar_level_output>5.239</output>
+    <output for=gk_Guitar_level id=gk_Guitar_level_output>24</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -92,9 +83,9 @@
     <td>
     <label for=gk_Blower_level>Blower level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_Blower_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Blower_level step=.001>
     <td>
-    <output for=gk_Blower_level id=gk_Blower_level_output>6</output>
+    <output for=gk_Blower_level id=gk_Blower_level_output>-5</output>
     </tr>
 
     <tr style="height:1em;"></tr>    
@@ -102,80 +93,9 @@
     <td>
     <label for=gk_Sweeper_level>Sweeper level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_Sweeper_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_Sweeper_level step=.001>
     <td>
-    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>6</output>
-    </tr>
-
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_Plucked_level>Plucked level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-4.846 id=gk_Plucked_level step=.001>
-    <td>
-    <output for=gk_Plucked_level id=gk_Plucked_level_output>-4.846</output>
-    </tr>
-
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_FMWaterBell_level>FMWaterBell level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=5.313 id=gk_FMWaterBell_level step=.001>
-    <td>
-    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>5.313</output>
-    </tr>
-
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_YiString_level>YiString level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=1.109 id=gk_YiString_level step=.001>
-    <td>
-    <output for=gk_YiString_level id=gk_YiString_level_output>1.109</output>
-    </tr>
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_Harpsichord_level>Harpsichord level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=1.195 id=gk_Harpsichord_level step=.001>
-    <td>
-    <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>1.195</output>
-    </tr>
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_ZakianFlute_level>ZakianFlute level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=10.838 id=gk_ZakianFlute_level step=.001>
-    <td>
-    <output for=gk_ZakianFlute_level id=gk_ZakianFlute_level_output>10.838</output>
-    </tr>
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_Kung4_level>Kung4 level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=9.6030 id=gk_Kung4_level step=.001>
-    <td>
-    <output for=gk_Kung4_level id=gk_Kung4_level_output>9.603</output>
-    </tr>
-
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_Kung2_level>Kung2 level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-3.058 id=gk_Kung2_level step=.001>
-    <td>
-    <output for=gk_Kung2_level id=gk_Kung2_level_output>-3.058</output>
+    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>-6</output>
     </tr>
 
     <tr style="height:1em;"></tr>    
@@ -183,17 +103,17 @@
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.831 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.96 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.831</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.96</output>
     </tr>
     <tr>
     <td>
     <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=20000 value=7513.252 id=gk_ReverbSC_frequency_cutoff step=.001>
+    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
     <td>
-    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>7513.252</output>
+    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>12000</output>
     </tr>
     <tr>
     <td>
@@ -237,9 +157,10 @@ always changing.
 
 <p>This piece is generated as a sort of musical dynamical system operating in 
 chord space. Generated notes are sent to Csound for rendering in real time. 
-The synthesized audio is then sampled (using a WebAudio Analyzer) to change 
-the brightness of the lines in the visual scene, as a form of music 
-visualization.
+The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
+a sine-wave visualization of the music, using code adapted from <a 
+href="https://www.shadertoy.com/view/4ljGD1"><b><i>Waves Remix</i></b></a>
+by a href="https://www.shadertoy.com/user/ADOB">ADOB</a>.
 
 <p>The notes are played by a Csound orchestra that is embedded in this Web 
 page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
@@ -433,7 +354,7 @@ a_signal = (.6 * a_top_body + .8 * a_bottom_body + .6 * a_whole_body + .4 * a_si
 i_declick_minimum = .003
 i_attack = .001 / i_frequency + i_declick_minimum
 i_exponent = 7
-a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
+a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  .2
 ; The de-clicking envelope must have attack and release segments that damp 
 ; artifacts in the signal. The duration of these segments depends on 
 ; the behavior of the instrument, and may vary as a function of frequency.
@@ -559,10 +480,10 @@ gk_Blower_grainFrequencyRange chnexport "gk_Blower_grainFrequencyRange", 3
 gk_Blower_level chnexport "gk_Blower_level", 3
 gk_Blower_midi_dynamic_range chnexport "gk_Blower_midi_dynamic_range", 3
 
-gk_Blower_grainDensity init 40
+gk_Blower_grainDensity init 90
 gk_Blower_grainDuration init 0.2
 gk_Blower_grainAmplitudeRange init 100
-gk_Blower_grainFrequencyRange init 3
+gk_Blower_grainFrequencyRange init 10
 gk_Blower_level init 0
 gk_Blower_midi_dynamic_range init 20
 
@@ -1725,29 +1646,36 @@ f 0 1000000000
         
 //////////////
 
-#define WAVES 8.0
+float squared(float value) { return value * value; }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-	vec2 uv = -1.0 + 2.0 * fragCoord.xy / iResolution.xy;
+float getAmp(float frequency) { return texture(iChannel0, vec2(frequency / 512.0, 0)).x; }
 
-	float time = iTime * 1.0;
+float getWeight(float f) {
+    return (+ getAmp(f-2.0) + getAmp(f-1.0) + getAmp(f+2.0) + getAmp(f+1.0) + getAmp(f)) / 5.0; }
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{    
+	vec2 uvTrue = fragCoord.xy / iResolution.xy;
+    vec2 uv = -1.0 + 2.0 * uvTrue;
+    
+	float lineIntensity;
+    float glowWidth;
+    vec3 color = vec3(0.0);
+    
+	for(float i = 0.0; i < 5.0; i++) {
+        
+		uv.y += (0.2 * sin(uv.x + i/7.0 - iTime * 0.6));
+        float Y = uv.y + getWeight(squared(i) * 20.0) *
+            (texture(iChannel0, vec2(uvTrue.x, 1)).x - 0.5);
+        lineIntensity = 0.04 + squared(1.6 * abs(mod(uvTrue.x + i / 1.3 + iTime,2.0) - 1.0));
+		glowWidth = abs(lineIntensity / (150.0 * Y));
+		color += vec3(glowWidth * (2.0 + sin(iTime * 0.13)),
+                      glowWidth * (2.0 - sin(iTime * 0.23)),
+                      glowWidth * (2.0 - cos(iTime * 0.19)));
+	}	
 	
-	vec3 color = vec3(0.0);
-
-	for (float i=0.0; i<WAVES + 1.0; i++) {
-		float freq = texture(iChannel0, vec2(i / WAVES, 0.0)).x * 7.0;
-
-		vec2 p = vec2(uv);
-
-		p.x += i * 0.04 + freq * 0.03;
-		p.y += sin(p.x * 10.0 + time) * cos(p.x * 2.0) * freq * 0.2 * ((i + 1.0) / WAVES);
-		float intensity = abs(0.01 / p.y) * clamp(freq, 0.35, 2.0);
-		color += vec3(1.0 * intensity * (i / 5.0), 0.5 * intensity, 1.75 * intensity) * (3.0 / WAVES);
-	}
-
 	fragColor = vec4(color, 1.0);
-}        
-
+}
 //////////////        
   
     </script>
