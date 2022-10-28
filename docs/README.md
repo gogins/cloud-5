@@ -21,12 +21,14 @@ piece -- perhaps quite a bit, amounting to a new piece, co-composed with me.
 All source code for these pieces is available in my GitHub repository.
 
 The underlying technology is my WebAssembly build of Csound with CsoundAC. 
-Some pieces may use third party libraries.
+Some pieces use third party libraries.
 
 - [Cloud Music No. 1](cloud_music_no_1.html).
 
 - [Cloud Music No. 2](cloud_music_no_2.html).
 
 - [Cloud Music No. 3](cloud_music_no_3.html).
+
+- [Cloud Music No. 4](cloud_music_no_4.html).
 
 

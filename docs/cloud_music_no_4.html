@@ -63,9 +63,9 @@
     <td>
     <label for=gk_FilteredSines_level>FilteredSines level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=18 id=gk_FilteredSines_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=24 id=gk_FilteredSines_level step=.001>
     <td>
-    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>18</output>
+    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>24</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -93,9 +93,9 @@
     <td>
     <label for=gk_Sweeper_level>Sweeper level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_Sweeper_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Sweeper_level step=.001>
     <td>
-    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>-6</output>
+    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>-5</output>
     </tr>
 
     <tr style="height:1em;"></tr>    
@@ -159,8 +159,8 @@ always changing.
 chord space. Generated notes are sent to Csound for rendering in real time. 
 The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
 a sine-wave visualization of the music, using code adapted from <a 
-href="https://www.shadertoy.com/view/4ljGD1"><b><i>Waves Remix</i></b></a>
-by a href="https://www.shadertoy.com/user/ADOB">ADOB</a>.
+href="https://www.shadertoy.com/view/4ljGD1"><b><i>Sound Sinus Wave</i></b></a>
+by <a href="https://www.shadertoy.com/user/Eitraz">Eitraz</a>.
 
 <p>The notes are played by a Csound orchestra that is embedded in this Web 
 page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
@@ -1646,36 +1646,29 @@ f 0 1000000000
         
 //////////////
 
-float squared(float value) { return value * value; }
+#define WAVES 8.0
 
-float getAmp(float frequency) { return texture(iChannel0, vec2(frequency / 512.0, 0)).x; }
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+	vec2 uv = -1.0 + 2.0 * fragCoord.xy / iResolution.xy;
 
-float getWeight(float f) {
-    return (+ getAmp(f-2.0) + getAmp(f-1.0) + getAmp(f+2.0) + getAmp(f+1.0) + getAmp(f)) / 5.0; }
-
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{    
-	vec2 uvTrue = fragCoord.xy / iResolution.xy;
-    vec2 uv = -1.0 + 2.0 * uvTrue;
-    
-	float lineIntensity;
-    float glowWidth;
-    vec3 color = vec3(0.0);
-    
-	for(float i = 0.0; i < 5.0; i++) {
-        
-		uv.y += (0.2 * sin(uv.x + i/7.0 - iTime * 0.6));
-        float Y = uv.y + getWeight(squared(i) * 20.0) *
-            (texture(iChannel0, vec2(uvTrue.x, 1)).x - 0.5);
-        lineIntensity = 0.04 + squared(1.6 * abs(mod(uvTrue.x + i / 1.3 + iTime,2.0) - 1.0));
-		glowWidth = abs(lineIntensity / (150.0 * Y));
-		color += vec3(glowWidth * (2.0 + sin(iTime * 0.13)),
-                      glowWidth * (2.0 - sin(iTime * 0.23)),
-                      glowWidth * (2.0 - cos(iTime * 0.19)));
-	}	
+	float time = iTime * 1.0;
 	
+	vec3 color = vec3(0.0);
+
+	for (float i=0.0; i<WAVES + 1.0; i++) {
+		float freq = texture(iChannel0, vec2(i / WAVES, 0.0)).x * 7.0;
+
+		vec2 p = vec2(uv);
+
+		p.x += i * 0.04 + freq * 0.03;
+		p.y += sin(p.x * 10.0 + time) * cos(p.x * 2.0) * freq * 0.2 * ((i + 1.0) / WAVES);
+		float intensity = abs(0.01 / p.y) * clamp(freq, 0.35, 2.0);
+		color += vec3(1.0 * intensity * (i / 5.0), 0.5 * intensity, 1.75 * intensity) * (3.0 / WAVES);
+	}
+
 	fragColor = vec4(color, 1.0);
 }
+
 //////////////        
   
     </script>
@@ -2337,7 +2330,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;
                     if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(4989293);
+                        CsoundAC.Random.seed(494293);
                         strange_attractor.reset();
                         strange_attractor.setDimensionCount(4);
                         strange_attractor.setAttractorType(4);
@@ -2349,6 +2342,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                                 break;
                             }
                         }
+                        ///strange_attractor.setCode("SJEOSGBEDTSYIUJLGICPVYJPNDRYXLUDFHBSMFMNEBWKWJPXLOWIARKQBEXJDBSYVQHHACDSVATCJELUKHHBUEJUXNKEMNARCJBMBVSBKS");
                         csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
                         current_time = window.performance.now();
                         prior_time = current_time;
