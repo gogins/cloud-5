@@ -11,7 +11,17 @@
      from each environment, preferring native (injected) Csound as found in 
      CsoundQt oe Android, then csound.node, then Csound for WebAssembly. -->
 <script src="csound_loader.js"></script>
+<!-- Note: osc.js does not work in a browser from regular Web server, osc.min.js 
+     must be used. -->
+<script src="./node_modules/osc-js/lib/osc.min.js"></script>
 <script>
+// The DataGram plugin cn't be used in browsers.
+const osc = new OSC()
+osc.open({ port: 51234 });
+osc.on('*', (m) => {
+  console.log('received:', m.address, m.args);
+});
+
 var csd_text = `<CsoundSynthesizer>
 <CsOptions>
 -d -m195 -odac:plughw:1,0
@@ -96,7 +106,7 @@ aoutl       poscil      1000*aadsr*a4, ao2+cpsoct(ioct+ishift), 1 ;fnl outleft
 aoutr       poscil      1000*aadsr*a4, ao2+cpsoct(ioct-ishift), 1 ;fnl outright
             outs        aoutl, aoutr
             endin
-
+        
 </CsInstruments>
 <CsScore>
 ;       Score for final project in Digital Audio Processing
@@ -307,7 +317,7 @@ Any self-contained Csound piece (.csd file) can be performed by pasting it into 
 </p>
 <div id='csd' style="width:98vw;height:50vh;margin-top:10px;">
 </div>
-<div id='console' style="width:98vw;height:25vh;margin-top:10px;opacity:.25;background:transparent;">
+<div id='console' style="width:98vw;height:25vh;margin-top:10px;">
 </div>
     <script>
         var csd_editor = ace.edit("csd");

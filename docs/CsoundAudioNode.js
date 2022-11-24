@@ -319,14 +319,15 @@ class CsoundAudioNode extends AudioWorkletNode {
             if (navigator.requestMIDIAccess) {
               let midi_access = await navigator.requestMIDIAccess({sysex:false});
               const inputs = midi_access.inputs.values();
-              var post_message = this.postMessage;
+              let thus = this;
               for (let entry of midi_access.inputs) {
-                  var port_ = entry[1];
-                  message_callback_("MIDI port: type: " + port_.type + "  manufacturer: " + port_.manufacturer + " name: " + port_.name +
-                      " version: " + port_.version + "\n");
+                  const midi_input = entry[1];
+                  message_callback_("MIDI port: type: " + midi_input.type + "  manufacturer: " + midi_input.manufacturer + " name: " + midi_input.name +
+                      " version: " + midi_input.version + "\n");
                   // Using the MessagePort for this is probably not good enough.
-                  port_.onmidimessage = function(event) {
-                      post_message(["MidiEvent", event.data[0], event.data[1], event.data[2]]);
+                  midi_input.onmidimessage = function(event) {
+                      console.log(event, event.data[0], event.data[1], event.data[2]);
+                      thus.port.postMessage(["MidiEvent", event.data[0], event.data[1], event.data[2]]);
                   };
               }
               for (let entry of midi_access.outputs) {
