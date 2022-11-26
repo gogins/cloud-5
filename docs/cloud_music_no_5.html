@@ -37,11 +37,11 @@
     <div class="w3-bar " style="position:fixed;background:transparent;">    
         <ul class = "menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
-            <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
             <li id="menu_item_tidal" class="w3-btn w3-hover-text-light-green">Tidal</li>
             <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
+            <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
         </ul>
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
@@ -49,35 +49,35 @@
     
 <!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<!-- <script src="https://unpkg.com/@strudel.cycles/embed@latest"></script> -->
-<script src="./embed.js"></script>
-<strudel-repl id="tidal_view" class="w3-container" style="position:absolute;top:70px;z-index:6;background:transparent;">
-  <!--
-note(`[[e5 [b4 c5] d5 [c5 b4]]
-[a4 [a4 c5] e5 [d5 c5]]
-[b4 [~ c5] d5 e5]
-[c5 a4 a4 ~]
-[[~ d5] [~ f5] a5 [g5 f5]]
-[e5 [~ c5] e5 [d5 c5]]
-[b4 [b4 c5] d5 e5]
-[c5 a4 a4 ~]],
-[[e2 e3]*4]
-[[a2 a3]*4]
-[[g#2 g#3]*2 [e2 e3]*2]
-[a2 a3 a2 a3 a2 a3 b1 c2]
-[[d2 d3]*4]
-[[c2 c3]*4]
-[[b1 b2]*2 [e2 e3]*2]
-[[a1 a2]*4]`).slow(16).midi()
-      -->
-</strudel-repl>
+    <script src="strudel_repl_component.js"></script>
+    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;top:70px;z-index:1;background:transparent;"> 
+      <!--
+    note(`[[e5 [b4 c5] d5 [c5 b4]]
+    [a4 [a4 c5] e5 [d5 c5]]
+    [b4 [~ c5] d5 e5]
+    [c5 a4 a4 ~]
+    [[~ d5] [~ f5] a5 [g5 f5]]
+    [e5 [~ c5] e5 [d5 c5]]
+    [b4 [b4 c5] d5 e5]
+    [c5 a4 a4 ~]],
+    [[e2 e3]*4]
+    [[a2 a3]*4]
+    [[g#2 g#3]*2 [e2 e3]*2]
+    [a2 a3 a2 a3 a2 a3 b1 c2]
+    [[d2 d3]*4]
+    [[c2 c3]*4]
+    [[b1 b2]*2 [e2 e3]*2]
+    [[a1 a2]*4]`).slow(16).midi(1, 4)
+          -->
+    </strudel-repl-component>
 
-<!-- END define "Tidal" overlay." >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
+<!-- END define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
     
     <div id="controls_view" class="w3-container" style="position:absolute;top:70px;z-index:2;background:transparent;">
     <form id='persist'>
     <table>
     <col width="2*">
+
     <col width="5*">
     <col width="100px">
     
@@ -185,7 +185,7 @@ note(`[[e5 [b4 c5] d5 [c5 b4]]
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>Cloud Music No. 4</h1>
+<h1>Cloud Music No. 5</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
@@ -288,7 +288,7 @@ Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
 
 <CsoundSynthesizer>
 <CsOptions>
--+msg_color=0 -m34 -d --sample-accurate -f -odac --midi-device=PortMIDI -M 0 --midi-key=4 --midi-velocity=5 
+-+msg_color=0 -m34 -d --sample-accurate -f -odac -M 0 --midi-key=4 --midi-velocity=5
 </CsOptions>
 <CsInstruments>
 
@@ -2398,7 +2398,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
-                                        
+                    
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
                     scale = new CsoundAC.Scale("F major");
@@ -2425,19 +2425,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                         prior_time = current_time;
                         strange_attractor_initialized = true;
                     }
+                    
+                    // Set up Tidal REPL.
+                    
                     var tidal_view = document.getElementById("tidal_view");
-                    console.log(tidal_view);
-                    // Hackish....
-                    var tidal_frame = tidal_view.children[0];
-                    console.log(tidal_frame);
-                    var tidal_window = tidal_frame.contentWindow;
-                    console.log(tidal_window);
-                    var tidal_document = tidal_frame.contentDocument;
-                    console.log(tidal_document);
-                    var tidal_buttons = tidal_document.getElementsByClassName("px-2");
-                    var tidal_start_button = tidal_buttons[0];
-                    $(tidal_start_button).click();
-
+                    console.log("tidal_view:", tidal_view);
+                    
                     interval_id = setTimeout(generate_score_fragment, tempo);
                     
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2477,7 +2470,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console.log("menu_item_controls click...");
                 $("#about_view").hide();            
                 $("#console_view").hide();            
-                if ($("#controls_view").is(":visible")){
+                $("#tidal_view").hide();            
+               if ($("#controls_view").is(":visible")){
                     $("#controls_view").hide();            
                 } else {
                     $("#controls_view").show();        
@@ -2487,6 +2481,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console.log("menu_item_console click...");
                 $("#controls_view").hide();            
                 $("#about_view").hide();            
+                $("#tidal_view").hide();            
                 let v = document.getElementById("console_view");
                 if ($("#console_view").is(":visible")){
                     $("#console_view").hide();          
@@ -2500,6 +2495,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console.log("menu_item_about click...");
                 $("#controls_view").hide();            
                 $("#console_view").hide();            
+                $("#tidal_view").hide();            
                 if ($("#about_view").is(":visible")){
                     $("#about_view").hide();            
                 } else {

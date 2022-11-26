@@ -12,4 +12,6 @@ cp ~/csound-wasm/dist-wasm/silencio/js/sprintf.js .
 cp ~/csound-wasm/dist-wasm/silencio/js/three.js .
 cp ~/csound-wasm/dist-wasm/silencio/js/tinycolor.js .
 
+cp -rf ~/strudel/out/* .
+
 ls -ll *.js
