@@ -2436,7 +2436,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     console.log(tidal_document);
                     var tidal_buttons = tidal_document.getElementsByClassName("px-2");
                     var tidal_start_button = tidal_buttons[0];
-                    tidal_start_button.onclick.apply(tidal_start_button);
+                    $(tidal_start_button).click();
 
                     interval_id = setTimeout(generate_score_fragment, tempo);
                     
