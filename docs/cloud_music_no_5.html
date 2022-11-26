@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 4</title>
+<title>Cloud Music No. 5</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
 <script src="jquery-3.6.1.js"></script>
@@ -49,27 +49,28 @@
     
 <!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-    <script src="https://unpkg.com/@strudel.cycles/embed@latest"></script>
-    <strudel-repl id="tidal_view" class="w3-container" style="position:absolute;top:70px;z-index:1;background:transparent;"> 
-      <!--
-    note(`[[e5 [b4 c5] d5 [c5 b4]]
-    [a4 [a4 c5] e5 [d5 c5]]
-    [b4 [~ c5] d5 e5]
-    [c5 a4 a4 ~]
-    [[~ d5] [~ f5] a5 [g5 f5]]
-    [e5 [~ c5] e5 [d5 c5]]
-    [b4 [b4 c5] d5 e5]
-    [c5 a4 a4 ~]],
-    [[e2 e3]*4]
-    [[a2 a3]*4]
-    [[g#2 g#3]*2 [e2 e3]*2]
-    [a2 a3 a2 a3 a2 a3 b1 c2]
-    [[d2 d3]*4]
-    [[c2 c3]*4]
-    [[b1 b2]*2 [e2 e3]*2]
-    [[a1 a2]*4]`).slow(16)
-          -->
-    </strudel-repl>
+<!-- <script src="https://unpkg.com/@strudel.cycles/embed@latest"></script> -->
+<script src="./embed.js"></script>
+<strudel-repl id="tidal_view" class="w3-container" style="position:absolute;top:70px;z-index:6;background:transparent;">
+  <!--
+note(`[[e5 [b4 c5] d5 [c5 b4]]
+[a4 [a4 c5] e5 [d5 c5]]
+[b4 [~ c5] d5 e5]
+[c5 a4 a4 ~]
+[[~ d5] [~ f5] a5 [g5 f5]]
+[e5 [~ c5] e5 [d5 c5]]
+[b4 [b4 c5] d5 e5]
+[c5 a4 a4 ~]],
+[[e2 e3]*4]
+[[a2 a3]*4]
+[[g#2 g#3]*2 [e2 e3]*2]
+[a2 a3 a2 a3 a2 a3 b1 c2]
+[[d2 d3]*4]
+[[c2 c3]*4]
+[[b1 b2]*2 [e2 e3]*2]
+[[a1 a2]*4]`).slow(16).midi()
+      -->
+</strudel-repl>
 
 <!-- END define "Tidal" overlay." >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
     
@@ -287,7 +288,7 @@ Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
 
 <CsoundSynthesizer>
 <CsOptions>
--+msg_color=0 -m34 -d --sample-accurate -f -odac 
+-+msg_color=0 -m34 -d --sample-accurate -f -odac --midi-device=PortMIDI -M 0 --midi-key=4 --midi-velocity=5 
 </CsOptions>
 <CsInstruments>
 
@@ -2397,7 +2398,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
-                    
+                                        
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
                     scale = new CsoundAC.Scale("F major");
@@ -2424,6 +2425,19 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                         prior_time = current_time;
                         strange_attractor_initialized = true;
                     }
+                    var tidal_view = document.getElementById("tidal_view");
+                    console.log(tidal_view);
+                    // Hackish....
+                    var tidal_frame = tidal_view.children[0];
+                    console.log(tidal_frame);
+                    var tidal_window = tidal_frame.contentWindow;
+                    console.log(tidal_window);
+                    var tidal_document = tidal_frame.contentDocument;
+                    console.log(tidal_document);
+                    var tidal_buttons = tidal_document.getElementsByClassName("px-2");
+                    var tidal_start_button = tidal_buttons[0];
+                    tidal_start_button.onclick.apply(tidal_start_button);
+
                     interval_id = setTimeout(generate_score_fragment, tempo);
                     
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
