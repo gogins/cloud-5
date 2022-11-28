@@ -12,6 +12,8 @@
 <script src="tinycolor.js"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
+<script src="embed.js"></script>
+
 <link rel="stylesheet" href="w3.css">
 <link rel="icon" href="data:,">
 <style>
@@ -49,26 +51,25 @@
     
 <!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-    <script src="strudel_repl_component.js"></script>
-    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;top:70px;z-index:1;background:transparent;"> 
-      <!--
-    note(`[[e5 [b4 c5] d5 [c5 b4]]
-    [a4 [a4 c5] e5 [d5 c5]]
-    [b4 [~ c5] d5 e5]
-    [c5 a4 a4 ~]
-    [[~ d5] [~ f5] a5 [g5 f5]]
-    [e5 [~ c5] e5 [d5 c5]]
-    [b4 [b4 c5] d5 e5]
-    [c5 a4 a4 ~]],
-    [[e2 e3]*4]
-    [[a2 a3]*4]
-    [[g#2 g#3]*2 [e2 e3]*2]
-    [a2 a3 a2 a3 a2 a3 b1 c2]
-    [[d2 d3]*4]
-    [[c2 c3]*4]
-    [[b1 b2]*2 [e2 e3]*2]
-    [[a1 a2]*4]`).slow(16).midi(1, 4)
-          -->
+    import { StrudelReplComponent } from "./modules/strudel_repl_component.mjs";
+    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;background:transparent;"> 
+    <!--
+"[-7*3],0,2,6,[8 7]"
+.echoWith(4,1/4, (x,n)=>x
+          .add(n*7)
+          .velocity(1/(n+1))
+          .legato(1/(n+1)))
+.velocity(perlin.range(.5,.9).slow(8))
+.stack("[22 25]*3"
+       .legato(sine.range(.5,2).slow(8))
+       .velocity(sine.range(.4,.8).slow(5))
+       .echo(4,1/12,.5))
+.scale(cat('D dorian','G mixolydian','C dorian','F mixolydian'))
+.legato(1)
+.slow(2)
+.note()
+.pianoroll({maxMidi:160}).csnd(1)
+    -->    
     </strudel-repl-component>
 
 <!-- END define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
@@ -2430,6 +2431,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     
                     var tidal_view = document.getElementById("tidal_view");
                     console.log("tidal_view:", tidal_view);
+                    tidal_view.setCsound(csound);
+                    tidal_view.togglePlay();
                     
                     interval_id = setTimeout(generate_score_fragment, tempo);
                     
@@ -2460,6 +2463,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console.log("menu_item_tidal click...");
                 $("#about_view").hide();            
                 $("#console_view").hide();            
+                $("#controls_view").hide();            
                 if ($("#tidal_view").is(":visible")){
                     $("#tidal_view").hide();            
                 } else {
