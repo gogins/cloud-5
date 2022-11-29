@@ -31,13 +31,17 @@ class StrudelReplComponent extends HTMLElement {
   connectedCallback() {
     setTimeout(() => {
       const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
-      const iframe = document.createElement('iframe');
+      let iframe = document.createElement('iframe');
+
       origin = location.origin;
       console.log("origin: ", origin);
-      const src = `${location.origin}/#${encodeURIComponent(btoa(code))}`;
+      const src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
+      console.log("src:", src);
       iframe.setAttribute('src', src);
       iframe.setAttribute('width', '800');
       iframe.setAttribute('height', '600');
+      iframe.setAttribute('allow-same-origin', '');
+      iframe.setAttribute('allowfullscreen', '');
       this.appendChild(iframe);
       this.i_frame = iframe;
     });
@@ -57,7 +61,7 @@ class StrudelReplComponent extends HTMLElement {
   setCode(tidal_code) {
     tidal_code = '<!-- ' + tidal_code + ' -->';
     this.innerHTML = tidal_code;
-    const src = `${location.origin}/#${encodeURIComponent(btoa(tidal_code))}`;
+    const src = `${location.origin}#${encodeURIComponent(btoa(tidal_code))}`;
     this.i_frame.setAttribute('src', src);
   }
   getCode() {
