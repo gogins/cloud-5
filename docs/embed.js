@@ -43,8 +43,15 @@ class StrudelReplComponent extends HTMLElement {
       iframe.setAttribute('allow-same-origin', '');
       iframe.setAttribute('allowfullscreen', '');
       this.appendChild(iframe);
+      iframe.style.display = "visible";
       this.i_frame = iframe;
     });
+  }
+  show() {
+    this.i_frame.contentDocument.getElementById("root").style.display="block";
+  }
+  hide() {
+    this.i_frame.contentDocument.getElementById("root").style.display="none";
   }
   togglePlay() {
     console.log("StrudelReplComponent.togglePlay:");

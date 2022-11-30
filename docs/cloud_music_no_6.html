@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 5</title>
+<title>Cloud Music No. 6</title>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
@@ -188,7 +188,7 @@
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>Cloud Music No. 5</h1>
+<h1>Cloud Music No. 6</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
@@ -2417,7 +2417,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;
                     if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(494293);
+                        CsoundAC.Random.seed(789);
                         strange_attractor.reset();
                         strange_attractor.setDimensionCount(4);
                         strange_attractor.setAttractorType(4);
