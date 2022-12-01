@@ -32,11 +32,15 @@ class StrudelReplComponent extends HTMLElement {
     setTimeout(() => {
       const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
       let iframe = document.createElement('iframe');
-
-      origin = location.origin;
-      console.log("origin: ", origin);
-      // TODO: Test for GitHub pages and correct base URL.
-      const src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
+      let home = location.origin;
+      console.log("origin: ", home);
+      // TODO: Fix up the "home" part of the URI to work with Strudel REPL.
+      let src;
+      if (location.href.includes("github")) {
+        src = `${location.origin}/cloud-music#${encodeURIComponent(btoa(code))}`;
+      } else {
+        src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
+      }
       console.log("src:", src);
       iframe.setAttribute('src', src);
       iframe.setAttribute('width', '800');
