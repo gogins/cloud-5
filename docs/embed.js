@@ -40,7 +40,7 @@ class StrudelReplComponent extends HTMLElement {
       let last_slash = location.href.lastIndexOf("/");
       if (last_slash > origin.length) {
         let to_insert = location.href.substring(origin.length, last_slash);
-        src = `${location.origin}/${to_insert}#${encodeURIComponent(btoa(code))}`;
+        src = `${location.origin}${to_insert}#${encodeURIComponent(btoa(code))}`;
       } else {
         src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
       }
@@ -51,15 +51,9 @@ class StrudelReplComponent extends HTMLElement {
       iframe.setAttribute('allow-same-origin', '');
       iframe.setAttribute('allowfullscreen', '');
       this.appendChild(iframe);
-      ///iframe.style.display = "visible";
+      iframe.style.display = "visible";
       this.i_frame = iframe;
     });
-  }
-  show() {
-    ///this.i_frame.contentDocument.getElementById("root").style.display="block";
-  }
-  hide() {
-    ///this.i_frame.contentDocument.getElementById("root").style.display="none";
   }
   togglePlay() {
     console.log("StrudelReplComponent.togglePlay:");
@@ -76,8 +70,19 @@ class StrudelReplComponent extends HTMLElement {
   setCode(tidal_code) {
     tidal_code = '<!-- ' + tidal_code + ' -->';
     this.innerHTML = tidal_code;
-    const src = `${location.origin}#${encodeURIComponent(btoa(tidal_code))}`;
-    this.i_frame.setAttribute('src', src);
+    // Fix up the "home" part of the URI to work with Strudel's REPL.
+    // We need to find the part of the pathname in between the origin 
+    // and the file name, and insert that into the request URI.
+    let src;
+    let last_slash = location.href.lastIndexOf("/");
+    if (last_slash > origin.length) {
+    let to_insert = location.href.substring(origin.length, last_slash);
+    src = `${location.origin}/${to_insert}#${encodeURIComponent(btoa(tidal_code))}`;
+    } else {
+    src = `${location.origin}#${encodeURIComponent(btoa(tidal_code))}`;
+    }
+    console.log("src:", src);
+    iframe.setAttribute('src', src);
   }
   getCode() {
     const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
