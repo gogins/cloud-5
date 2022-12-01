@@ -35,7 +35,7 @@ class StrudelReplComponent extends HTMLElement {
 
       origin = location.origin;
       console.log("origin: ", origin);
-      const src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
+      const src = `${location.origin}/cloud-music#${encodeURIComponent(btoa(code))}`;
       console.log("src:", src);
       iframe.setAttribute('src', src);
       iframe.setAttribute('width', '800');
