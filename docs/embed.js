@@ -32,12 +32,15 @@ class StrudelReplComponent extends HTMLElement {
     setTimeout(() => {
       const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
       let iframe = document.createElement('iframe');
-      let home = location.origin;
-      console.log("origin: ", home);
-      // TODO: Fix up the "home" part of the URI to work with Strudel REPL.
+      console.log("location.origin: ", location.origin);
+      // Fix up the "home" part of the URI to work with Strudel's REPL.
+      // We need to find the part of the pathname in between the origin 
+      // and the file name, and insert that into the request URI.
       let src;
-      if (location.href.includes("github")) {
-        src = `${location.origin}/cloud-music#${encodeURIComponent(btoa(code))}`;
+      let last_slash = location.href.lastIndexOf("/");
+      if (last_slash > origin.length) {
+        let to_insert = location.href.substring(origin.length, last_slash);
+        src = `${location.origin}/${to_insert}#${encodeURIComponent(btoa(code))}`;
       } else {
         src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
       }
