@@ -52,7 +52,7 @@
     
 <!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;background:transparent;"> 
+    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     <!--
 "[-7*3],0,2,6,[8 7]"
 .echoWith(4,1/4, (x,n)=>x
@@ -2354,7 +2354,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         }());
             
         window.onload = function() {
-            document.getElementById("tidal_view").show();
             $("#controls_view").css("display", "none");         
             $("#tidal_view").css("display", "none");         
             $("#about_view").css("display", "none");         
