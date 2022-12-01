@@ -36,7 +36,7 @@ class StrudelReplComponent extends HTMLElement {
       origin = location.origin;
       console.log("origin: ", origin);
       // TODO: Test for GitHub pages and correct base URL.
-      const src = `${location.origin}/cloud-music#${encodeURIComponent(btoa(code))}`;
+      const src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
       console.log("src:", src);
       iframe.setAttribute('src', src);
       iframe.setAttribute('width', '800');
@@ -44,15 +44,15 @@ class StrudelReplComponent extends HTMLElement {
       iframe.setAttribute('allow-same-origin', '');
       iframe.setAttribute('allowfullscreen', '');
       this.appendChild(iframe);
-      iframe.style.display = "visible";
+      ///iframe.style.display = "visible";
       this.i_frame = iframe;
     });
   }
   show() {
-    this.i_frame.contentDocument.getElementById("root").style.display="block";
+    ///this.i_frame.contentDocument.getElementById("root").style.display="block";
   }
   hide() {
-    this.i_frame.contentDocument.getElementById("root").style.display="none";
+    ///this.i_frame.contentDocument.getElementById("root").style.display="none";
   }
   togglePlay() {
     console.log("StrudelReplComponent.togglePlay:");
