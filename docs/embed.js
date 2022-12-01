@@ -35,6 +35,7 @@ class StrudelReplComponent extends HTMLElement {
 
       origin = location.origin;
       console.log("origin: ", origin);
+      // TODO: Test for GitHub pages and correct base URL.
       const src = `${location.origin}/cloud-music#${encodeURIComponent(btoa(code))}`;
       console.log("src:", src);
       iframe.setAttribute('src', src);
