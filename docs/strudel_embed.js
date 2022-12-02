@@ -33,16 +33,16 @@ class StrudelReplComponent extends HTMLElement {
       const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
       let iframe = document.createElement('iframe');
       console.log("location.origin: ", location.origin);
-      // Fix up the "home" part of the URI to work with Strudel's REPL.
+      // Fix up the "home" part of the URI to work with my version of Strudel's REPL.
       // We need to find the part of the pathname in between the origin 
       // and the file name, and insert that into the request URI.
       let src;
       let last_slash = location.href.lastIndexOf("/");
       if (last_slash > origin.length) {
         let to_insert = location.href.substring(origin.length, last_slash);
-        src = `${location.origin}${to_insert}/repl.html#${encodeURIComponent(btoa(code))}`;
+        src = `${location.origin}${to_insert}/strudel_repl.html#${encodeURIComponent(btoa(code))}`;
       } else {
-        src = `${location.origin}/repl.html#${encodeURIComponent(btoa(code))}`;
+        src = `${location.origin}/strudel_repl.html#${encodeURIComponent(btoa(code))}`;
       }
       console.log("src:", src);
       iframe.setAttribute('src', src);
