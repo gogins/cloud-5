@@ -9,15 +9,17 @@
     <!-- TODO: add manifest images -->
     <!-- <link rel="manifest" href="%PUBLIC_URL%/manifest.json" /> -->
     <title>cloud-music</title>
+    <script src="jquery-3.6.1.js"></script>
+    <link rel="stylesheet" href="assets/index.9ac7a85e.css">
     <script type="module" crossorigin src="./assets/index.14f87e30.js"></script>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="assets/index.9ac7a85e.css">
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <!-- Hidden by default so that 'index' works for other pages here. -->
-    <div id="root"></div>
- <div id="intro" class="w3-container" style="color:white;background:060606;margin:14px;padding:8px;display:none;">  
+    <div id="root">
+    
+    </div>
+    <div id="intro" class="w3-container" style="color:white;background:060606;margin:14px;padding:8px;">  
+
 <h1 style="font-size:18pt;margin:4pt;">Computer music in the cloud by Michael Gogins.</h1> 
 
 <p><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
@@ -48,7 +50,13 @@ Some pieces use third party libraries.
 <li><a href="Cloud_music_no_4.html">Cloud Music No. 4</a>
 <li><a href="Cloud_music_no_5.html">Cloud Music No. 5</a>
 </ul>
- </div>   
-    
+
+    </div>   
+    <script>
+      window.onload = function() {
+        ///$("#root").css("display", "block");         
+        ///$("#intro").css("display", "block");         
+      };
+    </script>
   </body>
 </html>

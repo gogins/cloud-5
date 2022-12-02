@@ -40,9 +40,9 @@ class StrudelReplComponent extends HTMLElement {
       let last_slash = location.href.lastIndexOf("/");
       if (last_slash > origin.length) {
         let to_insert = location.href.substring(origin.length, last_slash);
-        src = `${location.origin}${to_insert}#${encodeURIComponent(btoa(code))}`;
+        src = `${location.origin}${to_insert}/repl.html#${encodeURIComponent(btoa(code))}`;
       } else {
-        src = `${location.origin}#${encodeURIComponent(btoa(code))}`;
+        src = `${location.origin}/repl.html#${encodeURIComponent(btoa(code))}`;
       }
       console.log("src:", src);
       iframe.setAttribute('src', src);

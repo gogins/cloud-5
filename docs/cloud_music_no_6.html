@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 6</title>
+<title>Cloud Music No. 5</title>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
@@ -13,8 +13,6 @@
 <script src="tinycolor.js"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
-<script type="module" crossorigin src="/assets/index.14f87e30.js"></script>
-<link rel="stylesheet" href="/assets/index.9ac7a85e.css">
 <script src="embed.js"></script>
 
 <link rel="stylesheet" href="w3.css">
@@ -51,10 +49,12 @@
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
+    <div id=root>
+    </div>
     
-<!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
+<!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
 
-    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;background:transparent;"> 
+    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     <!--
 "[-7*3],0,2,6,[8 7]"
 .echoWith(4,1/4, (x,n)=>x
@@ -72,7 +72,7 @@
 .note()
 .pianoroll({maxMidi:160}).csnd(4)
     -->    
-    </strudel-repl-component>
+    </strudel-repl-component> -->
 
 <!-- END define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
     
@@ -188,7 +188,7 @@
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>Cloud Music No. 6</h1>
+<h1>Cloud Music No. 5</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
@@ -2356,9 +2356,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         }());
             
         window.onload = function() {
-            document.getElementById("tidal_view").show();
+        var tidal_view = document.getElementById("root");
             $("#controls_view").css("display", "none");         
-            $("#tidal_view").css("display", "none");         
+            $(tidal_view).css("display", "none");         
             $("#about_view").css("display", "none");         
             $("#console_view").css("display", "none");      
             $("#menu_item_play").click(async function(event) {
@@ -2417,7 +2417,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;
                     if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(789);
+                        CsoundAC.Random.seed(494293);
                         strange_attractor.reset();
                         strange_attractor.setDimensionCount(4);
                         strange_attractor.setAttractorType(4);
@@ -2484,7 +2484,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 $("#about_view").hide();            
                 $("#console_view").hide();            
                 $("#tidal_view").hide();            
-               if ($("#controls_view").is(":visible")){
+                if ($("#controls_view").is(":visible")){
                     $("#controls_view").hide();            
                 } else {
                     $("#controls_view").show();        
