@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 5</title>
+<title>Cloud Music No. 6</title>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
@@ -13,7 +13,7 @@
 <script src="tinycolor.js"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
-<script src="embed.js"></script>
+<script src="strudel_embed.js"></script>
 
 <link rel="stylesheet" href="w3.css">
 <link rel="icon" href="data:,">
@@ -49,10 +49,8 @@
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
-    <div id=root>
-    </div>
     
-<!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
+<!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     <!--
@@ -70,9 +68,9 @@
 .legato(1)
 .slow(5)
 .note()
-.pianoroll({maxMidi:160}).csnd(4)
+.pianoroll({maxMidi:160}).csnd(6)
     -->    
-    </strudel-repl-component> -->
+    </strudel-repl-component>
 
 <!-- END define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
     
@@ -98,21 +96,21 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_FilteredSines_level>FilteredSines level</label>
+    <label for=gk_Guitar_level>Guitar level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=24 id=gk_FilteredSines_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=16 id=gk_Guitar_level step=.001>
     <td>
-    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>24</output>
+    <output for=gk_Guitar_level id=gk_Guitar_level_output>16</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Guitar_level>Guitar level</label>
+    <label for=gk_FilteredSines_level>FilteredSines level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=24 id=gk_Guitar_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_FilteredSines_level step=.001>
     <td>
-    <output for=gk_Guitar_level id=gk_Guitar_level_output>24</output>
+    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>3</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -138,11 +136,91 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
+    <label for=gk_Plucked_level>Plucked level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_Plucked_level step=.001>
+    <td>
+    <output for=gk_Plucked_level id=gk_Plucked_level_output>10</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_FMWaterBell_level>FM Water Bell level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_FMWaterBell_level step=.001>
+    <td>
+    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>10</output>
+    </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_YiString_level>Yi String level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_YiString_level step=.001>
+    <td>
+    <output for=gk_YiString_level id=gk_YiString_level_output>-5</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Harpsichord_level>Harpsichord level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Harpsichord_level step=.001>
+    <td>
+    <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>-5</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_ZakianFlute_level>Zakian Flute level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_ZakianFlute_level step=.001>
+    <td>
+    <output for=gk_ZakianFlute_level id=gk_ZakianFlute_level_output>-8</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Kung4_level>Kung instrument 4 level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung4_level step=.001>
+    <td>
+    <output for=gk_Kung4_level id=gk_Kung4_level_output>-8</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Kung2_level>Kung instrument 2 level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung2_level step=.001>
+    <td>
+    <output for=gk_Kung2_level id=gk_Kung2_level_output>-8</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_Bower_level>Bower level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Bower_level step=.001>
+    <td>
+    <output for=gk_Bower_level id=gk_Bower_level_output>-8</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.96 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.8 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.96</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.8</output>
     </tr>
     <tr>
     <td>
@@ -188,7 +266,7 @@
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>Cloud Music No. 5</h1>
+<h1>Cloud Music No. 6</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
@@ -198,12 +276,18 @@ October 2022</h3>
 browser using high-resolution audio. It will play indefinitely, never ending, 
 always changing. 
 
-<p>This piece is generated by <a href="https://strudel.tidalcycles.org/">Strudel</a>,
-a JavaScript implementation of Tidal Cycles, which is accessed from a REPL embedded 
-in this piece -- use the Tidal button to view the Tidal code. The user can edit the 
-Tidal code that generates the score, and click on the update button to hear it. 
-Thanks to Felix Roos for helpful hints along the way. Strudel sends its notes to 
-Csound for synthesis.
+<p>The faster moving notes in this piece are generated by 
+<a href="https://strudel.tidalcycles.org/">Strudel</a>, a JavaScript 
+implementation of Tidal Cycles, which is accessed from a REPL embedded 
+in this piece -- use the Tidal button to view the Tidal code. The user can 
+edit the Tidal code that generates the score, and click on the update button 
+to hear it. Thanks to Felix Roos for helpful hints along the way. Strudel 
+ends its notes to Csound for synthesis.
+
+<p>The slower moving notes are generated by a 4-dimensional chaotic dynamical 
+system. The state of the system is mapped to indices of set-type, inversion, 
+pitch-class transposition, and octavewise revoicing. In short, the chaotic 
+orbit of this system becomes an unceasing flow of chord progressions.
 
 <p>The notes are played by a Csound orchestra that is embedded in this Web 
 page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
@@ -211,14 +295,12 @@ build of Csound</a>. This in turn includes my
 <a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
 algorithmic composition.
 
-The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
-a sine-wave visualization of the music, using code adapted from <a 
-href="https://www.shadertoy.com/view/4ljGD1"><b><i>Sound Sinus Wave</i></b></a>
-by <a href="https://www.shadertoy.com/user/Eitraz">Eitraz</a>.
-
+<p>The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
+a sine-wave visualization of the music.
 
 <p>Feel free to use this piece as a template for creating new pieces of this 
-type... as long as it doesn't sound too much like this one!
+type... as long as it honors the licenses and doesn't sound too much like this 
+one!
 
 <p>Please report any problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
@@ -233,14 +315,14 @@ menu to open the developer tools.
 
 <h2>Credits</h2>
 
+<p>The Tidal patch is adapted by me from the original patch by Felix Roos and 
+is licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>.
+
 <p>The StrangeAttractor class in CsoundAC, which computes the 4-dimensional 
 orbit of a system of 4 coupled ordinary differential equations, uses code 
 inspired by Julien C. Sprott's book <a 
 href="https://sprott.physics.wisc.edu/fractals/booktext/SABOOK.PDF"><b><i>
-Strange Attractors</i></b></a>. The state of the system is mapped to indices 
-of set-type, inversion, pitch-class transposition, and octavewise revoicing. 
-In short, the chaotic orbit of this system becomes an unceasing flow of chord 
-progressions.
+Strange Attractors</i></b></a>. 
 
 <p>My code in CsoundAC for working with chords, scales, and voice-leading 
 implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri 
@@ -255,9 +337,12 @@ Steinarsson's MS thesis</a> with code from <a
 href="https://github.com/pingec/downsample-lttb">
 https://github.com/pingec/downsample-lttb</a>.
 
-<p>Csound instruments are directly copied with minor alterations from <a 
-href="https://github.com/csound/examples/blob/master/csd/xanadu-high-resolution.csd"> 
-Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
+<p>The music visualization code is adapted from <a 
+href="https://www.shadertoy.com/view/4ljGD1"><b><i>Sound Sinus Wave</i></b></a>
+by <a href="https://www.shadertoy.com/user/Eitraz">Eitraz</a>
+
+<p>Some of the Csound instruments are by me, others are adapted by me from 
+patches originally written by others as noted in the orchestra.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -2356,9 +2441,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         }());
             
         window.onload = function() {
-        var tidal_view = document.getElementById("root");
             $("#controls_view").css("display", "none");         
-            $(tidal_view).css("display", "none");         
+            $("#tidal_view").css("display", "none");         
             $("#about_view").css("display", "none");         
             $("#console_view").css("display", "none");      
             $("#menu_item_play").click(async function(event) {
