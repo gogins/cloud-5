@@ -55,6 +55,24 @@ class StrudelReplComponent extends HTMLElement {
       this.i_frame = iframe;
     });
   }
+  startPlaying() {
+    console.log("StrudelReplComponent.startPlaying:");
+    this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
+    // TODO: Remove dependency on jQuery and find a reliable method of 
+    // obtaining the buttons.
+    if ($(this.buttons[0]).text() == "play") {
+        $(this.buttons[0]).click();
+    }
+  }
+  stopPlaying() {
+    console.log("StrudelReplComponent.stopPlaying:");
+    this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
+    // TODO: Remove dependency on jQuery and find a reliable method of 
+    // obtaining the buttons.
+    if ($(this.buttons[0]).text() == "stop") {
+        $(this.buttons[0]).click();
+    }
+  }
   togglePlay() {
     console.log("StrudelReplComponent.togglePlay:");
     this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
