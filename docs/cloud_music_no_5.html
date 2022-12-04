@@ -68,7 +68,7 @@
 .legato(1)
 .slow(5)
 .note()
-.pianoroll({maxMidi:160}).csoundm(6)
+.pianoroll({maxMidi:160}).csoundm(6, [1, 3, 9])
     -->    
     </strudel-repl-component>
 
@@ -96,7 +96,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Guitar_level>Guitar level</label>
+    <label for=gk_Guitar_level> 1 Guitar level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=16 id=gk_Guitar_level step=.001>
     <td>
@@ -106,7 +106,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_FilteredSines_level>FilteredSines level</label>
+    <label for=gk_FilteredSines_level> 2 FilteredSines level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_FilteredSines_level step=.001>
     <td>
@@ -116,7 +116,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Blower_level>Blower level</label>
+    <label for=gk_Blower_level> 3 Blower level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Blower_level step=.001>
     <td>
@@ -126,7 +126,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Sweeper_level>Sweeper level</label>
+    <label for=gk_Sweeper_level> 4 Sweeper level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Sweeper_level step=.001>
     <td>
@@ -136,7 +136,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Plucked_level>Plucked level</label>
+    <label for=gk_Plucked_level> 5 Plucked level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_Plucked_level step=.001>
     <td>
@@ -146,7 +146,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_FMWaterBell_level>FM Water Bell level</label>
+    <label for=gk_FMWaterBell_level> 6 FM Water Bell level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_FMWaterBell_level step=.001>
     <td>
@@ -156,7 +156,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_YiString_level>Yi String level</label>
+    <label for=gk_YiString_level> 7 Yi String level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_YiString_level step=.001>
     <td>
@@ -166,7 +166,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Harpsichord_level>Harpsichord level</label>
+    <label for=gk_Harpsichord_level>8 Harpsichord level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Harpsichord_level step=.001>
     <td>
@@ -176,7 +176,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_ZakianFlute_level>Zakian Flute level</label>
+    <label for=gk_ZakianFlute_level> 9 Zakian Flute level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_ZakianFlute_level step=.001>
     <td>
@@ -186,7 +186,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Kung4_level>Kung instrument 4 level</label>
+    <label for=gk_Kung4_level>10 Kung instrument 4 level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung4_level step=.001>
     <td>
@@ -196,7 +196,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Kung2_level>Kung instrument 2 level</label>
+    <label for=gk_Kung2_level>11 Kung instrument 2 level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung2_level step=.001>
     <td>
@@ -206,7 +206,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Bower_level>Bower level</label>
+    <label for=gk_Bower_level>12 Bower level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Bower_level step=.001>
     <td>
