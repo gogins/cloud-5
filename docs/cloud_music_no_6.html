@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 6</title>
+<title>Cloud Music No. 5</title>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
@@ -54,22 +54,20 @@
 
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     <!--
-"[-7*3],0,2,6,[8 7]"
-.echoWith(4,1/4, (x,n)=>x
-          .add(n*7)
-          .velocity(1/(n+1))
-          .legato(1/(n+1)))
-.velocity(perlin.range(.5,.9).slow(8))
-.stack("[22 25]*3"
-       .legato(sine.range(.5,2).slow(8))
-       .velocity(sine.range(.4,.8).slow(5))
-       .echo(4,1/12,.5))
-.scale(cat('D dorian','G mixolydian','C dorian','F mixolydian'))
-.legato(1)
-.slow(5)
-.note()
-.pianoroll({maxMidi:160}).csnd(6)
-    -->    
+"0, 2, 4,[7 6, 5]"
+  .add("<0 1 2 3 4 5 7 8>")
+  .slow(9,5).add(54)
+  .note().csound(1).stack(
+"0, 2, 4,[7 6, 5]"
+  .late(saw.slow(40))
+  .transpose(-3)
+  .add("<0 1 2 3 4 5 7 8>")
+  .transpose("<0 1 2 3>/8")
+  .slow(5,9)
+  .scale('C bebop major')
+  .legato(.8)
+  .note().csoundm(6, 9)).fast(3).pianoroll()
+    -->
     </strudel-repl-component>
 
 <!-- END define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
@@ -96,7 +94,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Guitar_level>Guitar level</label>
+    <label for=gk_Guitar_level> 1 Guitar level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=16 id=gk_Guitar_level step=.001>
     <td>
@@ -106,7 +104,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_FilteredSines_level>FilteredSines level</label>
+    <label for=gk_FilteredSines_level> 2 FilteredSines level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_FilteredSines_level step=.001>
     <td>
@@ -116,7 +114,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Blower_level>Blower level</label>
+    <label for=gk_Blower_level> 3 Blower level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Blower_level step=.001>
     <td>
@@ -126,7 +124,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Sweeper_level>Sweeper level</label>
+    <label for=gk_Sweeper_level> 4 Sweeper level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Sweeper_level step=.001>
     <td>
@@ -136,7 +134,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Plucked_level>Plucked level</label>
+    <label for=gk_Plucked_level> 5 Plucked level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_Plucked_level step=.001>
     <td>
@@ -146,7 +144,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_FMWaterBell_level>FM Water Bell level</label>
+    <label for=gk_FMWaterBell_level> 6 FM Water Bell level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_FMWaterBell_level step=.001>
     <td>
@@ -156,7 +154,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_YiString_level>Yi String level</label>
+    <label for=gk_YiString_level> 7 Yi String level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_YiString_level step=.001>
     <td>
@@ -166,7 +164,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Harpsichord_level>Harpsichord level</label>
+    <label for=gk_Harpsichord_level>8 Harpsichord level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Harpsichord_level step=.001>
     <td>
@@ -176,7 +174,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_ZakianFlute_level>Zakian Flute level</label>
+    <label for=gk_ZakianFlute_level> 9 Zakian Flute level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_ZakianFlute_level step=.001>
     <td>
@@ -186,7 +184,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Kung4_level>Kung instrument 4 level</label>
+    <label for=gk_Kung4_level>10 Kung instrument 4 level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung4_level step=.001>
     <td>
@@ -196,7 +194,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Kung2_level>Kung instrument 2 level</label>
+    <label for=gk_Kung2_level>11 Kung instrument 2 level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung2_level step=.001>
     <td>
@@ -206,7 +204,7 @@
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Bower_level>Bower level</label>
+    <label for=gk_Bower_level>12 Bower level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Bower_level step=.001>
     <td>
@@ -266,7 +264,7 @@
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>Cloud Music No. 6</h1>
+<h1>Cloud Music No. 5</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
@@ -2402,13 +2400,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-            CsoundAC = await createCsoundAC(); 
-            strange_attractor = new CsoundAC.StrangeAttractor();
-            conversions = new CsoundAC.Conversions();
-            score = new CsoundAC.Score();
-            scale = new CsoundAC.Scale("F major");
-            chord = scale.chord(1, 5, 3);
-            cs_random = new CsoundAC.Random();
+            //~ CsoundAC = await createCsoundAC(); 
+            //~ strange_attractor = new CsoundAC.StrangeAttractor();
+            //~ conversions = new CsoundAC.Conversions();
+            //~ score = new CsoundAC.Score();
+            //~ scale = new CsoundAC.Scale("F major");
+            //~ chord = scale.chord(1, 5, 3);
+            //~ cs_random = new CsoundAC.Random();
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
             
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2430,14 +2428,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-            csound_message_callback(CsoundAC.chord_space_version() + "\n");
-            let CM = CsoundAC.chordForName("CM");
-            CM = CM.T(-4.);
+            //~ csound_message_callback(CsoundAC.chord_space_version() + "\n");
+            //~ let CM = CsoundAC.chordForName("CM");
+            //~ CM = CM.T(-4.);
 
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-            csound_message_callback(CM.information());
-            csound_message_callback(CM.information_debug(-1));
+            //~ csound_message_callback(CM.information());
+            //~ csound_message_callback(CM.information_debug(-1));
         }());
             
         window.onload = function() {
@@ -2447,6 +2445,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             $("#console_view").css("display", "none");      
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
+                let tidal_view = document.getElementById("tidal_view");
                 if (csound == null) {
                     try {
                         csound_message_callback("Trying to load CsoundAudioNode...\n");
@@ -2485,8 +2484,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-                    pitv = new CsoundAC.PITV();
-                    pitv.initialize(4, 48, 1, true);
+                    //~ pitv = new CsoundAC.PITV();
+                    //~ pitv.initialize(4, 48, 1, true);
                     
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                     
@@ -2495,39 +2494,38 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-                    scale = new CsoundAC.Scale("F major");
-                    alert("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
-                    let tempo = document.getElementById("gi_Composition_tempo").value;
-                    let interval = 1 / tempo;
-                    let interval_milliseconds = interval * 1000;
-                    if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(494293);
-                        strange_attractor.reset();
-                        strange_attractor.setDimensionCount(4);
-                        strange_attractor.setAttractorType(4);
-                        cs_random.sample();
-                        while (true) {
-                            let not_found = strange_attractor.searchForAttractor();
-                            console.log("code: " + strange_attractor.getCode());
-                            if (not_found === false) {
-                                break;
-                            }
-                        }
-                        ///strange_attractor.setCode("SJEOSGBEDTSYIUJLGICPVYJPNDRYXLUDFHBSMFMNEBWKWJPXLOWIARKQBEXJDBSYVQHHACDSVATCJELUKHHBUEJUXNKEMNARCJBMBVSBKS");
-                        csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
-                        current_time = window.performance.now();
-                        prior_time = current_time;
-                        strange_attractor_initialized = true;
-                    }
+                    //~ scale = new CsoundAC.Scale("F major");
+                    //~ alert("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
+                    //~ let tempo = document.getElementById("gi_Composition_tempo").value;
+                    //~ let interval = 1 / tempo;
+                    //~ let interval_milliseconds = interval * 1000;
+                    //~ if (strange_attractor_initialized == false) {
+                        //~ CsoundAC.Random.seed(494293);
+                        //~ strange_attractor.reset();
+                        //~ strange_attractor.setDimensionCount(4);
+                        //~ strange_attractor.setAttractorType(4);
+                        //~ cs_random.sample();
+                        //~ while (true) {
+                            //~ let not_found = strange_attractor.searchForAttractor();
+                            //~ console.log("code: " + strange_attractor.getCode());
+                            //~ if (not_found === false) {
+                                //~ break;
+                            //~ }
+                        //~ }
+                        //~ ///strange_attractor.setCode("SJEOSGBEDTSYIUJLGICPVYJPNDRYXLUDFHBSMFMNEBWKWJPXLOWIARKQBEXJDBSYVQHHACDSVATCJELUKHHBUEJUXNKEMNARCJBMBVSBKS");
+                        //~ csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
+                        //~ current_time = window.performance.now();
+                        //~ prior_time = current_time;
+                        //~ strange_attractor_initialized = true;
+                    //~ }
                     
                     // Set up Tidal REPL.
                     
-                    var tidal_view = document.getElementById("tidal_view");
                     console.log("tidal_view:", tidal_view);
                     tidal_view.setCsound(csound);
-                    tidal_view.togglePlay();
+                    tidal_view.startPlaying();
                     
-                    interval_id = setTimeout(generate_score_fragment, tempo);
+                    //~ interval_id = setTimeout(generate_score_fragment, tempo);
                     
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2539,6 +2537,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     csound.Reset();
                     csound_message_callback("Csound is stopping...\n");
                     $("#menu_item_play").html("Play");
+                    tidal_view.stopPlaying();
                }
              });
             $("#menu_item_fullscreen").click(function(event) {

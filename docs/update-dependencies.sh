@@ -14,7 +14,7 @@ cp ~/csound-wasm/dist-wasm/silencio/js/tinycolor.js .
 
 rm -rf assets
 cp -rf ~/strudel/out/* .
-cp ~/strudel/packages/embed/embed.js .
+rm index.html
 
 ls -ll *.js
 ls -ll assets/
