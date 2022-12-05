@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 5</title>
+<title>Cloud Music No. 6</title>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
@@ -54,19 +54,17 @@
 
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     <!--
-"0, 2, 4,[7 6, 5]"
+"0,2,[7 6]"
   .add("<0 1 2 3 4 5 7 8>")
-  .slow(9,5).add(54)
-  .note().csound(1).stack(
-"0, 2, 4,[7 6, 5]"
-  .late(saw.slow(40))
-  .transpose(-3)
-  .add("<0 1 2 3 4 5 7 8>")
-  .transpose("<0 1 2 3>/8")
-  .slow(5,9)
-  .scale('C bebop major')
-  .legato(.8)
-  .note().csoundm(6, 9)).fast(3).pianoroll()
+  .transpose("<0 1 2 1>/8")
+  .slow(5).transpose(66)
+  .note().csoundm(6).orbit(2).stack(
+"0,2,[7 6]"
+  .add("<0 1 2 3 4 5 7 8 9>")
+  .transpose("<0 1 2 1>/8")
+  .slow(7).transpose(42,36)
+  .note().csoundm(4,11)).scale(cat('D dorian', 'G mixolydian', 'A dorian', 'F mixolydian'))
+.pianoroll()
     -->
     </strudel-repl-component>
 
