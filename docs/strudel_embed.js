@@ -9,8 +9,8 @@ class Strudel extends HTMLElement {
       const src = `https://strudel.tidalcycles.org/#${encodeURIComponent(btoa(code))}`;
       // const src = `http://localhost:3000/#${encodeURIComponent(btoa(code))}`;
       iframe.setAttribute('src', src);
-      iframe.setAttribute('width', '600');
-      iframe.setAttribute('height', '400');
+      iframe.setAttribute('width', '800');
+      iframe.setAttribute('height', '600');
       this.appendChild(iframe);
     });
   }
@@ -46,11 +46,11 @@ class StrudelReplComponent extends HTMLElement {
       }
       console.log("src:", src);
       iframe.setAttribute('src', src);
-      iframe.setAttribute('width', '800');
-      iframe.setAttribute('height', '600');
       iframe.setAttribute('allow-same-origin', '');
       iframe.setAttribute('allowfullscreen', '');
       this.appendChild(iframe);
+      iframe.setAttribute('width', '800px');
+      iframe.setAttribute('height', '600px');
       iframe.style.display = "visible";
       this.i_frame = iframe;
     });

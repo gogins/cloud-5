@@ -34,3 +34,5 @@ Some pieces use third party libraries.
 - [Cloud Music No. 5](cloud_music_no_5.html). Also embeds a JavaScript port of Tidal Cycles.
 
 - [Cloud Music No. 6](cloud_music_no_6.html). Also embeds a JavaScript port of Tidal Cycles.
+
+- [Cloud Music No. 7](cloud_music_no_7.html). Also embeds a JavaScript port of Tidal Cycles.
