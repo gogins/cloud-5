@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "dev": "vite --host",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "static": "npx serve ../docs"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "jquery": "^3.6.2",
+    "p5": "^1.5.0",
+    "sprintf-js": "^1.1.2",
+    "three": "^0.147.0",
+    "three-trackballcontrols": "^0.9.0",
+    "tinycolor": "^0.0.1",
+    "vite": "^4.0.1"
+  }
+}
