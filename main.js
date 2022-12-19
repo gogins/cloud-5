@@ -9,7 +9,7 @@ document.querySelector('#app').innerHTML = `
       <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
     </a>
     <h1>cloud-music</h1>
-      <p>This index.html file is kind of like a makefile for cloud-music.
+      <p>This index.html file is kind of like a makefile for cloud-music.</p>
     <div class="card">
       <button id="counter" type="button"></button>
     </div>
