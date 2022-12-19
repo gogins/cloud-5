@@ -58,8 +58,8 @@ computer.
 
 There is no need to build or configure anything. In a terminal, simply change 
 to your cloud-music directory and run `python3 -m http.server`. Then you can 
-use your Web browser to go to http://localhost:8000. You can view and run any 
-of these compositions in your browser.
+use your Web browser to go to `http://localhost:8000`, where you can view and 
+run any of these compositions in your browser.
 
 To create a new composition, simply create a new HTML file. You can copy one 
 of my existing pieces as a template and modify it, or you can create a new HTML 
@@ -73,8 +73,8 @@ case that a composer will write new software as libraries or other resources
 to support a number of their musical compositions.
 
 To develop this kind of software in your fork of cloud-music, keep in mind 
-that the cloud-music project uses [npm](https://www.npmjs.com/ )and [vite]
-(https://vitejs.dev/), which of course must first be installed. 
+that the cloud-music project uses [npm](https://www.npmjs.com/) and 
+[vite](https://vitejs.dev/), which of course must first be installed. 
 
 You will generally want to write your new software as JavaScript or TypeScript 
 in a subdirectory of the `/node_modules` directory, as a regular npm module. 
