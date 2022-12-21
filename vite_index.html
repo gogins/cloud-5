@@ -8,6 +8,19 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/main.js"></script>
+    <!-- Make a build that bundles all dependencies, in order to create a 
+         static development environment. -->
+    <script src="CsoundAudioNode.js"></script>
+    <script src="CsoundAC.js"></script>
+    <script type="module" src="/node_modules/dat.gui"></script>
+    <script type="module" src="/node_modules/jquery"></script>
+    <script type="module" src="/node_modules/p5"></script>
+    <script type="module" src="/node_modules/sprintf-js"></script>
+    <script type="module" src="/node_modules/three"></script>
+    <script type="module" src="/node_modules/three-trackballcontrols"></script>
+    <!-- <script type="module" src="/node_modules/tinycolor"></script> -->
+    <script type="module" src="/node_modules/dat.gui"></script>
+  
   <h1>Computer music in the cloud by Michael Gogins.</h1>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">

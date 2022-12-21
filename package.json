@@ -2,7 +2,7 @@
   "scripts": {
     "dev": "vite --host",
     "start": "vite",
-    "build": "vite build",
+    "build": "vite build && cd strudel && npm run build && cd .. && cp -rf strudel/out/* dist/ && mv dist/index.html dist/strudel_repl.html && cp strudel/packages/embed/embed.js dist/strudel_embed.js",
     "preview": "vite preview",
     "static": "npx serve dist"
   },
@@ -11,10 +11,16 @@
     "dat.gui": "^0.7.9",
     "jquery": "^3.6.2",
     "p5": "^1.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "sprintf-js": "^1.1.2",
     "three": "^0.147.0",
     "three-trackballcontrols": "^0.9.0",
     "tinycolor": "^0.0.1",
     "vite": "^4.0.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^3.0.0",
+    "rollup-plugin-visualizer": "^5.8.3"
   }
 }
