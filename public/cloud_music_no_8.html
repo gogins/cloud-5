@@ -54,8 +54,9 @@
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     <!--
     
-await csacLoad();
-let chord = await csacChord('D7b9');
+csacLoad();
+let chord = csacChord('D7');
+let pitv = csacPitv(4, 36);
 stack("0,3,[11 6]"
   .add("<0 1 2 [3 4] 5 7 8>")
   .transpose("<0 1 2 1>/8")
@@ -63,6 +64,7 @@ stack("0,3,[11 6]"
   .transpose(60)
   .legato(.95)
   .iter(2)
+  .pitvV(pitv, "<5 10 -4>").pitvN(pitv)
   .note()
   .csoundm("6 9"),
 "0,4,[7 6]"
