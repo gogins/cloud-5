@@ -55,6 +55,7 @@
     <!--
     
 csacLoad();
+csacDebugging(true);
 let chord = csacChord('D7');
 let pitv = csacPitv(4, 36);
 stack("0,3,[11 6]"
@@ -64,9 +65,9 @@ stack("0,3,[11 6]"
   .transpose(60)
   .legato(.95)
   .iter(2)
-  .pitvV(pitv, "<5 10 -4>").pitvN(pitv)
-  .note()
-  .csoundm("6 9"),
+  .pitvV(pitv, "<5 10 4>")
+  .pitvN(pitv)
+  .note().csoundm("6 9"),
 "0,4,[7 6]"
   .sub("<0 1 2 3 4 5 [7 8] 9>")
   .transpose("<0 1 -1 1>/3")
@@ -74,8 +75,10 @@ stack("0,3,[11 6]"
   .slow(7)
   .transpose("<48 36>/7")
   .legato(.95)
-  .note()
-  .csoundm("12 11 4"))
+  .pitvP(pitv, "<33 14 12 5>")
+  .pitvT(pitv, "2 5 -3")
+  .pitvN(pitv)
+  .note().csoundm("<12 11 4>"))
   .slow(3)
   // .scale(slowcat('D dorian', 'G mixolydian', 'C dorian', 'F mixolydian')/18)
   .pianoroll({cycles:120})
