@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
 <script src="jquery-3.6.1.js"></script>
-<script src="p5.js"></script>
 <script src="sprintf.js"></script>
 <script src="three.js"></script>
 <script src="ace.js"></script>
@@ -55,9 +54,10 @@
     <!--
     
 csacLoad();
-csacDebugging(false);
-let chord = csacChord('D7');
-let pitv = csacPitv(4, 36);
+csacDebugging(true);
+let chord = csacChord('GM');
+let chord2 = csacChord('Fm');
+let scale = csacScale('C minor');
 stack("0,3,[11 6]"
   .add("<0 1 2 [3 4] 5 7 8>")
   .transpose("<0 1 2 1>/8")
@@ -65,8 +65,8 @@ stack("0,3,[11 6]"
   .transpose(60)
   .legato(.95)
   .iter(2)
-  .pitvV(pitv, "<5 10 4>")
-  .pitvN(pitv)
+  .scaleT(scale, chord2, "<5 -1 4>")
+  .chordN(chord2)
   .note().csoundm("6 9"),
 "0,4,[7 6]"
   .sub("<0 1 2 3 4 5 [7 8] 9>")
@@ -75,11 +75,10 @@ stack("0,3,[11 6]"
   .slow(7)
   .transpose("<48 36>/7")
   .legato(.95)
-  .pitvP(pitv, "<33 14 12 5>")
-  .pitvT(pitv, "2 5 -3")
-  .pitvN(pitv)
-  .note().csoundm("<12 11 4>"))
   .slow(3)
+  .scaleM(scale, chord, 0)
+  .scaleN(scale)
+  .note().csoundm("<12 11 4>"))
   .pianoroll({cycles:120})
   
     -->
