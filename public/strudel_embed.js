@@ -92,4 +92,4 @@ class StrudelReplComponent extends HTMLElement {
   }
 }
 
-customElements.define('strudel-repl', StrudelReplComponent);
+customElements.define('strudel-repl-component', StrudelReplComponent);
