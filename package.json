@@ -2,10 +2,16 @@
   "scripts": {
     "dev": "vite --host",
     "start": "vite",
-    "build": "vite build && cd strudel && npm run build && cd .. && cp -rf strudel/out/* dist/ && mv dist/index.html dist/strudel_repl.html && cp strudel/packages/embed/embed.js dist/strudel_embed.js",
+    "bootstrap": "lerna bootstrap",
+    "setup": "npm install && npm run bootstrap",
+    "build-old": "vite build && cd strudel && npm run build && cd .. && cp -rf strudel/out/* dist/ && mv dist/index.html dist/strudel_repl.html && cp strudel/packages/embed/embed.js dist/strudel_embed.js",
+    "build": "vite build",
     "preview": "vite preview",
     "static": "npx serve -p 8000 dist"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "dependencies": {
     "ace-builds": "^1.14.0",
     "dat.gui": "^0.7.9",
