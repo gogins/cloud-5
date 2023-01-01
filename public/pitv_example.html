@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cloud Music No. 4</title>
+<title>PITV Example</title>
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
 <script src="jquery-3.6.1.js"></script>
@@ -12,6 +13,7 @@
 <script src="tinycolor.js"></script>
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
+<script src="strudel_embed.js"></script>
 <link rel="stylesheet" href="w3.css">
 <link rel="icon" href="data:,">
 <style>
@@ -38,6 +40,7 @@
         <ul class = "menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
+            <li id="menu_item_tidal" class="w3-btn w3-hover-text-light-green">Tidal</li>
             <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
@@ -45,62 +48,162 @@
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
-    <div id="controls_view" class="w3-container " style="position:absolute;top:70px;z-index:2;background:transparent;">
+    
+<!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
+
+    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
+    <!--
+    
+csacLoad();
+csacDebugging(false);
+let chord = csacChord('D7');
+let pitv = csacPitv(4, 36);
+stack("0,3,[11 6]"
+  .add("<0 1 2 [3 4] 5 7 8>")
+  .transpose("<0 1 2 1>/8")
+  .slow(7).degradeBy(.125)
+  .transpose(60)
+  .legato(.95)
+  .iter(2)
+  .pitvV(pitv, "<5 10 4>")
+  .pitvN(pitv)
+  .note().csoundm("6 9"),
+"0,4,[7 6]"
+  .sub("<0 1 2 3 4 5 [7 8] 9>")
+  .transpose("<0 1 -1 1>/3")
+  .iter(4)
+  .slow(7)
+  .transpose("<48 36>/7")
+  .legato(.95)
+  .pitvP(pitv, "<33 14 12 5>")
+  .pitvT(pitv, "2 5 -3")
+  .pitvN(pitv)
+  .note().csoundm("<12 11 4>"))
+  .slow(3)
+  .pianoroll({cycles:120})
+  
+    -->
+    </strudel-repl-component>
+
+<!-- END define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
+    
+    <div id="controls_view" class="w3-container" style="position:absolute;top:70px;z-index:2;background:transparent;">
     <form id='persist'>
     <table>
     <col width="2*">
+
     <col width="5*">
     <col width="100px">
     
 <!-- BEGIN Define "Controls" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
     
-    <tr>
-    <td>
-    <label for=gi_Composition_tempo>Tempo (notes/minute)</label>
-    <td>
-    <input class=persistent-element type=range min=2 max=480 value=2 id=gi_Composition_tempo step=.001>
-    <td>
-    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>2</output>
-    </tr>
-    
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_FilteredSines_level>FilteredSines level</label>
+    <label for=gk_Guitar_level>&ensp;1 Guitar level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=24 id=gk_FilteredSines_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=16 id=gk_Guitar_level step=.001>
     <td>
-    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>24</output>
+    <output for=gk_Guitar_level id=gk_Guitar_level_output>16</output>
     </tr>
     
-    <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Guitar_level>Guitar level</label>
+    <label for=gk_FilteredSines_level>&ensp;2 FilteredSines level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=24 id=gk_Guitar_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_FilteredSines_level step=.001>
     <td>
-    <output for=gk_Guitar_level id=gk_Guitar_level_output>24</output>
+    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>3</output>
     </tr>
     
-    <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_Blower_level>Blower level</label>
+    <label for=gk_Blower_level>&ensp;3 Blower level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Blower_level step=.001>
     <td>
     <output for=gk_Blower_level id=gk_Blower_level_output>-5</output>
     </tr>
 
-    <tr style="height:1em;"></tr>    
-    <tr>
+     <tr>
     <td>
-    <label for=gk_Sweeper_level>Sweeper level</label>
+    <label for=gk_Sweeper_level>&ensp;4 Sweeper level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Sweeper_level step=.001>
     <td>
     <output for=gk_Sweeper_level id=gk_Sweeper_level_output>-5</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_Plucked_level>&ensp;5 Plucked level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_Plucked_level step=.001>
+    <td>
+    <output for=gk_Plucked_level id=gk_Plucked_level_output>10</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_FMWaterBell_level>&ensp;6 FM Water Bell level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_FMWaterBell_level step=.001>
+    <td>
+    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>10</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_YiString_level>&ensp;7 Yi String level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_YiString_level step=.001>
+    <td>
+    <output for=gk_YiString_level id=gk_YiString_level_output>-5</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_Harpsichord_level>&ensp;8 Harpsichord level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Harpsichord_level step=.001>
+    <td>
+    <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>-5</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_ZakianFlute_level>&ensp;9 Zakian Flute level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_ZakianFlute_level step=.001>
+    <td>
+    <output for=gk_ZakianFlute_level id=gk_ZakianFlute_level_output>-8</output>
+    </tr>
+
+     <tr>
+    <td>
+    <label for=gk_Kung4_level>10 Kung instrument 4 level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung4_level step=.001>
+    <td>
+    <output for=gk_Kung4_level id=gk_Kung4_level_output>-8</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_Kung2_level>11 Kung instrument 2 level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung2_level step=.001>
+    <td>
+    <output for=gk_Kung2_level id=gk_Kung2_level_output>-8</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_Bower_level>12 Bower level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Bower_level step=.001>
+    <td>
+    <output for=gk_Bower_level id=gk_Bower_level_output>-8</output>
     </tr>
 
     <tr style="height:1em;"></tr>    
@@ -108,9 +211,9 @@
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.96 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.987 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.96</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.987</output>
     </tr>
     <tr>
     <td>
@@ -156,9 +259,9 @@
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>Cloud Music No. 4</h1>
+<h1>PITV Example</h1>
 <h3>Michael Gogins<br>
-October 2022</h3>
+December 2022</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
@@ -166,12 +269,18 @@ October 2022</h3>
 browser using high-resolution audio. It will play indefinitely, never ending, 
 always changing. 
 
-<p>This piece is generated as a sort of musical dynamical system operating in 
-chord space. Generated notes are sent to Csound for rendering in real time. 
-The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
-a sine-wave visualization of the music, using code adapted from <a 
-href="https://www.shadertoy.com/view/4ljGD1"><b><i>Sound Sinus Wave</i></b></a>
-by <a href="https://www.shadertoy.com/user/Eitraz">Eitraz</a>.
+<p>The notes in this piece are generated by 
+<a href="https://strudel.tidalcycles.org/">Strudel</a>, a JavaScript 
+implementation of Tidal Cycles, which is accessed from a REPL embedded 
+in this piece -- use the Tidal button to view the Tidal code. The user can 
+edit the Tidal code that generates the score, and click on the update button 
+to hear it. Thanks to Felix Roos for helpful hints along the way. Strudel 
+ends its notes to Csound for synthesis.
+
+<p>In this piece, the notes generated by the Tidal patterns are modified 
+to fit into a chord progression generated by CsoundAC based patterns that 
+implement the PITV group (set-type, inversion, transposition, and octavewise 
+revoicing as independently variable parameters).
 
 <p>The notes are played by a Csound orchestra that is embedded in this Web 
 page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
@@ -179,8 +288,12 @@ build of Csound</a>. This in turn includes my
 <a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
 algorithmic composition.
 
+<p>The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
+a sine-wave visualization of the music.
+
 <p>Feel free to use this piece as a template for creating new pieces of this 
-type... as long as it doesn't sound too much like this one!
+type... as long as it honors the licenses and doesn't sound too much like this 
+one!
 
 <p>Please report any problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
@@ -195,19 +308,6 @@ menu to open the developer tools.
 
 <h2>Credits</h2>
 
-<p>The StrangeAttractor class in CsoundAC, which computes the 4-dimensional 
-orbit of a system of 4 coupled ordinary differential equations, uses code 
-inspired by Julien C. Sprott's book <a 
-href="https://sprott.physics.wisc.edu/fractals/booktext/SABOOK.PDF"><b><i>
-Strange Attractors</i></b></a>. The state of the system is mapped to indices 
-of set-type, inversion, pitch-class transposition, and octavewise revoicing. 
-In short, the chaotic orbit of this system becomes an unceasing flow of chord 
-progressions.
-
-<p>My code in CsoundAC for working with chords, scales, and voice-leading 
-implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri 
-Tymoczko's work in music theory</a>.
-
 <p>Code for compiling and controlling shaders is adapted from <a 
 href="https://www.shadertoy.com">ShaderToy.com</a>.
 
@@ -217,9 +317,12 @@ Steinarsson's MS thesis</a> with code from <a
 href="https://github.com/pingec/downsample-lttb">
 https://github.com/pingec/downsample-lttb</a>.
 
-<p>Csound instruments are directly copied with minor alterations from <a 
-href="https://github.com/csound/examples/blob/master/csd/xanadu-high-resolution.csd"> 
-Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
+<p>The music visualization code is adapted from <a 
+href="https://www.shadertoy.com/view/4ljGD1"><b><i>Sound Sinus Wave</i></b></a>
+by <a href="https://www.shadertoy.com/user/Eitraz">Eitraz</a>
+
+<p>Some of the Csound instruments are by me, others are adapted by me from 
+patches originally written by others as noted in the orchestra.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -241,8 +344,9 @@ Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
 </svg></a>
 
 <a href="https://github.com/gogins">
-    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <svg width="36" height="36" viewBox="0 0 256 250" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+     width="36" height="36" viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
         <g>
             <path d="M128.00106,0 C57.3172926,0 0,57.3066942 0,128.00106 C0,184.555281 36.6761997,232.535542 87.534937,249.460899 C93.9320223,250.645779 96.280588,246.684165 96.280588,243.303333 C96.280588,240.251045 96.1618878,230.167899 96.106777,219.472176 C60.4967585,227.215235 52.9826207,204.369712 52.9826207,204.369712 C47.1599584,189.574598 38.770408,185.640538 38.770408,185.640538 C27.1568785,177.696113 39.6458206,177.859325 39.6458206,177.859325 C52.4993419,178.762293 59.267365,191.04987 59.267365,191.04987 C70.6837675,210.618423 89.2115753,204.961093 96.5158685,201.690482 C97.6647155,193.417512 100.981959,187.77078 104.642583,184.574357 C76.211799,181.33766 46.324819,170.362144 46.324819,121.315702 C46.324819,107.340889 51.3250588,95.9223682 59.5132437,86.9583937 C58.1842268,83.7344152 53.8029229,70.715562 60.7532354,53.0843636 C60.7532354,53.0843636 71.5019501,49.6441813 95.9626412,66.2049595 C106.172967,63.368876 117.123047,61.9465949 128.00106,61.8978432 C138.879073,61.9465949 149.837632,63.368876 160.067033,66.2049595 C184.49805,49.6441813 195.231926,53.0843636 195.231926,53.0843636 C202.199197,70.715562 197.815773,83.7344152 196.486756,86.9583937 C204.694018,95.9223682 209.660343,107.340889 209.660343,121.315702 C209.660343,170.478725 179.716133,181.303747 151.213281,184.472614 C155.80443,188.444828 159.895342,196.234518 159.895342,208.176593 C159.895342,225.303317 159.746968,239.087361 159.746968,243.303333 C159.746968,246.709601 162.05102,250.70089 168.53925,249.443941 C219.370432,232.499507 256,184.536204 256,128.00106 C256,57.3066942 198.691187,0 128.00106,0 Z M47.9405593,182.340212 C47.6586465,182.976105 46.6581745,183.166873 45.7467277,182.730227 C44.8183235,182.312656 44.2968914,181.445722 44.5978808,180.80771 C44.8734344,180.152739 45.876026,179.97045 46.8023103,180.409216 C47.7328342,180.826786 48.2627451,181.702199 47.9405593,182.340212 Z M54.2367892,187.958254 C53.6263318,188.524199 52.4329723,188.261363 51.6232682,187.366874 C50.7860088,186.474504 50.6291553,185.281144 51.2480912,184.70672 C51.8776254,184.140775 53.0349512,184.405731 53.8743302,185.298101 C54.7115892,186.201069 54.8748019,187.38595 54.2367892,187.958254 Z M58.5562413,195.146347 C57.7719732,195.691096 56.4895886,195.180261 55.6968417,194.042013 C54.9125733,192.903764 54.9125733,191.538713 55.713799,190.991845 C56.5086651,190.444977 57.7719732,190.936735 58.5753181,192.066505 C59.3574669,193.22383 59.3574669,194.58888 58.5562413,195.146347 Z M65.8613592,203.471174 C65.1597571,204.244846 63.6654083,204.03712 62.5716717,202.981538 C61.4524999,201.94927 61.1409122,200.484596 61.8446341,199.710926 C62.5547146,198.935137 64.0575422,199.15346 65.1597571,200.200564 C66.2704506,201.230712 66.6095936,202.705984 65.8613592,203.471174 Z M75.3025151,206.281542 C74.9930474,207.284134 73.553809,207.739857 72.1039724,207.313809 C70.6562556,206.875043 69.7087748,205.700761 70.0012857,204.687571 C70.302275,203.678621 71.7478721,203.20382 73.2083069,203.659543 C74.6539041,204.09619 75.6035048,205.261994 75.3025151,206.281542 Z M86.046947,207.473627 C86.0829806,208.529209 84.8535871,209.404622 83.3316829,209.4237 C81.8013,209.457614 80.563428,208.603398 80.5464708,207.564772 C80.5464708,206.498591 81.7483088,205.631657 83.2786917,205.606221 C84.8005962,205.576546 86.046947,206.424403 86.046947,207.473627 Z M96.6021471,207.069023 C96.7844366,208.099171 95.7267341,209.156872 94.215428,209.438785 C92.7295577,209.710099 91.3539086,209.074206 91.1652603,208.052538 C90.9808515,206.996955 92.0576306,205.939253 93.5413813,205.66582 C95.054807,205.402984 96.4092596,206.021919 96.6021471,207.069023 Z" fill="#161614"></path>
         </g>
@@ -259,7 +363,7 @@ Joseph T. Kung's Csound piece <i><b>Xanadu</b></i></a>.
 
 <CsoundSynthesizer>
 <CsOptions>
--+msg_color=0 -m34 -d --sample-accurate -f -odac 
+-+msg_color=0 -m34 -d --sample-accurate -f -odac -M 0 --midi-key=4 --midi-velocity=5
 </CsOptions>
 <CsInstruments>
 
@@ -286,9 +390,6 @@ connect "Bower", "outleft", "ReverbSC", "inleft"
 connect "Bower", "outright", "ReverbSC", "inright"
 connect "FilteredSines", "outleft", "ReverbSC", "inleft"
 connect "FilteredSines", "outright", "ReverbSC", "inright"
-connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
-connect "FMWaterBell", "outright", "ReverbSC", "inright"
-connect "Guitar", "outleft", "ReverbSC", "inleft"
 connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
 connect "FMWaterBell", "outright", "ReverbSC", "inright"
 connect "Guitar", "outleft", "ReverbSC", "inleft"
@@ -598,9 +699,9 @@ gk_Sweeper_level chnexport "gk_Sweeper_level", 3 ;  0
 gk_Sweeper_midi_dynamic_range init 20
 gk_Sweeper_attack init .125
 gk_Sweeper_release init .25
-gk_Sweeper_britel init .01
-gk_Sweeper_briteh init 5
-gk_Sweeper_britels init .5
+gk_Sweeper_britel init .05
+gk_Sweeper_briteh init 4
+gk_Sweeper_britels init .25
 gk_Sweeper_britehs init .5
 gk_Sweeper_level init 0
 gk_Sweeper_space_left_to_right chnexport "gk_Sweeper_space_left_to_right", 3
@@ -1474,7 +1575,7 @@ gk_Bower_midi_dynamic_range init 20
 gk_Bower_attack init .125
 gk_Bower_release init .125
 gk_Bower_level init 0
-gk_Bower_pressure init 0.25
+gk_Bower_pressure init 0.325
 gk_Bower_space_left_to_right init 0.75
 
 gi_Bower_sine ftgen 0,0,65537,10,1
@@ -2279,13 +2380,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-            CsoundAC = await createCsoundAC(); 
-            strange_attractor = new CsoundAC.StrangeAttractor();
-            conversions = new CsoundAC.Conversions();
-            score = new CsoundAC.Score();
-            scale = new CsoundAC.Scale("F major");
-            chord = scale.chord(1, 5, 3);
-            cs_random = new CsoundAC.Random();
+            //~ CsoundAC = await createCsoundAC(); 
+            //~ strange_attractor = new CsoundAC.StrangeAttractor();
+            //~ conversions = new CsoundAC.Conversions();
+            //~ score = new CsoundAC.Score();
+            //~ scale = new CsoundAC.Scale("F major");
+            //~ chord = scale.chord(1, 5, 3);
+            //~ cs_random = new CsoundAC.Random();
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
             
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2307,22 +2408,25 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-            csound_message_callback(CsoundAC.chord_space_version() + "\n");
-            let CM = CsoundAC.chordForName("CM");
-            CM = CM.T(-4.);
+            //~ csound_message_callback(CsoundAC.chord_space_version() + "\n");
+            //~ let CM = CsoundAC.chordForName("CM");
+            //~ CM = CM.T(-4.);
 
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-            csound_message_callback(CM.information());
-            csound_message_callback(CM.information_debug(-1));
+            //~ csound_message_callback(CM.information());
+            //~ csound_message_callback(CM.information_debug(-1));
         }());
             
         window.onload = function() {
             $("#controls_view").css("display", "none");         
+            $("#tidal_view").css("display", "none");         
             $("#about_view").css("display", "none");         
             $("#console_view").css("display", "none");      
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
+                let tidal_view = document.getElementById("tidal_view");
+                let csoundac = await createCsoundAC();
                 if (csound == null) {
                     try {
                         csound_message_callback("Trying to load CsoundAudioNode...\n");
@@ -2361,8 +2465,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-                    pitv = new CsoundAC.PITV();
-                    pitv.initialize(4, 48, 1, true);
+                    //~ pitv = new CsoundAC.PITV();
+                    //~ pitv.initialize(4, 48, 1, true);
                     
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                     
@@ -2371,31 +2475,39 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-                    scale = new CsoundAC.Scale("F major");
-                    alert("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
-                    let tempo = document.getElementById("gi_Composition_tempo").value;
-                    let interval = 1 / tempo;
-                    let interval_milliseconds = interval * 1000;
-                    if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(494293);
-                        strange_attractor.reset();
-                        strange_attractor.setDimensionCount(4);
-                        strange_attractor.setAttractorType(4);
-                        cs_random.sample();
-                        while (true) {
-                            let not_found = strange_attractor.searchForAttractor();
-                            console.log("code: " + strange_attractor.getCode());
-                            if (not_found === false) {
-                                break;
-                            }
-                        }
-                        ///strange_attractor.setCode("SJEOSGBEDTSYIUJLGICPVYJPNDRYXLUDFHBSMFMNEBWKWJPXLOWIARKQBEXJDBSYVQHHACDSVATCJELUKHHBUEJUXNKEMNARCJBMBVSBKS");
-                        csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
-                        current_time = window.performance.now();
-                        prior_time = current_time;
-                        strange_attractor_initialized = true;
-                    }
-                    interval_id = setTimeout(generate_score_fragment, tempo);
+                    //~ scale = new CsoundAC.Scale("F major");
+                    //~ alert("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
+                    //~ let tempo = document.getElementById("gi_Composition_tempo").value;
+                    //~ let interval = 1 / tempo;
+                    //~ let interval_milliseconds = interval * 1000;
+                    //~ if (strange_attractor_initialized == false) {
+                        //~ CsoundAC.Random.seed(494293);
+                        //~ strange_attractor.reset();
+                        //~ strange_attractor.setDimensionCount(4);
+                        //~ strange_attractor.setAttractorType(4);
+                        //~ cs_random.sample();
+                        //~ while (true) {
+                            //~ let not_found = strange_attractor.searchForAttractor();
+                            //~ console.log("code: " + strange_attractor.getCode());
+                            //~ if (not_found === false) {
+                                //~ break;
+                            //~ }
+                        //~ }
+                        //~ ///strange_attractor.setCode("SJEOSGBEDTSYIUJLGICPVYJPNDRYXLUDFHBSMFMNEBWKWJPXLOWIARKQBEXJDBSYVQHHACDSVATCJELUKHHBUEJUXNKEMNARCJBMBVSBKS");
+                        //~ csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
+                        //~ current_time = window.performance.now();
+                        //~ prior_time = current_time;
+                        //~ strange_attractor_initialized = true;
+                    //~ }
+                    
+                    // Set up Tidal REPL.
+                    
+                    console.log("tidal_view:", tidal_view);
+                    tidal_view.setCsound(csound);
+                    tidal_view.setCsoundAC(csoundac);
+                    tidal_view.startPlaying();
+                    
+                    //~ interval_id = setTimeout(generate_score_fragment, tempo);
                     
 // END Define score generator. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2407,6 +2519,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     csound.Reset();
                     csound_message_callback("Csound is stopping...\n");
                     $("#menu_item_play").html("Play");
+                    tidal_view.stopPlaying();
                }
              });
             $("#menu_item_fullscreen").click(function(event) {
@@ -2420,10 +2533,22 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     display.msRequestFullscreen();
                 }
             });
+            $("#menu_item_tidal").click(function(event) {
+                console.log("menu_item_tidal click...");
+                $("#about_view").hide();            
+                $("#console_view").hide();            
+                $("#controls_view").hide();            
+                if ($("#tidal_view").is(":visible")){
+                    $("#tidal_view").hide();            
+                } else {
+                    $("#tidal_view").show();        
+                }
+            });
             $("#menu_item_controls").click(function(event) {
                 console.log("menu_item_controls click...");
                 $("#about_view").hide();            
                 $("#console_view").hide();            
+                $("#tidal_view").hide();            
                 if ($("#controls_view").is(":visible")){
                     $("#controls_view").hide();            
                 } else {
@@ -2434,6 +2559,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console.log("menu_item_console click...");
                 $("#controls_view").hide();            
                 $("#about_view").hide();            
+                $("#tidal_view").hide();            
                 let v = document.getElementById("console_view");
                 if ($("#console_view").is(":visible")){
                     $("#console_view").hide();          
@@ -2447,6 +2573,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console.log("menu_item_about click...");
                 $("#controls_view").hide();            
                 $("#console_view").hide();            
+                $("#tidal_view").hide();            
                 if ($("#about_view").is(":visible")){
                     $("#about_view").hide();            
                 } else {
