@@ -3,7 +3,7 @@
     "dev": "vite --host",
     "start": "vite",
     "setup": "npm install && git submodule init && cd strudel && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
-    "build": "vite build && cd strudel && npm run setup && npm run build && cd .. && cp ",
+    "build": "cp strudel-addons/csoundac/csoundac.mjs strudel/packages/csound/ && cd strudel && npm run setup && npm run build && cd .. && vite build",
     "preview": "vite preview",
     "static": "npx serve -p 8000 dist",
     "repl": "cd strudel/website/dist && npx serve -p 8000 ."
