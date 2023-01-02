@@ -1,0 +1,3 @@
+[submodule "strudel"]
+	path = strudel
+	url = https://github.com/tidalcycles/strudel.git
