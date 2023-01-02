@@ -2,7 +2,7 @@
   "scripts": {
     "dev": "vite --host",
     "start": "vite",
-    "setup": "npm install && git submodule init && cd strudel && git checkout main && git pull && cd .. && git commit -a -m \"Updated Strudel from origin.\"",
+    "setup": "npm install && git submodule init && cd strudel && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build": "vite build && cd strudel && npm run build && cd .. && cp -rf strudel/out/* dist/ && mv dist/index.html dist/strudel_repl.html && cp strudel/packages/embed/embed.js dist/strudel_embed.js",
     "preview": "vite preview",
     "static": "npx serve -p 8000 dist"
