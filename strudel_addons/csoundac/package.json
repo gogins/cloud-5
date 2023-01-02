@@ -1,0 +1,32 @@
+{
+  "name": "@strudel.cycles/csoundac",
+  "version": "0.3.0",
+  "description": "Use CsoundAC chords and scales in Strudel",
+  "main": "csoundac.mjs",
+  "scripts": {
+    "test": "echo \"No tests present.\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tidalcycles/strudel.git"
+  },
+  "keywords": [
+    "tidalcycles",
+    "strudel",
+    "pattern",
+    "livecoding",
+    "algorave",
+    "CsoundAC"
+  ],
+  "author": "Michael Gogins <michael.gogins@gmail.com>",
+  "contributors": [
+    "Alex McLean <alex@slab.org>"
+  ],
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/tidalcycles/strudel/issues"
+  },
+  "homepage": "https://github.com/tidalcycles/strudel#readme",
+  "dependencies": {
+  }
+}

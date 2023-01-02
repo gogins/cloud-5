@@ -8,9 +8,6 @@
     "preview": "vite preview",
     "static": "npx serve -p 8000 dist"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "dependencies": {
     "ace-builds": "^1.14.0",
     "dat.gui": "^0.7.9",
