@@ -73,18 +73,13 @@ case that a composer will write new software as libraries or other resources
 to support a number of their musical compositions.
 
 To develop this kind of software in your fork of cloud-music, keep in mind 
-that the cloud-music project uses [npm](https://www.npmjs.com/) and 
-[vite](https://vitejs.dev/), which of course must first be installed. 
+that the cloud-music project uses [npm](https://www.npmjs.com/), which of 
+course must first be installed. 
 
-You will generally want to write your new software as JavaScript or TypeScript 
-in a subdirectory of the `/node_modules` directory, as a regular npm module. 
-You should import your new module in the `cloud-music/main.js` file.
+If you just want to work in the context of a Web site created in your fork of cloud-music, then just writing static code in the `public` directory would be 
+easiest. Otherwise, take a look at [BUILD.md](BUILD.md) and at the Strudel 
+build system.
 
-If you do that, then `npm run build` should roll your contributions up with 
-the rest of the project into the `dist` directory.
-
-Then `npm run dev` will run a debuggable session, and `npm run preview` will 
-run a production-style session from the `dist` directory.
 
 
 
