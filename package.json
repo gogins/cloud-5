@@ -2,7 +2,7 @@
   "scripts": {
     "dev": "vite --host",
     "start": "vite",
-    "setup": "npm install && git submodule init && cd strudel && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
+    "setup": "npm install && git submodule update --init --recursive --remote && cd strudel && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-repl": "cp strudel-addons/csoundac/csoundac.mjs strudel/packages/csound/ && cd strudel && npm run setup && npm run build",
     "build": "vite build && cp -rf strudel/website/dist/* dist/ && mv dist/index.html dist/strudel_repl.html && ls -ll dist",
     "preview": "vite preview",
