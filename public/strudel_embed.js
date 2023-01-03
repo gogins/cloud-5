@@ -8,6 +8,8 @@ class StrudelReplComponent extends HTMLElement {
       this.play_button = null;
       this.update_button = null;
       this.i_frame = null;
+      this.content_window = null;
+      this.content_document = null;
   }
   connectedCallback() {
     setTimeout(() => {
@@ -34,32 +36,27 @@ class StrudelReplComponent extends HTMLElement {
       iframe.setAttribute('height', '600px');
       iframe.style.display = "visible";
       this.i_frame = iframe;
+      this.content_window = this.i_frame.contentWindow;
+      this.content_document = this.i_frame.contentDocument;
     });
   }
   startPlaying() {
     console.log("StrudelReplComponent.startPlaying:");
     this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
-    // TODO: Remove dependency on jQuery and find a reliable method of 
-    // obtaining the buttons.
-    if ($(this.buttons[0]).text() == "play") {
-        $(this.buttons[0]).click();
+    let play_button = this.buttons[0];
+    // Fragile, depends on the Repl implementation.
+    if (play_button.title === "play") {
+        play_button.click();
     }
   }
   stopPlaying() {
     console.log("StrudelReplComponent.stopPlaying:");
     this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
-    // TODO: Remove dependency on jQuery and find a reliable method of 
-    // obtaining the buttons.
-    if ($(this.buttons[0]).text() == "stop") {
-        $(this.buttons[0]).click();
+    let play_button = this.buttons[0];
+    // Fragile, depends on the Repl implementation.
+    if (play_button.title === "stop") {
+        play_button.click();
     }
-  }
-  togglePlay() {
-    console.log("StrudelReplComponent.togglePlay:");
-    this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
-    // TODO: Remove dependency on jQuery and find a reliable method of 
-    // obtaining the buttons.
-    $(this.buttons[0]).click();
   }
   updateRepl() {
     console.log("StrudelReplComponent.updateRepl:");
@@ -75,10 +72,10 @@ class StrudelReplComponent extends HTMLElement {
     let src;
     let last_slash = location.href.lastIndexOf("/");
     if (last_slash > origin.length) {
-    let to_insert = location.href.substring(origin.length, last_slash);
-    src = `${location.origin}/${to_insert}#${encodeURIComponent(btoa(tidal_code))}`;
+      let to_insert = location.href.substring(origin.length, last_slash);
+      src = `${location.origin}/${to_insert}#${encodeURIComponent(btoa(tidal_code))}`;
     } else {
-    src = `${location.origin}#${encodeURIComponent(btoa(tidal_code))}`;
+      src = `${location.origin}#${encodeURIComponent(btoa(tidal_code))}`;
     }
     console.log("src:", src);
     iframe.setAttribute('src', src);
