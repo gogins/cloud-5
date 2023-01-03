@@ -51,7 +51,7 @@ To date, changes worked upon Strudel head are minimal:
     copy in `strudel-addons/website/src`, and `npm run build-repl` will use this
     automatically. If this quits working, replace `Repl.jsx` from 
     Strudel head and change:
-    ```
+```
 const modules = [
   import('@strudel.cycles/core'),
   import('@strudel.cycles/tonal'),
@@ -64,9 +64,9 @@ const modules = [
   import('@strudel.cycles/soundfonts'),
   import('@strudel.cycles/csound'),
 ];
-    ```
+```
     to:
-    ```
+```
 const modules = [
   import('@strudel.cycles/core'),
   import('@strudel.cycles/tonal'),
@@ -80,4 +80,4 @@ const modules = [
   import('@strudel.cycles/csound'),
   import('@strudel.cycles/csoundac'),
 ];
-   ```
+```
