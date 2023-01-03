@@ -40,3 +40,44 @@ available.
 
 If you see warnings or errors, don't panic unless executing `npm run static` 
 doesn't produce a working Web site with playable pieces.
+
+### Patches to Strudel
+
+To date, changes worked upon Strudel head are minimal:
+
+ 1. Added `strudel-addons/csoundac/` to the Strudel tree. It will build 
+    automatically using `npm run build-repl`.
+ 2. Patched `strudel/website/src/Repl.jsx` to import csoundac. There is a patched 
+    copy in `strudel-addons/website/src`, and `npm run build-repl` will use this
+    automatically. If this quits working, replace `Repl.jsx` from 
+    Strudel head and change:
+    ```
+const modules = [
+  import('@strudel.cycles/core'),
+  import('@strudel.cycles/tonal'),
+  import('@strudel.cycles/mini'),
+  import('@strudel.cycles/midi'),
+  import('@strudel.cycles/xen'),
+  import('@strudel.cycles/webaudio'),
+  import('@strudel.cycles/osc'),
+  import('@strudel.cycles/serial'),
+  import('@strudel.cycles/soundfonts'),
+  import('@strudel.cycles/csound'),
+];
+    ```
+    to:
+    ```
+const modules = [
+  import('@strudel.cycles/core'),
+  import('@strudel.cycles/tonal'),
+  import('@strudel.cycles/mini'),
+  import('@strudel.cycles/midi'),
+  import('@strudel.cycles/xen'),
+  import('@strudel.cycles/webaudio'),
+  import('@strudel.cycles/osc'),
+  import('@strudel.cycles/serial'),
+  import('@strudel.cycles/soundfonts'),
+  import('@strudel.cycles/csound'),
+  import('@strudel.cycles/csoundac'),
+];
+   ```
