@@ -10,7 +10,7 @@ CsoundAC, and then make Strudel into an embeddable component that I can use in
 my pieces.
 
 To this end, Strudel is included in this repository as a Git submodule. But,  
-before actually building Strudel, this repository adds some of my code to 
+before actually building Strudel, this repository adds some of my own code to 
 Strudel. 
 
  1. csoundac.mjs is a module that creates a number of Patterns in Strudel that 
@@ -22,8 +22,8 @@ Strudel.
 
 ### Maintenance Note!
 
-Never patch existing Strudel files, always add _new_ Strudel files in 
-_existing_ Strudel packages.
+Never edit existing Strudel files or add new packages, always add _new_ Strudel 
+files in _existing_ Strudel packages.
 
 ## Setting Up
 
