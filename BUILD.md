@@ -33,8 +33,8 @@ command will initialize all dependencies.
 ## Building
 
 Run `npm run build-repl` and then run `npm run build` to produce a usable 
-distribution for a static Web site. Examine `package.json` for details. This 
-command will patch Strudel with my addons, build everything, and make a 
+distribution for a static Web site. Examine `package.json` for details. These  
+commands will patch Strudel with my addons, build everything, and make a 
 distributable copy of the cloud-music Web site with all resources statically 
 available. 
 
@@ -45,39 +45,14 @@ doesn't produce a working Web site with playable pieces.
 
 To date, changes worked upon Strudel head are minimal:
 
- 1. Added `strudel-addons/csoundac/` to the Strudel tree. It will build 
-    automatically using `npm run build-repl`.
- 2. Patched `strudel/website/src/Repl.jsx` to import csoundac. There is a patched 
-    copy in `strudel-addons/website/src`, and `npm run build-repl` will use this
-    automatically. If this quits working, replace `Repl.jsx` from 
-    Strudel head and change:
-```
-const modules = [
-  import('@strudel.cycles/core'),
-  import('@strudel.cycles/tonal'),
-  import('@strudel.cycles/mini'),
-  import('@strudel.cycles/midi'),
-  import('@strudel.cycles/xen'),
-  import('@strudel.cycles/webaudio'),
-  import('@strudel.cycles/osc'),
-  import('@strudel.cycles/serial'),
-  import('@strudel.cycles/soundfonts'),
-  import('@strudel.cycles/csound'),
-];
-```
-    to:
-```
-const modules = [
-  import('@strudel.cycles/core'),
-  import('@strudel.cycles/tonal'),
-  import('@strudel.cycles/mini'),
-  import('@strudel.cycles/midi'),
-  import('@strudel.cycles/xen'),
-  import('@strudel.cycles/webaudio'),
-  import('@strudel.cycles/osc'),
-  import('@strudel.cycles/serial'),
-  import('@strudel.cycles/soundfonts'),
-  import('@strudel.cycles/csound'),
-  import('@strudel.cycles/csoundac'),
-];
-```
+ 1. Add `strudel-addons/csoundac/` to the Strudel tree. This is done 
+    automatically by `npm run build-repl`.
+ 2. Patch `strudel/website/src/Repl.jsx` to import csoundac. There is a Python 
+    script that npm will use to make this patch. If this quits working, 
+    change the `patch-strudel.py` script as required.
+ 3. Patch the generated `strudel/website/dist/index.html` file to use relative 
+    rather than absolute pathnames for imported assets. This is needed in 
+    order to run the Strudel repl from GitHub pages, which are not necessarily 
+    at the root of their Web server. There is a Python script that npm will use 
+    to make this patch. If this quits working, change the `patch-dist.py` 
+    script as required.
