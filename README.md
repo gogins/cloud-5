@@ -10,7 +10,5 @@ All source code for these pieces is available in the GitHub repository.
 
 The underlying technology is my WebAssembly builds of Csound and CsoundAC. Some pieces may use third party libraries.
 
-[Cloud Music No. 1](cloud_music_no_1.html).
-
 
 
