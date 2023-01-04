@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en-us" class="initial">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v1.7.2">
+
+<link rel="icon" type="image/svg+xml" href="/favicon.ico">
+
+<link rel="sitemap" href="/sitemap.xml">
+
+<!-- Preload Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital@0;1&display=swap" rel="stylesheet">
+
+<!-- Scrollable a11y code helper -->
+<script src="/make-scrollable-code-focusable.js"></script>
+
+<!-- This is intentionally inlined to avoid FOUC -->
+<script>
+  /*   const root = document.documentElement;
+  const theme = localStorage.getItem('theme');
+  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    root.classList.add('theme-dark');
+  } else {
+    root.classList.remove('theme-dark');
+  } */
+</script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEL60V1WM9" is:inline></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TEL60V1WM9');
+</script> -->
+
+    <!-- Page Metadata --><link rel="canonical" href="https://strudel.tidalcycles.org/learn/getting-started/">
+
+<!-- OpenGraph Tags -->
+<meta property="og:title" content="Getting Started 🚀 Strudel Docs">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://strudel.tidalcycles.org/learn/getting-started/">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/withastro/astro/blob/main/assets/social/banner-minimal.png?raw=true">
+<meta property="og:image:alt" content="astro logo on a starry expanse of space, with a purple saturn-like planet floating in the right foreground">
+<meta name="description" property="og:description" content="Strudel Tutorial - Getting Started">
+<meta property="og:site_name" content="Strudel Docs">
+
+<!-- Twitter Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="astrodotbuild">
+<meta name="twitter:title" content="Getting Started 🚀 Strudel Docs">
+<meta name="twitter:description" content="Strudel Tutorial - Getting Started">
+<meta name="twitter:image" content="https://github.com/withastro/astro/blob/main/assets/social/banner-minimal.png?raw=true">
+<meta name="twitter:image:alt" content="astro logo on a starry expanse of space, with a purple saturn-like planet floating in the right foreground">
+
+<!--
+  TODO: Add json+ld data, maybe https://schema.org/APIReference makes sense?
+  Docs: https://developers.google.com/search/docs/advanced/structured-data/intro-structured-data
+  https://www.npmjs.com/package/schema-dts seems like a great resource for implementing this.
+  Even better, there's a React component that integrates with `schema-dts`: https://github.com/google/react-schemaorg
+-->
+
+    <title>
+      Getting Started 🚀 Strudel Docs
+    </title>
+  <link rel="stylesheet" href="/assets/embed.463ff1aa.css" />
+<link rel="stylesheet" href="/assets/code.d985a308.css" />
+<link rel="stylesheet" href="/assets/code.90a8d9c8.css" /></head>
+
+  <body class="h-screen text-gray-50">
+    <div class="w-full h-full space-y-4 flex flex-col">
+      <header class="max-w-full fixed top-0 w-full z-[100]">
+        <nav class="flex justify-between py-2 px-4 items-center h-14 max-h-14 bg-[#161616] astro-BJPXWKN3" title="Top Navigation">
+  <!--     <div class="menu-toggle">
+      <SidebarToggle client:idle />
+    </div> -->
+  <div class="flex overflow-visible items-center grow astro-BJPXWKN3" style="overflow:visible">
+    <a href="/" class="flex items-center text-2xl space-x-2 astro-BJPXWKN3">
+      <h1 class="text-white font-bold flex space-x-2 items-baseline text-xl astro-BJPXWKN3">
+        <span class="astro-BJPXWKN3">🌀</span>
+        <div class="flex space-x-1 items-baseline astro-BJPXWKN3">
+          <span class=" astro-BJPXWKN3">strudel</span>
+          <span class="text-sm astro-BJPXWKN3">DOCS</span>
+        </div>
+      </h1>
+    </a>
+  </div>
+  
+  <div class="search-item h-10 astro-BJPXWKN3">
+    <!--     <Search client:idle /> -->
+  </div>
+  <a href="/" class="hidden md:flex cursor-pointer items-center space-x-1 astro-BJPXWKN3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 astro-BJPXWKN3"><path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd"></path></svg><span class="astro-BJPXWKN3">go to REPL</span>
+  </a>
+  <div class="md:hidden astro-BJPXWKN3">
+    <astro-island uid="1LfSJx" component-url="/MobileNav.437df6c7.js" component-export="default" renderer-url="/client.7faaadb8.js" props="{&quot;sidebar&quot;:[0,{&quot;Tutorial&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Getting Started\&quot;],\&quot;link\&quot;:[0,\&quot;learn/getting-started\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Notes\&quot;],\&quot;link\&quot;:[0,\&quot;learn/notes\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;learn/sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Coding syntax\&quot;],\&quot;link\&quot;:[0,\&quot;learn/code\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Mini-notation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/mini-notation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Samples\&quot;],\&quot;link\&quot;:[0,\&quot;learn/samples\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Synths\&quot;],\&quot;link\&quot;:[0,\&quot;learn/synths\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Audio effects\&quot;],\&quot;link\&quot;:[0,\&quot;learn/effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Functions\&quot;],\&quot;link\&quot;:[0,\&quot;learn/functions\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Signals\&quot;],\&quot;link\&quot;:[0,\&quot;learn/signals\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Tonal\&quot;],\&quot;link\&quot;:[0,\&quot;learn/tonal\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;MIDI &amp; OSC\&quot;],\&quot;link\&quot;:[0,\&quot;learn/input-output\&quot;]}]]&quot;],&quot;Technical Manual&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/patterns\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;REPL\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/repl\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Alignment\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/alignment\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Docs\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/docs\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Testing\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/testing\&quot;]}]]&quot;]}]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MobileNav&quot;,&quot;value&quot;:true}" await-children=""><nav data-headlessui-state=""><button class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" id="headlessui-disclosure-button-:R1:" type="button" aria-expanded="false" data-headlessui-state=""><span class="sr-only">Open main menu</span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button></nav></astro-island>
+  </div>
+</nav>
+
+
+
+
+      </header>
+      <main class="relative pt-16">
+        <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
+          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed">
+            <nav aria-labelledby="grid-left">
+  <ul>
+    <li>
+          <div class="nav-group pb-4">
+            <h2>Tutorial</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block bg-header" href="/learn/getting-started" aria-current="page">
+                      Getting Started
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/notes">
+                      Notes
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/sounds">
+                      Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/code">
+                      Coding syntax
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/mini-notation">
+                      Mini-notation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/samples">
+                      Samples
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/synths">
+                      Synths
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/effects">
+                      Audio effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/functions">
+                      Functions
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/signals">
+                      Signals
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/tonal">
+                      Tonal
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/input-output">
+                      MIDI &amp; OSC
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Technical Manual</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/patterns">
+                      Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/repl">
+                      REPL
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/alignment">
+                      Pattern Alignment
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/docs">
+                      Docs
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/testing">
+                      Testing
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li>
+  </ul>
+</nav>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    var target = document.querySelector('[aria-current="page"]');
+    if (target && target.offsetTop > window.innerHeight - 100) {
+      document.querySelector('.nav-groups').scrollTop = target.offsetTop;
+    }
+  });
+</script>
+          </aside>
+          <article id="article" class="content astro-663FUVDK">
+  <section class="main-section astro-663FUVDK">
+    <!-- TODO: add dropdown toc on mobile -->
+    <!--     <nav class="block sm:hidden mb-8">
+      <span>On this Page:</span>
+      <TableOfContents client:media="(max-width: 50em)" headings={headings} />
+    </nav> -->
+    <div class="prose prose-invert max-w-full pb-8 astro-663FUVDK">
+      <h1 id="welcome"><a aria-hidden="true" tabIndex="-1" href="#welcome"><span class="icon icon-link"></span></a>Welcome</h1>
+<p>Welcome to the Strudel documentation pages!</p>
+<p>These pages will introduce you to <a href="https://strudel.tidalcycles.org/">Strudel</a>, a web-based <a href="https://github.com/toplap/awesome-livecoding/">live coding</a> environment that implements the <a href="https://tidalcycles.org">Tidal Cycles</a> algorithmic pattern language.</p>
+<h1 id="what-is-strudel"><a aria-hidden="true" tabIndex="-1" href="#what-is-strudel"><span class="icon icon-link"></span></a>What is Strudel?</h1>
+<p><a href="https://strudel.tidalcycles.org/">Strudel</a> is a version of <a href="https://tidalcycles.org">Tidal Cycles</a> written in <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">JavaScript</a>, initiated by <a href="https://slab.org">Alex McLean</a> and <a href="https://github.com/felixroos">Felix Roos</a> in 2022.
+Tidal Cycles, also known as Tidal, is a language for <a href="https://algorithmicpattern.org">algorithmic pattern</a>, and though it is most commonly used for <a href="https://tidalcycles.org/docs/showcase">making music</a>, it can be used for any kind of pattern making activity, including <a href="https://www.youtube.com/watch?v=TfEmEsusXjU">weaving</a>.</p>
+<p>Tidal was first implemented as a library written in the <a href="https://www.haskell.org/">Haskell</a> functional programming language, and by itself it does not make any sound.
+To make sound, it has to be connected to a sound engine, and by default this is a <a href="https://supercollider.github.io/">SuperCollider</a> plugin called <a href="https://github.com/musikinformatik/SuperDirt/">SuperDirt</a>.
+As such, it can be difficult for first-time users to install both Tidal Cycles and SuperDirt, as there are many small details to get right.
+Strudel however runs directly in your web browser, does not require any custom software installation, and can make sound all by itself.</p>
+<h1 id="strudel-repl-and-minirepl"><a aria-hidden="true" tabIndex="-1" href="#strudel-repl-and-minirepl"><span class="icon icon-link"></span></a>Strudel REPL and MiniREPL</h1>
+<p>The main place to actually make music with Strudel is the <a href="https://strudel.tidalcycles.org/">Strudel REPL</a> (<a href="https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop">what is a REPL?</a>), but in these pages you will also encounter interactive “MiniREPLs” where you can listen to and edit Strudel patterns.
+Try clicking the play icon below:</p>
+<style>astro-island,astro-slot{display:contents}</style><script>(self.Astro=self.Astro||{}).idle=t=>{const e=async()=>{await(await t())()};"requestIdleCallback"in window?window.requestIdleCallback(e):setTimeout(e,200)},window.dispatchEvent(new Event("astro:idle"));var l;{const c={0:t=>t,1:t=>JSON.parse(t,o),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(JSON.parse(t,o)),5:t=>new Set(JSON.parse(t,o)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(JSON.parse(t)),9:t=>new Uint16Array(JSON.parse(t)),10:t=>new Uint32Array(JSON.parse(t))},o=(t,s)=>{if(t===""||!Array.isArray(s))return s;const[e,n]=s;return e in c?c[e](n):void 0};customElements.get("astro-island")||customElements.define("astro-island",(l=class extends HTMLElement{constructor(){super(...arguments);this.hydrate=()=>{if(!this.hydrator||this.parentElement&&this.parentElement.closest("astro-island[ssr]"))return;const s=this.querySelectorAll("astro-slot"),e={},n=this.querySelectorAll("template[data-astro-template]");for(const r of n){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(const r of s){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("name")||"default"]=r.innerHTML)}const a=this.hasAttribute("props")?JSON.parse(this.getAttribute("props"),o):{};this.hydrator(this)(this.Component,a,e,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),window.removeEventListener("astro:hydrate",this.hydrate),window.dispatchEvent(new CustomEvent("astro:hydrate"))}}connectedCallback(){!this.hasAttribute("await-children")||this.firstChild?this.childrenConnectedCallback():new MutationObserver((s,e)=>{e.disconnect(),this.childrenConnectedCallback()}).observe(this,{childList:!0})}async childrenConnectedCallback(){window.addEventListener("astro:hydrate",this.hydrate);let s=this.getAttribute("before-hydration-url");s&&await import(s),this.start()}start(){const s=JSON.parse(this.getAttribute("opts")),e=this.getAttribute("client");if(Astro[e]===void 0){window.addEventListener(`astro:${e}`,()=>this.start(),{once:!0});return}Astro[e](async()=>{const n=this.getAttribute("renderer-url"),[a,{default:r}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),i=this.getAttribute("component-export")||"default";if(!i.includes("."))this.Component=a[i];else{this.Component=a;for(const d of i.split("."))this.Component=this.Component[d]}return this.hydrator=r,this.hydrate},s,this)}attributeChangedCallback(){this.hydrator&&this.hydrate()}},l.observedAttributes=["props"],l))}</script><astro-island uid="1KAhSU" component-url="/MiniRepl.c4b39493.js" component-export="MiniRepl" renderer-url="/client.7faaadb8.js" props="{&quot;tune&quot;:[0,&quot;s(\&quot;bd sd\&quot;)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;bd sd&quot;)</pre></astro-island>
+<p>Then edit the text so it reads <code>s(&quot;bd sd cp hh&quot;)</code> and click the refresh icon.
+Congratulations, you have now live coded your first Strudel pattern!</p>
+<p>With Strudel, you can expressively write dynamic music pieces.
+You don’t need to know JavaScript or Tidal Cycles to make music with Strudel.
+This interactive tutorial will guide you through the basics of Strudel.</p>
+<h1 id="show-me-some-demos"><a aria-hidden="true" tabIndex="-1" href="#show-me-some-demos"><span class="icon icon-link"></span></a>Show me some demos!</h1>
+<p>To see and hear what Strudel can do, visit the <a href="https://strudel.tidalcycles.org/">Strudel REPL</a> and click the Shuffle icon in the top menu bar.
+You can get a feel for Strudel by browsing and editing these examples and clicking the Refresh icon to update.</p>
+<p>You can also browse through the examples <a href="/examples">here</a>.</p>
+<p>Alternatively, you can get a taste of what Strudel can do by clicking play on this track:</p>
+<astro-island uid="x2XO4" component-url="/MiniRepl.c4b39493.js" component-export="MiniRepl" renderer-url="/client.7faaadb8.js" props="{&quot;tune&quot;:[0,&quot;samples({\n  bd: [&#39;bd/BT0AADA.wav&#39;,&#39;bd/BT0AAD0.wav&#39;,&#39;bd/BT0A0DA.wav&#39;,&#39;bd/BT0A0D3.wav&#39;,&#39;bd/BT0A0D0.wav&#39;,&#39;bd/BT0A0A7.wav&#39;],\n  sd: [&#39;sd/rytm-01-classic.wav&#39;,&#39;sd/rytm-00-hard.wav&#39;],\n  hh: [&#39;hh27/000_hh27closedhh.wav&#39;,&#39;hh/000_hh3closedhh.wav&#39;],\n}, &#39;github:tidalcycles/Dirt-Samples/master/&#39;);\nstack(\ns(\&quot;bd,[~ &lt;sd!3 sd(3,4,2)&gt;],hh(3,4)\&quot;) // drums\n.speed(perlin.range(.7,.9)) // random sample speed variation\n,\&quot;&lt;a1 b1*2 a1(3,8) e2&gt;\&quot; // bassline\n.off(1/8,x=&gt;x.add(12).degradeBy(.5)) // random octave jumps\n.add(perlin.range(0,.5)) // random pitch variation\n.superimpose(add(.05)) // add second, slightly detuned voice\n.n() // wrap in \&quot;n\&quot;\n.decay(.15).sustain(0) // make each note of equal length\n.s(&#39;sawtooth&#39;) // waveform\n.gain(.4) // turn down\n.cutoff(sine.slow(7).range(300,5000)) // automate cutoff\n,\&quot;&lt;Am7!3 &lt;Em7 E7b13 Em7 Ebm7b5&gt;&gt;\&quot;.voicings(&#39;lefthand&#39;) // chords\n.superimpose(x=&gt;x.add(.04)) // add second, slightly detuned voice\n.add(perlin.range(0,.5)) // random pitch variation\n.n() // wrap in \&quot;n\&quot;\n.s(&#39;sawtooth&#39;) // waveform\n.gain(.16) // turn down\n.cutoff(500) // fixed cutoff\n.attack(1) // slowly fade in\n)\n.slow(3/2)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>samples({
+  bd: [&#x27;bd/BT0AADA.wav&#x27;,&#x27;bd/BT0AAD0.wav&#x27;,&#x27;bd/BT0A0DA.wav&#x27;,&#x27;bd/BT0A0D3.wav&#x27;,&#x27;bd/BT0A0D0.wav&#x27;,&#x27;bd/BT0A0A7.wav&#x27;],
+  sd: [&#x27;sd/rytm-01-classic.wav&#x27;,&#x27;sd/rytm-00-hard.wav&#x27;],
+  hh: [&#x27;hh27/000_hh27closedhh.wav&#x27;,&#x27;hh/000_hh3closedhh.wav&#x27;],
+}, &#x27;github:tidalcycles/Dirt-Samples/master/&#x27;);
+stack(
+s(&quot;bd,[~ &lt;sd!3 sd(3,4,2)&gt;],hh(3,4)&quot;) // drums
+.speed(perlin.range(.7,.9)) // random sample speed variation
+,&quot;&lt;a1 b1*2 a1(3,8) e2&gt;&quot; // bassline
+.off(1/8,x=&gt;x.add(12).degradeBy(.5)) // random octave jumps
+.add(perlin.range(0,.5)) // random pitch variation
+.superimpose(add(.05)) // add second, slightly detuned voice
+.n() // wrap in &quot;n&quot;
+.decay(.15).sustain(0) // make each note of equal length
+.s(&#x27;sawtooth&#x27;) // waveform
+.gain(.4) // turn down
+.cutoff(sine.slow(7).range(300,5000)) // automate cutoff
+,&quot;&lt;Am7!3 &lt;Em7 E7b13 Em7 Ebm7b5&gt;&gt;&quot;.voicings(&#x27;lefthand&#x27;) // chords
+.superimpose(x=&gt;x.add(.04)) // add second, slightly detuned voice
+.add(perlin.range(0,.5)) // random pitch variation
+.n() // wrap in &quot;n&quot;
+.s(&#x27;sawtooth&#x27;) // waveform
+.gain(.16) // turn down
+.cutoff(500) // fixed cutoff
+.attack(1) // slowly fade in
+)
+.slow(3/2)</pre></astro-island>
+<h1 id="strudel-is-a-work-in-progress"><a aria-hidden="true" tabIndex="-1" href="#strudel-is-a-work-in-progress"><span class="icon icon-link"></span></a>Strudel is a work in progress 🚧</h1>
+<p>Please note that this project is still in its experimental state.
+In the future, parts of it might change significantly.
+This tutorial is also far from complete.
+You can contribute to it clicking ‘Edit this page’ in the top right, or by visiting the <a href="https://github.com/tidalcycles/strudel/">Strudel GitHub page</a>.</p>
+<h1 id="whats-next"><a aria-hidden="true" tabIndex="-1" href="#whats-next"><span class="icon icon-link"></span></a>What’s next?</h1>
+<p>Head on over to the <a href="/learn/notes">Notes</a> page.</p>
+<br/>
+    </div>
+  </section>
+  <nav class="block sm:hidden astro-663FUVDK">
+    <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/learn/getting-started.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+<div style="margin: 2rem 0; text-align: center;">
+  <!--   <ThemeToggleButton client:visible /> -->
+</div>
+  </nav>
+</article>
+
+          <aside class="fixed right-0 h-full overflow-auto pr-4 pl-0 pb-16 hidden xl:block" title="Table of Contents">
+            <nav aria-labelledby="grid-right">
+  <script>(self.Astro=self.Astro||{}).media=(s,a)=>{const t=async()=>{await(await s())()};if(a.value){const e=matchMedia(a.value);e.matches?t():e.addEventListener("change",t,{once:!0})}},window.dispatchEvent(new Event("astro:media"));</script><astro-island uid="DV27D" component-url="/TableOfContents.48cd9bcf.js" component-export="default" renderer-url="/client.9d5dd920.js" props="{&quot;headings&quot;:[1,&quot;[[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;welcome\&quot;],\&quot;text\&quot;:[0,\&quot;Welcome\&quot;]}],[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;what-is-strudel\&quot;],\&quot;text\&quot;:[0,\&quot;What is Strudel?\&quot;]}],[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;strudel-repl-and-minirepl\&quot;],\&quot;text\&quot;:[0,\&quot;Strudel REPL and MiniREPL\&quot;]}],[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;show-me-some-demos\&quot;],\&quot;text\&quot;:[0,\&quot;Show me some demos!\&quot;]}],[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;strudel-is-a-work-in-progress\&quot;],\&quot;text\&quot;:[0,\&quot;Strudel is a work in progress 🚧\&quot;]}],[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;whats-next\&quot;],\&quot;text\&quot;:[0,\&quot;What’s next?\&quot;]}]]&quot;]}" ssr="" client="media" opts="{&quot;name&quot;:&quot;TableOfContents&quot;,&quot;value&quot;:&quot;(min-width: 50em)&quot;}" await-children=""><ul><li class="w-full"><a href="#welcome" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-4">Welcome</a></li><li class="w-full"><a href="#what-is-strudel" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-4">What is Strudel?</a></li><li class="w-full"><a href="#strudel-repl-and-minirepl" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-4">Strudel REPL and MiniREPL</a></li><li class="w-full"><a href="#show-me-some-demos" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-4">Show me some demos!</a></li><li class="w-full"><a href="#strudel-is-a-work-in-progress" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-4">Strudel is a work in progress 🚧</a></li><li class="w-full"><a href="#whats-next" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-4">What’s next?</a></li></ul></astro-island>
+  <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/learn/getting-started.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+<div style="margin: 2rem 0; text-align: center;">
+  <!--   <ThemeToggleButton client:visible /> -->
+</div>
+</nav>
+          </aside>
+        </div>
+      </main>
+      <!--     <Footer path={currentFile} /> -->
+    </div>
+  </body></html>

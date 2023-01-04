@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="/assets/embed.463ff1aa.css" /><body class="bg-slate-800">
+  <div class="prose prose-invert p-2">
+        <h1 id="my-patterns">my-patterns</h1>
+<p>This directory can be used to save your own patterns, which then get
+made into a pattern swatch.</p>
+<ol start="0">
+<li>fork and clone the strudel repository</li>
+<li>run <code>npm run setup</code> in the strudel folder</li>
+<li>Save one or more .txt files in this folder</li>
+<li>run <code>npm run repl</code> in the top-level strudel folder</li>
+<li>open <code>http://localhost:3000/swatch/</code> !</li>
+</ol>
+<h2 id="deploy">deploy</h2>
+<ol>
+<li>in your fork, go to settings -> pages and select “Github Actions” as source</li>
+<li>edit <code>website/public/CNAME</code> to contain <code>&#x3C;your-username>.github.io/strudel</code></li>
+<li>edit <code>website/astro.config.mjs</code> to use site: <code>&#x3C;your-username>.github.io/strudel</code> and base <code>/strudel</code></li>
+<li>go to Actions -> <code>Build and Deploy</code> and click <code>Run workflow</code></li>
+<li>view your patterns at <code>&#x3C;your-username>.github.io/strudel/swatch/</code></li>
+</ol>
+<p>Alternatively, github pages allows you to use a custom domain, like <a href="https://mycooldomain.org/swatch/">https://mycooldomain.org/swatch/</a>. <a href="https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site">See their documentation for details</a>.</p>
+      </div>
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 p-2 select-none">
+    
+  </div>
+</body>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en-us" class="initial">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v1.7.2">
+
+<link rel="icon" type="image/svg+xml" href="/favicon.ico">
+
+<link rel="sitemap" href="/sitemap.xml">
+
+<!-- Preload Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital@0;1&display=swap" rel="stylesheet">
+
+<!-- Scrollable a11y code helper -->
+<script src="/make-scrollable-code-focusable.js"></script>
+
+<!-- This is intentionally inlined to avoid FOUC -->
+<script>
+  /*   const root = document.documentElement;
+  const theme = localStorage.getItem('theme');
+  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    root.classList.add('theme-dark');
+  } else {
+    root.classList.remove('theme-dark');
+  } */
+</script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEL60V1WM9" is:inline></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TEL60V1WM9');
+</script> -->
+
+    <!-- Page Metadata --><link rel="canonical" href="https://strudel.tidalcycles.org/technical-manual/repl/">
+
+<!-- OpenGraph Tags -->
+<meta property="og:title" content="REPL 🚀 Strudel Docs">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://strudel.tidalcycles.org/technical-manual/repl/">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/withastro/astro/blob/main/assets/social/banner-minimal.png?raw=true">
+<meta property="og:image:alt" content="astro logo on a starry expanse of space, with a purple saturn-like planet floating in the right foreground">
+<meta name="description" property="og:description" content="Documentation for the Strudel Live Coding Language">
+<meta property="og:site_name" content="Strudel Docs">
+
+<!-- Twitter Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="astrodotbuild">
+<meta name="twitter:title" content="REPL 🚀 Strudel Docs">
+<meta name="twitter:description" content="Documentation for the Strudel Live Coding Language">
+<meta name="twitter:image" content="https://github.com/withastro/astro/blob/main/assets/social/banner-minimal.png?raw=true">
+<meta name="twitter:image:alt" content="astro logo on a starry expanse of space, with a purple saturn-like planet floating in the right foreground">
+
+<!--
+  TODO: Add json+ld data, maybe https://schema.org/APIReference makes sense?
+  Docs: https://developers.google.com/search/docs/advanced/structured-data/intro-structured-data
+  https://www.npmjs.com/package/schema-dts seems like a great resource for implementing this.
+  Even better, there's a React component that integrates with `schema-dts`: https://github.com/google/react-schemaorg
+-->
+
+    <title>
+      REPL 🚀 Strudel Docs
+    </title>
+  <link rel="stylesheet" href="/assets/embed.463ff1aa.css" />
+<link rel="stylesheet" href="/assets/code.d985a308.css" />
+<link rel="stylesheet" href="/assets/code.90a8d9c8.css" /></head>
+
+  <body class="h-screen text-gray-50">
+    <div class="w-full h-full space-y-4 flex flex-col">
+      <header class="max-w-full fixed top-0 w-full z-[100]">
+        <nav class="flex justify-between py-2 px-4 items-center h-14 max-h-14 bg-[#161616] astro-BJPXWKN3" title="Top Navigation">
+  <!--     <div class="menu-toggle">
+      <SidebarToggle client:idle />
+    </div> -->
+  <div class="flex overflow-visible items-center grow astro-BJPXWKN3" style="overflow:visible">
+    <a href="/" class="flex items-center text-2xl space-x-2 astro-BJPXWKN3">
+      <h1 class="text-white font-bold flex space-x-2 items-baseline text-xl astro-BJPXWKN3">
+        <span class="astro-BJPXWKN3">🌀</span>
+        <div class="flex space-x-1 items-baseline astro-BJPXWKN3">
+          <span class=" astro-BJPXWKN3">strudel</span>
+          <span class="text-sm astro-BJPXWKN3">DOCS</span>
+        </div>
+      </h1>
+    </a>
+  </div>
+  
+  <div class="search-item h-10 astro-BJPXWKN3">
+    <!--     <Search client:idle /> -->
+  </div>
+  <a href="/" class="hidden md:flex cursor-pointer items-center space-x-1 astro-BJPXWKN3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 astro-BJPXWKN3"><path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd"></path></svg><span class="astro-BJPXWKN3">go to REPL</span>
+  </a>
+  <div class="md:hidden astro-BJPXWKN3">
+    <style>astro-island,astro-slot{display:contents}</style><script>(self.Astro=self.Astro||{}).idle=t=>{const e=async()=>{await(await t())()};"requestIdleCallback"in window?window.requestIdleCallback(e):setTimeout(e,200)},window.dispatchEvent(new Event("astro:idle"));var l;{const c={0:t=>t,1:t=>JSON.parse(t,o),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(JSON.parse(t,o)),5:t=>new Set(JSON.parse(t,o)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(JSON.parse(t)),9:t=>new Uint16Array(JSON.parse(t)),10:t=>new Uint32Array(JSON.parse(t))},o=(t,s)=>{if(t===""||!Array.isArray(s))return s;const[e,n]=s;return e in c?c[e](n):void 0};customElements.get("astro-island")||customElements.define("astro-island",(l=class extends HTMLElement{constructor(){super(...arguments);this.hydrate=()=>{if(!this.hydrator||this.parentElement&&this.parentElement.closest("astro-island[ssr]"))return;const s=this.querySelectorAll("astro-slot"),e={},n=this.querySelectorAll("template[data-astro-template]");for(const r of n){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(const r of s){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("name")||"default"]=r.innerHTML)}const a=this.hasAttribute("props")?JSON.parse(this.getAttribute("props"),o):{};this.hydrator(this)(this.Component,a,e,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),window.removeEventListener("astro:hydrate",this.hydrate),window.dispatchEvent(new CustomEvent("astro:hydrate"))}}connectedCallback(){!this.hasAttribute("await-children")||this.firstChild?this.childrenConnectedCallback():new MutationObserver((s,e)=>{e.disconnect(),this.childrenConnectedCallback()}).observe(this,{childList:!0})}async childrenConnectedCallback(){window.addEventListener("astro:hydrate",this.hydrate);let s=this.getAttribute("before-hydration-url");s&&await import(s),this.start()}start(){const s=JSON.parse(this.getAttribute("opts")),e=this.getAttribute("client");if(Astro[e]===void 0){window.addEventListener(`astro:${e}`,()=>this.start(),{once:!0});return}Astro[e](async()=>{const n=this.getAttribute("renderer-url"),[a,{default:r}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),i=this.getAttribute("component-export")||"default";if(!i.includes("."))this.Component=a[i];else{this.Component=a;for(const d of i.split("."))this.Component=this.Component[d]}return this.hydrator=r,this.hydrate},s,this)}attributeChangedCallback(){this.hydrator&&this.hydrate()}},l.observedAttributes=["props"],l))}</script><astro-island uid="1LfSJx" component-url="/MobileNav.437df6c7.js" component-export="default" renderer-url="/client.7faaadb8.js" props="{&quot;sidebar&quot;:[0,{&quot;Tutorial&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Getting Started\&quot;],\&quot;link\&quot;:[0,\&quot;learn/getting-started\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Notes\&quot;],\&quot;link\&quot;:[0,\&quot;learn/notes\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;learn/sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Coding syntax\&quot;],\&quot;link\&quot;:[0,\&quot;learn/code\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Mini-notation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/mini-notation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Samples\&quot;],\&quot;link\&quot;:[0,\&quot;learn/samples\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Synths\&quot;],\&quot;link\&quot;:[0,\&quot;learn/synths\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Audio effects\&quot;],\&quot;link\&quot;:[0,\&quot;learn/effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Functions\&quot;],\&quot;link\&quot;:[0,\&quot;learn/functions\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Signals\&quot;],\&quot;link\&quot;:[0,\&quot;learn/signals\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Tonal\&quot;],\&quot;link\&quot;:[0,\&quot;learn/tonal\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;MIDI &amp; OSC\&quot;],\&quot;link\&quot;:[0,\&quot;learn/input-output\&quot;]}]]&quot;],&quot;Technical Manual&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/patterns\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;REPL\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/repl\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Alignment\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/alignment\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Docs\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/docs\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Testing\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/testing\&quot;]}]]&quot;]}]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MobileNav&quot;,&quot;value&quot;:true}" await-children=""><nav data-headlessui-state=""><button class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" id="headlessui-disclosure-button-:R1:" type="button" aria-expanded="false" data-headlessui-state=""><span class="sr-only">Open main menu</span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button></nav></astro-island>
+  </div>
+</nav>
+
+
+
+
+      </header>
+      <main class="relative pt-16">
+        <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
+          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed">
+            <nav aria-labelledby="grid-left">
+  <ul>
+    <li>
+          <div class="nav-group pb-4">
+            <h2>Tutorial</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/getting-started">
+                      Getting Started
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/notes">
+                      Notes
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/sounds">
+                      Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/code">
+                      Coding syntax
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/mini-notation">
+                      Mini-notation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/samples">
+                      Samples
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/synths">
+                      Synths
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/effects">
+                      Audio effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/functions">
+                      Functions
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/signals">
+                      Signals
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/tonal">
+                      Tonal
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/learn/input-output">
+                      MIDI &amp; OSC
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Technical Manual</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/patterns">
+                      Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block bg-header" href="/technical-manual/repl" aria-current="page">
+                      REPL
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/alignment">
+                      Pattern Alignment
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/docs">
+                      Docs
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-header block" href="/technical-manual/testing">
+                      Testing
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li>
+  </ul>
+</nav>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    var target = document.querySelector('[aria-current="page"]');
+    if (target && target.offsetTop > window.innerHeight - 100) {
+      document.querySelector('.nav-groups').scrollTop = target.offsetTop;
+    }
+  });
+</script>
+          </aside>
+          <article id="article" class="content astro-663FUVDK">
+  <section class="main-section astro-663FUVDK">
+    <!-- TODO: add dropdown toc on mobile -->
+    <!--     <nav class="block sm:hidden mb-8">
+      <span>On this Page:</span>
+      <TableOfContents client:media="(max-width: 50em)" headings={headings} />
+    </nav> -->
+    <div class="prose prose-invert max-w-full pb-8 astro-663FUVDK">
+      <h1 id="repl"><a aria-hidden="true" tabIndex="-1" href="#repl"><span class="icon icon-link"></span></a>REPL</h1>
+
+<p>While Strudel can be used as a library in any JavaScript codebase, its main, reference user interface is the Strudel REPL^[REPL stands for read, evaluate, print/play, loop. It is friendly jargon for an interactive programming interface from computing heritage, usually for a commandline interface but also applied to live coding editors.], which is a browser-based live coding environment. This live code editor is dedicated to manipulating Strudel patterns while they play. The REPL features built-in visual feedback, highlighting which elements in the patterned (mini-notation) sequences are influencing the event that is currently being played. This feedback is designed to support both learning and live use of Strudel.</p>
+<p>Besides a UI for playback control and meta information, the main part of the REPL interface is the code editor powered by CodeMirror. In it, the user can edit and evaluate pattern code live, using one of the available synthesis outputs to create music and/or sound art. The control flow of the REPL follows 3 basic steps:</p>
+<ol>
+<li>The user writes and updates code. Each update transpiles and evaluates it to create a <code>Pattern</code> instance</li>
+<li>While the REPL is running, the <code>Scheduler</code> queries the active <code>Pattern</code> by a regular interval, generating <code>Events</code> (also known as <code>Haps</code> in Strudel) for the next time span.</li>
+<li>For each scheduling tick, all generated <code>Events</code> are triggered by calling their <code>onTrigger</code> method, which is set by the output.</li>
+</ol>
+<img src="https://github.com/tidalcycles/strudel/blob/talk/talk/public/strudelflow.png?raw=true" width="600"/>
+<h2 id="user-code"><a aria-hidden="true" tabIndex="-1" href="#user-code"><span class="icon icon-link"></span></a>User Code</h2>
+<p>To create a <code>Pattern</code> from the user code, two steps are needed:</p>
+<ol>
+<li>Transpile the JS input code to make it functional</li>
+<li>Evaluate the transpiled code</li>
+</ol>
+<h3 id="transpilation--evaluation"><a aria-hidden="true" tabIndex="-1" href="#transpilation--evaluation"><span class="icon icon-link"></span></a>Transpilation &amp; Evaluation</h3>
+<p>In the JavaScript world, using transpilation is a common practise to be able to use language features that are not supported by the base language. Tools like <code>babel</code> will transpile code that contains unsupported language features into a version of the code without those features.</p>
+<p>In the same tradition, Strudel can add a transpilation step to simplify the user code in the context of live coding. For example, the Strudel REPL lets the user create mini-notation patterns using just double quoted strings, while single quoted strings remain what they are:</p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#A5D6FF">&#39;c3 [e3 g3]*2&#39;</span><span style="color:#C9D1D9">;</span></span></code></pre>
+<p>is transpiled to:</p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#D2A8FF">mini</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;c3 [e3 g3]*2&#39;</span><span style="color:#C9D1D9">).</span><span style="color:#D2A8FF">withMiniLocation</span><span style="color:#C9D1D9">([</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">0</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">0</span><span style="color:#C9D1D9">], [</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">14</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">14</span><span style="color:#C9D1D9">]);</span></span></code></pre>
+<p>Here, the string is wrapped in <code>mini</code>, which will create a pattern from a mini-notation string. Additionally, the <code>withMiniLocation</code> method passes the original source code location of the string to the pattern, which enables highlighting active events.</p>
+<p>Other convenient features like pseudo variables, operator overloading and top level await are possible with transpilation.</p>
+<p>After the transpilation, the code is ready to be evaluated into a <code>Pattern</code>.</p>
+<p>Behind the scenes, the user code string is parsed with <code>acorn</code>, turning it into an Abstract Syntax Tree (AST). The AST allows changing the structure of the code before generating the transpiled version using <code>escodegen</code>.</p>
+<h3 id="mini-notation"><a aria-hidden="true" tabIndex="-1" href="#mini-notation"><span class="icon icon-link"></span></a>Mini-notation</h3>
+<p>While the transpilation allows JavaScript to express Patterns in a less verbose way, it is still preferable to use the mini-notation as a more compact way to express rhythm. Strudel aims to provide the same mini-notation features and syntax as used in Tidal.</p>
+<p>The mini-notation parser is implemented using <code>peggy</code>, which allows generating performant parsers for Domain Specific Languages (DSLs) using a concise grammar notation. The generated parser turns the mini-notation string into an AST which is used to call the respective Strudel functions with the given structure. For example, <code>&quot;c3 [e3 g3]*2&quot;</code> will result in the following calls:</p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#D2A8FF">seq</span><span style="color:#C9D1D9">(</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#D2A8FF">reify</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;c3&#39;</span><span style="color:#C9D1D9">).</span><span style="color:#D2A8FF">withLocation</span><span style="color:#C9D1D9">([</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">], [</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">4</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">4</span><span style="color:#C9D1D9">]),</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#D2A8FF">seq</span><span style="color:#C9D1D9">(</span><span style="color:#D2A8FF">reify</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;e3&#39;</span><span style="color:#C9D1D9">).</span><span style="color:#D2A8FF">withLocation</span><span style="color:#C9D1D9">([</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">5</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">5</span><span style="color:#C9D1D9">], [</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">8</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">8</span><span style="color:#C9D1D9">]), </span><span style="color:#D2A8FF">reify</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;g3&#39;</span><span style="color:#C9D1D9">).</span><span style="color:#D2A8FF">withLocation</span><span style="color:#C9D1D9">([</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">8</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">8</span><span style="color:#C9D1D9">], [</span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">10</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">10</span><span style="color:#C9D1D9">])).</span><span style="color:#D2A8FF">fast</span><span style="color:#C9D1D9">(</span><span style="color:#79C0FF">2</span><span style="color:#C9D1D9">),</span></span>
+<span class="line"><span style="color:#C9D1D9">);</span></span></code></pre>
+<h3 id="highlighting-locations"><a aria-hidden="true" tabIndex="-1" href="#highlighting-locations"><span class="icon icon-link"></span></a>Highlighting Locations</h3>
+<p>As seen in the examples above, both the JS and the mini-notation parser add source code locations using <code>withMiniLocation</code> and <code>withLocation</code> methods. While the JS parser adds locations relative to the user code as a whole, the mini-notation adds locations relative to the position of the mini-notation string. The absolute location of elements within mini-notation can be calculated by simply adding both locations together. This absolute location can be used to highlight active events in real time.</p>
+<h3 id="mini-notation-1"><a aria-hidden="true" tabIndex="-1" href="#mini-notation-1"><span class="icon icon-link"></span></a>Mini Notation</h3>
+<p>Another important part of the user code is the mini notation, which allows to express rhythms in a short manner.</p>
+<ul>
+<li>the mini notation is <a href="https://github.com/tidalcycles/strudel/blob/main/packages/mini/krill.pegjs">implemented as a PEG grammar</a>, living in the <a href="https://github.com/tidalcycles/strudel/tree/main/packages/mini">mini package</a></li>
+<li>it is based on <a href="https://github.com/Mdashdotdashn/krill">krill</a> by Mdashdotdashn</li>
+<li>the peg grammar is used to generate a parser with <a href="https://peggyjs.org/">peggyjs</a></li>
+<li>the generated parser takes a mini notation string and outputs an AST</li>
+<li>the AST can then be used to construct a pattern using the regular Strudel API</li>
+</ul>
+<p>Here’s an example AST for <code>c3 [e3 g3]</code></p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#C9D1D9">{</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#7EE787">&quot;type_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;pattern&quot;</span><span style="color:#C9D1D9">,</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#7EE787">&quot;arguments_&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;alignment&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;h&quot;</span><span style="color:#C9D1D9"> },</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#7EE787">&quot;source_&quot;</span><span style="color:#C9D1D9">: [</span></span>
+<span class="line"><span style="color:#C9D1D9">    {</span></span>
+<span class="line"><span style="color:#C9D1D9">      </span><span style="color:#7EE787">&quot;type_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;element&quot;</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;source_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;c3&quot;</span><span style="color:#C9D1D9">,</span></span>
+<span class="line"><span style="color:#C9D1D9">      </span><span style="color:#7EE787">&quot;location_&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;start&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">2</span><span style="color:#C9D1D9"> }, </span><span style="color:#7EE787">&quot;end&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">4</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">5</span><span style="color:#C9D1D9"> } }</span></span>
+<span class="line"><span style="color:#C9D1D9">    },</span></span>
+<span class="line"><span style="color:#C9D1D9">    {</span></span>
+<span class="line"><span style="color:#C9D1D9">      </span><span style="color:#7EE787">&quot;type_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;element&quot;</span><span style="color:#C9D1D9">,</span></span>
+<span class="line"><span style="color:#C9D1D9">      </span><span style="color:#7EE787">&quot;location_&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;start&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">4</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">5</span><span style="color:#C9D1D9"> }, </span><span style="color:#7EE787">&quot;end&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">11</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">12</span><span style="color:#C9D1D9"> } }</span></span>
+<span class="line"><span style="color:#C9D1D9">      </span><span style="color:#A5D6FF">&quot;source_&quot;</span><span style="color:#FFA198">:</span><span style="color:#C9D1D9"> {</span></span>
+<span class="line"><span style="color:#C9D1D9">        </span><span style="color:#7EE787">&quot;type_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;pattern&quot;</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;arguments_&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;alignment&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;h&quot;</span><span style="color:#C9D1D9"> },</span></span>
+<span class="line"><span style="color:#C9D1D9">        </span><span style="color:#7EE787">&quot;source_&quot;</span><span style="color:#C9D1D9">: [</span></span>
+<span class="line"><span style="color:#C9D1D9">          {</span></span>
+<span class="line"><span style="color:#C9D1D9">            </span><span style="color:#7EE787">&quot;type_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;element&quot;</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;source_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;e3&quot;</span><span style="color:#C9D1D9">,</span></span>
+<span class="line"><span style="color:#C9D1D9">            </span><span style="color:#7EE787">&quot;location_&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;start&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">5</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">6</span><span style="color:#C9D1D9"> }, </span><span style="color:#7EE787">&quot;end&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">8</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">9</span><span style="color:#C9D1D9"> } }</span></span>
+<span class="line"><span style="color:#C9D1D9">          },</span></span>
+<span class="line"><span style="color:#C9D1D9">          {</span></span>
+<span class="line"><span style="color:#C9D1D9">            </span><span style="color:#7EE787">&quot;type_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;element&quot;</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;source_&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#A5D6FF">&quot;g3&quot;</span><span style="color:#C9D1D9">,</span></span>
+<span class="line"><span style="color:#C9D1D9">            </span><span style="color:#7EE787">&quot;location_&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;start&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">8</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">9</span><span style="color:#C9D1D9"> }, </span><span style="color:#7EE787">&quot;end&quot;</span><span style="color:#C9D1D9">: { </span><span style="color:#7EE787">&quot;offset&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">10</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;line&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">, </span><span style="color:#7EE787">&quot;column&quot;</span><span style="color:#C9D1D9">: </span><span style="color:#79C0FF">11</span><span style="color:#C9D1D9"> } }</span></span>
+<span class="line"><span style="color:#C9D1D9">          }</span></span>
+<span class="line"><span style="color:#C9D1D9">        ]</span></span>
+<span class="line"><span style="color:#C9D1D9">      },</span></span>
+<span class="line"><span style="color:#C9D1D9">    }</span></span>
+<span class="line"><span style="color:#C9D1D9">  ]</span></span>
+<span class="line"><span style="color:#C9D1D9">}</span></span></code></pre>
+<p>which translates to <code>seq(c3, seq(e3, g3))</code></p>
+<h2 id="scheduling-events"><a aria-hidden="true" tabIndex="-1" href="#scheduling-events"><span class="icon icon-link"></span></a>Scheduling Events</h2>
+<p>After an instance of <code>Pattern</code> is obtained from the user code,
+it is used by the scheduler to get queried for events. Once started, the scheduler runs at a fixed interval to query the active pattern for events within the current interval’s time span. A simplified implementation looks like this:</p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#FF7B72">let</span><span style="color:#C9D1D9"> pattern </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#D2A8FF">seq</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;c3&#39;</span><span style="color:#C9D1D9">, [</span><span style="color:#A5D6FF">&#39;e3&#39;</span><span style="color:#C9D1D9">, </span><span style="color:#A5D6FF">&#39;g3&#39;</span><span style="color:#C9D1D9">]); </span><span style="color:#8B949E">// pattern from user</span></span>
+<span class="line"><span style="color:#FF7B72">let</span><span style="color:#C9D1D9"> interval </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">0.5</span><span style="color:#C9D1D9">; </span><span style="color:#8B949E">// query interval in seconds</span></span>
+<span class="line"><span style="color:#FF7B72">let</span><span style="color:#C9D1D9"> time </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">0</span><span style="color:#C9D1D9">; </span><span style="color:#8B949E">// beginning of current time span</span></span>
+<span class="line"><span style="color:#FF7B72">let</span><span style="color:#C9D1D9"> minLatency </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">0.1</span><span style="color:#C9D1D9">; </span><span style="color:#8B949E">// min time before a hap should trigger</span></span>
+<span class="line"><span style="color:#D2A8FF">setInterval</span><span style="color:#C9D1D9">(() </span><span style="color:#FF7B72">=&gt;</span><span style="color:#C9D1D9"> {</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#FF7B72">const</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">haps</span><span style="color:#C9D1D9"> </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> pattern.</span><span style="color:#D2A8FF">queryArc</span><span style="color:#C9D1D9">(time, time </span><span style="color:#FF7B72">+</span><span style="color:#C9D1D9"> interval);</span></span>
+<span class="line"><span style="color:#C9D1D9">  time </span><span style="color:#FF7B72">+=</span><span style="color:#C9D1D9"> interval; </span><span style="color:#8B949E">// increment time</span></span>
+<span class="line"><span style="color:#C9D1D9">  haps.</span><span style="color:#D2A8FF">forEach</span><span style="color:#C9D1D9">((</span><span style="color:#FFA657">hap</span><span style="color:#C9D1D9">) </span><span style="color:#FF7B72">=&gt;</span><span style="color:#C9D1D9"> {</span></span>
+<span class="line"><span style="color:#C9D1D9">    </span><span style="color:#FF7B72">const</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">deadline</span><span style="color:#C9D1D9"> </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> hap.whole.begin </span><span style="color:#FF7B72">-</span><span style="color:#C9D1D9"> time </span><span style="color:#FF7B72">+</span><span style="color:#C9D1D9"> minLatency;</span></span>
+<span class="line"><span style="color:#C9D1D9">    </span><span style="color:#D2A8FF">onTrigger</span><span style="color:#C9D1D9">(hap, deadline, duration);</span></span>
+<span class="line"><span style="color:#C9D1D9">  });</span></span>
+<span class="line"><span style="color:#C9D1D9">}, interval </span><span style="color:#FF7B72">*</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">1000</span><span style="color:#C9D1D9">); </span><span style="color:#8B949E">// query each &quot;interval&quot; seconds</span></span></code></pre>
+<p>Note that the above code is simplified for illustrative purposes. The actual implementation has to work around imprecise callbacks of <code>setInterval</code>. More about the implementation details can be read in <a href="https://loophole-letters.vercel.app/web-audio-scheduling">this blog post</a>.</p>
+<p>The fact that <code>Pattern.queryArc</code> is a pure function that maps a time span to a set of events allows us to choose any interval we like without changing the resulting output. It also means that when the pattern is changed from outside, the next scheduling callback will work with the new pattern, keeping its clock running.</p>
+<p>The latency between the time the pattern is evaluated and the change is heard is between <code>minLatency</code> and <code>interval + minLatency</code>, in our example between 100ms and 600ms. In Strudel, the current query interval is 50ms with a minLatency of 100ms, meaning the latency is between 50ms and 150ms.</p>
+<h2 id="output"><a aria-hidden="true" tabIndex="-1" href="#output"><span class="icon icon-link"></span></a>Output</h2>
+<p>The last step is to trigger each event in the chosen output.
+This is where the given time and value of each event is used to generate audio or any other form of time based output. The default output of the Strudel REPL is the WebAudio output. To understand what an output does, we first have to understand what control parameters are.</p>
+<h3 id="control-parameters"><a aria-hidden="true" tabIndex="-1" href="#control-parameters"><span class="icon icon-link"></span></a>Control Parameters</h3>
+<p>To be able to manipulate multiple aspects of sound in parallel, so called control parameters are used to shape the value of each event. Example:</p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#D2A8FF">note</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;c3 e3&#39;</span><span style="color:#C9D1D9">)</span></span>
+<span class="line"><span style="color:#C9D1D9">  .</span><span style="color:#D2A8FF">cutoff</span><span style="color:#C9D1D9">(</span><span style="color:#79C0FF">1000</span><span style="color:#C9D1D9">)</span></span>
+<span class="line"><span style="color:#C9D1D9">  .</span><span style="color:#D2A8FF">s</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;sawtooth&#39;</span><span style="color:#C9D1D9">)</span></span>
+<span class="line"><span style="color:#C9D1D9">  .</span><span style="color:#D2A8FF">queryArc</span><span style="color:#C9D1D9">(</span><span style="color:#79C0FF">0</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">1</span><span style="color:#C9D1D9">)</span></span>
+<span class="line"><span style="color:#C9D1D9">  .</span><span style="color:#D2A8FF">map</span><span style="color:#C9D1D9">((</span><span style="color:#FFA657">hap</span><span style="color:#C9D1D9">) </span><span style="color:#FF7B72">=&gt;</span><span style="color:#C9D1D9"> hap.value);</span></span>
+<span class="line"><span style="color:#8B949E">/* [</span></span>
+<span class="line"><span style="color:#8B949E">  { note: &#39;c3&#39;, cutoff: 1000, s: &#39;sawtooth&#39; }</span></span>
+<span class="line"><span style="color:#8B949E">  { note: &#39;e3&#39;, cutoff: 1000, s: &#39;sawtooth&#39; }</span></span>
+<span class="line"><span style="color:#8B949E">] */</span></span></code></pre>
+<p>Here, the control parameter functions <code>note</code>, <code>cutoff</code> and <code>s</code> are used, where each controls a different property in the value object. Each control parameter function accepts a primitive value, a list of values to be sequenced into a <code>Pattern</code>, or a <code>Pattern</code>. In the example, <code>note</code> gets a <code>Pattern</code> from a mini-notation expression (double quoted), while <code>cutoff</code> and <code>s</code> are given a <code>Number</code> and a (single quoted) <code>String</code> respectively.</p>
+<p>Strudel comes with a large default set of control parameter functions that are based on the ones used by Tidal and SuperDirt, focusing on music and audio terminology. It is however possible to create custom control parameters for any purpose:</p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#FF7B72">const</span><span style="color:#C9D1D9"> { </span><span style="color:#79C0FF">x</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">y</span><span style="color:#C9D1D9"> } </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#D2A8FF">createParams</span><span style="color:#C9D1D9">(</span><span style="color:#A5D6FF">&#39;x&#39;</span><span style="color:#C9D1D9">, </span><span style="color:#A5D6FF">&#39;y&#39;</span><span style="color:#C9D1D9">);</span></span>
+<span class="line"><span style="color:#D2A8FF">x</span><span style="color:#C9D1D9">(sine.</span><span style="color:#D2A8FF">range</span><span style="color:#C9D1D9">(</span><span style="color:#79C0FF">0</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">200</span><span style="color:#C9D1D9">)).</span><span style="color:#D2A8FF">y</span><span style="color:#C9D1D9">(cosine.</span><span style="color:#D2A8FF">range</span><span style="color:#C9D1D9">(</span><span style="color:#79C0FF">0</span><span style="color:#C9D1D9">, </span><span style="color:#79C0FF">200</span><span style="color:#C9D1D9">));</span></span></code></pre>
+<p>This example creates the custom control parameters <code>x</code> and <code>y</code> which are then used to form a pattern that descibes the coordinates of a circle.</p>
+<h3 id="outputs"><a aria-hidden="true" tabIndex="-1" href="#outputs"><span class="icon icon-link"></span></a>Outputs</h3>
+<p>Now that we know how the value of an event is manipulated using control parameters, we can look at how outputs can use that value to generate anything. The scheduler above was calling the <code>onTrigger</code> function which is used to implement the output. A very simple version of the web audio output could look like this:</p>
+<pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#FF7B72">function</span><span style="color:#C9D1D9"> </span><span style="color:#D2A8FF">onTrigger</span><span style="color:#C9D1D9">(</span><span style="color:#FFA657">hap</span><span style="color:#C9D1D9">, </span><span style="color:#FFA657">deadline</span><span style="color:#C9D1D9">, </span><span style="color:#FFA657">duration</span><span style="color:#C9D1D9">) {</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#FF7B72">const</span><span style="color:#C9D1D9"> { </span><span style="color:#79C0FF">note</span><span style="color:#C9D1D9"> } </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> hap.value;</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#FF7B72">const</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">time</span><span style="color:#C9D1D9"> </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#D2A8FF">getAudioContext</span><span style="color:#C9D1D9">().currentTime </span><span style="color:#FF7B72">+</span><span style="color:#C9D1D9"> deadline;</span></span>
+<span class="line"><span style="color:#C9D1D9">  </span><span style="color:#FF7B72">const</span><span style="color:#C9D1D9"> </span><span style="color:#79C0FF">o</span><span style="color:#C9D1D9"> </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#D2A8FF">getAudioContext</span><span style="color:#C9D1D9">().</span><span style="color:#D2A8FF">createOscillator</span><span style="color:#C9D1D9">();</span></span>
+<span class="line"><span style="color:#C9D1D9">  o.frequency.value </span><span style="color:#FF7B72">=</span><span style="color:#C9D1D9"> </span><span style="color:#D2A8FF">getFreq</span><span style="color:#C9D1D9">(note);</span></span>
+<span class="line"><span style="color:#C9D1D9">  o.</span><span style="color:#D2A8FF">start</span><span style="color:#C9D1D9">(time);</span></span>
+<span class="line"><span style="color:#C9D1D9">  o.</span><span style="color:#D2A8FF">stop</span><span style="color:#C9D1D9">(time </span><span style="color:#FF7B72">+</span><span style="color:#C9D1D9"> event.duration);</span></span>
+<span class="line"><span style="color:#C9D1D9">  o.</span><span style="color:#D2A8FF">connect</span><span style="color:#C9D1D9">(</span><span style="color:#D2A8FF">getAudioContext</span><span style="color:#C9D1D9">().destination);</span></span>
+<span class="line"><span style="color:#C9D1D9">}</span></span></code></pre>
+<p>The above example will create an <code>OscillatorNode</code> for each event, where the frequency is controlled by the <code>note</code> param. In essence, this is how the WebAudio API output of Strudel works, only with many more parameters to control synths, samples and effects.</p>
+    </div>
+  </section>
+  <nav class="block sm:hidden astro-663FUVDK">
+    <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/technical-manual/repl.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+<div style="margin: 2rem 0; text-align: center;">
+  <!--   <ThemeToggleButton client:visible /> -->
+</div>
+  </nav>
+</article>
+
+          <aside class="fixed right-0 h-full overflow-auto pr-4 pl-0 pb-16 hidden xl:block" title="Table of Contents">
+            <nav aria-labelledby="grid-right">
+  <script>(self.Astro=self.Astro||{}).media=(s,a)=>{const t=async()=>{await(await s())()};if(a.value){const e=matchMedia(a.value);e.matches?t():e.addEventListener("change",t,{once:!0})}},window.dispatchEvent(new Event("astro:media"));</script><astro-island uid="Z1ihf57" component-url="/TableOfContents.48cd9bcf.js" component-export="default" renderer-url="/client.9d5dd920.js" props="{&quot;headings&quot;:[1,&quot;[[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;repl\&quot;],\&quot;text\&quot;:[0,\&quot;REPL\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;user-code\&quot;],\&quot;text\&quot;:[0,\&quot;User Code\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;transpilation--evaluation\&quot;],\&quot;text\&quot;:[0,\&quot;Transpilation &amp; Evaluation\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;mini-notation\&quot;],\&quot;text\&quot;:[0,\&quot;Mini-notation\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;highlighting-locations\&quot;],\&quot;text\&quot;:[0,\&quot;Highlighting Locations\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;mini-notation-1\&quot;],\&quot;text\&quot;:[0,\&quot;Mini Notation\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;scheduling-events\&quot;],\&quot;text\&quot;:[0,\&quot;Scheduling Events\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;output\&quot;],\&quot;text\&quot;:[0,\&quot;Output\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;control-parameters\&quot;],\&quot;text\&quot;:[0,\&quot;Control Parameters\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;outputs\&quot;],\&quot;text\&quot;:[0,\&quot;Outputs\&quot;]}]]&quot;]}" ssr="" client="media" opts="{&quot;name&quot;:&quot;TableOfContents&quot;,&quot;value&quot;:&quot;(min-width: 50em)&quot;}" await-children=""><ul><li class="w-full"><a href="#repl" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-4">REPL</a></li><li class="w-full"><a href="#user-code" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-9">User Code</a></li><li class="w-full"><a href="#transpilation--evaluation" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-12">Transpilation &amp; Evaluation</a></li><li class="w-full"><a href="#mini-notation" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-12">Mini-notation</a></li><li class="w-full"><a href="#highlighting-locations" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-12">Highlighting Locations</a></li><li class="w-full"><a href="#mini-notation-1" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-12">Mini Notation</a></li><li class="w-full"><a href="#scheduling-events" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-9">Scheduling Events</a></li><li class="w-full"><a href="#output" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-9">Output</a></li><li class="w-full"><a href="#control-parameters" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-12">Control Parameters</a></li><li class="w-full"><a href="#outputs" class="py-0.5 block cursor-pointer w-full border-l-4 border-header hover:bg-header pl-12">Outputs</a></li></ul></astro-island>
+  <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/technical-manual/repl.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+<div style="margin: 2rem 0; text-align: center;">
+  <!--   <ThemeToggleButton client:visible /> -->
+</div>
+</nav>
+          </aside>
+        </div>
+      </main>
+      <!--     <Footer path={currentFile} /> -->
+    </div>
+  </body></html>
