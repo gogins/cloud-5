@@ -7,8 +7,8 @@
     "build": "vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && python3 patch-dist.py && ls -ll dist",
     "preview": "vite preview",
     "static": "npx serve -p 8000 dist",
-    "repl": "cd strudel/website/dist && npx serve -p 8000 ."
-    "deploy:" "rm -r -f docs/* && cp -rf dist/* docs/ && git add --force docs && git commit -a -m 'Deploying.' && git push"
+    "repl": "cd strudel/website/dist && npx serve -p 8000 .",
+    "deploy": "rm -r -f docs/* && cp -rf dist/* docs/ && git add --force docs && git commit -a -m 'Deploying.' && git push"
   },
   "dependencies": {
     "ace-builds": "^1.14.0",
