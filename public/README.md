@@ -19,8 +19,8 @@ along with the music. The listener may or may not be able to customize the
 piece -- perhaps quite a bit, amounting to a new piece, co-composed with me.
 
 The underlying technology is my WebAssembly build of Csound with CsoundAC. 
-Some pieces use third party libraries, especially (Strudel)
-[https://github.com/tidalcycles/strudel], a JavaScript port 
+Some pieces use third party libraries, especially [Strudel]
+(https://github.com/tidalcycles/strudel), a JavaScript port 
 of the live coding system [Tidal Cycles](https://tidalcycles.org/).
 
 - [Cloud Music No. 1](cloud_music_no_1.html).
@@ -48,7 +48,7 @@ All software used here is JavaScript, WebAssembly, or HTML. All third party
 dependencies are contained in this repository as static files.
 
 To use cloud-music, fork cloud-music on GitHub and clone your fork on your 
-own computer. You can also download the latest cloud-music release as a zip 
+own computer. You can also just download the latest cloud-music release as a zip 
 file and unzip it on your computer.
 
 _This is actually the easiest way to install a usable version of Csound on your 
@@ -80,7 +80,7 @@ If you just want to work in the context of a Web site created in your fork of
 cloud-music, then just writing static code in the `public` directory would be 
 fine, and by far the easiest. 
 
-Otherwise, take a look at [BUILD.md](https://github.com/gogins/cloud-music/blob/main/BUILD.md) 
+Otherwise, take a look at [BUILD.md](https://github.com/gogins/cloud-music/blob/main/BUILD.md)
 and at the build system files such as `package.json`.
 
 
