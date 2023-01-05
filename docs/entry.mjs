@@ -2092,11 +2092,9 @@ const $$Astro$6 = createAstro("/Users/michaelgogins/cloud-music/strudel/website/
 const $$HeadCommon = createComponent(async ($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro$6, $$props, $$slots);
   Astro2.self = $$HeadCommon;
-  return renderTemplate(_a$2 || (_a$2 = __template$2(['<!-- Global Metadata --><meta charset="utf-8">\n<meta name="viewport" content="width=device-width">\n<meta name="generator"', `>
-
-<link rel="icon" type="image/svg+xml" href="/favicon.ico">
-
-<link rel="sitemap" href="/sitemap.xml">
+  const { BASE_URL } = (Object.assign({"BASE_URL":"/","MODE":"production","DEV":false,"PROD":true},{_:process.env._,BASE_URL:'/',}));
+  const base = BASE_URL;
+  return renderTemplate(_a$2 || (_a$2 = __template$2(['<!-- Global Metadata --><meta charset="utf-8">\n<meta name="viewport" content="width=device-width">\n<meta name="generator"', '>\n\n<link rel="icon" type="image/svg+xml" href="favicon.ico">\n\n<link rel="sitemap" href="./sitemap.xml">\n\n<base', `>
 
 <!-- Preload Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2104,7 +2102,7 @@ const $$HeadCommon = createComponent(async ($$result, $$props, $$slots) => {
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital@0;1&display=swap" rel="stylesheet">
 
 <!-- Scrollable a11y code helper -->
-<script src="/make-scrollable-code-focusable.js"><\/script>
+<script src="./make-scrollable-code-focusable.js"><\/script>
 
 <!-- This is intentionally inlined to avoid FOUC -->
 <script>
@@ -2125,7 +2123,7 @@ const $$HeadCommon = createComponent(async ($$result, $$props, $$slots) => {
   gtag('js', new Date());
   gtag('config', 'G-TEL60V1WM9');
 <\/script> -->
-`])), addAttribute(Astro2.generator, "content"));
+`])), addAttribute(Astro2.generator, "content"), addAttribute(base, "href"));
 }, "/Users/michaelgogins/cloud-music/strudel/website/src/components/HeadCommon.astro");
 
 const $$Astro$5 = createAstro("/Users/michaelgogins/cloud-music/strudel/website/src/pages/index.astro", "https://strudel.tidalcycles.org/", "file:///Users/michaelgogins/cloud-music/strudel/website/");
@@ -7861,17 +7859,17 @@ const webaudio = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 	getLoadedSamples
 }, Symbol.toStringTag, { value: 'Module' }));
 
-async function prebake({ baseDir = '' } = {}) {
+async function prebake() {
   // https://archive.org/details/SalamanderGrandPianoV3
   // License: CC-by http://creativecommons.org/licenses/by/3.0/ Author: Alexander Holm
   return await Promise.all([
-    samples('/piano.json', `${baseDir}/piano/`),
+    samples(`./piano.json`, `./piano/`),
     // https://github.com/sgossner/VCSL/
     // https://api.github.com/repositories/126427031/contents/
     // LICENSE: CC0 general-purpose
-    samples('/vcsl.json', 'github:sgossner/VCSL/master/'),
-    samples('/tidal-drum-machines.json', 'github:ritchse/tidal-drum-machines/main/machines/'),
-    samples('/EmuSP12.json', `${baseDir}/EmuSP12/`),
+    samples(`./vcsl.json`, 'github:sgossner/VCSL/master/'),
+    samples(`./tidal-drum-machines.json`, 'github:ritchse/tidal-drum-machines/main/machines/'),
+    samples(`./EmuSP12.json`, `./EmuSP12/`),
     // samples('github:tidalcycles/Dirt-Samples/master'),
   ]);
 }
@@ -7892,7 +7890,7 @@ Pattern$1.prototype.piano = function () {
 };
 
 if (typeof window !== "undefined") {
-  evalScope(controls, Promise.resolve().then(() => strudel), Promise.resolve().then(() => tonalHelpers), import('./chunks/index.701eeaa1.mjs'), import('./chunks/index.26ec182b.mjs'), import('./chunks/index.0133e719.mjs'), Promise.resolve().then(() => webaudio), import('./chunks/osc.350003c7.mjs'));
+  evalScope(controls, Promise.resolve().then(() => strudel), Promise.resolve().then(() => tonalHelpers), import('./chunks/index.cd9bd191.mjs'), import('./chunks/index.000aa6e3.mjs'), import('./chunks/index.65799992.mjs'), Promise.resolve().then(() => webaudio), import('./chunks/osc.449927c4.mjs'));
 }
 if (typeof window !== "undefined") {
   initAudioOnFirstClick();
@@ -7904,7 +7902,7 @@ function MiniRepl({
 }) {
   const [Repl, setRepl] = useState();
   useEffect(() => {
-    import('./chunks/index.es.b274e8e1.mjs').then((res) => {
+    import('./chunks/index.es.96992082.mjs').then((res) => {
       setRepl(() => res.MiniRepl);
     });
   }, []);
@@ -7921,7 +7919,7 @@ __astro_tag_component__(MiniRepl, "@astrojs/react");
 const MDXLayout$k = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -14652,7 +14650,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.osc",
 		kind: "member",
-		___id: "T000002R003334",
+		___id: "T000002R003335",
 		___s: true
 	},
 	{
@@ -14692,7 +14690,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.transpose",
 		kind: "member",
-		___id: "T000002R004001",
+		___id: "T000002R004002",
 		___s: true
 	},
 	{
@@ -14730,7 +14728,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.scaleTranspose",
 		kind: "member",
-		___id: "T000002R004006",
+		___id: "T000002R004007",
 		___s: true
 	},
 	{
@@ -14768,7 +14766,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.scale",
 		kind: "member",
-		___id: "T000002R004009",
+		___id: "T000002R004010",
 		___s: true
 	},
 	{
@@ -14824,7 +14822,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.addVoicings",
 		kind: "member",
-		___id: "T000002R004030",
+		___id: "T000002R004031",
 		___s: true
 	},
 	{
@@ -14862,7 +14860,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.voicings",
 		kind: "member",
-		___id: "T000002R004044",
+		___id: "T000002R004045",
 		___s: true
 	},
 	{
@@ -14900,7 +14898,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.rootNotes",
 		kind: "member",
-		___id: "T000002R004049",
+		___id: "T000002R004050",
 		___s: true
 	},
 	{
@@ -14915,7 +14913,7 @@ const docs$1 = [
 			columnno: 0,
 			path: "/Users/michaelgogins/cloud-music/strudel/packages/webaudio",
 			code: {
-				id: "astnode100047824",
+				id: "astnode100047838",
 				name: "exports.samples",
 				type: "VariableDeclaration"
 			}
@@ -14928,7 +14926,7 @@ const docs$1 = [
 		longname: "samples",
 		kind: "constant",
 		scope: "global",
-		___id: "T000002R004289",
+		___id: "T000002R004290",
 		___s: true
 	},
 	{
@@ -14955,7 +14953,7 @@ const docs$1 = [
 		scope: "static",
 		longname: "Pattern.webdirt",
 		kind: "member",
-		___id: "T000002R004566",
+		___id: "T000002R004567",
 		___s: true
 	},
 	{
@@ -15062,7 +15060,7 @@ const docs$1 = [
 			"/Users/michaelgogins/cloud-music/strudel/packages/xen/tunejs.js",
 			"/Users/michaelgogins/cloud-music/strudel/packages/xen/xen.mjs"
 		],
-		___id: "T000002R014583",
+		___id: "T000002R014584",
 		___s: true
 	}
 ];
@@ -15110,7 +15108,7 @@ __astro_tag_component__(JsDoc, "@astrojs/react");
 const MDXLayout$j = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -15333,7 +15331,7 @@ const _page3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$i = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -15570,7 +15568,7 @@ const _page5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$h = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -16224,7 +16222,7 @@ const _page6 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$g = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -20258,13 +20256,16 @@ const $$Astro$4 = createAstro("/Users/michaelgogins/cloud-music/strudel/website/
 const $$Index$3 = createComponent(async ($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro$4, $$props, $$slots);
   Astro2.self = $$Index$3;
-  return renderTemplate`${maybeRenderHead($$result)}<body class="bg-slate-800">
+  return renderTemplate`<head>
+  ${renderComponent($$result, "HeadCommon", $$HeadCommon, {})}
+${renderHead($$result)}</head>
+<body class="bg-slate-800">
   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 p-2 select-none">
-    ${Object.entries(tunes).map(([name, tune]) => renderTemplate`<a class="rounded-md bg-slate-900 hover:bg-slate-700 cursor-pointer relative"${addAttribute(`/#${btoa(tune)}`, "href")}>
+    ${Object.entries(tunes).map(([name, tune]) => renderTemplate`<a class="rounded-md bg-slate-900 hover:bg-slate-700 cursor-pointer relative"${addAttribute(`./#${btoa(tune)}`, "href")}>
           <div class="absolute w-full h-full flex justify-center items-center">
             <span class="bg-slate-800 p-2 rounded-md text-white">${name}</span>
           </div>
-          <img${addAttribute(`/img/example-${name}.png`, "src")}>
+          <img${addAttribute(`./img/example-${name}.png`, "src")}>
         </a>`)}
   </div>
 </body>`;
@@ -20304,7 +20305,7 @@ const _page9 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$f = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -20501,7 +20502,7 @@ const _page10 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$e = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -20710,7 +20711,7 @@ const _page11 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$d = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -21012,16 +21013,19 @@ const $$Index$1 = createComponent(async ($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro$2, $$props, $$slots);
   Astro2.self = $$Index$1;
   const myPatterns = await getMyPatterns();
-  return renderTemplate`${maybeRenderHead($$result)}<body class="bg-slate-800">
+  return renderTemplate`<head>
+  ${renderComponent($$result, "HeadCommon", $$HeadCommon, {})}
+${renderHead($$result)}</head>
+<body class="bg-slate-800">
   ${Object.keys(myPatterns).length === 0 && renderTemplate`<div class="prose prose-invert p-2">
         ${renderComponent($$result, "Content", Content$d, {})}
       </div>`}
   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 p-2 select-none">
-    ${Object.entries(myPatterns).map(([name, tune]) => renderTemplate`<a class="rounded-md bg-slate-900 hover:bg-slate-700 cursor-pointer relative"${addAttribute(`../#${btoa(tune)}`, "href")}>
+    ${Object.entries(myPatterns).map(([name, tune]) => renderTemplate`<a class="rounded-md bg-slate-900 hover:bg-slate-700 cursor-pointer relative"${addAttribute(`./#${btoa(tune)}`, "href")}>
           <div class="absolute w-full h-full flex justify-center items-center">
             <span class="bg-slate-800 p-2 rounded-md text-white">${name}</span>
           </div>
-          <img${addAttribute(`./${name}.png`, "src")}>
+          <img${addAttribute(`./swatch/${name}.png`, "src")}>
         </a>`)}
   </div>
 </body>`;
@@ -24080,7 +24084,7 @@ const _page17 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$c = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -24274,7 +24278,7 @@ function _createMdxContent$c(props) {
       }), " and click the Shuffle icon in the top menu bar.\nYou can get a feel for Strudel by browsing and editing these examples and clicking the Refresh icon to update."]
     }), "\n", createVNode(_components.p, {
       children: ["You can also browse through the examples ", createVNode(_components.a, {
-        href: "/examples",
+        href: "./examples",
         children: "here"
       }), "."]
     }), "\n", createVNode(_components.p, {
@@ -24379,7 +24383,7 @@ const _page18 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$b = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -25117,7 +25121,7 @@ const _page19 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$a = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -25436,7 +25440,7 @@ const _page20 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$9 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -26520,7 +26524,7 @@ const _page21 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$8 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -26899,7 +26903,7 @@ const _page22 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$7 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -27439,7 +27443,7 @@ const _page23 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$6 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -28226,7 +28230,7 @@ __astro_tag_component__(Colors, "@astrojs/react");
 const MDXLayout$5 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -28328,7 +28332,7 @@ const _page25 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$4 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -28542,7 +28546,7 @@ const _page26 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$3 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -28742,7 +28746,7 @@ const _page27 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$2 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -29086,7 +29090,7 @@ const _page28 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout$1 = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content
@@ -29342,7 +29346,7 @@ const _page29 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const MDXLayout = async function ({
   children
 }) {
-  const Layout = (await import('./chunks/MainLayout.f37e83f1.mjs')).default;
+  const Layout = (await import('./chunks/MainLayout.c7eab378.mjs')).default;
   const {
     layout,
     ...content

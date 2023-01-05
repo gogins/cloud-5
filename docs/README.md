@@ -48,11 +48,11 @@ All software used here is JavaScript, WebAssembly, or HTML. All third party
 dependencies are contained in this repository as static files.
 
 To use cloud-music, fork cloud-music on GitHub and clone your fork on your 
-own computer. You can also download the latest cloud-music release as a zip 
+own computer. You can also just download the latest cloud-music release as a zip 
 file and unzip it on your computer.
 
-This is actually the easiest way to install a usable version of Csound on your 
-computer.
+_This is actually the easiest way to install a usable version of Csound on your 
+computer._
 
 ### Writing New Compositions
 
@@ -76,9 +76,12 @@ To develop this kind of software in your fork of cloud-music, keep in mind
 that the cloud-music project uses [npm](https://www.npmjs.com/), which of 
 course must first be installed. 
 
-If you just want to work in the context of a Web site created in your fork of cloud-music, then just writing static code in the `public` directory would be 
-easiest. Otherwise, take a look at [BUILD.md](BUILD.md) and at the Strudel 
-build system.
+If you just want to work in the context of a Web site created in your fork of 
+cloud-music, then just writing static code in the `public` directory would be 
+fine, and by far the easiest. 
+
+Otherwise, take a look at [BUILD.md](https://github.com/gogins/cloud-music/blob/main/BUILD.md)
+and at the build system files such as `package.json`.
 
 
 
