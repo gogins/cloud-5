@@ -22,8 +22,9 @@ Strudel.
 
 ### Maintenance Note!
 
-Never edit existing Strudel files or add new packages, always add _new_ Strudel 
-files in _existing_ Strudel packages.
+_If at all possible_, never edit existing Strudel files or add new packages, 
+always add _new_ Strudel files in _existing_ Strudel packages. This is to 
+keep discrepancies between Strudel and cloud-music to an absolute minimum.
 
 ## Setting Up
 
@@ -35,15 +36,15 @@ command will initialize all dependencies.
 Run `npm run build-repl` and then run `npm run build` to produce a usable 
 distribution for a static Web site. Examine `package.json` for details. These  
 commands will patch Strudel with my addons, build everything, and make a 
-distributable copy of the cloud-music Web site with all resources statically 
-available. 
+distributable copy of the cloud-music Web site in the `dist` directory, 
+with all resources statically available. 
 
 If you see warnings or errors, don't panic unless executing `npm run static` 
 doesn't produce a working Web site with playable pieces.
 
 ### Patches to Strudel
 
-To date, changes worked upon Strudel head are minimal:
+To date, the patches that I have made to Strudel head are minimal:
 
  1. Add `strudel-addons/csoundac/` to the Strudel tree. This is done 
     automatically by `npm run build-repl`.

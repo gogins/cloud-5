@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "static": "npx serve -p 8000 dist",
     "repl": "cd strudel/website/dist && npx serve -p 8000 ."
+    "deploy:" "rm -rf docs/* && cp -rf dist/* docs/* && git add docs && git commit -a -m 'Deploying.' && git push"
   },
   "dependencies": {
     "ace-builds": "^1.14.0",
