@@ -2,29 +2,32 @@
 
 ## Introduction
 
-This repository is a bit of a hack but I have tried to make it as maintainable 
+This repository is a bit of a hack, but I have tried to make it as maintainable 
 as possible.
 
 The basic idea is to extend Strudel not only with Csound but also with 
 CsoundAC, and then make Strudel into an embeddable component that I can use in 
-my pieces.
+my pieces. This is possible because the Strudel Web site serves a REPL page 
+that will run Strudel code from users via an HTTP request, which I can hijack 
+for my own purposes.
 
-To this end, Strudel is included in this repository as a Git submodule. But,  
-before actually building Strudel, this repository adds some of my own code to 
-Strudel. 
+To this end, Strudel is included in this repository as a Git submodule. But, 
+before actually building Strudel, this repository makes the following patches 
+to Strudel head:
 
- 1. csoundac.mjs is a module that creates a number of Patterns in Strudel that 
-    use CsoundAC's Chord, Scale, and PITV classes.
+ 1. Add `strudel-addons/csoundac/` to the Strudel tree. This is done 
+    automatically by `npm run build-repl`.
+ 2. Patch `strudel/website/src/Repl.jsx` to import csoundac. There is a Python 
+    script that npm will use to make this patch. If this quits working, 
+    change the `patch-strudel.py` script as required.
+ 3. Patch the generated `strudel/website/dist/index.html` file to use relative 
+    rather than absolute pathnames for imported assets. This is needed in 
+    order to run the Strudel repl from GitHub pages, which are not necessarily 
+    at the root of their Web server. There is a Python script that npm will use 
+    to make this patch. If this quits working, change the `patch-dist.py` 
+    script as required.
     
- 2. strudel_embed.js is a script that adds some event handling hooks to the 
-    existing Strudel REPL page, and uses it as an iframe component in 
-    cloud-music pieces.
-
-### Maintenance Note!
-
-_If at all possible_, never edit existing Strudel files or add new packages, 
-always add _new_ Strudel files in _existing_ Strudel packages. This is to 
-keep discrepancies between Strudel and cloud-music to an absolute minimum.
+I have done my best to keep these patches as few and simple as possible.
 
 ## Setting Up
 
@@ -42,18 +45,10 @@ with all resources statically available.
 If you see warnings or errors, don't panic unless executing `npm run static` 
 doesn't produce a working Web site with playable pieces.
 
-### Patches to Strudel
+## Maintenance Note!
 
-To date, the patches that I have made to Strudel head are minimal:
+_If at all possible_, never edit existing Strudel files or add new packages, 
+always add _new_ Strudel files in _existing_ Strudel packages. This is to 
+keep discrepancies between Strudel and cloud-music to an absolute minimum.
 
- 1. Add `strudel-addons/csoundac/` to the Strudel tree. This is done 
-    automatically by `npm run build-repl`.
- 2. Patch `strudel/website/src/Repl.jsx` to import csoundac. There is a Python 
-    script that npm will use to make this patch. If this quits working, 
-    change the `patch-strudel.py` script as required.
- 3. Patch the generated `strudel/website/dist/index.html` file to use relative 
-    rather than absolute pathnames for imported assets. This is needed in 
-    order to run the Strudel repl from GitHub pages, which are not necessarily 
-    at the root of their Web server. There is a Python script that npm will use 
-    to make this patch. If this quits working, change the `patch-dist.py` 
-    script as required.
+
