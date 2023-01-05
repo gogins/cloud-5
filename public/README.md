@@ -19,8 +19,8 @@ along with the music. The listener may or may not be able to customize the
 piece -- perhaps quite a bit, amounting to a new piece, co-composed with me.
 
 The underlying technology is my WebAssembly build of Csound with CsoundAC. 
-Some pieces use third party libraries, especially [Strudel]
-(https://github.com/tidalcycles/strudel), a JavaScript port 
+Some pieces use third party libraries, especially (Strudel)
+[https://github.com/tidalcycles/strudel], a JavaScript port 
 of the live coding system [Tidal Cycles](https://tidalcycles.org/).
 
 - [Cloud Music No. 1](cloud_music_no_1.html).
