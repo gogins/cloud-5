@@ -47,8 +47,8 @@ doesn't produce a working Web site with playable pieces.
 
 ## Maintenance Note!
 
-_If at all possible_, never edit existing Strudel files or add new packages, 
-always add _new_ Strudel files in _existing_ Strudel packages. This is to 
-keep discrepancies between Strudel and cloud-music to an absolute minimum.
+_If at all possible_, never edit _existing_ Strudel files, always add _new_ 
+Strudel files. This is to keep discrepancies between Strudel and cloud-music 
+to an absolute minimum.
 
 

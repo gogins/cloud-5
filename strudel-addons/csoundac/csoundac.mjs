@@ -443,9 +443,299 @@ export const pitvN = register('pitvN', (pitv, pat) => {
   });
 });
 
+// The following Patterns apply only to Notes, i.e. they expect onTrigger to be invoked.
 
+/**
+  * A Pattern that transposes the specified Chord by the specified number 
+  * of semitones. This enables transposing Chords in a patternified way.
+  */
+export const chordtT = register('chordtT', (current_chord, semitones, pat) => {
+  return pat.withHap((hap) => {
+    let new_chord = current_chord.T(semitones);
+    if (csac_debugging) {
+        let message = `[chordT]: ${current_chord.toString()} ${current_chord.eOP().name()} T(${semitones}) =>\n[chordT]: ${new_chord.toString()} ${new_chord.name()}`
+        logger(message, 'debug');
+    }
+    csacCopy(new_chord, current_chord);
+    return hap.withValue(() => hap.value);
+  });
+});
 
+/**
+  * A Pattern that reflects the specified Chord in the specified center. 
+  * This enables inverting Chords in a patternified way.
+  */
+export const chordtI = register('chordtI', (current_chord, center, pat) => {
+  return pat.withHap((hap) => {
+    let new_chord = current_chord.I(center);
+    if (csac_debugging) {
+        let message = `[chordI]: ${current_chord.toString()} ${current_chord.eOP().name()} I(${center}) =>\n[chordI]: ${new_chord.toString()} ${new_chord.eOP().name()}`
+        logger(message, 'debug');
+    }
+    ///current_chord = new_chord;
+    csacCopy(new_chord, current_chord);
+    return hap.withValue(() => hap.value);
+  });
+});
 
+/**
+  * A Pattern that transforms the specified Chord using the interchange by 
+  * inversion operation of the Generalized Contextual Group of Fiore and 
+  * Satyendra. This enables exchanging a "major" sounding pitch-class set with 
+  * the corresponding "minor" sounding pitch-class set, and vice versa, in a 
+  * patternified way.
+  */
+export const chordtK = register('chordtK', (current_chord, pat) => {
+  return pat.withHap((hap) => {
+    let new_chord = current_chord.K();
+    if (csac_debugging) {
+        let message = `[chordK]: ${current_chord.toString()} ${current_chord.eOP().name()} K =>\n[ChordK]: ${new_chord.toString()} ${new_chord.eOP().name()}`
+        logger(message, 'debug');
+    }
+    csacCopy(new_chord, current_chord);
+    return hap.withValue(() => hap.value);
+  });
+});
 
+/**
+  * A Pattern that transforms the specified Chord using the contextual 
+  * transposition operation of the Generalized Contextual Group of Fiore and 
+  * Satyendra. This enables tranposing the specified Chord by the specified 
+  * number of semitones _up_ if the Chord is a _transposed_ form of the 
+  * modality Chord, and by the specified number of semitones _down_ if the 
+  * Chord is an _inverted_ form of the modality Chord. This enables applying 
+  * contextual transpositions to Chords in a patternified way.
+  */
+export const chordtQ = register('chordtQ', (current_chord, modality, semitones, pat) => {
+  return pat.withHap((hap) => {
+    let new_chord = current_chord.Q(semitones, modality, 1.);
+    if (csac_debugging) {
+        let message = `[chordQ]: ${current_chord.toString()} ${current_chord.eOP().name()} Q(${semitones}) =>\n[chordQ]: ${new_chord.toString()} ${new_chord.eOP().name()}`
+        logger(message, 'debug');
+    }
+    csacCopy(new_chord, current_chord);
+    return hap.withValue(() => hap.value);
+  });
+});
 
+/**
+  * A Pattern that conforms _notes_ to the closest _note_ of the 
+  * specified (presumably voiced) Chord.
+  */
+export const chordtNV = register('chordtNV', (chord_, pat) => {
+  return pat.withHap((hap) => {
+    let frequency;
+    try {
+      frequency = getFrequency(hap);
+    } catch(error) {
+      logger('[chordNV] not a note!', 'warning');
+      return;
+    }
+    let current_midi_key = frequencyToMidiInteger(frequency);
+    let new_midi_key = csoundac.closestPitch(current_midi_key, chord_);
+    let result = hap.withValue(() => new_midi_key);
+    if (csac_debugging) logger(`[chordNV]: ${chord_.toString()} ${chord_.eOP().name()} old note: ${current_midi_key} new note: ${result.value}`, 'debug');
+    return result;
+  });
+});
 
+/**
+  * A Pattern that conforms _pitch-classes_ to the closest _pitch-class set_ 
+  * of the specified Chord.
+  */
+export const chordtN = register('chordtN', (chord_, pat) => {
+  return pat.withHap((hap) => {
+    let frequency;
+    try {
+      frequency = getFrequency(hap);
+    } catch(error) {
+      logger('[chordN] not a note!', 'warning');
+      return;
+    }
+    let current_midi_key = frequencyToMidiInteger(frequency);
+    let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, chord_.epcs());
+    let result = hap.withValue(() => new_midi_key);
+    if (csac_debugging) logger(`[chordN]: ${chord_.toString()} ${chord_.eOP().name()} old note: ${current_midi_key} new note: ${result.value}`, 'debug');
+    return result;
+  });
+});
+
+/**
+  * A Pattern that returns the Chord corresponding to the specified scale step 
+  * of the Scale object. This enables generating tonal chord progressions in a 
+  * patternified way. The Chord is returned in the argument and can then be 
+  * used in Chord-based Patterns.
+  */
+export const scaletS = register('scaletS', (current_chord, scale, scale_step, pat) => {
+  return pat.withHap((hap) => {
+    new_chord = scale.chord_(scale_step, current_chord.voices());
+    if (csac_debugging) logger(`[scaleS]: old chord: ${current_chord.toString()} scale step: ${scale_step} new chord: ${new_chord.toString()}`, 'debug');
+    csacCopy(new_chord, current_chord);
+    return hap.withValue(() => hap.value);
+  });
+});
+
+/**
+  * A Pattern that transposes the specified Chord by the specified number of 
+  * scale degrees, in the specified Scale. This enables generating tonal chord  
+  * progressions within the Scale in a patternified way. The transposed Chord 
+  * is returned in the argument and can then be used in Chord-based Patterns.
+  */
+export const scaletT = register('scaletT', (scale_, current_chord, scale_steps, pat) => {
+  return pat.withHap((hap) => {
+    let new_chord = scale_.transpose_degrees(current_chord, scale_steps, 3);
+    if (csac_debugging) logger(`[scaleT]: old chord: ${current_chord.toString()} scale steps: ${scale_steps} new chord: ${new_chord.toString()}`, 'debug');
+    csacCopy(new_chord, current_chord);
+    return hap.withValue(() => hap.value);
+  });
+});
+
+/**
+  * A Pattern that modulates from one Scale to another, assuming that the 
+  * specified Chord is a pivot chord in the specified Scale. This enables 
+  * generating correct tonal key changes in a patternified way. The new 
+  * Scale is returned in the argument and can then be used in Scale-based 
+  * Patterns. The specified index picks one of the possible modulations.
+  */
+export const scaletM = register('scaletM', (current_scale, pivot_chord, index, pat) => {
+  return pat.withHap((hap) => {
+    let pivot_chord_eop = pivot_chord.eOP();
+    let possible_modulations = current_scale.modulations(pivot_chord_eop);
+    let new_scale = current_scale;
+    let modulation_count = possible_modulations.size();
+    let wrapped_index = -1;
+    if (modulation_count > 0) {
+      wrapped_index = index % modulation_count;
+      new_scale = possible_modulations.get(wrapped_index);
+      if (csac_debugging) {
+        let message = `
+[scaleM]: modulating in: ${current_scale.toString()} ${current_scale.name()} 
+[scaleM]: from pivot:    ${pivot_chord_eop.toString()} ${pivot_chord_eop.name()}
+[scaleM]: modulations:   ${modulation_count} => ${wrapped_index}
+[scaleM]: modulated to:  ${new_scale.toString()} ${new_scale.name()}
+`;
+        logger(message, 'debug');
+      }
+      csacCopy(new_scale, current_scale);
+    }
+    return hap.withValue(() => hap.value);
+  });
+});
+
+/**
+  * A Pattern that conforms notes to the closest pitch-class of the 
+  * specified Scale.
+  */
+export const scaletN = register('scaletN', (scale_, pat) => {
+  return pat.withHap((hap) => {
+    let frequency;
+    try {
+      frequency = getFrequency(hap);
+    } catch(error) {
+      logger('[scaleN] not a note!', 'warning');
+      return;
+    }
+    let current_midi_key = frequencyToMidiInteger(frequency);
+    let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, scale_);
+    let result = hap.withValue(() => new_midi_key);
+    if (csac_debugging) logger(`[scaleN]: old note: ${current_midi_key} new note: ${new_midi_key}`, 'debug');
+    return result;
+  });
+});
+
+/**
+  * A Pattern that sets the indicated set-type index in the PITV object. This 
+  * enables mutating Chords in a patternified way.
+  */
+export const pitvtP = register('pitvtP', (pitv, P, pat) => {
+  return pat.withHap((hap) => {
+    pitv.P = P;
+    if (csac_debugging) logger(`[pitvP]: ${pitv.P}`, 'debug');
+    return hap.withValue(() => hap.value);
+  });
+});
+
+/**
+  * A Pattern that sets the indicated index of inversion in the PITV object. 
+  * This enables inverting a PITV element in a patternified way.
+  */
+export const pitvtI = register('pitvtI', (pitv, I, pat) => {
+  return pat.withHap((hap) => {
+    pitv.I = I;
+    logger(`[pitvI]: ${pitv.I}`, 'debug');
+    return hap.withValue(() => hap.value);
+  });
+});
+
+/**
+  * A Pattern that sets the indicated index of pitch-class transposition in 
+  * the PITV object. This enables transposing a PITV element in a patternified 
+  * way.
+  */
+export const pitvtT = register('pitvtT', (pitv, T, pat) => {
+  return pat.withHap((hap) => {
+    pitv.T = T;
+    if (csac_debugging) logger(`[pitvT]: ${pitv.T}`, 'debug');
+    return hap.withValue(() => hap.value);
+  });
+});
+
+/**
+  * A Pattern that sets the indicated index of octavewise revoicing in the 
+  * PITV object. This enables revoicing a PITV element in a patternified way.
+  */
+export const pitvV = register('pitvV', (pitv, V, pat) => {
+  return pat.withHap((hap) => {
+    pitv.V = V;
+    if (csac_debugging) logger(`[pitvV]: ${pitv.V}`, 'debug');
+    return hap.withValue(() => hap.value);
+  });
+});
+
+/**
+  * A Pattern that that conforms the notes of a Pattern to the current 
+  * element of the PITV object. The notes are moved to the closest _note_ 
+  * of the chord _voicing_ of the PITV element.
+  */
+export const pitvtNV = register('pitvtNV', (pitv, pat) => {
+  return pat.withHap((hap) => {
+    let frequency;
+    try {
+      frequency = getFrequency(hap);
+    } catch(error) {
+      logger('[pitvNV] not a note!', 'warning');
+      return;
+    }
+    let current_midi_key = frequencyToMidiInteger(frequency);
+    let voiced_chord = pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, true).get(0);
+    let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
+    let result = hap.withValue(() => new_midi_key);
+    if (csac_debugging) logger(`[pitvNV]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`, 'debug');
+    return result;
+  });
+});
+
+/**
+  * A Pattern that that conforms the notes of a Pattern to the current 
+  * element of the PITV object. The notes are moved to the closest _pitch- 
+  * class_ of the _pitch-class set_ of the PITV element.
+  */
+export const pitvtN = register('pitvtN', (pitv, pat) => {
+  return pat.withHap((hap) => {
+    let frequency;
+    try {
+      frequency = getFrequency(hap);
+    } catch(error) {
+      logger('[pitvNV] not a note!', 'warning');
+      return;
+    }
+    let current_midi_key = frequencyToMidiInteger(frequency);
+    let chord_ = pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, false).get(1);
+    let pcs_ = chord_.epcs();
+    let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, pcs_);
+    let result = hap.withValue(() => new_midi_key);
+    if (csac_debugging) logger(`[pitvN]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`, 'debug');
+    /// console.log(`[pitvN]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`);
+    return result;
+  });
+});
