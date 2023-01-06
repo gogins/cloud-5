@@ -65,6 +65,12 @@ To create a new composition, simply create a new HTML file. You can copy one
 of my existing pieces as a template and modify it, or you can create a new HTML 
 file from scratch.
 
+Although cloud-music renders audio only in real time, it is easy to use an 
+audio loopback driver to route audio from the system output to an audio 
+recorder and save the recording as a soundfile. On my MacBook Pro, I have been 
+able to use [BlackHole](https://github.com/ExistentialAudio/BlackHole) to 
+route audio from cloud-music pices to [Audacity](https://www.audacityteam.org/).
+
 ### Writing New Software
 
 Because algorithmic compositions are generally also software, the line between 
