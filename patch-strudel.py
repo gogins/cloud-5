@@ -19,6 +19,7 @@ with open(Repl_jsx_filepath, "r+") as file:
   patched_text = text.replace(find_this, replace_with)
   print(patched_text)
   file.seek(0)
+  file.truncate()
   file.write(patched_text)
   
 csound_mjs_filepath = "strudel/packages/csound/csound.mjs"
@@ -30,5 +31,6 @@ with open(csound_mjs_filepath, "r+") as file:
   patched_text = text.replace(find_this, replace_with)
   print(patched_text)
   file.seek(0)
+  file.truncate()
   file.write(patched_text)
   
