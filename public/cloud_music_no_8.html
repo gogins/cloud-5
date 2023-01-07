@@ -428,7 +428,7 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Guitar_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Guitar_space_left_to_right
 else
@@ -508,7 +508,7 @@ i_time = p2
 i_duration = p3
 i_midi_key = p4
 i_midi_velocity = p5
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
@@ -609,7 +609,7 @@ i_duration = p3
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Blower_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 ==0 then
 k_space_left_to_right = gk_Blower_space_left_to_right
 else
@@ -710,7 +710,7 @@ i_duration = p3
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Sweeper_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 ==0 then
 k_space_left_to_right = gk_Sweeper_space_left_to_right
 else
@@ -811,7 +811,7 @@ i_midi_key = p4
 i_midi_dynamic_range = i(gk_Plucked_midi_dynamic_range)
 i_midi_velocity = p5 ;* i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
 i_midi_velocity ampmidid i_midi_velocity, i_midi_dynamic_range
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Plucked_space_left_to_right
 else
@@ -915,7 +915,7 @@ xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 ==0 then
 k_space_left_to_right = gk_FMWaterBell_space_left_to_right
 else
@@ -983,7 +983,7 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_YiString_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
@@ -1066,7 +1066,7 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Harpsichord_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Harpsichord_space_left_to_right
 else
@@ -1154,7 +1154,8 @@ i_duration = p3
 endif
 i_midi_key = p4
 i_midi_velocity = p5
-k_space_front_to_back = 0;p6
+//k_space_front_to_back = 0;p6
+S_controls strget p6
 if p7 == 0 then
 k_space_left_to_right = gi_ZakianFLute_space_left_to_front
 else
@@ -1403,7 +1404,7 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Kung4_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Kung4_space_left_to_right
 else
@@ -1497,7 +1498,7 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Kung2_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Kung2_space_left_to_right
 else
@@ -1576,13 +1577,12 @@ i_duration = p3
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Bower_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Bower_space_left_to_right
 else
 k_space_left_to_right = p7
 endif
-k_space_bottom_to_top = p8
 k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
