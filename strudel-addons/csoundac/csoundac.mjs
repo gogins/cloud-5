@@ -246,7 +246,7 @@ export function csacScale(name) {
   */
 export const scaleS = register('scaleS', (current_chord, scale, scale_step, pat) => {
   return pat.withHap((hap) => {
-    let new_chord = scale.chord_(scale_step, current_chord.voices());
+    let new_chord = scale.chord(scale_step, current_chord.voices(), 3);
     if (csac_debugging) logger(`[scaleS]: old chord: ${current_chord.toString()} scale step: ${scale_step} new chord: ${new_chord.toString()}`, 'debug');
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
