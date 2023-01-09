@@ -37,6 +37,8 @@ of the live coding system [Tidal Cycles](https://tidalcycles.org/).
 
 - [Cloud Music No. 7](cloud_music_no_7.html). Also embeds Strudel.
 
+- [Cloud Music No. 8](cloud_music_no_8.html). Also embeds Strudel.
+
 ## cloud-music as a Studio and/or Development Environment
 
 I have designed this repository not only to present some of my compositions, 
