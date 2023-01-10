@@ -47,7 +47,7 @@ export function csacDebugging(enabled) {
 function logger_(message_, level_) {
   logger(message_, level_); 
   if (csound) {
-    csound.message(`${message_} [${level_}]`);
+    csound.message(`[ Strudel ${level_} ${message_}]`);
   }
 }
 
