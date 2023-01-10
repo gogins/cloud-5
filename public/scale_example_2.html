@@ -55,17 +55,18 @@
     
 csacLoad();
 csacDebugging(true);
-let chord = csacChord('G7');
-let scale = csacScale('C major');
+let chord = csacChord('AbM');
+let scale = csacScale('Ab major');
 
 stack(
   "<0 [1, 5, 8] 2 3 4 5 6 7 8 9 10>"
-  .scaleS(chord, scale, "<2 4 5 7 0>")
-  .chordN(chord).transpose(24).note().csoundm(8),
-  "24 13 [7, 11, 16] 9".scaleM(scale, chord, "<2 1>/8")
-  ).slow(4).chordN(chord).transpose(36).note().csoundm("<9 6 5 11>")  
-  .pianoroll()
-  
+  .scaleS(chord, scale, "<0 4 0 2 7>")
+  .chordN(chord).transpose(36).note().csoundm("<8>"),
+  "24 13 [7, 11, 16] 9".scaleM(scale, chord, "<2 1 2 0 3>/8")
+  .chordN(chord).transpose(48).note().csoundm("<9 6>")   
+).slow(1.5) 
+ .pianoroll()
+ 
     -->
     </strudel-repl-component>
 

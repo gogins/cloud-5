@@ -26,6 +26,7 @@ import { transpose } from '@strudel.cycles/tonal';
   * appropriate Patterns, where they may be modified by reference.
   */
 
+let csound;
 let csoundac;
 let csac_debugging = false;
 
@@ -34,6 +35,20 @@ let csac_debugging = false;
  */
 export function csacDebugging(enabled) {
     csac_debugging = enabled;
+    if (globalThis.__csound__) {
+      csound = globalThis.__csound__;
+    }
+}
+
+/** 
+  * Adds the Csound log as an output for the Strudel logger (in this module 
+  * only).
+  */
+function logger_(message_, level_) {
+  logger(message_, level_); 
+  if (csound) {
+    csound.message(`${message_} [${level_}]`);
+  }
 }
 
 /**
@@ -114,7 +129,7 @@ export const chordT = register('chordT', (current_chord, semitones, pat) => {
     let new_chord = current_chord.T(semitones);
     if (csac_debugging) {
         let message = `[chordT]: ${current_chord.toString()} ${current_chord.eOP().name()} T(${semitones}) =>\n[chordT]: ${new_chord.toString()} ${new_chord.name()}`
-        logger(message, 'debug');
+        logger_(message, 'debug');
     }
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
@@ -130,7 +145,7 @@ export const chordI = register('chordI', (current_chord, center, pat) => {
     let new_chord = current_chord.I(center);
     if (csac_debugging) {
         let message = `[chordI]: ${current_chord.toString()} ${current_chord.eOP().name()} I(${center}) =>\n[chordI]: ${new_chord.toString()} ${new_chord.eOP().name()}`
-        logger(message, 'debug');
+        logger_(message, 'debug');
     }
     ///current_chord = new_chord;
     csacCopy(new_chord, current_chord);
@@ -150,7 +165,7 @@ export const chordK = register('chordK', (current_chord, pat) => {
     let new_chord = current_chord.K();
     if (csac_debugging) {
         let message = `[chordK]: ${current_chord.toString()} ${current_chord.eOP().name()} K =>\n[ChordK]: ${new_chord.toString()} ${new_chord.eOP().name()}`
-        logger(message, 'debug');
+        logger_(message, 'debug');
     }
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
@@ -171,7 +186,7 @@ export const chordQ = register('chordQ', (current_chord, modality, semitones, pa
     let new_chord = current_chord.Q(semitones, modality, 1.);
     if (csac_debugging) {
         let message = `[chordQ]: ${current_chord.toString()} ${current_chord.eOP().name()} Q(${semitones}) =>\n[chordQ]: ${new_chord.toString()} ${new_chord.eOP().name()}`
-        logger(message, 'debug');
+        logger_(message, 'debug');
     }
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
@@ -292,7 +307,7 @@ export const scaleM = register('scaleM', (current_scale, pivot_chord, index, pat
 [scaleM]: modulations:   ${modulation_count} => ${wrapped_index}
 [scaleM]: modulated to:  ${new_scale.toString()} ${new_scale.name()}
 `;
-        logger(message, 'debug');
+        logger_(message, 'debug');
       }
       csacCopy(new_scale, current_scale);
     }
