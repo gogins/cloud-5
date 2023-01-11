@@ -2284,6 +2284,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         var csound_message_callback = function(message) {
             // Split in case the newline is in the middle of the message but 
             // not at the end?
+            if (message === null) {
+              return;
+            }
             message_callback_buffer = message_callback_buffer + message;
             if (message_callback_buffer.endsWith("\n")) {
                 console.log(message_callback_buffer);
