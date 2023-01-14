@@ -74,7 +74,7 @@ stack("0,3,[11 6]"
   .note()
   .csoundm("12 11 4"))
   .slow(3)
-  .scale(slowcat('D dorian', 'G mixolydian', 'C dorian', 'F mixolydian')/18)
+  //.scale(slowcat('D dorian', 'G mixolydian', 'C dorian', 'F mixolydian')/18)
   .pianoroll({cycles:120})
   
     -->
@@ -428,8 +428,8 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Guitar_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
-if p7 ==0 then
+k_space_front_to_back = 0;p6
+if p7 == 0 then
 k_space_left_to_right = gk_Guitar_space_left_to_right
 else
 k_space_left_to_right = p7
@@ -486,7 +486,7 @@ a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_FilteredSines_level chnexport "gk_FilteredSines_level", 3
@@ -508,7 +508,7 @@ i_time = p2
 i_duration = p3
 i_midi_key = p4
 i_midi_velocity = p5
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
@@ -574,7 +574,7 @@ a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 
@@ -609,7 +609,7 @@ i_duration = p3
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Blower_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 ==0 then
 k_space_left_to_right = gk_Blower_space_left_to_right
 else
@@ -661,7 +661,7 @@ xtratim i_attack + i_release
 a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
 a_signal = a_signal * i_amplitude * a_declicking * k_gain
 
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -694,7 +694,7 @@ gk_Sweeper_britels init .25
 gk_Sweeper_britehs init .5
 gk_Sweeper_level init 0
 gk_Sweeper_space_left_to_right chnexport "gk_Sweeper_space_left_to_right", 3
-gk_Sweeper_space_left_to_right init .5
+gk_Sweeper_space_left_to_right init .875
 
 gi_Sweeper_sine ftgen 0, 0, 65537, 10, 1
 gi_Sweeper_octfn ftgen 0, 0, 65537, -19, 1, 0.5, 270, 0.5
@@ -710,7 +710,7 @@ i_duration = p3
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Sweeper_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 ==0 then
 k_space_left_to_right = gk_Sweeper_space_left_to_right
 else
@@ -771,7 +771,7 @@ a_envelope = a_declicking_envelope
 a_filtered_envelope tonex a_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
 
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -811,7 +811,7 @@ i_midi_key = p4
 i_midi_dynamic_range = i(gk_Plucked_midi_dynamic_range)
 i_midi_velocity = p5 ;* i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
 i_midi_velocity ampmidid i_midi_velocity, i_midi_dynamic_range
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Plucked_space_left_to_right
 else
@@ -871,7 +871,7 @@ a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 //////////////////////////////////////////////
@@ -915,7 +915,7 @@ xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 ==0 then
 k_space_left_to_right = gk_FMWaterBell_space_left_to_right
 else
@@ -948,7 +948,7 @@ a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_YiString_midi_dynamic_range chnexport "gk_YiString_midi_dynamic_range", 3 ;  127
@@ -983,7 +983,7 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_YiString_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
@@ -1034,7 +1034,7 @@ outleta "chorusleft", a_out_left
 outleta "chorusright", a_out_right 
 ;printks "YiString         %9.4f  %9.4f\n", 0.5, a_out_left, a_out_right
 #endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_Harpsichord_level chnexport "gk_Harpsichord_level", 3
@@ -1066,7 +1066,7 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Harpsichord_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Harpsichord_space_left_to_right
 else
@@ -1112,7 +1112,7 @@ outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
 ;printks "Harpsichord      %9.4f   %9.4f\n", 0.5, a_out_left, a_out_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_ZakianFlute_midi_dynamic_range chnexport "gk_ZakianFlute_midi_dynamic_range", 3 ;  20
@@ -1154,7 +1154,8 @@ i_duration = p3
 endif
 i_midi_key = p4
 i_midi_velocity = p5
-k_space_front_to_back = p6
+//k_space_front_to_back = 0;p6
+S_controls strget p6
 if p7 == 0 then
 k_space_left_to_right = gi_ZakianFLute_space_left_to_front
 else
@@ -1354,8 +1355,8 @@ a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick
 ; That envelope is then low-pass filtered to remove most discontinuities.
 a_filtered_envelope tonex a_declicking_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
-
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+print p1, p2, p3, p4, p5, p7
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -1377,7 +1378,7 @@ gk_Kung4_level init -20
 gk_Kung4_midi_dynamic_range chnexport "gk_Kung4_midi_dynamic_range", 3
 gk_Kung4_midi_dynamic_range init 30
 gk_Kung4_space_left_to_right chnexport "gk_Kung4_space_left_to_right", 3
-gk_Kung4_space_left_to_right init .5
+gk_Kung4_space_left_to_right init .75
 gi_Kung4_modulation_ratio_start chnexport "gi_Kung4_modulation_ratio_start", 3
 gi_Kung4_modulation_ratio_start init 1.7
 gi_Kung4_modulation_ratio_end chnexport "gi_Kung4_modulation_ratio_end", 3
@@ -1403,8 +1404,8 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Kung4_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
-if p7 ==0 then
+k_space_front_to_back = 0;p6
+if p7 == 0 then
 k_space_left_to_right = gk_Kung4_space_left_to_right
 else
 k_space_left_to_right = p7
@@ -1464,7 +1465,7 @@ a_out_right = a_out_right * i_amplitude * a_filtered_envelope * k_gain
 
 outleta "outleft", a_out_left 
 outleta "outright", a_out_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 /**
@@ -1481,7 +1482,7 @@ gk_Kung2_level init 0
 gk_Kung2_midi_dynamic_range chnexport "gk_Kung2_midi_dynamic_range", 3
 gk_Kung2_midi_dynamic_range init 30
 gk_Kung2_space_left_to_right chnexport "gk_Kung2_space_left_to_right", 3
-gk_Kung2_space_left_to_right init .5
+gk_Kung2_space_left_to_right init .25
 gi_Kung2_sine ftgen 0, 0, 65537, 10, 1
 opcode Kung2_, aa, 0
 setksmps 1
@@ -1497,8 +1498,8 @@ endif
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Kung2_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
-if p7 ==0 then
+k_space_front_to_back = 0;p6
+if p7 == 0 then
 k_space_left_to_right = gk_Kung2_space_left_to_right
 else
 k_space_left_to_right = p7
@@ -1550,7 +1551,7 @@ instr Kung2
 a_out_left, a_out_right Kung2_
 outleta "outleft", a_out_left 
 outleta "outright", a_out_right
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_Bower_midi_dynamic_range chnexport "gk_Bower_midi_dynamic_range", 3
@@ -1565,7 +1566,7 @@ gk_Bower_attack init .125
 gk_Bower_release init .125
 gk_Bower_level init 0
 gk_Bower_pressure init 0.325
-gk_Bower_space_left_to_right init 0.75
+gk_Bower_space_left_to_right init 0.1375
 
 gi_Bower_sine ftgen 0,0,65537,10,1
 
@@ -1576,13 +1577,12 @@ i_duration = p3
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Bower_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
+k_space_front_to_back = 0;p6
 if p7 == 0 then
 k_space_left_to_right = gk_Bower_space_left_to_right
 else
 k_space_left_to_right = p7
 endif
-k_space_bottom_to_top = p8
 k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
@@ -1608,7 +1608,7 @@ iminfreq = i(kfreq) / 1.5
 aSig wgbow kamp,kfreq,gk_Bower_pressure,krat,kvibf,kvibamp,gi_Bower_sine,iminfreq
 a_signal = aSig * kenvelope * k_gain
 
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -1646,7 +1646,7 @@ aleftoutmix = aleftin * gk_ReverbSC_dry + aleftout * gk_ReverbSC_wet
 arightoutmix = arightin * gk_ReverbSC_dry + arightout * gk_ReverbSC_wet
 outleta "outleft", aleftoutmix
 outleta "outright", arightoutmix
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
@@ -1671,7 +1671,7 @@ if i_filename_length > 0 then
 prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
 fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
 endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(round(p1)), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 </CsInstruments>

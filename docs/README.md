@@ -37,6 +37,8 @@ of the live coding system [Tidal Cycles](https://tidalcycles.org/).
 
 - [Cloud Music No. 7](cloud_music_no_7.html). Also embeds Strudel.
 
+- [Cloud Music No. 8](cloud_music_no_8.html). Also embeds Strudel.
+
 ## cloud-music as a Studio and/or Development Environment
 
 I have designed this repository not only to present some of my compositions, 
@@ -64,6 +66,12 @@ run any of these compositions in your browser.
 To create a new composition, simply create a new HTML file. You can copy one 
 of my existing pieces as a template and modify it, or you can create a new HTML 
 file from scratch.
+
+Although cloud-music renders audio only in real time, it is easy to use an 
+audio loopback driver to route audio from the system output to an audio 
+recorder and save the recording as a soundfile. On my MacBook Pro, I have been 
+able to use [BlackHole](https://github.com/ExistentialAudio/BlackHole) to 
+route audio from cloud-music pices to [Audacity](https://www.audacityteam.org/).
 
 ### Writing New Software
 
