@@ -69,7 +69,7 @@
     <title>
       Docs 🚀 Strudel Docs
     </title>
-  <link rel="stylesheet" href="/assets/embed.3f906136.css" />
+  <link rel="stylesheet" href="/assets/embed.e7b891cc.css" />
 <link rel="stylesheet" href="/assets/intro.049773e7.css" />
 <link rel="stylesheet" href="/assets/intro.f2378a4b.css" /></head>
 
@@ -275,8 +275,11 @@
 <ul>
 <li><code>client:idle</code> is required to tell astro that the repl should be interactive, see <a href="https://docs.astro.build/en/reference/directives-reference/#client-directives">Client Directive</a></li>
 <li><code>tune</code>: be any valid pattern code</li>
-<li><code>withCanvas</code>: If set, a canvas will be rendered below that shows a pianoroll (WIP)</li>
+<li><code>punchcard</code>: if added, a punchcard / pianoroll visualization is renderd</li>
+<li><code>drawTime</code>: time window for drawing, defaults to <code>[0, 4]</code></li>
+<li><code>canvasHeight</code>: height of the canvas, defaults to 100px</li>
 </ul>
+<p>See <code>mini-notation.mdx</code> for usage examples</p>
 <h2 id="in-source-documentation"><a aria-hidden="true" tabIndex="-1" href="#in-source-documentation"><span class="icon icon-link"></span></a>In-Source Documentation</h2>
 <p>You can add the in-source documentation for a function by using the <code>JsDoc</code> component. Import:</p>
 <pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#FF7B72">import</span><span style="color:#C9D1D9"> { JsDoc } </span><span style="color:#FF7B72">from</span><span style="color:#C9D1D9"> </span><span style="color:#A5D6FF">&#39;../../docs/JsDoc&#39;</span><span style="color:#C9D1D9">;</span></span></code></pre>

@@ -51,25 +51,27 @@
 <!-- BEGIN define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
-    <!--
+<!--
     
 csacLoad();
 csacDebugging(true);
-let chord = csacChord('AbM7');
+let chord = csacChord('AbM9');
 let scale = csacScale('Ab major');
 
 stack(
-  "<0 [1, 5, 8] 2 3 4 5 6 7 8 9 10>".superimpose(x=>x.sub(9))  
-  .transpose(47)
+  "<0 [1, 5, 8] 2 3 4 5 6 7 8 9 10>"
+  .off(-1/4, x => x.sub(9))
+  .transpose(40)
   .scaleS(chord, scale, "<0 4 0 2 7>")
-  .chordN(chord).note().csoundm("<8 10>"),
-  "24 20 [7, 11, 16] 9"
-  .transpose(49).scaleM(scale, chord, "<2 1 2 0 3>/8")
-  .scaleN(scale).note().csoundm("<9 6 9 11 6 6>")   
-).slow(1.5) 
- .pianoroll()
+  .chordN(chord).note().csoundm("<4 9>"),
+  "24 20 11 9"
+  .firstOf(6, echoWith(3, 1/8, (p,n) => p.add(n*3)))
+  .transpose(60).scaleM(scale, chord, "<2 1 2 0 3>/8")
+  .scaleN(scale).note().csoundm("<6 8>")   
+).slow(2) 
+ .pianoroll({maxMidi:120,minMidi:16})
  
-    -->
+-->
     </strudel-repl-component>
 
 <!-- END define "Tidal" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
@@ -116,9 +118,9 @@ stack(
     <td>
     <label for=gk_Sweeper_level>&ensp;4 Sweeper level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Sweeper_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-1 id=gk_Sweeper_level step=.001>
     <td>
-    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>-5</output>
+    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>-1</output>
     </tr>
 
     <tr>
@@ -134,9 +136,9 @@ stack(
     <td>
     <label for=gk_FMWaterBell_level>&ensp;6 FM Water Bell level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=13 id=gk_FMWaterBell_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=7 id=gk_FMWaterBell_level step=.001>
     <td>
-    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>13</output>
+    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>7</output>
     </tr>
     
     <tr>
@@ -152,9 +154,9 @@ stack(
     <td>
     <label for=gk_Harpsichord_level>&ensp;8 Harpsichord level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=2 id=gk_Harpsichord_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-2 id=gk_Harpsichord_level step=.001>
     <td>
-    <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>2</output>
+    <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>-2</output>
     </tr>
 
     <tr>
@@ -198,9 +200,9 @@ stack(
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.9 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.83 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.9</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.83</output>
     </tr>
     <tr>
     <td>
@@ -224,9 +226,9 @@ stack(
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=5.928 id=gk_MasterOutput_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_MasterOutput_level step=.001>
     <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>5.928</output>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>6</output>
     </tr>
     </table>
     <p>
