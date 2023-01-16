@@ -31,13 +31,32 @@ of the live coding system [Tidal Cycles](https://tidalcycles.org/).
 
 - [Cloud Music No. 4](cloud_music_no_4.html).
 
-- [Cloud Music No. 5](cloud_music_no_5.html). Also embeds Strudel.
+- [Cloud Music No. 5](cloud_music_no_5.html).
 
-- [Cloud Music No. 6](cloud_music_no_6.html). Also embeds Strudel.
+- [Cloud Music No. 6](cloud_music_no_6.html).
 
-- [Cloud Music No. 7](cloud_music_no_7.html). Also embeds Strudel.
+- [Cloud Music No. 7](cloud_music_no_7.html).
 
-- [Cloud Music No. 8](cloud_music_no_8.html). Also embeds Strudel.
+- [Cloud Music No. 8](cloud_music_no_8.html).
+
+### Experiments
+
+These are not finished pieces. I am still figuring out how to compose them. 
+However, because they use new facilities, here they are if you want to play 
+with then and examine their code. Comments are welcome (as issues in the 
+cloud-music repository).
+
+- [Chord Example](chord_example.html).
+
+- [PITV Example](pitv_example.html).
+
+- [Scale Example](scale_example.html).
+
+- [Scale Example 2](scale_example_2.html).
+
+- [Scale Example 3](scale_example_3.html).
+
+- [Scale Example 4](scale_example_4.html).
 
 ## cloud-music as a Studio and/or Development Environment
 
