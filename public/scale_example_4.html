@@ -71,8 +71,8 @@ let scale = csacScale('Ab major');
 stack(
   "<0 [1, 5, 8] 2 3 4 5 6 7 8 9 10>"
   .off(-1/4, x => x.sub(9))
-  .transpose(40)
-  .scaleS(chord, scale, "<0 4 0 2 7>")
+  .transpose(44)
+  .scaleS(chord, scale, "<0 3 0 2 7>")
   .chordN(chord).note().csoundm("<4 9>"),
   "24 20 11 9"
   .firstOf(6, echoWith(3, 1/8, (p,n) => p.add(n*3)))
