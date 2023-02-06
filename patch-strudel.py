@@ -30,7 +30,7 @@ with open(Repl_jsx_filepath, "r+") as file:
 Workaround for a bug in Csound's handling of string pfields; Strudel controls 
 passed in p6 as a string have to be omitted to preserve other pfields.
 '''
-csound_mjs_filepath = "strudel/packages/csound/csound.mjs"
+csound_mjs_filepath = "strudel/packages/csound/index.mjs"
 print(f"Patching '{csound_mjs_filepath}'")
 with open(csound_mjs_filepath, "r+") as file:
   find_this = '''i ${p1} ${p2} ${p3} ${p4} ${p5} "${p6}"'''
