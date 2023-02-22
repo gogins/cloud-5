@@ -434,7 +434,7 @@ export const pitvNV = register('pitvNV', (pitv, pat) => {
 });
 
 /**
-  * A Pattern that that conforms the notes of a Pattern to the current 
+  * A Pattern that conforms the notes of a Pattern to the current 
   * element of the PITV object. The notes are moved to the closest _pitch- 
   * class_ of the _pitch-class set_ of the PITV element.
   */
@@ -457,4 +457,27 @@ export const pitvN = register('pitvN', (pitv, pat) => {
     return result;
   });
 });
+
+/**
+  * A Pattern that calls a function object that may be defined in a user level 
+  * Strudel patch. To be used something like this:
+  * my_function = function(pat) {
+  *  // do something...
+  * };
+  * my_function.y = .5;
+  * my_function.c = .91;
+  * .userpattern(my_function).
+  */
+export const userpattern = register('userpattern', (function_object, pat) => {
+  console.log('user_pattern');
+  return pat.withHap((hap) => {
+    let result = function_object(pat);
+    result = hap.withValue(() => result);
+    if (csac_debugging) logger(`[user_pattern]: result.value: ${result.value}`, 'debug');
+    return result;
+  });
+});
+
+
+
 
