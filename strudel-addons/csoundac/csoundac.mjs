@@ -461,10 +461,15 @@ export const pitvN = register('pitvN', (pitv, pat) => {
 /**
   * A Pattern that calls a closure that may be defined in a user level 
   * Strudel patch. To be used something like this:
-  * const c = .913;
+  * const c = .88;
   * let y = .5;
-  * const logistic = function(pat) {
-  *   let y1 = 4 * c * y * (1 - y);
+  * const logistic = function(pat, hap) {
+  *   // In many cases, the closure should be computed only at the beginning 
+  *   // of its cycle.
+  *   if (hap.hasOnset() == true) {
+  *     let y1 = 4 * c * y * (1 - y);
+  *     y = y1;
+  *   }
   *   let midi_key = Math.round(y * 36 + 36);
   *   return midi_key;
   * };
@@ -472,10 +477,7 @@ export const pitvN = register('pitvN', (pitv, pat) => {
   */
 export const userpattern = register('userpattern', (function_object, pat) => {
   return pat.withHap((hap) => {
-    let result = hap.value;
-    if (hap.hasOnset() == true) {
-      result = function_object(pat);
-    }
+    let result = function_object(pat, hap);
     result = hap.withValue(() => result);
     if (csac_debugging) {
       logger(`[userpattern]: result.value: ${result.value} hasOnset: ${hap.hasOnset()}`, 'debug');
