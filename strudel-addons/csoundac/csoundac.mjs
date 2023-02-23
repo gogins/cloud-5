@@ -459,21 +459,28 @@ export const pitvN = register('pitvN', (pitv, pat) => {
 });
 
 /**
-  * A Pattern that calls a function object that may be defined in a user level 
+  * A Pattern that calls a closure that may be defined in a user level 
   * Strudel patch. To be used something like this:
-  * my_function = function(pat) {
-  *  // do something...
+  * const c = .913;
+  * let y = .5;
+  * const logistic = function(pat) {
+  *   let y1 = 4 * c * y * (1 - y);
+  *   let midi_key = Math.round(y * 36 + 36);
+  *   return midi_key;
   * };
-  * my_function.y = .5;
-  * my_function.c = .91;
-  * .userpattern(my_function).
+  * .userpattern(logistic)
   */
 export const userpattern = register('userpattern', (function_object, pat) => {
-  console.log('user_pattern');
   return pat.withHap((hap) => {
-    let result = function_object(pat);
+    let result = hap.value;
+    if (hap.hasOnset() == true) {
+      result = function_object(pat);
+    }
     result = hap.withValue(() => result);
-    if (csac_debugging) logger(`[user_pattern]: result.value: ${result.value}`, 'debug');
+    if (csac_debugging) {
+      logger(`[userpattern]: result.value: ${result.value} hasOnset: ${hap.hasOnset()}`, 'debug');
+      logger(hap.show());
+    }
     return result;
   });
 });
