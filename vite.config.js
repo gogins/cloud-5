@@ -17,6 +17,9 @@ export default defineConfig({
       ],
     },
     rollupOptions: {
+      external: [
+        /^node:.*/,
+      ]
       input: {
         main: '/vite_index.html'
       },
