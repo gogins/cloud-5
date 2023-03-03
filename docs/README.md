@@ -19,8 +19,6 @@ along with the music. The listener may or may not be able to customize the
 piece -- perhaps quite a bit, amounting to a new piece, co-composed with me.
 
 The underlying technology is my WebAssembly build of Csound with CsoundAC. 
-Some pieces use third party libraries, especially [Strudel](https://github.com/tidalcycles/strudel),
-a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.org/).
 
 - [Cloud Music No. 1](cloud_music_no_1.html).
 
@@ -29,33 +27,6 @@ a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.o
 - [Cloud Music No. 3](cloud_music_no_3.html).
 
 - [Cloud Music No. 4](cloud_music_no_4.html).
-
-- [Cloud Music No. 5](cloud_music_no_5.html).
-
-- [Cloud Music No. 6](cloud_music_no_6.html).
-
-- [Cloud Music No. 7](cloud_music_no_7.html).
-
-- [Cloud Music No. 8](cloud_music_no_8.html).
-
-### Experiments
-
-These are not finished pieces. I am still figuring out how to compose them. 
-However, because they use new facilities, here they are if you want to play 
-with then and examine their code. Comments are welcome (as issues in the 
-cloud-music repository).
-
-- [Chord Example](chord_example.html).
-
-- [PITV Example](pitv_example.html).
-
-- [Scale Example](scale_example.html).
-
-- [Scale Example 2](scale_example_2.html).
-
-- [Scale Example 3](scale_example_3.html).
-
-- [Scale Example 4](scale_example_4.html).
 
 ## cloud-music as a Studio and/or Development Environment
 
@@ -90,25 +61,6 @@ audio loopback driver to route audio from the system output to an audio
 recorder and save the recording as a soundfile. On my MacBook Pro, I have been 
 able to use [BlackHole](https://github.com/ExistentialAudio/BlackHole) to 
 route audio from cloud-music pices to [Audacity](https://www.audacityteam.org/).
-
-### Writing New Software
-
-Because algorithmic compositions are generally also software, the line between 
-compositions and other software can become blurred. However, it is often the 
-case that a composer will write new software as libraries or other resources 
-to support a number of their musical compositions.
-
-To develop this kind of software in your fork of cloud-music, keep in mind 
-that the cloud-music project uses [npm](https://www.npmjs.com/), which of 
-course must first be installed. 
-
-If you just want to work in the context of a Web site created in your fork of 
-cloud-music, then just writing static code in the `public` directory would be 
-fine, and by far the easiest. 
-
-Otherwise, take a look at [BUILD.md](https://github.com/gogins/cloud-music/blob/main/BUILD.md)
-and at the build system files such as `package.json`.
-
 
 
 
