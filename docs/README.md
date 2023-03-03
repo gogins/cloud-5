@@ -39,18 +39,19 @@ All software used here is JavaScript, WebAssembly, or HTML. All third party
 dependencies are contained in this repository as static files.
 
 To use cloud-music, fork cloud-music on GitHub and clone your fork on your 
-own computer. You can also just download the latest cloud-music release as a zip 
-file and unzip it on your computer.
+own computer. You can also just download the latest cloud-music release as a 
+zip file and unzip it on your computer.
 
 _This is actually the easiest way to install a usable version of Csound on your 
 computer._
 
-### Writing New Compositions
+To run cloud-music pieces, there is no need to build or configure anything. In 
+a terminal, simply change to your `cloud-music directory/docs` and run 
+`python3 -m http.server`. Then you can use your Web browser to go to 
+`http://localhost:8000`, where you can view and run any of these compositions 
+in your browser.
 
-There is no need to build or configure anything. In a terminal, simply change 
-to your cloud-music directory and run `python3 -m http.server`. Then you can 
-use your Web browser to go to `http://localhost:8000`, where you can view and 
-run any of these compositions in your browser.
+### Writing New Compositions
 
 To create a new composition, simply create a new HTML file. You can copy one 
 of my existing pieces as a template and modify it, or you can create a new HTML 
@@ -61,6 +62,15 @@ audio loopback driver to route audio from the system output to an audio
 recorder and save the recording as a soundfile. On my MacBook Pro, I have been 
 able to use [BlackHole](https://github.com/ExistentialAudio/BlackHole) to 
 route audio from cloud-music pices to [Audacity](https://www.audacityteam.org/).
+
+### Writing New Software
+
+The line between writing new compositions and writing new software can be hard 
+to define.
+
+To write new software in a fork of cloud-music, the best approach is probably 
+to avoid npm and simply write all software as new JavaScript files that will be 
+statically served in the `docs` directory.
 
 
 
