@@ -56,11 +56,21 @@ class Performer extends Node {
   constructor() {
     this.root = new Node();
     this.keep_running = false;
+    this.interval = 50;
+    this.events = new Array();
   };
   start() {
+    this.keep_running = true;
+    this.tymer = setTimeout(this.tick, this.interval);
   }
   stop() {
+    this.keep_running = false;
   }
   tick() {
+    if (this.keep_running === false) {
+      return;
+    }
+    this.traverse();
+    
   }
 };
