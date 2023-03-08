@@ -1,11 +1,18 @@
 /**
   * This file implements real-time and/or "always-on" score generation for 
-  * cloud-music. Time is provided by performance.now() or from 
+  * cloud-music. Time is provided by performance.now() or by  
   * BaseAudioContext.currentTime.
   * 
   * Author: Michael Gogins
   * Copyright: 2023.
   * Licence: GNU Lesser General Public License, version 2.1.
+  *
+  * Provisionally using CsoundAC-wasm and math.js. Dimensions of 
+  * events are the same as CsoundAC, but CsoundAC is column major while 
+  * math.js is row major.
+  * let transform = math.identity(11);
+  * let event = math.zeros([1,11]);
+  * event[10] = 1;
   */
   
 /**
@@ -19,6 +26,7 @@ class Node {
   this.STACK_APPLY = 4;
   constructor(performer) {
     this.performer = performer;
+    this.transform = math.identity(11);
     // Children are keys, types of nodes are values.
     this.children = new Map();
   };
