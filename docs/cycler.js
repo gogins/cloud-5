@@ -54,9 +54,10 @@ class Node {
   };
   /** 
     * Produces events for the current time slice from this Node and its 
-    * children.
+    * children. The default implementation simply traverses the tree for this 
+    * slice and applies the transformation.
     */
-  generate(events, transformation) {
+  generate(events, transform) {
   };
 };
 
@@ -64,21 +65,47 @@ class Performer extends Node {
   constructor() {
     this.root = new Node();
     this.keep_running = false;
-    this.interval = 50;
-    this.events = new Array();
+    this.interval = .02;
+    this.events = new CsoundAC.Score();
+    this.divisions_per_octave = 12;
+    this.round_pitches = true;
+    this.current_time = 0;
+    this.starting_time = 0;
   };
+  current_time() {
+  }
+  performance_time() {
+  }
   start() {
     this.keep_running = true;
+    this.starting_time = performance.now() / 1000; 
+    this.slice_start = 0;
+    this.slice_end = this.slice_start + this.interval);
     this.tymer = setTimeout(this.tick, this.interval);
   }
   stop() {
     this.keep_running = false;
   }
+  render() {
+    let score_fragment = "";
+    // Time 0 is the beginning of this slice, not the 
+    // beginning of this performance.
+    score_text = score.getCsoundScore(this.divisions_per_octave, this.round_pitches);
+    csound.readScore(score_text);
+  }
+  /**
+    * Generates and renders events indefinitely, until stopped.
+    */
   tick() {
     if (this.keep_running === false) {
       return;
+    } else {
+      this.tymer.setTimeout(this.tick, this.interval);
     }
-    this.traverse();
-    
+    this.events.clear();
+    // Generate one slice's worth of pending events.
+    this.generate(this.events, this.getLocalCoordinates());
+    // Render this slice's pending events in real time using Csound.
+    this.render();    
   }
 };
