@@ -1,7 +1,6 @@
 /**
   * This file implements real-time and/or "always-on" score generation for 
-  * cloud-music. Time is provided by performance.now() or by  
-  * BaseAudioContext.currentTime.
+  * cloud-music. Time is provided by `performance.now`.
   * 
   * Author: Michael Gogins
   * Copyright: 2023.
@@ -9,70 +8,88 @@
   *
   * Algorithm
   * ---------
-  * 
-  * The algorithm described here is very very loosely inspired by Strudel and 
-  * Tidal Cycles, but supports neither live coding nor the scheduling of audio 
-  * rate or control rate events. The algorithm here is concerned only with 
-  * generating and processing Events, which are numerical vectors that 
-  * correspond directly to Csound "i" statements. Control signals, when 
-  * needed, can be generated either within Csound instruments, or as 
-  * JavaScript calls to Csound.setChannelValue. 
   *
-  * A piece is a tree of Nodes. Each Node has a nominal duration of 1 (its 
-  * cycle) but can have a longer or shorter duration, or begin at an offset 
-  * from its nominal cycle. Nodes can also be scheduled to perform from 1 to 
-  * an infinite number of times. An always-on piece is created when the root 
-  * Node of the piece is scheduled to repeat indefinitely.
-  * 
-  * Traversal of this tree is governed by two factors: the onsets and 
-  * durations of the Nodes, which define a series of possibly varying time 
-  * slices, and the hierachical structure of the tree. At the beginning of 
-  * each time slice, the tree is traversed from the bottom to the top of the 
-  * tree just for Nodes _within that time slice_. This means that Events 
-  * produced by a Node that come later than the end of that slice are saved 
-  * for processing and rendering in the next time slice. Obviously, the 
-  * definition of Nodes with uneven durations will cause the relative onsets 
-  * and even their order to change, thus enabling "phase canons." It is even 
-  * possible for Nodes to modify the structure of the tree during performance.
-  * 
-  * At the end of the traversal for a given time slice, the generated Score 
-  * is rescaled by a seconds_per_cycle factor and to begin at the current 
-  * performance time. The Score is then sent to Csound for rendering in real 
-  * time.
+  * This algorithm is _very_ loosely inspired by Tidal Cycles. The algorithm 
+  * is concerned only with generating and processing Events, which are 
+  * numerical vectors that correspond directly to Csound "i" statements, 
+  * usually notes. Control signals can be generated either within Csound 
+  * instruments, or as JavaScript calls to `Csound.setChannelValue`. 
   *
-  * The actual scheduling of Nodes and Events _should_ have audio sample 
-  * precision, and Nodes that follow or contain each other _must never_ be 
-  * scheduled out of order. Traversing the tree at every audio sample is  
-  * guaranteed to be correct, but would be prohibitively inefficient. 
-  * *HARD PART HERE*
-  * https://stackoverflow.com/questions/29971898/how-to-create-an-accurate-timer-in-javascript#29972322
-  * https://incolumitas.com/2021/12/18/on-high-precision-javascript-timers/
-  * These don't look likely to do my job.
-  * I just need to accumulate timer callbacks, put them into the correct order by onset,
-  * and call the next timers with adjusted intervals.
+  * By using Csound for almost all scheduling, the poor resolution and jitter 
+  * of JavaScript timers, which have been imposed as defenses against timing-
+  * based attacks, affect only the repeat times of cycles.
+  *
+  * A composition is a directed acyclic graph of Nodes that generate Events 
+  * for a Score that is periodically sent to Csound. Each Node has a nominal 
+  * offset, defaulting to 0, and a nominal interval, defaulting to 1. Any Node 
+  * can either generate Events, or transform Events produced by its child 
+  * Nodes, or both. Parent nodes can have any number of child Nodes, and child 
+  * Nodes can have any number of parent Nodes. 
+  *
+  * The fundamental types of Nodes are:
+  *
+  * 1. Cycles, which repeat indefinitely. An always-on piece is created when 
+  *    the root Node of the piece is a Cycle. Any number of Cycles can run at 
+  *    the same time, and at different intervals.
+  * 2. Sequences, where adding (or repeating) child Nodes expands the duration 
+  *    of the parent Sequence to equal the sum of intervals of its child 
+  *    Nodes.
+  * 3. Nests, where adding (or repeating) child Nodes squeezes the child Nodes 
+  *    to fit within the interval of the parent Nest. 
+  *
+  * The main loop is:
+  *
+  * 1. Reset all times, and then traverse the tree to determine the interval 
+  *    of the root Node. Please note, if the root Node is a Cycle, its 
+  *    interval will default to the sum of the intervals of its child Nodes.
+  * 2. Assign the current value of `Player.current_time` to 
+  *    `Player.times.performance.current`.
+  * 3. Clear `Player.score`.
+  * 4. Perform a depth-first traversal of the tree of Nodes by calling 
+  *    `Player.root.traverse`. At each level of the tree, for each child Node:
+  *    a. Call `child.traverse`, which will normally descend recursively to 
+  *       the leaf nodes of the tree.
+  *    b. Call `this.generate`.
+  *    c. Call `this.transform`.
+  *    d. Push generated and/or transformed Events onto the Score.
+  * 5. After the traversal, rescale the duration of the Score by multiplying 
+  *    offsets and intervals by `Player.tempo_factor`.
+  * 6. Call `Player.csound.readScore` to send the Score to Csound.
+  * 7. Assign `Player.times.performance.current` to 
+  *    `player.times.performance.prior`. 
+  * 8. Assign the value of `Player.current_time` to 
+  *    `Player.times.performance.current`.
+  * 9. Subtract `Player.times.performance.prior` from 
+  *    `Player.times.performance.current` to obtain the time spent 
+  *    performing steps 1 through 7, and assign that time to 
+  *   `Player.times.current.compute_time`.
+  * 10.Call `setInterval(Player.times.interval - Player.times.current.compute_time, 
+  *    Player.root.traverse)` to schedule the next cycle.
   */
   
 /**
-  * Base class for always-on performance nodes.
+  * Base class for for all Nodes.
   */
 class Node {
   constructor() {
     this.children = new Array();
     this.times = {nominal: {}, cycle: {}, performance: {}};
     // A cycle has a nominal duration of 1.
-    this.times.nominal.start = 0;
+    this.times.nominal.offset = 0;
     this.times.nominal.current = 0;
     this.times.nominal.duration = 1;
     // A cycle has an actual duration = nominal * seconds_per_cycle.
-    // This is in real seconds but resets to 0 at the start of each cycle.
-    this.times.cycle.start = 0;
+    // This is in real seconds, but resets to 0 at the start of each _cycle_.
+    this.times.cycle.offset = 0;
     this.times.cycle.current = 0;
     this.times.cycle.duration = 1;
-    // Performance time is real time starting at 0 at the start of the 
-    // performance.
-    this.times.performance.start = 0;
+    // Performance time is in real seconds, counting from 0 at the start of 
+    // the performance.
+    this.times.performance.offset = 0;
     this.times.performance.current = 0;
     this.times.performance.duration = 1;
+    // Contains Events that begin after the interval of this.
+    this.pending_events = new CsoundAC.Score();
   };
   /**
     * Returns true if this should generate Events. The default implementation 
@@ -90,8 +107,8 @@ class Node {
   /**
     * If predicate returns true, generates and/or transforms Events and adds 
     * them to the Score. The default implementation does nothing. Events 
-    * generated by this and its child Nodes will be rescaled to fit with the 
-    * performance time (both start and duration) of this.
+    * generated by this and its child Nodes are rescaled to fit within the 
+    * interval of this.
     */
   generate(score) {
   };
@@ -100,7 +117,7 @@ class Node {
     * child Nodes. The default implementation does nothing. Derived Nodes 
     * must override this function. But in all cases, the times of the parent 
     * (e.g. Sequence) or of this (e.g. Nest) must first be computed, then 
-    * the predicate is evaluated, then if that is true first generate and 
+    * the predicate is evaluated, then if that is true, first generate and 
     * then transform are called.
     */
   traverse(parent, score) {
@@ -108,45 +125,33 @@ class Node {
 };
 
 /**
-  * Performs the immediate child nodes of this in sequence. The duration of 
-  * this is the sum of the durations of the _immediate_ children. When the 
+  * Performs the immediate child nodes of this in sequence. The interval of 
+  * this is the sum of the intervals of its _immediate_ children. When the 
   * end of the last child is reached, the nominal time of this is reset to 0.
   */
 class Sequence extends Node {
 };
 
 /**
-  * Performs the immediate child nodes of this in sequence. The durations of 
+  * Performs the immediate child nodes of this in sequence. The intervals of 
   * the _immediate_ child nodes of this are rescaled so that their sum equals 
-  * the duration of this. When the end of the last child is reached, the 
+  * the interval of this. When the end of the last child is reached, the 
   * nominal time of this is reset to 0.
   */
 class Nest extends Sequence {
 };
 
 /**
-  * Generates the events of the child nodes of this, modifies them in some
-  * way, and produces the modified events.
+  * Performs the _immediate_ child nodes of this in a repeating loop. The 
+  * Cycle may have an interval that differs from the sum of the intervals of 
+  * its _immediate_ child nodes. When the end of the last child is reached, 
+  * Events that are still pending are saved, and the offset of this is 
+  * adjusted.
   */
-class Apply extends Node {
+class Cycle extends Node {
+  traverse(parent, score) {
+  }
 };
-
-/**
-  * Performs the child nodes of this simultaneously. The child nodes may have 
-  * different durations, in which case one or more additional timers is used.
-  */
-class Stack extends Node {
-};
-
-
-/**
-  * Performs the child nodes of this simultaneously. The child nodes may have 
-  * different durations. Then, modifies the generated events in some way. 
-  * Finally, produces both the child events and the modified child events.
-  */
-class StackApply extends Apply {
-};
-
 
 class Player extends Node {
   constructor(csound) {
@@ -175,7 +180,6 @@ class Player extends Node {
       child.cycle_duration = child_cycle_duration;
     }
   };
-  
   current_time() {
     return performance.now() / 1000;
   }
