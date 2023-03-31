@@ -9,15 +9,15 @@
   * Algorithm
   * ---------
   *
-  * This algorithm is _very_ loosely inspired by Tidal Cycles. The algorithm 
+  * This algorithm is _very_ loosely inspired by Tidal Cycles. Thids algorithm 
   * is concerned only with generating and processing Events, which are 
   * numerical vectors that correspond directly to Csound "i" statements, 
-  * usually notes. Control signals can be generated either within Csound 
-  * instruments, or as JavaScript calls to `Csound.setChannelValue`. 
+  * usually notes (control signals can be generated either within Csound 
+  * instruments, or as JavaScript calls to `Csound.setChannelValue`). 
   *
   * By using Csound for almost all scheduling, the poor resolution and jitter 
   * of JavaScript timers, which have been imposed as defenses against timing-
-  * based attacks, affect only the repeat times of cycles.
+  * based attacks, can affect only the repeat times of cycles.
   *
   * A composition is a directed acyclic graph of Nodes that generate Events 
   * for a Score that is periodically sent to Csound. Each Node has a nominal 
@@ -26,45 +26,20 @@
   * Nodes, or both. Parent nodes can have any number of child Nodes, and child 
   * Nodes can have any number of parent Nodes. 
   *
+  * The composer must derive new classes from Node, in which he or she defines 
+  * the generation and/or transformation of Events in the piece.
+  *
   * The fundamental types of Nodes are:
   *
-  * 1. Cycles, which repeat indefinitely. An always-on piece is created when 
-  *    the root Node of the piece is a Cycle. Any number of Cycles can run at 
-  *    the same time, and at different intervals.
-  * 2. Sequences, where adding (or repeating) child Nodes expands the duration 
+  * 1. Node (base class).
+  * 2. Sequence, where adding (or repeating) child Nodes expands the interval 
   *    of the parent Sequence to equal the sum of intervals of its child 
   *    Nodes.
-  * 3. Nests, where adding (or repeating) child Nodes squeezes the child Nodes 
+  * 3. Nest, where adding (or repeating) child Nodes squeezes the child Nodes 
   *    to fit within the interval of the parent Nest. 
-  *
-  * The main loop is:
-  *
-  * 1. Reset all times, and then traverse the tree to determine the interval 
-  *    of the root Node. Please note, if the root Node is a Cycle, its 
-  *    interval will default to the sum of the intervals of its child Nodes.
-  * 2. Assign the current value of `Player.current_time` to 
-  *    `Player.times.performance.current`.
-  * 3. Clear `Player.score`.
-  * 4. Perform a depth-first traversal of the tree of Nodes by calling 
-  *    `Player.root.traverse`. At each level of the tree, for each child Node:
-  *    a. Call `child.traverse`, which will normally descend recursively to 
-  *       the leaf nodes of the tree.
-  *    b. Call `this.generate`.
-  *    c. Call `this.transform`.
-  *    d. Push generated and/or transformed Events onto the Score.
-  * 5. After the traversal, rescale the duration of the Score by multiplying 
-  *    offsets and intervals by `Player.tempo_factor`.
-  * 6. Call `Player.csound.readScore` to send the Score to Csound.
-  * 7. Assign `Player.times.performance.current` to 
-  *    `player.times.performance.prior`. 
-  * 8. Assign the value of `Player.current_time` to 
-  *    `Player.times.performance.current`.
-  * 9. Subtract `Player.times.performance.prior` from 
-  *    `Player.times.performance.current` to obtain the time spent 
-  *    performing steps 1 through 7, and assign that time to 
-  *   `Player.times.current.compute_time`.
-  * 10.Call `setInterval(Player.times.interval - Player.times.current.compute_time, 
-  *    Player.root.traverse)` to schedule the next cycle.
+  * 4. Cycle, which repeats all child Events indefinitely, using a cycle 
+  *    interval that may differ from the nominal interval; two or more Cycles 
+  *    may thus be used to implement differential canons and other structures.
   */
   
 /**
@@ -72,113 +47,192 @@
   */
 class Node {
   constructor() {
+    this.parent = null;
     this.children = new Array();
-    this.times = {nominal: {}, cycle: {}, performance: {}};
-    // A cycle has a nominal duration of 1.
+    this.times = {nominal: {}, cycle: {}};
+    // Nominal times default to 0 and 1, but may be defined by the composer, 
+    // and afterwards will remain unchanged; they form the basis for computing 
+    // cycle times.
     this.times.nominal.offset = 0;
-    this.times.nominal.current = 0;
-    this.times.nominal.duration = 1;
-    // A cycle has an actual duration = nominal * seconds_per_cycle.
-    // This is in real seconds, but resets to 0 at the start of each _cycle_.
+    this.times.nominal.interval = 1;
+    // Cycle times are obtained when the nominal times are rescaled to expand 
+    // parent Nodes or squeeze child Nodes during traversal of the tree. 
+    // Performance times are obtained by multiplying cycle times by seconds 
+    // per cycle.
     this.times.cycle.offset = 0;
-    this.times.cycle.current = 0;
-    this.times.cycle.duration = 1;
-    // Performance time is in real seconds, counting from 0 at the start of 
-    // the performance.
-    this.times.performance.offset = 0;
-    this.times.performance.current = 0;
-    this.times.performance.duration = 1;
-    // Contains Events that begin after the interval of this.
-    this.pending_events = new CsoundAC.Score();
+    this.times.cycle.interval = 1;
   };
   /**
-    * Returns true if this should generate Events. The default implementation 
-    * always returns true.
+    * Pushes the child Node onto the children of this.
     */
-  predicate() {
-    return true;
-  };
-  /**
-    * Applies some transformation to the child Events of this. The default 
-    * implementation does nothing.
-    */
-  transform(score) {
+  add_child(child) {
+    child.parent = this;
+    this.children.push(child);
   }
   /**
-    * If predicate returns true, generates and/or transforms Events and adds 
-    * them to the Score. The default implementation does nothing. Events 
-    * generated by this and its child Nodes are rescaled to fit within the 
-    * interval of this.
+    * Adjusts the cycle times of this and/or the children of this 
+    * to fit each other. The default implementation does nothing.
+    */
+  update_times() {
+  }
+  /**
+    * Generates Events and pushes them onto the Score. The default 
+    * implementation does nothing. 
     */
   generate(score) {
   };
   /**
-    * Performs a depth-first traversal of the tree defined by this and its 
-    * child Nodes. The default implementation does nothing. Derived Nodes 
-    * must override this function. But in all cases, the times of the parent 
-    * (e.g. Sequence) or of this (e.g. Nest) must first be computed, then 
-    * the predicate is evaluated, then if that is true, first generate and 
-    * then transform are called.
+    * Applies some transformation to all Events generated by this and the 
+    * child Nodes of this. Such transformations should not affect times. The 
+    * default implementation does nothing.
     */
-  traverse(parent, score) {
+  transform(score) {
+  }
+  /**
+    * Rescales the times of _only_ those Events _generated_ by this Node to 
+    * fit within the interval of this.
+    */
+  rescale_times(score, start_index, end_index) {
+    // The rescaling of onsets and durations is performed using cycle times.
+    let events_interval = 0;
+    for (let i = start_index; i < end_index; ++i) {
+      if (events_interval < score[i].getOffTime()) {
+        events_interval = score[i].getOffTime();
+      };
+    }
+    const ratio = this.times.cycle.interval / events_interval;
+    for (let i = start_index; i < end_index; ++i) {
+      let onset = score[i].getTime();
+      score[i].setTime(onset * ratio);
+      let duration = score[i].getDuration();
+      score[i].setDuration(duration * ratio);
+    };
+  };
+  /**
+    * Traverses the tree defined by this and its child Nodes. 
+    */
+  traverse(score) {
+    // Adjust times of this and its immediate children (done from the top 
+    // down).
+    this.update_times();
+    // Recursively traverse all sub-trees.
+    for (let child of this.children) {
+      child.traverse(score);
+    };
+    // Optionally, generate Events and push them on the Score (done from the 
+    // bottom up).
+    const begin_index = score.length;
+    this.generate(score);
+    const end_index = score.length;
+    // Rescale the times of any Events generated by this.
+    this.rescale_times(begin_index, end_index;
+    // Optionally, transform _all_ child Events of this; this transformation 
+    // should not change times.
+    this.transform(score);
   };
 };
 
 /**
   * Performs the immediate child nodes of this in sequence. The interval of 
-  * this is the sum of the intervals of its _immediate_ children. When the 
-  * end of the last child is reached, the nominal time of this is reset to 0.
+  * this is the sum of the intervals of its _immediate_ children. 
   */
 class Sequence extends Node {
+  update_times() {
+    let total_interval = 0;
+    for (let child of this.children) {
+      total_interval += child.times.cycle.interval;
+    }
+    this.times.cycle.interval = total_interval;
+   }
 };
 
 /**
   * Performs the immediate child nodes of this in sequence. The intervals of 
   * the _immediate_ child nodes of this are rescaled so that their sum equals 
-  * the interval of this. When the end of the last child is reached, the 
-  * nominal time of this is reset to 0.
+  * the interval of this. 
   */
 class Nest extends Sequence {
-};
-
-/**
-  * Performs the _immediate_ child nodes of this in a repeating loop. The 
-  * Cycle may have an interval that differs from the sum of the intervals of 
-  * its _immediate_ child nodes. When the end of the last child is reached, 
-  * Events that are still pending are saved, and the offset of this is 
-  * adjusted.
-  */
-class Cycle extends Node {
-  traverse(parent, score) {
+  update_times() {
+    let children_interval = 0;
+    for (let child of this.children) {
+      children_interval += child.times.cycle.interval;
+    }
+    const ratio = this.times.cycle.interval / children_interval;
+    for (let child of this.children) {
+      child.times.cycle.interval *= children_interval;
+    }
   }
 };
 
-class Player extends Node {
+/**
+  * Contains an inner Nest that may have cycle times that differ from the 
+  * times of the outer Nest (i.e. this). Child Nodes added to this are 
+  * actually added to the inner Nest.
+  */
+class Cycle extends Nest {
+  constructor() {
+    super();
+    this.inner_node = new Nest();
+    this.inner_score = new CsoundAC.Score();
+  };
+  add_child(child) {
+    this.inner_node.add_child(child);
+  }
+  update_times() {
+    this.update_times();
+    this.inner_node.update_times();
+    
+  }
+  advance(score.offset) {
+    for (let i = 0; i < score.length; ++i) {
+      let onset = score[i].getTime() + offset;
+      score[i].setTime(onset);
+    }
+  }
+  traverse(score) {
+    // While the outer offset is less than the outer interval, traverse the 
+    // inner tree with the inner Score.
+    while (this.times.cycle.offset < this.times.cycle.interval) {
+      // Clear the inner Score.
+      this.inner_score.length = 0;
+      this.inner_node.traverse(inner_score);
+      // Advance all Events in the inner Score by the offset,
+      // and move them to the outer Score.
+      this.advance(this.inner_score, this.times.cycle.offset);
+      score.push(this.inner_score);
+      // Advance the offset by the _inner_ interval.
+      this.times.cycle.offset = this.times.cycle.offset + this.inner_node.times.cycle.interval;
+    }
+    // Set the offset to the offset modulo the _outer_ interval.
+    this.times.cycle.offset = this.times.cycle.offset % this.times.cycle.interval;
+  };
+};
+
+/**
+  * A Player is also the root node of its tree. The root node is thus a Nest. 
+  * To create an always-on piece, the root must contain at least one Cycle, 
+  * which may contain other Nodes.
+  */
+class Player extends Nest {
   constructor(csound) {
     this.csound = csound;
     this.keep_running = false;
     // Tempo in seconds per cycle. The default value is basically 8 bars of 
-    // 4/4 at 120 bpm. In actual pieces this time can be much longer.
+    // 4/4 at 120 bpm. In actual pieces this time will usually be much longer.
     this.seconds_per_cycle = 16;
-    this.events = new CsoundAC.Score();
+    this.score = new CsoundAC.Score();
     this.divisions_per_octave = 12;
     this.round_pitches = true;
+    this.starting_time = 0;
   };
   /**
     * Pushes the child Node onto the list of immediate children of the parent. 
-    * The default child cycle duration is 1. However, times are not adjusted 
-    * until performance.  
+    * Times are not adjusted until performance.  
     */
-  append(parent, child, child_cycle_duration) {
-    if (parent === this) {
-      this.children.push(parent);
-    }
-    parent.children.push(child);
+  append(parent, child) {
+    parent.add_child(child);
     parent.player = this;
     child.player = this;
-    if (typeof child_cycle_duration !== 'undefined') {
-      child.cycle_duration = child_cycle_duration;
-    }
   };
   current_time() {
     return performance.now() / 1000;
@@ -188,32 +242,44 @@ class Player extends Node {
   }
   start() {
     this.keep_running = true;
-    this.starting_time = performance.now() / 1000; 
-  }
+    this.starting_time = this.current_time();
+    this.cycle();
+  };
   stop() {
     this.keep_running = false;
   }
+  /**
+    * Sends Events generated during the current traversal to Csound.
+    */
   render() {
     // Time 0 is the beginning of this cycle, not the beginning of this 
-    // performance.
+    // performance. Rescales the generated score to fit its cycle interval 
+    // in real seconds.
+    this.score.setDuration(this.times.cycle.interval * this.times.seconds_per_cycle);
     score_text = this.score.getCsoundScore(this.divisions_per_octave, this.round_pitches);
     this.csound.readScore(score_text);
   }
   /**
-    * Generates and renders Events indefinitely, until stopped.
+    * Generates, transforms, and renders Events, until stopped.
     */
   cycle() {
+    // Keep track of time spent computing this cycle.
+    const compute_start = this.current_time();
     if (this.keep_running === false) {
       return;
     }
-    this.events.clear();
-    // Generate one cycle's worth of pending events, using nominal times.
-    this.generate(this.events);
+    this.score.clear();
+    // Generate and/or transform one cycle's worth of events, using cycle 
+    // times.
+    this.traverse(this.events);
     // Render this cycle's pending events in real time with Csound, using 
-    // cycle times.
+    // real times.
     this.render();    
-    // Schedule the next cycle.
-    let next_cycle_time = this.performance_time() + this.cycle_duration;
-    setTimer(next_cycle_time, this.cycle);
+    // Schedule the next cycle in real seconds.
+    const compute_end = this.current_time();
+    const compute_time = compute_end - compute_time;
+    const cycle_interval = this.times.cycle.interval * this.times.cycle.seconds;
+    const timer_interval = cycle_interval - compute_time;
+    setTimer(timer_interval, this.cycle);
   }
 };
