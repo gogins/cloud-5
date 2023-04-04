@@ -68,9 +68,6 @@ class Node {
     // tree. Performance times are obtained by multiplying cycle times by 
     // seconds per cycle. 
     this.times.traversal.onset = 0;
-    // The offset is added to (or subtracted from) the traversal interval 
-    // in order to implement out of phase intervals. The default is 0.
-    this.times.traversal.offset = 0;
     this.times.traversal.interval = 1;
     this.local_score = new CsoundAC.Score();
   };
@@ -112,7 +109,8 @@ class Node {
   };
   /**
     * Rescales the times of the Score to match [onset, onset + interval) of 
-    * this.
+    * this. Also updates the offset of this if parent and child intervals 
+    * are out of phase.
     */
   update_times(score) {
     score.setDuration(this.times.traversal.interval);
@@ -120,6 +118,7 @@ class Node {
       let onset = score[i].getTime() + this.times.traversal.onset;
       score[i].setTime(onset);
     }
+    this.times.traversal.offset = this.times.traversal.offset
   }
   /** Appends to the global Score those Events of the local Score that fall 
     * within the interval of this traversal; but retains those Events of the 
@@ -169,8 +168,9 @@ class Node {
     // Rescale the times of any Events generated locally.
     this.update_times(local_score);
     // Postpone scheduling Events that overlap the interval of the current 
-    // traversal.
-    this.split_events(global_score, local_score);
+    // traversal. The local Score may contain Events that were generated in 
+    // prior traversals for onsets after the interval of that traversal.
+    this.split_overlap(global_score, local_score);
     // Optionally, transform _all_ child Events of this within the current
     // traversal; this transformation should not change times.
     this.transform(global_score);
@@ -188,6 +188,7 @@ class Sequence extends Node {
       total_interval += child.times.traversal.interval;
     }
     this.times.traversal.interval = total_interval;
+    super.update_intervals();
    }
 };
 
@@ -199,6 +200,7 @@ class Sequence extends Node {
 class Nest extends Sequence {
   update_intervals() {
     let children_interval = 0;
+    super.update_intervals();
     for (let child of this.children) {
       children_interval += child.times.traversal.interval;
     }
@@ -210,11 +212,21 @@ class Nest extends Sequence {
 };
 
 /**
-  * Performs the immediate child Nodes of this simultaneously.
+  * Performs the immediate child Nodes of this simultaneously. The traversal 
+  * times of the immediate child Nodes may differ from the traversal times of 
+  * this, enabling the traversal times of those children to go out of and back 
+  * into phase with the traversal times of this. Enables differential canons 
+  * and other temporal structures.
   */
 class Stack extends Node {
-  traverse(score) {
+  update_intervals() {
     for (let child of this.children) {
+      child.times.traversal.interval = this.times.traversal.interval * child.times.nominal.interval;
+    }
+  }
+  traverse(global_score) {
+    for (let child of this.children) {
+      child.traverse(global_score);
     }
   }
 };
@@ -233,7 +245,7 @@ class Player extends Nest {
     this.divisions_per_octave = 12;
     this.round_pitches = true;
     this.starting_time = 0;
-    // By default, the player runs forever.
+    // By default, the player runs forever. The composer may redefine this.
     this.forever = true;
   };
   /**
@@ -254,7 +266,7 @@ class Player extends Nest {
   start() {
     this.keep_running = true;
     this.starting_time = this.current_time();
-    this.traversal();
+    this.cycle();
   };
   stop() {
     this.keep_running = false;
@@ -266,8 +278,8 @@ class Player extends Nest {
     // Time 0 is the beginning of this cycle, not the beginning of this 
     // performance. Rescales the generated score to fit its traversal interval 
     // in real seconds.
-    this.score.setDuration(this.times.traversal.interval * this.times.seconds_per_cycle);
-    score_text = this.score.getCsoundScore(this.divisions_per_octave, this.round_pitches);
+    this.local_score.setDuration(this.times.traversal.interval * this.times.seconds_per_cycle);
+    score_text = this.local_score.getCsoundScore(this.divisions_per_octave, this.round_pitches);
     this.csound.readScore(score_text);
   }
   /**
@@ -279,10 +291,11 @@ class Player extends Nest {
     if (this.keep_running === false) {
       return;
     }
-    this.score.clear();
+    this.local_score.clear();
     // Generate and/or transform one traversal's worth of events, using 
-    // traversal times.
-    this.traverse(this.score);
+    // traversal times. NOTE: The local Score of the Player, i.e. the root 
+    // Node, is the global Score for the composition.
+    this.traverse(this.local_score);
     // Render this traversal's pending events in real time with Csound, using 
     // real times.
     this.render();    
