@@ -47,18 +47,29 @@
   * 3. Nest, where adding (or repeating) child Nodes squeezes the child Nodes 
   *    to fit within the interval of the parent Nest. 
   * 4. Stack, which performs two or more child Nodes simultaneously. Their 
-  *    intervals may differ, thus enabling differential canons and other 
+  *    intervals may diffe from that of the parent and/or those of sibling 
+  *    Nodes, thus enabling differential canons and other 
   *    structures.
   */
   
+var cycler_logging_enabled = true;
+  
+function cycler_log(message) {
+  typeof message !== 'undefined' ? message : '';
+  if (cycler_logging_enabled === true) {
+    const current_time = performance.now() / 1000;
+    const text = sprintf("[cycler][%9.4f] %s", current_time, message);
+    console.log(text);
+  }
+}
 /**
   * Base class for for all Nodes.
   */
 class Node {
   constructor() {
-    this.parent = null;
+    this.parent = this;
     this.children = new Array();
-    this.times = {nominal: {}, cycle: {}};
+    this.times = {nominal: {}, traversal: {}};
     // Nominal intervals (Node durations) default to 1, but may be redefined 
     // by the composer, and afterwards remain unchanged; they form the basis 
     // for computing all other times. Nominal onsets are assumed to be 0.
@@ -70,6 +81,7 @@ class Node {
     this.times.traversal.onset = 0;
     this.times.traversal.interval = 1;
     this.local_score = new CsoundAC.Score();
+    cycler_log();
   };
   /**
     * Pushes the child Node onto the children of this.
@@ -132,7 +144,7 @@ class Node {
      let off_time = event.getOffTime();
       if (off_time < end_time) {
         global_score.push(event);
-      } else 
+      } else {
         let new_onset = event.getTime() - end_time;
         event.setTime(new_onset);
         new_local_score.push(event);
@@ -152,6 +164,7 @@ class Node {
     * Nodes. 
     */
   traverse(global_score) {
+    cycler_log();
     // Rescale the intervals of this and its immediate children (done from the 
     // top down).
     this.update_intervals();
@@ -166,11 +179,11 @@ class Node {
     // the bottom up).
     this.generate(this.local_score);
     // Rescale the times of any Events generated locally.
-    this.update_times(local_score);
+    this.update_times(this.local_score);
     // Postpone scheduling Events that overlap the interval of the current 
     // traversal. The local Score may contain Events that were generated in 
     // prior traversals for onsets after the interval of that traversal.
-    this.split_overlap(global_score, local_score);
+    this.split_overlap(global_score, this.local_score);
     // Optionally, transform _all_ child Events of this within the current
     // traversal; this transformation should not change times.
     this.transform(global_score);
@@ -182,6 +195,9 @@ class Node {
   * this is the sum of the intervals of its _immediate_ children. 
   */
 class Sequence extends Node {
+  constructor() {
+    super();
+  }
   update_intervals() {
     let total_interval = 0;
     for (let child of this.children) {
@@ -198,6 +214,9 @@ class Sequence extends Node {
   * the interval of this. 
   */
 class Nest extends Sequence {
+  constructor() {
+    super();
+  }
   update_intervals() {
     let children_interval = 0;
     super.update_intervals();
@@ -219,6 +238,9 @@ class Nest extends Sequence {
   * and other temporal structures.
   */
 class Stack extends Node {
+  constructor() {
+    super();
+  }
   update_intervals() {
     for (let child of this.children) {
       child.times.traversal.interval = this.times.traversal.interval * child.times.nominal.interval;
@@ -236,6 +258,7 @@ class Stack extends Node {
   */
 class Player extends Nest {
   constructor(csound) {
+    super();
     this.csound = csound;
     this.keep_running = false;
     // Tempo in seconds per cycle. The default value is basically 8 bars of 
@@ -264,6 +287,7 @@ class Player extends Nest {
     return this.current_time() - this.starting_time();
   }
   start() {
+    cycler_log("Starting...");
     this.keep_running = true;
     this.starting_time = this.current_time();
     this.cycle();
@@ -291,6 +315,7 @@ class Player extends Nest {
     if (this.keep_running === false) {
       return;
     }
+    cycler_log("Cycle...");
     this.local_score.clear();
     // Generate and/or transform one traversal's worth of events, using 
     // traversal times. NOTE: The local Score of the Player, i.e. the root 
