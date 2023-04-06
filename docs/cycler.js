@@ -96,7 +96,7 @@ class Node {
     * any.
     */
   update_intervals() {
-    this.times.traversal.interval += this.times.traversal.offset;
+    this.times.traversal.interval += this.times.traversal.onset;
   }
   /**
     * Adjusts the traversal onsets of this and/or the children of this 
@@ -104,7 +104,7 @@ class Node {
     */
   update_onsets() {
     if (this.children.length > 0) {
-      onset = 0;
+      let onset = 0;
       this.children[0].times.traversal.onset = 0;
       for (let i = 1; i < this.children.length; ++i) {
         onset += this.children[i - 1].times.traversal.interval;
@@ -115,22 +115,22 @@ class Node {
   /**
     * Generates Events and pushes them onto the Score. These events can have 
     * arbitrary times, usually beginning at onset 0, but will be rescaled to 
-    * match the traversal times. The default implementation does nothing.
+    * match the traversal times in [onset, onset + interval). The default 
+    * implementation does nothing.
     */
   generate(score) {
   };
   /**
-    * Rescales the times of the Score to match [onset, onset + interval) of 
-    * this. Also updates the offset of this if parent and child intervals 
-    * are out of phase.
+    * Rescales the times of the Events to match [onset, onset + interval) of 
+    * this. 
     */
   update_times(score) {
     score.setDuration(this.times.traversal.interval);
-    for (let i = 0; i < score.length; ++i) {
-      let onset = score[i].getTime() + this.times.traversal.onset;
-      score[i].setTime(onset);
+    for (let i = 0; i < score.size(); ++i) {
+      let new_onset = score.get(i).getTime();
+      new_onset += this.times.traversal.onset;
+      score.get(i).setTime(new_onset);
     }
-    this.times.traversal.offset = this.times.traversal.offset
   }
   /** Appends to the global Score those Events of the local Score that fall 
     * within the interval of this traversal; but retains those Events of the 
@@ -140,14 +140,15 @@ class Node {
   split_overlap(global_score, local_score) {
     const end_time = this.parent.times.traversal.interval;
     let new_local_score = new CsoundAC.Score();
-    for (event of local_score) {
-     let off_time = event.getOffTime();
+    for (let i = 0; i < this.local_score.size(); ++i) {
+      let event = this.local_score.get(i);
+      let off_time = event.getOffTime();
       if (off_time < end_time) {
-        global_score.push(event);
+        global_score.append_event(event);
       } else {
         let new_onset = event.getTime() - end_time;
         event.setTime(new_onset);
-        new_local_score.push(event);
+        new_local_score.append_event(event);
       }
     }
     this.local_score = new_local_score;
@@ -270,6 +271,7 @@ class Player extends Nest {
     this.starting_time = 0;
     // By default, the player runs forever. The composer may redefine this.
     this.forever = true;
+    this.cycle_count = 0;
   };
   /**
     * Pushes the child Node onto the list of immediate children of the parent. 
@@ -290,6 +292,7 @@ class Player extends Nest {
     cycler_log("Starting...");
     this.keep_running = true;
     this.starting_time = this.current_time();
+    this.cycle_count = 0;
     this.cycle();
   };
   stop() {
@@ -315,7 +318,8 @@ class Player extends Nest {
     if (this.keep_running === false) {
       return;
     }
-    cycler_log("Cycle...");
+    this.cycle_count = this.cycle_count + 1;
+    cycler_log(`cycle: ${this.cycle_count}`);
     this.local_score.clear();
     // Generate and/or transform one traversal's worth of events, using 
     // traversal times. NOTE: The local Score of the Player, i.e. the root 
@@ -332,6 +336,6 @@ class Player extends Nest {
     const compute_time = compute_end - compute_time;
     const cycle_interval = this.times.traversal.interval * this.times.traversal.seconds;
     const timer_interval = cycle_interval - compute_time;
-    setTimer(timer_interval, this.traversal);
+    setTimer(timer_interval, this.cycle);
   }
 };
