@@ -146,7 +146,7 @@ class Node {
       if (off_time < end_time) {
         global_score.append_event(event);
       } else {
-        let new_onset = event.getTime() - end_time;
+        let new_onset = end_time - event.getTime();
         event.setTime(new_onset);
         new_local_score.append_event(event);
       }
@@ -164,8 +164,8 @@ class Node {
     * Traverses the directed acyclic graph defined by this and its child 
     * Nodes. 
     */
-  traverse(global_score) {
-    cycler_log();
+  traverse(global_score, depth) {
+    cycler_log(`[traverse] depth: ${depth}`);
     // Rescale the intervals of this and its immediate children (done from the 
     // top down).
     this.update_intervals();
@@ -174,7 +174,7 @@ class Node {
     this.update_onsets();
     // Recursively traverse all sub-trees.
     for (let child of this.children) {
-      child.traverse(global_score);
+      child.traverse(global_score, depth + 1);
     };
     // Optionally, generate Events and push them on the local Score (done from 
     // the bottom up).
@@ -245,11 +245,6 @@ class Stack extends Node {
   update_intervals() {
     for (let child of this.children) {
       child.times.traversal.interval = this.times.traversal.interval * child.times.nominal.interval;
-    }
-  }
-  traverse(global_score) {
-    for (let child of this.children) {
-      child.traverse(global_score);
     }
   }
 };
@@ -324,7 +319,7 @@ class Player extends Nest {
     // Generate and/or transform one traversal's worth of events, using 
     // traversal times. NOTE: The local Score of the Player, i.e. the root 
     // Node, is the global Score for the composition.
-    this.traverse(this.local_score);
+    this.traverse(this.local_score, 0);
     // Render this traversal's pending events in real time with Csound, using 
     // real times.
     this.render();    
