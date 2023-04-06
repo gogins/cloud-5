@@ -263,7 +263,8 @@ class Player {
     this.seconds_per_cycle = 16;
     this.score = new CsoundAC.Score();
     this.divisions_per_octave = 12.;
-    this.round_pitches = true;
+    // Not to be confused with divisions per octave for equal temperament!
+    this.conform_pitches = false;
     this.starting_time = 0;
     // By default, the player runs forever. The composer may redefine this.
     this.forever = true;
@@ -301,7 +302,7 @@ class Player {
     // performance. Rescales the generated score to fit its traversal interval 
     // in real seconds.
     this.score.setDuration(this.root.times.traversal.interval * this.seconds_per_cycle);
-    const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.round_pitches);
+    const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
     cycler_log(`[render] score:\n ${score_text}`);
     this.csound.readScore(score_text);
   }
