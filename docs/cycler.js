@@ -92,8 +92,7 @@ class Node {
   }
   /**
     * Adjusts the traversal intervals of this and/or the children of this 
-    * to fit each other. The default implementation applies the offset, if 
-    * any.
+    * to fit each other. 
     */
   update_intervals() {
     this.times.traversal.interval += this.times.traversal.onset;
@@ -142,12 +141,14 @@ class Node {
     let new_local_score = new CsoundAC.Score();
     for (let i = 0; i < this.local_score.size(); ++i) {
       let event = this.local_score.get(i);
-      let off_time = event.getOffTime();
-      if (off_time < end_time) {
+      let onset = event.getTime();
+      if (onset < end_time) {
+        cycler_log(`[split_overlap] i: ${i} global event: ${event.toString()}`);
         global_score.append_event(event);
       } else {
-        let new_onset = end_time - event.getTime();
+        let new_onset = end_time - onset;
         event.setTime(new_onset);
+        cycler_log(`[split_overlap] i: ${i} local event: ${event.toString()}`);
         new_local_score.append_event(event);
       }
     }
@@ -252,16 +253,16 @@ class Stack extends Node {
 /**
   * A Player is also the root node of its tree. The root node is thus a Nest. 
   */
-class Player extends Nest {
+class Player {
   constructor(csound) {
-    super();
+    this.root = new Nest();
     this.csound = csound;
     this.keep_running = false;
     // Tempo in seconds per cycle. The default value is basically 8 bars of 
     // 4/4 at 120 bpm. In actual pieces this time will usually be much longer.
     this.seconds_per_cycle = 16;
     this.score = new CsoundAC.Score();
-    this.divisions_per_octave = 12;
+    this.divisions_per_octave = 12.;
     this.round_pitches = true;
     this.starting_time = 0;
     // By default, the player runs forever. The composer may redefine this.
@@ -272,9 +273,8 @@ class Player extends Nest {
     * Pushes the child Node onto the list of immediate children of the parent. 
     * Times are not adjusted until performance.  
     */
-  append(parent, child) {
-    parent.add_child(child);
-    parent.player = this;
+  add_child(child) {
+    this.root.children.push(child);
     child.player = this;
   };
   current_time() {
@@ -300,8 +300,9 @@ class Player extends Nest {
     // Time 0 is the beginning of this cycle, not the beginning of this 
     // performance. Rescales the generated score to fit its traversal interval 
     // in real seconds.
-    this.local_score.setDuration(this.times.traversal.interval * this.times.seconds_per_cycle);
-    score_text = this.local_score.getCsoundScore(this.divisions_per_octave, this.round_pitches);
+    this.score.setDuration(this.root.times.traversal.interval * this.seconds_per_cycle);
+    const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.round_pitches);
+    cycler_log(`[render] score:\n ${score_text}`);
     this.csound.readScore(score_text);
   }
   /**
@@ -315,11 +316,10 @@ class Player extends Nest {
     }
     this.cycle_count = this.cycle_count + 1;
     cycler_log(`cycle: ${this.cycle_count}`);
-    this.local_score.clear();
+    this.score.clear();
     // Generate and/or transform one traversal's worth of events, using 
-    // traversal times. NOTE: The local Score of the Player, i.e. the root 
-    // Node, is the global Score for the composition.
-    this.traverse(this.local_score, 0);
+    // traversal times.
+    this.root.traverse(this.score, 0);
     // Render this traversal's pending events in real time with Csound, using 
     // real times.
     this.render();    
@@ -328,9 +328,9 @@ class Player extends Nest {
     }
     // Schedule the next traversal in real seconds.
     const compute_end = this.current_time();
-    const compute_time = compute_end - compute_time;
-    const cycle_interval = this.times.traversal.interval * this.times.traversal.seconds;
+    const compute_time = compute_end - compute_start;
+    const cycle_interval = this.root.times.traversal.interval * this.root.times.traversal.seconds;
     const timer_interval = cycle_interval - compute_time;
-    setTimer(timer_interval, this.cycle);
+    setTimeout(timer_interval, this.cycle);
   }
 };
