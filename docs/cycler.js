@@ -321,8 +321,7 @@ class Player {
     // Generate and/or transform one traversal's worth of events, using 
     // traversal times.
     this.root.traverse(this.score, 0);
-    // Render this traversal's pending events in real time with Csound, using 
-    // real times.
+    // Render this traversal's pending events with Csound, using real times.
     this.render();    
     if (this.forever === false) {
       return;
@@ -330,8 +329,10 @@ class Player {
     // Schedule the next traversal in real seconds.
     const compute_end = this.current_time();
     const compute_time = compute_end - compute_start;
-    const cycle_interval = this.root.times.traversal.interval * this.root.times.traversal.seconds;
+    const cycle_interval = this.root.times.traversal.interval * this.seconds_per_cycle;
     const timer_interval = cycle_interval - compute_time;
-    setTimeout(timer_interval, this.cycle);
-  }
+    var that = this;
+    setTimeout(function () {
+      that.cycle();
+    }, timer_interval * 1000.);  }
 };
