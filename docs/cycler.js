@@ -1,6 +1,6 @@
 /**
   * This file implements real-time and/or "always-on" score generation for 
-  * cloud-music. Time is provided by `performance.now`.
+  * cloud-music. 
   * 
   * Author: Michael Gogins
   * Copyright: 2023.
@@ -51,13 +51,15 @@
   *    Nodes, thus enabling differential canons and other 
   *    structures.
   */
-  
+
+var AudioContext = window.AudioContext || window.webkitAudioContext;
+var audioContext = new AudioContext();
 var cycler_logging_enabled = true;
   
 function cycler_log(message) {
   typeof message !== 'undefined' ? message : '';
   if (cycler_logging_enabled === true) {
-    const current_time = performance.now() / 1000;
+    const current_time = audioContext.currentTime;
     const text = sprintf("[cycler][%9.4f] %s", current_time, message);
     console.log(text);
   }
@@ -73,13 +75,13 @@ class Node {
     // Nominal intervals (Node durations) default to 1, but may be redefined 
     // by the composer, and afterwards remain unchanged; they form the basis 
     // for computing all other times. Nominal onsets are assumed to be 0.
-    this.times.nominal.interval = 1;
+    this.times.nominal.interval = 1.;
     // Traversal times are obtained when the nominal times are rescaled to 
     // expand parent Nodes, or squeeze child Nodes, during traversal of the 
     // tree. Performance times are obtained by multiplying cycle times by 
     // seconds per cycle. 
-    this.times.traversal.onset = 0;
-    this.times.traversal.interval = 1;
+    this.times.traversal.onset = 0.;
+    this.times.traversal.interval = 1.;
     this.local_score = new CsoundAC.Score();
     cycler_log();
   };
@@ -124,12 +126,16 @@ class Node {
     * this. 
     */
   update_times(score) {
-    score.setDuration(this.times.traversal.interval);
+    const interval = this.times.traversal.interval;
+    score.setDuration(interval);
     for (let i = 0; i < score.size(); ++i) {
-      let new_onset = score.get(i).getTime();
+      let event = score.get(i);
+      let new_onset = event.getTime();
       new_onset += this.times.traversal.onset;
-      score.get(i).setTime(new_onset);
+      event.setTime(new_onset);
+      score.set(i, event);
     }
+    cycler_log(sprintf("[update_times] node interval:       %9.4f score duration: %9.4f", interval, score.getDurationFromZero()));
   }
   /** Appends to the global Score those Events of the local Score that fall 
     * within the interval of this traversal; but retains those Events of the 
@@ -266,8 +272,6 @@ class Player {
     // Not to be confused with divisions per octave for equal temperament!
     this.conform_pitches = false;
     this.starting_time = 0;
-    // By default, the player runs forever. The composer may redefine this.
-    this.forever = true;
     this.cycle_count = 0;
   };
   /**
@@ -279,16 +283,18 @@ class Player {
     child.player = this;
   };
   current_time() {
-    return performance.now() / 1000;
+    return audioContext.currentTime;
   }
   performance_time() {
-    return this.current_time() - this.starting_time();
+    return this.current_time() - this.starting_time;
   }
   start() {
     cycler_log("Starting...");
     this.keep_running = true;
-    this.starting_time = this.current_time();
     this.cycle_count = 0;
+    this.starting_time = this.current_time();
+    this.current_rendering_time = this.performance_time();
+    this.prior_rendering_time = this.performance_time();
     this.cycle();
   };
   stop() {
@@ -298,20 +304,27 @@ class Player {
     * Sends Events generated during the current traversal to Csound.
     */
   render() {
-    // Time 0 is the beginning of this cycle, not the beginning of this 
-    // performance. Rescales the generated score to fit its traversal interval 
-    // in real seconds.
-    this.score.setDuration(this.root.times.traversal.interval * this.seconds_per_cycle);
+    this.prior_rendering_time = this.current_rendering_time;
+    // Rescales the generated score to fit its traversal interval in real 
+    // seconds. Time 0 is the beginning of this cycle, not the beginning of 
+    // this performance; and the duration is the duration not to the last 
+    // _onset_ in the score, but to the last _off time_ in the score.
+    const traversal_interval = this.root.times.traversal.interval * this.seconds_per_cycle;
+    this.score.setDurationFromZero(traversal_interval);
     const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
-    cycler_log(`[render] score:\n ${score_text}`);
+    cycler_log(sprintf("[render] traversal interval:        %9.4f score duration: %9.4f", traversal_interval, this.score.getDurationFromZero()));
     this.csound.readScore(score_text);
+    this.current_rendering_time = this.performance_time();
+    cycler_log(sprintf("[render] prior_rendering_time:      %9.4f current_rendering_time: %9.4f", this.prior_rendering_time, this.current_rendering_time));
+    cycler_log(sprintf("[render] actual rendering interval: %9.4f", this.current_rendering_time - this.prior_rendering_time));
+    console.log(score_text);
   }
   /**
     * Generates, transforms, and renders Events, until stopped.
     */
   cycle() {
     // Keep track of time spent computing this traversal.
-    const compute_start = this.current_time();
+    const compute_start = this.performance_time();
     if (this.keep_running === false) {
       return;
     }
@@ -323,16 +336,15 @@ class Player {
     this.root.traverse(this.score, 0);
     // Render this traversal's pending events with Csound, using real times.
     this.render();    
-    if (this.forever === false) {
-      return;
-    }
     // Schedule the next traversal in real seconds.
-    const compute_end = this.current_time();
+    const compute_end = this.performance_time();
     const compute_time = compute_end - compute_start;
-    const cycle_interval = this.root.times.traversal.interval * this.seconds_per_cycle;
-    const timer_interval = cycle_interval - compute_time;
-    var that = this;
-    setTimeout(function () {
+    const traversal_interval = this.root.times.traversal.interval * this.seconds_per_cycle;
+    const timer_interval = traversal_interval - compute_time;
+    cycler_log(sprintf("[cycle] traversal interval: %9.4f timer interval:%9.4f", traversal_interval, timer_interval));
+    let that = this;
+    let closure = function () {
       that.cycle();
-    }, timer_interval * 1000.);  }
+    };      
+    setTimeout(closure, timer_interval * 1000.);  }
 };
