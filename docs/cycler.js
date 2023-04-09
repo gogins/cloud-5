@@ -149,12 +149,12 @@ class Node {
       let event = this.local_score.get(i);
       let onset = event.getTime();
       if (onset < end_time) {
-        cycler_log(`[split_overlap] i: ${i} global event: ${event.toString()}`);
+        cycler_log(sprintf("[split_overlap] i: %6d ${i} global event: %s}", i, event.toString()));
         global_score.append_event(event);
       } else {
         let new_onset = end_time - onset;
         event.setTime(new_onset);
-        cycler_log(`[split_overlap] i: ${i} local event: ${event.toString()}`);
+        cycler_log(sprintf("[split_overlap] i: %6d ${i} local event:  %s}", i, event.toString()));
         new_local_score.append_event(event);
       }
     }
@@ -172,7 +172,7 @@ class Node {
     * Nodes. 
     */
   traverse(global_score, depth) {
-    cycler_log(`[traverse] depth: ${depth}`);
+    cycler_log(sprintf("[traverse] depth: %5d", depth));
     // Rescale the intervals of this and its immediate children (done from the 
     // top down).
     this.update_intervals();
@@ -295,13 +295,14 @@ class Player {
     this.starting_time = this.current_time();
     this.current_rendering_time = this.performance_time();
     this.prior_rendering_time = this.performance_time();
+    this.expected_traversal_time = 0;
     this.cycle();
   };
   stop() {
     this.keep_running = false;
   }
   /**
-    * Sends Events generated during the current traversal to Csound.
+    * Sends Events generated in the current traversal to Csound.
     */
   render() {
     this.prior_rendering_time = this.current_rendering_time;
@@ -323,28 +324,42 @@ class Player {
     * Generates, transforms, and renders Events, until stopped.
     */
   cycle() {
-    // Keep track of time spent computing this traversal.
-    const compute_start = this.performance_time();
+    // Find the amount of time spent computing this traversal.
+    const current_traversal_time = this.performance_time();
     if (this.keep_running === false) {
       return;
     }
     this.cycle_count = this.cycle_count + 1;
-    cycler_log(`cycle: ${this.cycle_count}`);
+    cycler_log("[cycle] cycle count: %9d", this.cycle_count);
     this.score.clear();
-    // Generate and/or transform one traversal's worth of events, using 
-    // traversal times.
+    // Generate and/or transform one traversal's worth of events, 
+    // using _traversal_ times.
     this.root.traverse(this.score, 0);
-    // Render this traversal's pending events with Csound, using real times.
+    // Render this traversal's pending events with Csound, 
+    // using _real_ times.
     this.render();    
-    // Schedule the next traversal in real seconds.
+    // Subtract time spent computing this traversal from the next traversal.
     const compute_end = this.performance_time();
-    const compute_time = compute_end - compute_start;
+    const compute_time = compute_end - current_traversal_time;
     const traversal_interval = this.root.times.traversal.interval * this.seconds_per_cycle;
-    const timer_interval = traversal_interval - compute_time;
-    cycler_log(sprintf("[cycle] traversal interval: %9.4f timer interval:%9.4f", traversal_interval, timer_interval));
+    let timer_interval = traversal_interval - compute_time;
+    // Also correct for timer drift, which is measured every cycle.
+    // The timer drift is the difference between the actual traversal onset 
+    // and the scheduled traversal onset.
+    const timer_drift = current_traversal_time - this.expected_traversal_time;
+    timer_interval = Math.max(0, timer_interval - timer_drift);
+    cycler_log(sprintf("[cycle] traversal interval: %9.4f compute time: %9.4f timer drift: %9.4f timer interval:%9.4f", traversal_interval, compute_time, timer_drift, timer_interval));
     let that = this;
     let closure = function () {
       that.cycle();
     };      
-    setTimeout(closure, timer_interval * 1000.);  }
+    setTimeout(closure, timer_interval * 1000.);  
+    this.expected_traversal_time += traversal_interval;
+  };    
 };
+
+
+
+
+
+

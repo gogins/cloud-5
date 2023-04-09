@@ -2216,7 +2216,7 @@ f 0 1000000000
           cycle() {
             this.repeat = this.repeat + 1;
             if (this.repeat > this.repeats) {
-              this.forever = false;
+              this.keep_running = false;
             }
             super.cycle();
           }
