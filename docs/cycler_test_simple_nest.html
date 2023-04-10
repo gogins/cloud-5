@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cycler Test</title>
+<title>Cycler Tests -- Simple Nest</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
 <script src="jquery-3.6.1.js"></script>
@@ -29,19 +29,6 @@
 </style>
 </head></head>
 <body id="body" class="w3-medium w3-text-sand" style="height:100vh;">
-    <!------------------------------------------------------------------------
-    This piece consists of an actual composition, which may include a Csound 
-    orchestra, WebGL, a GLSL shader, JavaScript for generating scores (perhaps
-    using the CsoundAC library), controls for the user to adjust the settings 
-    of the piece or to control it in real time, license information, and 
-    program notes. These are the parts that need to be written to create a new
-    piece.
-     
-    There is also much "infrastructure" code that sets up the user interface, 
-    compiles the Csound orchestra, compiles any GLSL shaders, and handles 
-    all events from the user interface. Most of this code requires little or 
-    no change when writing a new piece.
-    ------------------------------------------------------------------------->
     <div class="w3-bar " style="position:fixed;background:transparent;">    
         <ul class = "menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
@@ -132,30 +119,18 @@
     <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
     <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
-<h1>Cloud Music No. 2</h1>
+<h1>Unit Tests for cycler.js -- Simple Sequence</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This is an online piece of electroacoustic music, rendered in your Web 
-browser using high-resolution audio. It will play indefinitely, never ending, 
-always changing. 
+<p>This piece serves as a unit test for cycler.js, specifically for the Nest 
+node.
 
-<p>This piece is generated as a sort of musical dynamical system operating in 
-chord space. Generated notes are sent to Csound for rendering in real time. 
-The synthesized audio is then sampled (using a WebAudio Analyzer) to change 
-the brightness of the lines in the visual scene, as a form of music 
-visualization.
-
-<p>The notes are played by a Csound orchestra that is embedded in this Web 
-page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
-build of Csound</a>. This in turn includes my 
-<a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
-algorithmic composition.
-
-<p>Feel free to use this piece as a template for creating new pieces of this 
-type... as long as it doesn't sound too much like this one!
+<p>The chromatic scale should repeat 2 times without audible gaps or overlaps
+between repetition. The measured time for each repeat should be 8 seconds. 
+The measured time for one cycle should be 16 seconds.
 
 <p>Please report any problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
@@ -2187,8 +2162,10 @@ f 0 1000000000
         };
         
         class Generator extends Node {
+          constructor() {
+            super();
+          };
           generate() {
-            // virtual void add(double time, double duration, double status, double instrument, double key, double velocity, double phase=0, double pan=0, double depth=0, double height=0, double pitches=4095);
             let tyme = 0;
             let duration = 1;
             let status = 144;
@@ -2203,10 +2180,29 @@ f 0 1000000000
           }
         };
         
+        class Generator2 extends Node {
+          constructor() {
+            super();
+          };
+          generate() {
+            let tyme = 0;
+            let duration = 1;
+            let status = 144;
+            let instrument = 1;
+            let key = 64;
+            let velocity = 70;
+            let phase = 0;
+            let pan = .5;
+            for (let i = 0; i < 16; ++i) {
+              this.local_score.add((tyme + i), duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
+            }
+          }
+        };
+
         class CyclerTest extends Player {
           constructor(csound) {
             super(csound);
-            this.repeats = 5;
+            this.repeats = 3;
             this.repeat = 0;
           }
           start() {
@@ -2276,8 +2272,11 @@ f 0 1000000000
                                             
                             // Define the actual composition.
                             player = new CyclerTest(csound);
-                            player.add_child(new Generator());
-                            
+                            let nest = new Nest();
+                            player.add_child(nest);
+                            nest.add_child(new Generator);
+                            nest.add_child(new Generator2);
+                            var test = nest.children[1];
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });

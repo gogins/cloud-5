@@ -93,10 +93,9 @@ class Node {
   }
   /**
     * Adjusts the traversal intervals of this and/or the children of this 
-    * to fit each other. 
+    * to fit each other. The default implementation does nothing.
     */
   update_intervals() {
-    this.times.traversal.interval += this.times.traversal.onset;
   }
   /**
     * Adjusts the traversal onsets of this and/or the children of this 
@@ -105,11 +104,13 @@ class Node {
   update_onsets() {
     if (this.children.length > 0) {
       let onset = 0;
-      this.children[0].times.traversal.onset = 0;
+      this.children[0].times.traversal.onset = onset;
+      cycler_log(sprintf("[update_onsets] child: %6d onset: %9.4f", 0, onset));
       for (let i = 1; i < this.children.length; ++i) {
         onset += this.children[i - 1].times.traversal.interval;
         this.children[i].onset = onset;
-      }
+        cycler_log(sprintf("[update_onsets] child: %6d onset: %9.4f", i, onset));
+     }
     }
   }
   /**
@@ -125,16 +126,17 @@ class Node {
     * this. 
     */
   update_times(score) {
-    const interval = this.times.traversal.interval;
+    let interval = this.times.traversal.interval;
+    let onset = this.times.traversal.onset;
     score.setDuration(interval);
     for (let i = 0; i < score.size(); ++i) {
       let event = score.get(i);
       let new_onset = event.getTime();
-      new_onset += this.times.traversal.onset;
+      new_onset += onset;
       event.setTime(new_onset);
       score.set(i, event);
     }
-    cycler_log(sprintf("[update_times] node interval:       %9.4f score duration: %9.4f", interval, score.getDurationFromZero()));
+    cycler_log(sprintf("[update_times] node interval:       %9.4f score duration: %9.4f onset: %9.4f", interval, score.getDurationFromZero(), onset));
   }
   /** Appends to the global Score those Events of the local Score that fall 
     * within the interval of this traversal; but retains those Events of the 
@@ -142,7 +144,7 @@ class Node {
     * their onsets for the next traversal.
     */
   split_overlap(global_score, local_score) {
-    const end_time = this.parent.times.traversal.interval;
+    let end_time = this.parent.times.traversal.interval;
     let new_local_score = new CsoundAC.Score();
     for (let i = 0; i < this.local_score.size(); ++i) {
       let event = this.local_score.get(i);
@@ -186,6 +188,8 @@ class Node {
     // (done from the bottom up).
     this.generate(this.local_score);
     // Rescale the times of any Events generated locally.
+    // Move the onsets of the immediate children of this to match their 
+    // successive intervals.
     this.update_times(this.local_score);
     // Postpone scheduling Events that overlap the interval of the current 
     // traversal. The local Score may contain Events that were generated in 
@@ -207,12 +211,15 @@ class Sequence extends Node {
   }
   update_intervals() {
     let total_interval = 0;
-    for (let child of this.children) {
+    let onset = 0;
+    for (let i = 0; i < this.children.length; ++i) {
+      let child = this.children[i];
+      child.times.traversal.onset = total_interval;
       total_interval += child.times.traversal.interval;
     }
     this.times.traversal.interval = total_interval;
     super.update_intervals();
-   }
+  }
 };
 
 /**
@@ -225,15 +232,20 @@ class Nest extends Sequence {
     super();
   }
   update_intervals() {
-    let children_interval = 0;
+    const this_interval = this.times.traversal.interval;
     super.update_intervals();
-    for (let child of this.children) {
-      children_interval += child.times.traversal.interval;
+    const children_interval = this.times.traversal.interval;
+    const scale = this_interval / children_interval;
+    let total_interval = 0;
+    let onset = 0;
+    for (let i = 0; i < this.children.length; ++i) {
+      let child = this.children[i];
+      child.times.traversal_onset = total_interval;
+      child.times.traversal.interval *= scale;
+      child.times.traversal.onset = total_interval;
+      total_interval += child.times.traversal.interval;
     }
-    const ratio = this.times.traversal.interval / children_interval;
-    for (let child of this.children) {
-      child.times.traversal.interval *= ratio;
-    }
+    this.times.traversal.interval = total_interval;
   }
 };
 
