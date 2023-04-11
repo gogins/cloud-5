@@ -92,6 +92,12 @@ class Node {
     this.children.push(child);
   }
   /**
+    * Adjusts all intervals back to nominal values.
+    */
+  reset_to_nominal() {
+    this.times.traversal.interval = this.times.nominal.interval;
+  }
+  /**
     * Adjusts the traversal intervals of this and/or the children of this 
     * to fit each other. The default implementation does nothing.
     */
@@ -168,18 +174,18 @@ class Node {
     */
   transform(score) {
   };
-   /**
+  /**
     * Traverses the directed acyclic graph defined by this and its child 
     * Nodes. 
     */
   traverse(global_score, depth) {
-    cycler_log(sprintf("[traverse] depth: %5d", depth));
+    cycler_log(sprintf("[traverse] depth: %5d events: %6d", depth, global_score.size()));
+    this.reset_to_nominal();
     // Rescale the intervals of this and its immediate children 
     // (done from the top down).
     this.update_intervals();
     // Move the onsets of the immediate children of this to match their 
     // successive intervals.
-    this.update_onsets();
     // Recursively traverse all sub-trees.
     for (let child of this.children) {
       child.traverse(global_score, depth + 1);
@@ -268,10 +274,13 @@ class Stack extends Node {
 };
 
 /**
-  * A Player is also the root node of its graph. The root node is thus a Nest. 
+  * Compositions are written by creating Nodes that generate and/or transform 
+  * Events (usually notes), and adding these Nodes first to `Player.root`, and 
+  * then to children of `root`, and so on recursively.
   */
 class Player {
   constructor(csound) {
+    // The default root is a Nest but the composer may change this.
     this.root = new Nest();
     this.csound = csound;
     this.keep_running = false;
@@ -279,19 +288,12 @@ class Player {
     // 4/4 at 120 bpm. In actual pieces this time will usually be much longer.
     this.seconds_per_cycle = 16;
     this.score = new CsoundAC.Score();
+    // This can be changed to define other systems of equal temperament.
     this.divisions_per_octave = 12.;
     // Not to be confused with divisions per octave for equal temperament!
     this.conform_pitches = false;
     this.starting_time = 0;
     this.cycle_count = 0;
-  };
-  /**
-    * Pushes the child Node onto the list of immediate children of the parent. 
-    * Times are not adjusted until performance.  
-    */
-  add_child(child) {
-    this.root.children.push(child);
-    child.player = this;
   };
   current_time() {
     return audioContext.currentTime;

@@ -2253,7 +2253,7 @@ f 0 1000000000
                                             
                             // Define the actual composition.
                             player = new CyclerTest(csound);
-                            player.add_child(new Generator());
+                            player.root.add_child(new Generator());
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');
