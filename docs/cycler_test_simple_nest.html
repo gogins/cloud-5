@@ -2273,10 +2273,11 @@ f 0 1000000000
                             // Define the actual composition.
                             player = new CyclerTest(csound);
                             let nest = new Nest();
-                            player.add_child(nest);
+                            player.root = nest
                             nest.add_child(new Generator);
                             nest.add_child(new Generator2);
                             var test = nest.children[1];
+                            
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });
