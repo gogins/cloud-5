@@ -2164,7 +2164,7 @@ f 0 1000000000
         };
         
         class Generator extends Node {
-          generate() {
+          generate(score) {
             // virtual void add(double time, double duration, double status, double instrument, double key, double velocity, double phase=0, double pan=0, double depth=0, double height=0, double pitches=4095);
             let tyme = 0;
             let duration = 1;
@@ -2175,7 +2175,7 @@ f 0 1000000000
             let phase = 0;
             let pan = .5;
             for (let i = 0; i < 16; ++i) {
-              this.local_score.add((tyme + i), duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
+              score.add((tyme + i), duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
             }
           }
         };
