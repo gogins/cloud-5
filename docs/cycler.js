@@ -138,10 +138,10 @@ class Node {
     * time as required. At the root node, the cycle time always starts at 0; 
     * the cycle time is thus recursively updated as the tree is traversed.
     */
-  traverse(cycle_time, depth, parent_score) {
+  async traverse(cycle_time, depth, parent_score) {
     cycler_log("%s[Node.traverse] cycle_start: %9.4f depth: %5d events: %6d", '  '.repeat(depth), cycle_time, depth, parent_score.size());
     // Clear the score of all child Events.
-    this.score.clear();
+    await this.score.clear();
     for (let child of this.children) {
       // Accumulate Events from child Nodes.
       child.traverse(cycle_time, depth + 1, this.score);
@@ -154,16 +154,19 @@ class Node {
         let event = child.score.get(i);
         this.score.append_event(event);
       }
+      cycler_log("%s[Node.traverse] child.score:\n%s", '  '.repeat(depth), child.score.toString());
     };
     // Optionally, generate own Events and push on the Score.
     this.generate(this.score);
     // Optionally, transform all Events in the Score.
     this.transform(this.score);
+    cycler_log("%s[Node.traverse] this.score:\n%s", '  '.repeat(depth), this.score.toString());
     // Transfer all Events from this Score to the parent Score.
     for (let i = 0, n = this.score.size(); i < n; ++i) {
       let event = this.score.get(i);
       parent_score.append_event(event);
     }
+    cycler_log("%s[Node.traverse] parent_score:\n%s", '  '.repeat(depth), parent_score.toString());
   };
 };
 
@@ -260,7 +263,7 @@ class Cycle extends Node {
   /**
     * Generates, transforms, and renders Events, until stopped.
     */
-  cycle() {
+  async cycle() {
     // Find the amount of time spent computing this traversal.
     if (this.repeat === false) {
       return;
@@ -269,9 +272,9 @@ class Cycle extends Node {
     this.expected_cycle_onset = this.prior_cycle_onset + this.prior_cycle_duration;
     this.prior_cycle_onset = this.actual_cycle_onset;
     this.actual_cycle_onset = this.begin_compute_time;
-    this.score.clear();
+    await this.score.clear();
     // Reset the cycle time to 0, and traverse the graph one time.
-    this.traverse(0, this.cycle_count, this.score);
+    await this.traverse(0, this.cycle_count, this.score);
     this.render();
     this.cycle_count = this.cycle_count + 1;
     cycler_log("[Cycle.cycle] cycle count: %9d", this.cycle_count);
