@@ -2180,25 +2180,6 @@ f 0 1000000000
           }
         };
         
-        class CyclerTest extends Player {
-          constructor(csound) {
-            super(csound);
-            this.repeats = 5;
-            this.repeat = 0;
-          }
-          start() {
-            this.repeat = 0;
-            super.start();
-          }
-          cycle() {
-            this.repeat = this.repeat + 1;
-            if (this.repeat > this.repeats) {
-              this.keep_running = false;
-            }
-            super.cycle();
-          }
-        }
-      
         (async function() {
             CsoundAC = await createCsoundAC(); 
             strange_attractor = new CsoundAC.StrangeAttractor();
@@ -2252,7 +2233,8 @@ f 0 1000000000
                             console.log("csound: " + csound);
                                             
                             // Define the actual composition.
-                            player = new CyclerTest(csound);
+                            player = new Player(csound);
+                            player.root.cycles = 3;
                             player.root.add_child(new Generator());
                             
                         }, function(error) {

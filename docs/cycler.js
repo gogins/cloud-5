@@ -1,6 +1,8 @@
 /**
   * This file implements real-time and/or "always-on" score generation for 
-  * cloud-music. 
+  * cloud-music. The purpose is to adapt existing CsoundAC score generation 
+  * and transformation facilities, especially the chord space stuff, to 
+  * indefinite, real-time looping.
   * 
   * Author: Michael Gogins
   * Copyright: 2023.
@@ -24,7 +26,7 @@ var AudioContext = window.AudioContext || window.webkitAudioContext;
 var audioContext = new AudioContext();
 var cycler_logging_enabled = true;
   
-async function cycler_log() {
+function cycler_log() {
   if (cycler_logging_enabled === true) {
     const current_time = audioContext.currentTime;
     const formatted = sprintf(...arguments);
@@ -79,9 +81,9 @@ class Node {
     * Called by the Player recursively to stop the performance. The default 
     * implementation does nothing but recursively call this method.
     */
-  stop() {
+   stop() {
     for (let child of this.children) {
-      child.stop();
+       child.stop();
     }
   }
   /**
@@ -104,7 +106,7 @@ class Node {
     * offset, but not the cycle time.
     */
   rescale_score(score) {
-    cycler_log("[Node][rescale_score]...");
+    cycler_log("[Node.rescale_score]...");
     let original_duration = score.getDurationFromZero();
     let rescaled_duration;
     if (this.time_duration > 0) {
@@ -123,12 +125,12 @@ class Node {
       }
     }
     rescaled_duration = score.getDurationFromZero();
-    cycler_log("[Node][rescale_score] original duration: %9.4f rescaled duration: %9.4f", original_duration, rescaled_duration);
+    cycler_log("[Node.rescale_score] original duration: %12.6f rescaled duration: %12.6f", original_duration, rescaled_duration);
     return rescaled_duration;
   }
   /**
-    * Updates the cycle time from the child. The default implementation simply 
-    * resets the cycle time.
+    * Optionally updates the cycle time from the child Score. The default 
+    * implementation simply resets the cycle time.
     */
   update_cycle_time(cycle_time, child_score) {
     return 0;
@@ -137,36 +139,34 @@ class Node {
     * Recursively calls traverse, generate, and transform, advancing the cycle  
     * time as required. At the root node, the cycle time always starts at 0; 
     * the cycle time is thus recursively updated as the tree is traversed.
+    * Returns a Score that includes events generated and/or transformed 
+    * by this and all the child Nodes of this.
     */
-  async traverse(cycle_time, depth, parent_score) {
-    cycler_log("%s[Node.traverse] cycle_start: %9.4f depth: %5d events: %6d", '  '.repeat(depth), cycle_time, depth, parent_score.size());
-    // Clear the score of all child Events.
-    await this.score.clear();
-    for (let child of this.children) {
+  traverse(cycle_time, depth) {
+    cycler_log("%s[Node.traverse] cycle_start: %12.6f depth: %5d", '  '.repeat(depth), cycle_time, depth);
+    this.score.clear();
+    for (let i = 0, n = this.children.length; i < n; ++i) {
       // Accumulate Events from child Nodes.
-      child.traverse(cycle_time, depth + 1, this.score);
+      let child = this.children[i];
+      let child_score = child.traverse(cycle_time, depth + 1);
       // Optionally, rescale the child Score.
-      child.rescale_score(child.score);
+      child.rescale_score(child_score);
       // Optionally leave unchanged, advance, or reset the cycle time.
-      cycle_time = this.update_cycle_time(cycle_time, child.score);
+      cycle_time = this.update_cycle_time(cycle_time, child_score);
       // Transfer all Events from the child Score to this Score.
-      for (let i = 0, n = child.score.size(); i < n; ++i) {
-        let event = child.score.get(i);
-        this.score.append_event(event);
+      for (let i = 0, n = child_score.size(); i < n; ++i) {
+        let child_event = child_score.get(i);
+        this.score.append_event(child_event);
       }
-      cycler_log("%s[Node.traverse] child.score:\n%s", '  '.repeat(depth), child.score.toString());
+      cycler_log("%s[Node.traverse] child[%4d].score:\n%s", '  '.repeat(depth), i, child.score.toString());
+      return this.score;
     };
-    // Optionally, generate own Events and push on the Score.
+    // Optionally, generate own Events and push on this Score.
     this.generate(this.score);
-    // Optionally, transform all Events in the Score.
+    // Optionally, transform all Events in this Score.
     this.transform(this.score);
     cycler_log("%s[Node.traverse] this.score:\n%s", '  '.repeat(depth), this.score.toString());
-    // Transfer all Events from this Score to the parent Score.
-    for (let i = 0, n = this.score.size(); i < n; ++i) {
-      let event = this.score.get(i);
-      parent_score.append_event(event);
-    }
-    cycler_log("%s[Node.traverse] parent_score:\n%s", '  '.repeat(depth), parent_score.toString());
+    return this.score;
   };
 };
 
@@ -212,6 +212,10 @@ class Cycle extends Node {
     this.conform_pitches = false;
     this.starting_time = 0;
     this.cycle_count = 0;
+    // The number of times this Cycle will repeat; a negative value means 
+    // loop indefinitely. The default is to loop indefinitely.
+    // indefinitely.
+    this.cycles = -1;
   }
   current_time() {
     return audioContext.currentTime;
@@ -220,7 +224,7 @@ class Cycle extends Node {
     return this.current_time() - this.starting_time;
   }
   start(csound) {
-    cycler_log("[Cycle] start...");
+    cycler_log("[Cycle.start]");
     this.csound = csound;
     this.repeat = true;
     this.cycle_count = 0;
@@ -232,14 +236,11 @@ class Cycle extends Node {
     this.prior_cycle_duration = 0;
     this.begin_compute_time = 0;
     this.end_compute_time = 0;
-    this.prior_cycle_onset = 0;
-    this.actual_cycle_onset = 0;
-    this.expected_cycle_onset = 0;
     this.cycle();
     super.start();
   }
-  stop() {
-    cycler_log("[Cycle] stop...");
+   stop() {
+    cycler_log("[Cycle.stop]");
     this.repeat = false;
     super.stop();
   }
@@ -250,49 +251,59 @@ class Cycle extends Node {
     this.prior_performance_time = this.current_performance_time;
     this.prior_cycle_duration = this.current_cycle_duration;
     const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
-    // As close as possible to when Csound actually starts rendering this Score.
+    // As close as possible to when Csound actually starts rendering _this_ cycle.
     this.current_performance_time = this.performance_time();
     this.csound.readScore(score_text);
-    // As close as possible to when Csound should start rendering the next cycle.
+    // As close as possible to when Csound should start rendering the _next_ cycle.
     this.current_cycle_duration = this.score.getDurationFromZero();
     this.expected_performance_time = this.prior_performance_time + this.current_cycle_duration;
-    cycler_log("[Cycle.render] prior rendering time: %9.4f current rendering time: %9.4f next rendering time: %9.4f", this.prior_performance_time, this.current_performance_time, this.expected_performance_time);
-    cycler_log("[Cycle.render] prior cycle duration: %9.4f current cycle duration: %9.4f", this.prior_cycle_duration, this.current_cycle_duration);
-    console.log(score_text);
+    cycler_log("[Cycle.render] prior cycle duration: %12.6f current cycle duration: %12.6f", this.prior_cycle_duration, this.current_cycle_duration);
+    cycler_log("[Cycle.render] prior rendering time: %12.6f current rendering time: %12.6f next rendering time: %12.6f", this.prior_performance_time, this.current_performance_time, this.expected_performance_time);
+    cycler_log("[Cycle.render] score size:          %6d", this.score.size());
   }
   /**
     * Generates, transforms, and renders Events, until stopped.
     */
-  async cycle() {
+  cycle() {
     // Find the amount of time spent computing this traversal.
+    this.begin_compute_time = this.performance_time();
+    if (this.cycles !== -1) {
+      if (this.cycle_count >= this.cycles) {
+        this.stop();
+        return;
+      }
+    }
     if (this.repeat === false) {
+      this.stop();
       return;
     }
-    this.begin_compute_time = this.performance_time();
-    this.expected_cycle_onset = this.prior_cycle_onset + this.prior_cycle_duration;
-    this.prior_cycle_onset = this.actual_cycle_onset;
-    this.actual_cycle_onset = this.begin_compute_time;
-    await this.score.clear();
-    // Reset the cycle time to 0, and traverse the graph one time.
-    await this.traverse(0, this.cycle_count, this.score);
-    this.render();
     this.cycle_count = this.cycle_count + 1;
-    cycler_log("[Cycle.cycle] cycle count: %9d", this.cycle_count);
+    // A Cycle is always the root of its graph with respect to actual 
+    // scheduling and rendering, starting at cycle 1, cycle time 0, and 
+    // depth 1.
+    this.score = this.traverse(0, 1);
+    this.render();
     // Correct for timer drift, which is measured every cycle.
-    const timer_drift = this.actual_cycle_onset - this.expected_cycle_onset;
+    let timer_drift;
+    if (this.cycle_count > 1) {
+      timer_drift = this.expected_performance_time - this.current_performance_time;
+    } else {
+      timer_drift = 0;
+    }
+    let timer_interval = this.current_cycle_duration;
     // The correction applies the drift in reverse.
-    let timer_interval = Math.max(0, this.current_cycle_duration - timer_drift);
+    //timer_interval = Math.max(0, timer_interval - timer_drift);
     // Also correct for compute time.
     this.end_compute_time = this.performance_time();
     const compute_duration = this.end_compute_time - this.begin_compute_time;
-    timer_interval = Math.max(0, timer_interval - compute_duration);
-    cycler_log("[Cycle.cycle] cycle duration: %9.4f compute time: %9.4f timer drift: %9.4f timer interval:%9.4f", this.current_cycle_duration, compute_duration, timer_drift, timer_interval);
+    /// timer_interval = Math.max(0, timer_interval - compute_duration);
+    cycler_log("[Cycle.cycle] count: %5d cycle duration: %12.6f compute time: %12.6f timer drift: %12.6f timer interval:%9.4f", this.cycle_count, this.current_cycle_duration, compute_duration, timer_drift, timer_interval);
     let that = this;
     let closure = function () {
       that.cycle();
     };      
     // Repeat the cycle...
-    setTimeout(closure, timer_interval * 1000.);  
+    setTimeout(closure, 1000. * timer_interval);  
   };    
 }
 
@@ -311,14 +322,15 @@ class Player {
   constructor(csound) {
     this.csound = csound;
     // The default root Node is an instance of Cycle; the composer may change that.
+    // By default, this Cycle loops indefinitely.
     this.root = new Cycle();
   };
   start() {
-    cycler_log("[Player] starting...");
+    cycler_log("[Player.start]");
     this.root.start(this.csound);
   }
   stop() {
-    cycler_log("[Player] stopping...");
+    cycler_log("[Player.stop]");
     this.root.stop();
   }
 };
