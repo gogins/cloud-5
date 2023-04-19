@@ -125,12 +125,12 @@ October 2022</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This piece serves as a unit test for cycler.js, specifically for the Nest 
-node.
+<p>This piece serves as a unit test for cycler.js, specifically for the 
+Sequence node in "nesting" mode.
 
 <p>The chromatic scale should repeat 2 times without audible gaps or overlaps
-between repetition. The measured time for each repeat should be 8 seconds. 
-The measured time for one cycle should be 16 seconds.
+between repetition. The measured time for each repeat should be 16 seconds.
+The measured time for one cycle should be 32 seconds.
 
 <p>Please report any problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
@@ -2165,9 +2165,9 @@ f 0 1000000000
           constructor() {
             super();
           };
-          generate() {
+          generate(score) {
             let tyme = 0;
-            let duration = 1;
+            let duration = .5;
             let status = 144;
             let instrument = 1;
             let key = 60;
@@ -2175,7 +2175,8 @@ f 0 1000000000
             let phase = 0;
             let pan = .5;
             for (let i = 0; i < 16; ++i) {
-              this.local_score.add((tyme + i), duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
+              score.add(tyme, duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
+              tyme = tyme + duration;
             }
           }
         };
@@ -2184,41 +2185,23 @@ f 0 1000000000
           constructor() {
             super();
           };
-          generate() {
+          generate(score) {
             let tyme = 0;
-            let duration = 1;
+            let duration = .25;
             let status = 144;
-            let instrument = 1;
+            let instrument = 6;
             let key = 64;
             let velocity = 70;
             let phase = 0;
             let pan = .5;
             for (let i = 0; i < 16; ++i) {
-              this.local_score.add((tyme + i), duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
+              score.add(tyme, duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
+              tyme = tyme + duration;
             }
           }
         };
 
-        class CyclerTest extends Player {
-          constructor(csound) {
-            super(csound);
-            this.repeats = 3;
-            this.repeat = 0;
-          }
-          start() {
-            this.repeat = 0;
-            super.start();
-          }
-          cycle() {
-            this.repeat = this.repeat + 1;
-            if (this.repeat > this.repeats) {
-              this.keep_running = false;
-            }
-            super.cycle();
-          }
-        }
-      
-        (async function() {
+         (async function() {
             CsoundAC = await createCsoundAC(); 
             strange_attractor = new CsoundAC.StrangeAttractor();
             conversions = new CsoundAC.Conversions();
@@ -2271,12 +2254,13 @@ f 0 1000000000
                             console.log("csound: " + csound);
                                             
                             // Define the actual composition.
-                            player = new CyclerTest(csound);
-                            let nest = new Nest();
-                            player.add_child(nest);
-                            nest.add_child(new Generator);
-                            nest.add_child(new Generator2);
-                            var test = nest.children[1];
+                            player = new Player(csound);
+                            player.root.cycles = 3;
+                            let sequence = new Sequence();
+                            sequence.time_duration = 9;
+                            player.root.add_child(sequence);
+                            sequence.add_child(new Generator);
+                            sequence.add_child(new Generator2);
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });
