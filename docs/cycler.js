@@ -159,7 +159,6 @@ class Node {
         this.score.append_event(child_event);
       }
       cycler_log("%s[Node.traverse] child[%4d].score:\n%s", '  '.repeat(depth), i, child.score.toString());
-      return this.score;
     };
     // Optionally, generate own Events and push on this Score.
     this.generate(this.score);
@@ -179,11 +178,19 @@ class Sequence extends Node {
     super();
   }
   /**
-    * Advances the cycle time by the duration of the Score.
+    * Advances the cycle time by the duration of the Score, 
+    * and advances the times in the Score to match.
     */
-  update_cycle_time(cycle_time, child_score) {
-    cycle_time += super.update_cycle_time(cycle_time, score);
-    return cycle_time;
+  update_cycle_time(current_cycle_time, child_score) {
+    const new_cycle_time = current_cycle_time + child_score.getDurationFromZero();
+    for (let i = 0, n = child_score.size(); i < n; ++i) {
+      let event = child_score.get(i);
+      let current_time = event.getTime();
+      let new_time = current_cycle_time + current_time;
+      event.setTime(new_time);
+      child_score.set(i, event);
+    }
+    return new_cycle_time;
   }
 };
 /**
