@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cycler Tests -- Simple Nest</title>
+<title>Cycler Tests -- Simple Stack</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
 <script src="jquery-3.6.1.js"></script>
@@ -126,9 +126,13 @@ October 2022</h3>
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
 <p>This piece serves as a unit test for cycler.js, specifically for the 
-Sequence node in "nesting" mode.
+Sequence node.
 
-t any problems you have playing this piece, or any ideas for 
+<p>The chromatic scale should repeat 2 times without audible gaps or overlaps
+between repetition. The measured time for each repeat should be 16 seconds.
+The measured time for one cycle should be 32 seconds.
+
+<p>Please report any problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
 cloud-music issues</a>.
 
@@ -2252,11 +2256,11 @@ f 0 1000000000
                             // Define the actual composition.
                             player = new Player(csound);
                             player.root.cycles = 3;
-                            let sequence = new Sequence();
-                            sequence.time_duration = 9;
-                            player.root.add_child(sequence);
-                            sequence.add_child(new Generator);
-                            sequence.add_child(new Generator2);
+                            let stack = new Stack();
+                            player.root.add_child(stack);
+                            stack.add_child(new Generator);
+                            stack.add_child(new Generator2);
+                            
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });

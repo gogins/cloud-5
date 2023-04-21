@@ -91,7 +91,8 @@ class Node {
       * zero, the Score is not rescaled, and the absolute value of this 
       * duration is used as the basis of the cycle time, i.e. the Score is 
       * performed at the beginning of the cycle, but otherwise its Events are 
-      * independent of the cycle.
+      * independent of the cycle. The default is to base the cycle time on 
+      * the duration of the Score of this.
       */
     this.time_duration = 0;
     /**
@@ -103,10 +104,10 @@ class Node {
     /**
       * If the extension is not zero, the value of the extension in seconds is 
       * added to the duration of the cycle without changing times of Events, 
-      * this extending the performance of the Score with silence. The default 
+      * thus extending the performance of the Score with silence. The default 
       * is no extension.
       */
-    this.time_extend = 0;
+    this.time_extension = 0;
   };
   /**
     * Adds the child Node to the list of immediate children of this.
@@ -148,8 +149,7 @@ class Node {
   };
   /**
     * Optionally rescales and/or offsets the Score times. Returns the duration 
-    * in seconds of the resulting score. This method takes into account the 
-    * delay, but not the cycle time.
+    * in seconds of the resulting score. 
     */
   rescale_score(score) {
     cycler_log("[Node.rescale_score]...");
@@ -161,21 +161,12 @@ class Node {
       rescaled_duration = original_duration * ratio;
       score.setDurationFromZero(rescaled_duration);
     } 
-    if (this.time_delay !== 0) {
-      for (let i = 0, n = score.size(); i < n; ++i) {
-        let event = score.get(i);
-        let current_time = event.getTime();
-        let new_time = this.time_delay + current_time;
-        event.setTime(new_time);
-      }
-    }
     rescaled_duration = score.getDurationFromZero();
     cycler_log("[Node.rescale_score] original duration: %12.6f rescaled duration: %12.6f", original_duration, rescaled_duration);
     return rescaled_duration;
   }
   /**
-    * Optionally updates the cycle time from the child Score. The default 
-    * implementation simply resets the cycle time. 
+    * Updates the cycle time. The default implementiaton resets the cycle time.
     */
   update_cycle_time(cycle_time, child_score) {
     return 0;
@@ -196,8 +187,12 @@ class Node {
       let child_score = child.traverse(cycle_time, depth + 1);
       // Optionally, rescale the child Score.
       child.rescale_score(child_score);
+      // Optionally, delay generated Events.
+      cycle_time = cycle_time + child.time_delay;
       // Optionally leave unchanged, advance, or reset the cycle time.
       cycle_time = this.update_cycle_time(cycle_time, child_score);
+      // Optionally, pad the cycle with silence.
+      cycle_time = cycle_time + child.time_extension;
       // Transfer all Events from the child Score to this Score.
       for (let i = 0, n = child_score.size(); i < n; ++i) {
         let child_event = child_score.get(i);
@@ -226,12 +221,9 @@ class Sequence extends Node {
     * times in the Score to match. The interval of advancement can optionally 
     * be either the existing duration of the child Score, or the duration of 
     * the child Score multiplied by a scale factor, or the duration of the 
-    * child Score rescaled to fit a predetermined duration. The interval of 
-    * advancement may additionally be prefixed (positively) or postfixed 
-    * (positively or negatively) by specific intervals. 
+    * child Score rescaled to fit a predetermined duration. 
     */
   update_cycle_time(current_cycle_time, child_score) {
-    const new_cycle_time = current_cycle_time + child_score.getDurationFromZero();
     for (let i = 0, n = child_score.size(); i < n; ++i) {
       let event = child_score.get(i);
       let current_time = event.getTime();
@@ -239,6 +231,7 @@ class Sequence extends Node {
       event.setTime(new_time);
       child_score.set(i, event);
     }
+    const new_cycle_time = current_cycle_time + child_score.getDurationFromZero();
     return new_cycle_time;
   }
 };
