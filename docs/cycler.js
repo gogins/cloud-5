@@ -166,10 +166,11 @@ class Node {
     return rescaled_duration;
   }
   /**
-    * Updates the cycle time. The default implementiaton resets the cycle time.
+    * Updates the cycle time. The default default implementation simply 
+    * propagates the existing cycle time.
     */
   update_cycle_time(cycle_time, child_score) {
-    return 0;
+    return cycle_time;
   }
   /**
     * Recursively calls traverse, generate, and transform, advancing the cycle  
