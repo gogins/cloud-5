@@ -2171,12 +2171,11 @@ f 0 1000000000
             let velocity = 70;
             let phase = 0;
             let pan = .5;
-            for (let duration = 1; duration > (1/32); duration /= 2) {
-              for (let i = 0; i < 16; ++i) {
-                score.add(tyme, duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
-                tyme += duration;
-              }
+            for (let i = 0; i < 16; ++i) {
+              score.add(tyme, duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
+              tyme += duration;
             }
+            cycler_log("[Generator.generate] generated %d notes.", score.size());
           }
         };
         
@@ -2237,11 +2236,11 @@ f 0 1000000000
                             player = new Player(csound);
                             player.root.cycles = 3;
                             let sequence = new Sequence();
-                            player.root.add(sequence);
+                            player.root.add_child(sequence);
                             let generator = new Generator();
-                            generator.time_delay = 5;
-                            generator.time_extension = 5;
-                            generator.add_child(generator);
+                            generator.time_delay = 3;
+                            generator.time_extension = 7;
+                            sequence.add_child(generator);
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');

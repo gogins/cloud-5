@@ -2235,7 +2235,8 @@ f 0 1000000000
                             // Define the actual composition.
                             player = new Player(csound);
                             player.root.cycles = 3;
-                            player.root.add_child(new Generator());
+                            let generator = new Generator();
+                            player.root.add_child(generator);
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');
