@@ -2235,7 +2235,7 @@ f 0 1000000000
                             
                             player = new Player(csound);
                             player.root.cycles = 3;
-                            let sequence = new Sequence();
+                            let sequence = new Node();
                             player.root.add_child(sequence);
                             let generator = new Generator();
                             generator.time_delay = 3;
