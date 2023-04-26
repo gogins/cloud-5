@@ -30,7 +30,8 @@
   * may be set in several different ways. A base Node performs its immediate 
   * child Nodes in sequence, in order of insertion. A Stack performs its 
   * immediate child Nodes simultaneously. A Cycle repeats its child Nodes (of 
-  * any kind) either indefinitely, or for a fixed number of times. Only Cycles 
+  * any kind) either indefinitely, or for a fixed number of times. There is 
+  * also a Rest node that adds a silent Node to a sequence. Only Cycles 
   * actually schedule and render Events. Therefore, every composition must 
   * include at least one Cycle; but a composition may include multiple Cycles, 
   * which might repeat at different intervals.
@@ -44,7 +45,7 @@
   *
   * As a Cycle repeats, it resets its cycle time to 0 and recursively 
   * generates and/or transforms Events from the bottom of its graph of Nodes 
-  * up to the Cycle root. Each Node has a Score into which Events are 
+  * up to the root of the graph. Each Node has a Score into which Events are 
   * generated and within which Events are transformed. The Scores of child 
   * Nodes are appended to the Score of their parent node, and so on, 
   * recursively. The Node durations propagate from the bottom of the 
@@ -57,9 +58,7 @@
   * duration. The duration of the child Node may be left independent of the 
   * parent Node, or the duration of the parent may be expanded to match the 
   * duration of the child, or the duration of the child may be squeezed to 
-  * match the duration of the parent. Also, the duration of any Node's Score 
-  * may be padded with a silent delay at the beginning of the interval, and/or 
-  * a silent extension of time at the end of the interval.
+  * match the duration of the parent. 
   */
   
 var AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -99,22 +98,7 @@ class Node {
       */
     this.time_score_duration = 0;
     /**
-      * Defines the basic duration of this Node, usually but not always 
-      * the duration from zero of its Score.
-      */
-    this.time_basic_duration = 0;
-    /**
-      * The number of seconds that the onset of the performance is delayed.
-      */
-    this.time_delay = 0;
-    /**
-      * The number of seconds of silence following the performance before the 
-      * onset of the next Node or cycle.
-      */
-    this.time_extension = 0;
-    /**
-      * The total duration of this Node's performance:
-      * time_node_duration = time_delay + time_basic_duration + time_extension.
+      * The total duration of this Node's performance.
       */
     this.time_node_duration = 0;
     /**
@@ -124,37 +108,32 @@ class Node {
       */
     this.cycle_time = 0;
     this.schedule_fixed = false;
-    this.schedule_from_score = true;
+    this.schedule_rescale_segment = true;
     this.schedule_rescale_score = false;
   }
   /**
-    * Disregard the duration of the Score, and schedule at the interval:
-    * time_node_duration = time_delay + time_basic_duration + time_extension. 
+    * Disregard the duration of the Score.
     */
   set_schedule_fixed() {
     this.schedule_fixed = true;
-    this.schedule_from_score = false;
+    this.schedule_rescale_segment = false;
     this.schedule_rescale_score = false;
   }
 /**
   * Assign the current duration of the Score from zero to 
-  * time_basic_duration, and schedule at the interval:
-  * time_node_duration = time_delay + time_basic_duration + time_extension.
-  * This is the default.
+  * time_node_duration.
   */
   set_schedule_from_score() {
     this.schedule_fixed = false;
-    this.schedule_from_score = true;
+    this.schedule_rescale_segment = true;
     this.schedule_rescale_score = false;
   }
   /**
-    * Rescale the score to fit within the interval time_score_duration, 
-    * assign that value to time_basic_duration, and schedule at the interval:
-    * time_node_duration = time_delay + time_basic_duration + time_extension.
+    * Rescale the Score to match time_node_duration.
     */
   set_schedule_rescale_score() {
     this.schedule_fixed = false;
-    this.schedule_from_score = false;
+    this.schedule_rescale_segment = false;
     this.schedule_rescale_score = true;
   }
   /**
@@ -185,7 +164,9 @@ class Node {
     * Optionally generates Events and pushes them onto the Score. The 
     * times of the Events are assumed to start at 0 and their durations are 
     * set by code, but the Score times may later be rescaled and/or delayed.
-    * The default implementation does nothing.
+    * The default implementation does nothing. If the score is perchance 
+    * read from a file or generated just once, keep the original score in 
+    * a separate Score and copy it into the Score argument on every call.
     */
   generate(score) {
   };
@@ -196,29 +177,27 @@ class Node {
   transform(score) {
   };
   /**
-    * Updates the node duration and optionally rescales the Score times.
+    * Rescales the segment times to match the Score times.
     */
   rescale_segment(score, depth) {
     cycler_log("%s[Node.rescale_segment]...", '  '.repeat(depth));
-    let original_duration = score.getDurationFromZero();
     if (this.time_scale !== 1) {
+      let original_duration = this.score.getDurationFromZero();
       let rescaled_duration = original_duration * this.time_scale;
       score.setDurationFromZero(rescaled_duration);
-      cycler_log("%s[Node.rescale_segment] original duration: %12.6f rescaled duration: %12.6f", '  '.repeat(depth), original_duration, rescaled_duration);
+      cycler_log("%s[Node.rescale_segment] rescaled from original duration: %12.6f to: %12.6f", '  '.repeat(depth), original_duration, rescaled_duration);
     } 
-    if (this.schedule_fixed === true) {
-      // Nothing is rescaled.
-    } else if (this.schedule_from_score === true) {
-      // The segment might be rescaled.
-      this.time_score_duration = score.getDurationFromZero();
-      this.time_basic_duration = this.time_score_duration;
-    } else if (this.schedule_rescale_score === true) {
-      // The Score might be rescaled.
-      score.setTimeFromZero(this.time_score_duration);
-      this.time_basic_duration = this.time_score_duration;
-    }
-    this.time_node_duration = this.time_delay + this.time_basic_duration + this.time_extension;
-    cycler_log("%s[Node.rescale_segment] node duration: %12.6f delay: %12.6f basic: %12.6f extension: %12.6f", '  '.repeat(depth), this.time_node_duration, this.time_delay, this.time_basic_duration, this.time_extension);
+    this.time_node_duration = this.score.getDurationFromZero();
+    cycler_log("%s[Node.rescale_segment] node duration: %12.6f", '  '.repeat(depth), this.time_node_duration);
+  }
+  /**
+    * Rescales the Score times to match the segment times.
+    */
+  rescale_score(score, depth) {
+    cycler_log("%s[Node.rescale_score]...", '  '.repeat(depth));
+    this.time_score_duration = this.time_segment_duration;
+    score.setDurationFromZero(this.time_score_duration);
+    cycler_log("%s[Node.rescale_score] node duration: %12.6f", '  '.repeat(depth), this.time_node_duration);
   }
   /**
     * Updates both the cycle time and the node duration of this. The 
@@ -229,16 +208,16 @@ class Node {
     this.cycle_time = this.cycle_time + child.time_node_duration;
   }
   /**
-    * Schedules the child Score, taking into account the current cycle time 
-    * and any time delay.
+    * Schedules the child Score, taking into account the current cycle time,
+    * and adds it to the Score of this.
     */
   schedule_child(child) {
     for (let i = 0, n = child.score.size(); i < n; ++i) {
-      let event = child.score.get(i);
-      let event_time = event.getTime();
-      let new_event_time = child.cycle_time + child.time_delay + event_time;
-      event.setTime(new_event_time);
-      child.score.set(i, event);
+      let child_event = child.score.get(i);
+      let child_event_time = child_event.getTime();
+      let new_child_event_time = this.cycle_time + child_event_time;
+      child_event.setTime(new_child_event_time);
+      this.score.append_event(child_event);
     }
   }
   /**
@@ -255,16 +234,16 @@ class Node {
       // Accumulate Events from child Nodes.
       let child = this.children[i];
       child.traverse(cycle_time, depth + 1);
-      // Optionally, rescale the child Score.
-      child.rescale_segment(child.score, depth);
-      // Schedule the child Score.
-      this.schedule_child(child);
-       // Transfer all Events from the child Score to this Score.
-      for (let i = 0, n = child.score.size(); i < n; ++i) {
-        let child_event = child.score.get(i);
-        this.score.append_event(child_event);
+      if (child.schedule_rescale_segment === true) {
+        child.rescale_segment(child.score, depth);
+      } else if (child.schedule.rescale_score === true) {
+        child.rescale_score(child.score, depth);
+      } else if (child.schedule_fixed === true) {
+        // Do not rescale anything.
       }
-      // Depending on the type of _this_ Node, reset or advance the cycle times
+      // Schedule the child Score.
+      this.schedule_child(child, depth);
+       // Depending on the type of _this_ Node, reset or advance the cycle times
       // from the _child_ times.
       this.update_cycle_time(child);
       cycler_log("%s[Node.traverse] child[%4d].score:\n%s", '  '.repeat(depth), i, child.score.toString());
@@ -274,7 +253,7 @@ class Node {
     // Optionally, transform all Events in this Score.
     this.transform(this.score);
     cycler_log("%s[Node.traverse] this.score:\n%s", '  '.repeat(depth), this.score.toString());
-    cycler_log("%s[Node.traverse] cycle interval: %12.6f delay: %12.6f basic: %12.6f extension: %12.6f", '  '.repeat(depth), this.time_node_duration, this.time_delay, this.time_basic_duration, this.time_extension);
+    cycler_log("%s[Node.traverse] cycle interval: %12.6f", '  '.repeat(depth), this.time_node_duration);
   };
 };
 
@@ -295,6 +274,29 @@ class Stack extends Node {
   update_cycle_time(child) {
     this.time_node_duration = child.time_node_duration;
     this.cycle_time = 0;
+  }
+};
+
+/**
+  * Performs an interval of silence within a cycle of Nodes.
+  */
+class Rest extends Node {
+   constructor(duration_) {
+    super();
+    if (typeof duration_ !== 'undefined') {
+      this.duration = duration_;
+    } else {
+      this.duration = 1;
+    }
+    // The rest is actually but silently performed by an instrument that has 
+    // been defined in the orchestra, so that the rest will be rescaled along 
+    // with all other times. If using instrument 1 causes problems, the 
+    // composer can assign a different number, or even add a dummy "rest" 
+    // instrument to the orchestra.
+    this.instrument = 1;
+  }
+  generate(score) {
+    score.add(this.duration, 0, 144, this.instrument, 60, 1, 0, 0, 0, 0, 0);
   }
 };
 
@@ -359,6 +361,7 @@ class Cycle extends Node {
     cycler_log("[Cycle.render] prior cycle duration: %12.6f current cycle duration: %12.6f", this.prior_cycle_duration, this.time_node_duration);
     cycler_log("[Cycle.render] prior rendering time: %12.6f current rendering time: %12.6f next rendering time: %12.6f", this.prior_performance_time, this.current_performance_time, this.expected_performance_time);
     cycler_log("[Cycle.render] score size:          %6d", this.score.size());
+    cycler_log("[Cycle.render] score:\n%s", this.score.toString());
   }
   /**
     * Generates, transforms, and renders Events, until stopped.

@@ -2237,10 +2237,9 @@ f 0 1000000000
                             player.root.cycles = 3;
                             let sequence = new Node();
                             player.root.add_child(sequence);
-                            let generator = new Generator();
-                            generator.time_delay = 3;
-                            generator.time_extension = 7;
-                            sequence.add_child(generator);
+                            sequence.add_child(new Rest(3));
+                            sequence.add_child(new Generator());
+                            sequence.add_child(new Rest(7));
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');

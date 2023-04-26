@@ -2183,7 +2183,7 @@ f 0 1000000000
           };
           generate(score) {
             let tyme = 0;
-            let duration = .25;
+            let duration = .5;
             let status = 144;
             let instrument = 6;
             let key = 64;
@@ -2252,11 +2252,13 @@ f 0 1000000000
                             // Define the actual composition.
                             player = new Player(csound);
                             player.root.cycles = 3;
-                            let sequence = new Sequence();
+                            let sequence = new Node();
+                            sequence.set_schedule_rescale_score();
                             sequence.time_duration = 9;
                             player.root.add_child(sequence);
                             sequence.add_child(new Generator);
                             sequence.add_child(new Generator2);
+                            
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });
