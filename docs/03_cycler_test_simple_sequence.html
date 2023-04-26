@@ -2252,7 +2252,7 @@ f 0 1000000000
                             // Define the actual composition.
                             player = new Player(csound);
                             player.root.cycles = 3;
-                            let sequence = new Sequence();
+                            let sequence = new Node();
                             player.root.add_child(sequence);
                             sequence.add_child(new Generator);
                             sequence.add_child(new Generator2);

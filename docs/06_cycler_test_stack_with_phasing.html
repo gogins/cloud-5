@@ -2157,7 +2157,7 @@ f 0 1000000000
             }
         };
         
-        class Generator extends Cycle {
+        class Generator extends Node {
           constructor() {
             super();
           };
@@ -2177,7 +2177,7 @@ f 0 1000000000
           }
         };
         
-        class Generator2 extends Cycle {
+        class Generator2 extends Node {
           constructor() {
             super();
           };
@@ -2253,8 +2253,14 @@ f 0 1000000000
                             player = new Player(csound);
                             // Replace Cycle with Stack to allow phasing Cycles.
                             player.root = new Stack();
-                            player.root.add_child(new Generator);
-                            player.root.add_child(new Generator2);
+                            let cycle_a = new Cycle();
+                            player.root.add_child(cycle_a);
+                            let cycle_b = new Cycle();
+                            player.root.add_child(cycle_b);
+                            let generator_a = new Generator();
+                            cycle_a.add_child(generator_a);
+                            let generator_b = new Generator2();
+                            cycle_b.add_child(generator_b);
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');

@@ -195,7 +195,7 @@ class Node {
     */
   rescale_score(score, depth) {
     cycler_log("%s[Node.rescale_score]...", '  '.repeat(depth));
-    this.time_score_duration = this.time_segment_duration;
+    this.time_score_duration = this.time_node_duration;
     score.setDurationFromZero(this.time_score_duration);
     cycler_log("%s[Node.rescale_score] node duration: %12.6f", '  '.repeat(depth), this.time_node_duration);
   }
@@ -236,14 +236,14 @@ class Node {
       child.traverse(cycle_time, depth + 1);
       if (child.schedule_rescale_segment === true) {
         child.rescale_segment(child.score, depth);
-      } else if (child.schedule.rescale_score === true) {
+      } else if (child.schedule_rescale_score === true) {
         child.rescale_score(child.score, depth);
       } else if (child.schedule_fixed === true) {
         // Do not rescale anything.
       }
       // Schedule the child Score.
       this.schedule_child(child, depth);
-       // Depending on the type of _this_ Node, reset or advance the cycle times
+      // Depending on the type of _this_ Node, reset or advance the cycle times
       // from the _child_ times.
       this.update_cycle_time(child);
       cycler_log("%s[Node.traverse] child[%4d].score:\n%s", '  '.repeat(depth), i, child.score.toString());
