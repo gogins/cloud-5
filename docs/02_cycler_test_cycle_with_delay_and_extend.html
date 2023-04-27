@@ -2125,7 +2125,7 @@ f 0 1000000000
     
     <script>
         var CsoundAC = null;
-        var player = null;
+        var cycler = null;
         var strange_attractor = null;
         var csound = null;
         var score = null;
@@ -2233,10 +2233,10 @@ f 0 1000000000
                                             
                             // Define the actual composition.
                             
-                            player = new Player(csound);
-                            player.root.cycles = 3;
+                            cycler = new Cycler(csound);
+                            cycler.root.cycles = 3;
                             let sequence = new Node();
-                            player.root.add_child(sequence);
+                            cycler.root.add_child(sequence);
                             sequence.add_child(new Rest(3));
                             sequence.add_child(new Generator());
                             sequence.add_child(new Rest(7));
@@ -2264,10 +2264,10 @@ f 0 1000000000
                     }
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
-                    player.start();
+                    cycler.start();
                     $("#menu_item_play").html("Stop");
                 } else {
-                    player.stop();
+                    cycler.stop();
                     await csound.Stop();
                     await csound.Cleanup();
                     csound.Reset();

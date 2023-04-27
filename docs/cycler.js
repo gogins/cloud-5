@@ -24,9 +24,9 @@
   * within Csound instruments, or sent to Csound from JavaScript via 
   * `Csound.setChannelValue`.)
   *
-  * Another difference is that Tidal Cycles resolves every note to its own 
-  * leaf node in the rendering graph; whereas here, any node, even leaf nodes, 
-  * may contain processes or scores that produce multiple notes.
+  * Another difference is that whereas Tidal Cycles resolves every note to its 
+  * own leaf node in the rendering graph, here any node, even leaf nodes, may 
+  * contain processes or scores that produce multiple notes.
   *
   * The basic idea is that a composition is a directed acyclic graph of Nodes:
   * the base Node class, a Stack, a Rest, or a Cycle. Any Node may optionally 
@@ -38,7 +38,7 @@
   * times. There is also a Rest node that adds a silent Node to a sequence. 
   * Only Cycles actually schedule and render Events. Therefore, every 
   * composition must include at least one Cycle; but a composition may include 
-  * multiple Cycles, which can repeat at different intervals.
+  * multiple Cycles, which can repeat at differing intervals.
   *
   * Compositions are by no means limited to unvarying repetitions of one 
   * cycle. Not only may multiple cycles run at different intervals to produce 
@@ -112,7 +112,7 @@ class Node {
       */
     this.cycle_time = 0;
     this.schedule_fixed = false;
-    this.schedule_rescale_segment = true;
+    this.schedule_rescale_node = true;
     this.schedule_rescale_score = false;
   }
   /**
@@ -123,16 +123,16 @@ class Node {
     */
   set_schedule_fixed() {
     this.schedule_fixed = true;
-    this.schedule_rescale_segment = false;
+    this.schedule_rescale_node = false;
     this.schedule_rescale_score = false;
   }
 /**
   * Assign the current duration of the Score from zero to 
   * time_node_duration.
   */
-  set_schedule_from_score() {
+  set_schedule_rescale_node() {
     this.schedule_fixed = false;
-    this.schedule_rescale_segment = true;
+    this.schedule_rescale_node = true;
     this.schedule_rescale_score = false;
   }
   /**
@@ -140,7 +140,7 @@ class Node {
     */
   set_schedule_rescale_score() {
     this.schedule_fixed = false;
-    this.schedule_rescale_segment = false;
+    this.schedule_rescale_node = false;
     this.schedule_rescale_score = true;
   }
   /**
@@ -184,34 +184,34 @@ class Node {
   transform(score) {
   };
   /**
-    * Rescales the segment times to match the Score times.
+    * Rescales the node times to match the Score times.
     */
-  rescale_segment(score, depth) {
-    cycler_log("%s[Node.rescale_segment]...", '  '.repeat(depth));
+  rescale_node(score, depth) {
+    cycler_log("[Node.rescale_node]...",);
     if (this.time_scale !== 1) {
       let original_duration = this.score.getDurationFromZero();
       let rescaled_duration = original_duration * this.time_scale;
       score.setDurationFromZero(rescaled_duration);
-      cycler_log("%s[Node.rescale_segment] rescaled from original duration: %12.6f to: %12.6f", '  '.repeat(depth), original_duration, rescaled_duration);
+      cycler_log("[Node.rescale_node] rescaled from original duration: %12.6f to: %12.6f",, original_duration, rescaled_duration);
     } 
     this.time_node_duration = this.score.getDurationFromZero();
-    cycler_log("%s[Node.rescale_segment] node duration: %12.6f", '  '.repeat(depth), this.time_node_duration);
+    cycler_log("[Node.rescale_node] node duration: %12.6f",, this.time_node_duration);
   }
   /**
-    * Rescales the Score times to match the segment times.
+    * Rescales the Score times to match the node times.
     */
   rescale_score(score, depth) {
-    cycler_log("%s[Node.rescale_score]...", '  '.repeat(depth));
+    cycler_log("[Node.rescale_score]...",);
     this.time_score_duration = this.time_node_duration;
     score.setDurationFromZero(this.time_score_duration);
-    cycler_log("%s[Node.rescale_score] node duration: %12.6f", '  '.repeat(depth), this.time_node_duration);
+    cycler_log("[Node.rescale_score] node duration: %12.6f",, this.time_node_duration);
   }
   /**
     * Updates both the cycle time and the node duration of this. The 
     * default schedules child Nodes in sequence.
     */
   update_cycle_time(child) {
-    this.time_node_duration = this.time_node_duration + child.time_node_duration;
+    this.time_children_duration = this.time_children_duration + child.time_node_duration;
     this.cycle_time = this.cycle_time + child.time_node_duration;
   }
   /**
@@ -233,18 +233,18 @@ class Node {
     * cycle time always starts at 0. 
     */
   traverse(cycle_time, depth) {
-    cycler_log("%s[Node.traverse] cycle_start: %12.6f depth: %5d", '  '.repeat(depth), cycle_time, depth);
+    cycler_log("[Node.traverse] cycle_start: %12.6f depth: %5d",, cycle_time, depth);
     this.score.clear();
     this.cycle_time = cycle_time;
     if (this.schedule_fixed === false) {
-      this.time_node_duration = 0;
+      this.time_children_duration = 0;
     }
     for (let i = 0, n = this.children.length; i < n; ++i) {
       // Accumulate Events from child Nodes.
       let child = this.children[i];
       child.traverse(cycle_time, depth + 1);
-      if (child.schedule_rescale_segment === true) {
-        child.rescale_segment(child.score, depth);
+      if (child.schedule_rescale_node === true) {
+        child.rescale_node(child.score, depth);
       } else if (child.schedule_rescale_score === true) {
         child.rescale_score(child.score, depth);
       } else if (child.schedule_fixed === true) {
@@ -255,14 +255,18 @@ class Node {
       // Depending on the type of _this_ Node, reset or advance the cycle times
       // from the _child_ times.
       this.update_cycle_time(child);
-      /// cycler_log("%s[Node.traverse] child[%4d].score:\n%s", '  '.repeat(depth), i, child.score.toString());
     };
     // Optionally, generate own Events and push them on this Score.
     this.generate(this.score);
     // Optionally, transform all Events in this Score.
     this.transform(this.score);
-    cycler_log("%s[Node.traverse] this.score:\n%s", '  '.repeat(depth), this.score.toString());
-    cycler_log("%s[Node.traverse] cycle interval: %12.6f", '  '.repeat(depth), this.time_node_duration);
+    if (this.schedule_rescale_score === true) {
+      this.rescale_score(this.score, depth);
+    } else if (this.schedule_rescale_node === true) {
+      this.time_node_duration = this.time_children_duration;
+    }
+    cycler_log("[Node.traverse] this.score:\n%s",, this.score.toString());
+    cycler_log("[Node.traverse] cycle interval: %12.6f",, this.time_node_duration);
   };
 };
 
@@ -292,10 +296,10 @@ class Stack extends Node {
 class Rest extends Node {
    constructor(duration) {
     super();
-    if (typeof duration_ !== 'undefined') {
-      this.time_node_duration = duration;
+    if (typeof duration !== 'undefined') {
+      this.duration = duration;
     } else {
-      this.time_node_duration = 1;
+      this.duration = 1;
     }
     // The rest is actually but silently performed by an instrument that has 
     // been defined in the orchestra, so that the rest will be rescaled along 

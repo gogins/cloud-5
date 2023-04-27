@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cycler Tests -- Simple Nest</title>
+<title>Cycler Tests -- Logistic</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
 <script src="jquery-3.6.1.js"></script>
@@ -29,6 +29,10 @@
 </style>
 </head></head>
 <body id="body" class="w3-medium w3-text-sand" style="height:100vh;">
+    <!------------------------------------------------------------------------
+    This uses the infrastructure for actual pieces to implement a unit test 
+    of simple looping in cycler.js.
+    ------------------------------------------------------------------------->
     <div class="w3-bar " style="position:fixed;background:transparent;">    
         <ul class = "menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
@@ -119,16 +123,16 @@
     <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
     <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
-<h1>Unit Tests for cycler.js -- Simple Sequence</h1>
+<h1>Unit Tests for cycler.js -- Simple Loop</h1>
 <h3>Michael Gogins<br>
 October 2022</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This piece serves as a unit test for cycler.js, specifically for the 
-Sequence node in "nesting" mode.
+<p>This piece serves as a unit test for cycler.js, specifically for a simple 
+score generated in a Cycle node.
 
-t any problems you have playing this piece, or any ideas for 
+ problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
 cloud-music issues</a>.
 
@@ -2157,47 +2161,40 @@ f 0 1000000000
             }
         };
         
-        class Generator extends Node {
+        class Logistic extends Node {
           constructor() {
             super();
-          };
+            // State to persist from cycle to cycle.
+            this.c = .8949;
+            this.y = .5;
+            this.iterations = 100;
+            this.total_iterations = 0;
+            this.bass = 36;
+            this.range = 60;
+            this.time_step = 0.125;
+            this.tyme = 0;
+            this.duration = 1;
+            this.status = 144;
+            this.instrument = 6;
+            this.key = 60;
+            this.velocity = 70;
+            this.phase = 0;
+            this.pan = 0.5;
+          }
           generate(score) {
-            let tyme = 0;
-            let duration = .5;
-            let status = 144;
-            let instrument = 1;
-            let key = 60;
-            let velocity = 70;
-            let phase = 0;
-            let pan = .5;
-            for (let i = 0; i < 16; ++i) {
-              score.add(tyme, duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
-              tyme = tyme + duration;
+            for (let iteration = 0; iteration < this.iterations; ++iteration, ++this.total_iterations) {
+              // Time is counted from 0 at start of Node!
+              this.tyme = iteration * this.time_step;
+              // Normalized logistic map.
+              let y1 = this.c * this.y * (1 - this.y) * 4;
+              this.y = y1;
+              this.key = Math.floor(this.bass + (this.y * this.range));
+              score.add(this.tyme, this.duration, this.status, this.instrument, this.key, this.velocity, this.phase, this.pan, 0, 0, 0);
             }
           }
         };
         
-        class Generator2 extends Node {
-          constructor() {
-            super();
-          };
-          generate(score) {
-            let tyme = 0;
-            let duration = .5;
-            let status = 144;
-            let instrument = 6;
-            let key = 64;
-            let velocity = 70;
-            let phase = 0;
-            let pan = .5;
-            for (let i = 0; i < 16; ++i) {
-              score.add(tyme, duration, status, instrument, (key + i), velocity, phase, pan, 0, 0, 0);
-              tyme = tyme + duration;
-            }
-          }
-        };
-
-         (async function() {
+        (async function() {
             CsoundAC = await createCsoundAC(); 
             strange_attractor = new CsoundAC.StrangeAttractor();
             conversions = new CsoundAC.Conversions();
@@ -2251,13 +2248,12 @@ f 0 1000000000
                                             
                             // Define the actual composition.
                             cycler = new Cycler(csound);
-                            cycler.root.cycles = 3;
-                            let sequence = new Node();
-                            sequence.set_schedule_rescale_score();
-                            sequence.time_node_duration = 6;
-                            cycler.root.add_child(sequence);
-                            sequence.add_child(new Generator);
-                            sequence.add_child(new Generator2);
+                            /// cycler.root.cycles = 3;
+                            let logistic = new Logistic();
+                            logistic.set_schedule_fixed();
+                            ///logistic.set_schedule_from_score();
+                            logistic.time_node_duration = 12.5;
+                            cycler.root.add_child(logistic);
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');
@@ -2282,6 +2278,7 @@ f 0 1000000000
                     }
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
+                    /// cycler_logging_enabled = false;
                     cycler.start();
                     $("#menu_item_play").html("Stop");
                 } else {
