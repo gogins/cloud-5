@@ -2121,7 +2121,7 @@ f 0 1000000000
     
     <script>
         var CsoundAC = null;
-        var player = null;
+        var cycler = null;
         var strange_attractor = null;
         var csound = null;
         var score = null;
@@ -2250,13 +2250,13 @@ f 0 1000000000
                             console.log("csound: " + csound);
                                             
                             // Define the actual composition.
-                            player = new Player(csound);
+                            cycler = new Cycler(csound);
                             // Replace Cycle with Stack to allow phasing Cycles.
-                            player.root = new Stack();
+                            cycler.root = new Stack();
                             let cycle_a = new Cycle();
-                            player.root.add_child(cycle_a);
+                            cycler.root.add_child(cycle_a);
                             let cycle_b = new Cycle();
-                            player.root.add_child(cycle_b);
+                            cycler.root.add_child(cycle_b);
                             let generator_a = new Generator();
                             cycle_a.add_child(generator_a);
                             let generator_b = new Generator2();
@@ -2285,10 +2285,10 @@ f 0 1000000000
                     }
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
-                    player.start();
+                    cycler.start();
                     $("#menu_item_play").html("Stop");
                 } else {
-                    player.stop();
+                    cycler.stop();
                     await csound.Stop();
                     await csound.Cleanup();
                     csound.Reset();
