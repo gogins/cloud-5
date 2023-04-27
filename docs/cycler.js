@@ -5,36 +5,40 @@
   * Copyright: 2023.
   * Licence: GNU Lesser General Public License, version 2.1.
   *
-  * This file implements real-time and/or "always-on" score generation for 
-  * cloud-music. The purpose is to adapt existing CsoundAC score generation 
-  * and transformation facilities, especially the chord space facilities, to 
-  * indefinite, real-time looping in a 100% HTML5 environment.
+  * Cycler implements real-time and/or "always-on" score generation for 
+  * cloud-music, a 100% HTML5 environment for computer music and algorithmic 
+  * composition.
   *
+  * Cycler is _very_ loosely inspired by Tidal Cycles. However, Cycler is not 
+  * designed for live coding. Instead, the purpose is to adapt existing 
+  * CsoundAC score generation and transformation facilities, especially the 
+  * chord space stuff, to indefinite, real-time looping in the HTML5 
+  * environment.
+  * 
   * Algorithm
   * ---------
   *
-  * The algorithm is _very_ loosely inspired by Tidal Cycles. This algorithm 
-  * is concerned only with generating and processing Events; these are 
+  * Cycler is concerned only with generating and processing Events; these are 
   * numerical vectors that correspond directly to Csound "i" statements, 
   * usually notes. (As for control signals, they can either be generated 
   * within Csound instruments, or sent to Csound from JavaScript via 
   * `Csound.setChannelValue`.)
   *
   * Another difference is that Tidal Cycles resolves every note to its own 
-  * leaf node in the graph to be performed; whereas here, any node, even leaf 
-  * nodes, may contain processes or scores that produce multiple notes.
+  * leaf node in the rendering graph; whereas here, any node, even leaf nodes, 
+  * may contain processes or scores that produce multiple notes.
   *
   * The basic idea is that a composition is a directed acyclic graph of Nodes:
-  * the base Node class, a Stack, or a Cycle. Any Node may optionally generate 
-  * Events and/or transform Events. Each Node has an associated duration that 
-  * may be set in several different ways. A base Node performs its immediate 
-  * child Nodes in sequence, in order of insertion. A Stack performs its 
-  * immediate child Nodes simultaneously. A Cycle repeats its child Nodes (of 
-  * any kind) either indefinitely, or for a fixed number of times. There is 
-  * also a Rest node that adds a silent Node to a sequence. Only Cycles 
-  * actually schedule and render Events. Therefore, every composition must 
-  * include at least one Cycle; but a composition may include multiple Cycles, 
-  * which might repeat at different intervals.
+  * the base Node class, a Stack, a Rest, or a Cycle. Any Node may optionally 
+  * generate Events and/or transform Events. Each Node has an associated 
+  * duration that may be set in several different ways. A base Node performs 
+  * its immediate child Nodes in sequence, in order of insertion. A Stack 
+  * performs its immediate child Nodes simultaneously. A Cycle repeats its 
+  * child Nodes (of any kind) either indefinitely, or for a fixed number of 
+  * times. There is also a Rest node that adds a silent Node to a sequence. 
+  * Only Cycles actually schedule and render Events. Therefore, every 
+  * composition must include at least one Cycle; but a composition may include 
+  * multiple Cycles, which can repeat at different intervals.
   *
   * Compositions are by no means limited to unvarying repetitions of one 
   * cycle. Not only may multiple cycles run at different intervals to produce 
@@ -112,7 +116,10 @@ class Node {
     this.schedule_rescale_score = false;
   }
   /**
-    * Disregard the duration of the Score.
+    * Disregard the duration of the Score. This is useful if the Node will 
+    * generate a stream of overlapping Events across multiple cycles, so 
+    * the node duration that properly segues to the next cycle is not always 
+    * the same as the score duration.
     */
   set_schedule_fixed() {
     this.schedule_fixed = true;
@@ -229,7 +236,9 @@ class Node {
     cycler_log("%s[Node.traverse] cycle_start: %12.6f depth: %5d", '  '.repeat(depth), cycle_time, depth);
     this.score.clear();
     this.cycle_time = cycle_time;
-    this.time_node_duration = 0;
+    if (this.schedule_fixed === false) {
+      this.time_node_duration = 0;
+    }
     for (let i = 0, n = this.children.length; i < n; ++i) {
       // Accumulate Events from child Nodes.
       let child = this.children[i];
@@ -246,7 +255,7 @@ class Node {
       // Depending on the type of _this_ Node, reset or advance the cycle times
       // from the _child_ times.
       this.update_cycle_time(child);
-      cycler_log("%s[Node.traverse] child[%4d].score:\n%s", '  '.repeat(depth), i, child.score.toString());
+      /// cycler_log("%s[Node.traverse] child[%4d].score:\n%s", '  '.repeat(depth), i, child.score.toString());
     };
     // Optionally, generate own Events and push them on this Score.
     this.generate(this.score);
@@ -281,12 +290,12 @@ class Stack extends Node {
   * Performs an interval of silence within a cycle of Nodes.
   */
 class Rest extends Node {
-   constructor(duration_) {
+   constructor(duration) {
     super();
     if (typeof duration_ !== 'undefined') {
-      this.duration = duration_;
+      this.time_node_duration = duration;
     } else {
-      this.duration = 1;
+      this.time_node_duration = 1;
     }
     // The rest is actually but silently performed by an instrument that has 
     // been defined in the orchestra, so that the rest will be rescaled along 
@@ -353,15 +362,15 @@ class Cycle extends Node {
     this.prior_performance_time = this.current_performance_time;
     this.prior_cycle_duration = this.time_node_duration;
     const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
+    this.csound.inputMessage(score_text);
     // As close as possible to when Csound actually starts rendering _this_ cycle.
     this.current_performance_time = this.performance_time();
-    this.csound.readScore(score_text);
     // As close as possible to when Csound should start rendering the _next_ cycle.
     this.expected_performance_time = this.prior_performance_time + this.time_node_duration;
     cycler_log("[Cycle.render] prior cycle duration: %12.6f current cycle duration: %12.6f", this.prior_cycle_duration, this.time_node_duration);
     cycler_log("[Cycle.render] prior rendering time: %12.6f current rendering time: %12.6f next rendering time: %12.6f", this.prior_performance_time, this.current_performance_time, this.expected_performance_time);
     cycler_log("[Cycle.render] score size:          %6d", this.score.size());
-    cycler_log("[Cycle.render] score:\n%s", this.score.toString());
+    ///cycler_log("[Cycle.render] score:\n%s", this.score.toString());
   }
   /**
     * Generates, transforms, and renders Events, until stopped.
@@ -417,7 +426,7 @@ class Cycle extends Node {
   * contain an instance of Cycle (the only Node that actually sends Events to 
   * Csound); by default, the root Node of this is a Cycle.
   */
-class Player {
+class Cycler {
 /**
   * The constructor takes a defined instance of Csound that has already 
   * compiled its orchestra and is already performing.
