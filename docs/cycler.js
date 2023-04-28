@@ -1,61 +1,76 @@
-/**
-  * This file implements real-time and/or "always-on" score generation for 
-  * cloud-music. 
+/** 
+  * # C Y C L E R
   * 
-  * Author: Michael Gogins
-  * Copyright: 2023.
-  * Licence: GNU Lesser General Public License, version 2.1.
+  * @author Michael Gogins 
+  * @copyright Michael Gogins 2023
+  * @license GNU Lesser General Public License, version 2.1
   *
-  * Algorithm
-  * ---------
+  * @file 
   *
-  * This algorithm is _very_ loosely inspired by Tidal Cycles. This algorithm 
-  * is concerned only with generating and processing Events; these are 
+  * Cycler implements real-time and/or "always-on" score generation for 
+  * cloud-music, a 100% HTML5 environment for computer music and algorithmic 
+  * composition.
+  *
+  * Cycler is _very_ loosely inspired by Tidal Cycles. However, Cycler is not 
+  * designed for live coding. Instead, the purpose is to adapt existing 
+  * CsoundAC score generation and transformation facilities, especially the 
+  * chord space stuff, to indefinite, real-time looping in the HTML5 
+  * environment.
+  * 
+  * ## Algorithm
+  *
+  * Cycler is concerned only with generating and processing Events; these are 
   * numerical vectors that correspond directly to Csound "i" statements, 
-  * usually notes. (Control signals are generated either within Csound 
-  * instruments, or as JavaScript calls to `Csound.setChannelValue`.) 
+  * usually notes. (As for control signals, they can either be generated 
+  * within Csound instruments, or sent to Csound from JavaScript via 
+  * `Csound.setChannelValue`.)
   *
-  * Another difference is that Tidal Cycles resolves every note to its own 
-  * node in the graph to be performed, whereas here any node, even leaf nodes,
-  * may contain processes or scores that produce multiple notes.
+  * Another difference is that whereas Tidal Cycles resolves every note to its 
+  * own leaf node in the rendering graph, here any node, even leaf nodes, may 
+  * contain processes or scores that produce multiple notes.
   *
-  * By using Csound for almost all scheduling, the poor resolution and jitter 
-  * of JavaScript timers, which have been imposed as defenses against timing-
-  * based attacks, can affect only the repeat times of cycles.
+  * The basic idea is that a composition is a directed acyclic graph of Nodes:
+  * the base Node class, a Stack, a Rest, or a Cycle. Any Node may optionally 
+  * generate Events and/or transform Events. Each Node has an associated 
+  * duration that may be set in several different ways. A base Node performs 
+  * its immediate child Nodes in sequence, in order of insertion. A Stack 
+  * performs its immediate child Nodes simultaneously. A Cycle repeats its 
+  * child Nodes (of any kind) either indefinitely, or for a fixed number of 
+  * times. There is also a Rest node that adds a silent Node to a sequence. 
+  * Only Cycles actually schedule and render Events. Therefore, every 
+  * composition must include at least one Cycle; but a composition may include 
+  * multiple Cycles, which can repeat at differing intervals.
   *
-  * A composition is a directed acyclic graph of Nodes that generate Events 
-  * for a Score that is periodically sent to Csound. Each Node has a nominal 
-  * interval, defaulting to 1. Any Node can either generate Events, or 
-  * transform Events produced by its child Nodes, or both. Parent nodes can 
-  * have any number of child Nodes. Nominal times are translated to cycle 
-  * onsets and intervals for each traversal of the graph, from the top down, 
-  * then Events are generated and/or transformed, from the bottom up. At the 
-  * end of each traversal, the generated Score is rescaled by tempo and sent 
-  * to Csound for rendering in real time. The next traversal is then 
-  * scheduled, after correcting its interval for compute time and timer drift.
+  * Compositions are by no means limited to unvarying repetitions of one 
+  * cycle. Not only may multiple cycles run at different intervals to produce 
+  * differential canons and other temporal structures, but the score 
+  * generators and processors that the composer defines in Nodes can use 
+  * chance operations and/or chaos, or even modify the graph of the piece as 
+  * it performs.
   *
-  * The composer must derive new classes from Node, in which he or she defines 
-  * the generation and/or transformation of Events in the piece, and assemble 
-  * these derived Nodes into a graph rooted in a Performer.
+  * As a Cycle repeats, it resets its cycle time to 0 and recursively 
+  * generates and/or transforms Events from the bottom of its graph of Nodes 
+  * up to the root of the graph. Each Node has a Score into which Events are 
+  * generated and within which Events are transformed. The Scores of child 
+  * Nodes are appended to the Score of their parent node, and so on, 
+  * recursively. The Node durations propagate from the bottom of the 
+  * graph up, with optional rescaling, but the current cycle time is 
+  * propagated from the root at the top of the graph down, and is used to 
+  * schedule the different Scores in sync with the master timing of the Cycle. 
   *
-  * The fundamental types of Nodes are:
-  *
-  * 1. Node (base class).
-  * 2. Sequence, where adding (or repeating) child Nodes expands the interval 
-  *    of the parent Sequence to equal the sum of intervals of its child 
-  *    Nodes.
-  * 3. Nest, where adding (or repeating) child Nodes squeezes the child Nodes 
-  *    to fit within the interval of the parent Nest. 
-  * 4. Stack, which performs two or more child Nodes simultaneously. Their 
-  *    intervals may diffe from that of the parent and/or those of sibling 
-  *    Nodes, thus enabling differential canons and other structures.
+  * In addition to this recursive subdivision of cycle time, each Node fits 
+  * all Events generated by itself and its child Nodes into its alloted 
+  * duration. The duration of the child Node may be left independent of the 
+  * parent Node, or the duration of the parent may be expanded to match the 
+  * duration of the child, or the duration of the child may be squeezed to 
+  * match the duration of the parent. 
   */
-
+  
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var audioContext = new AudioContext();
 var cycler_logging_enabled = true;
   
-async function cycler_log() {
+function cycler_log() {
   if (cycler_logging_enabled === true) {
     const current_time = audioContext.currentTime;
     const formatted = sprintf(...arguments);
@@ -63,323 +78,443 @@ async function cycler_log() {
     console.log(text);
   }
 }
-/**
-  * Base class for for all Nodes.
+
+/** @classdesc
+  *
+  * Base class for all Nodes. Each Node consumes a segment of its parent 
+  * Node's duration. This duration is computed in different ways for different 
+  * methods of scheduling. Exactly one method of scheduling must be chosen for 
+  * each Node in the graph. 
   */
 class Node {
   constructor() {
-    this.parent = this;
-    this.children = new Array();
-    this.times = {nominal: {}, traversal: {}};
-    // Nominal intervals (Node durations) default to 1, but may be redefined 
-    // by the composer, and afterwards remain unchanged; they form the basis 
-    // for computing all other times. Nominal onsets are assumed to be 0.
-    this.times.nominal.interval = 1;
-    this.times.nominal.onset = 0;
-    // Traversal times are obtained when the nominal times are rescaled to 
-    // expand parent Nodes, or squeeze child Nodes, during traversal of the 
-    // tree. Performance times are obtained by multiplying intervals by 
-    // seconds per cycle. 
-    this.times.traversal.onset = 0;
-    this.times.traversal.interval = 1;
-    this.local_score = new CsoundAC.Score();
-    cycler_log();
-  };
+    /** 
+      * The child Nodes of this advance recursively through 
+      * time_node_duration, starting at time 0 and subdividing, rescaling, 
+      * or resetting the cycle time.
+      * @member
+      */
+this.children = new Array();
+    /** 
+      * The Score contains all Events generated not only by this Node, but 
+      * also by all Events generated by all of this Node's child Nodes.
+      * @member
+      */
+    this.score = new CsoundAC.Score();
+    /** 
+      * The times of all Events in the Score are rescaled by this factor. 
+      * The default is not to rescale.
+      * @member
+      */
+    this.time_scale = 1;
+    /** 
+      * The duration from zero of this Score.
+      * @member
+      */
+    this.time_score_duration = 0;
+    /** 
+      * The total duration of this Node's performance.
+      * @member
+      */
+    this.time_node_duration = 0;
+    /** 
+      * The current time of rendering, as a fraction of this Node's duration..
+      * @member
+      */
+    this.cycle_time = 0;
+    this.schedule_fixed = false;
+    this.schedule_rescale_node = true;
+    this.schedule_rescale_score = false;
+  }
   /**
-    * Pushes the child Node onto the children of this.
+    * Disregards the duration of the Score. This is useful if the Node will 
+    * generate a stream of overlapping Events across multiple cycles, as 
+    * the node duration that properly segues to the next cycle is not always 
+    * the same as the score duration.
+    */
+  set_schedule_fixed() {
+    this.schedule_fixed = true;
+    this.schedule_rescale_node = false;
+    this.schedule_rescale_score = false;
+  }
+/**
+  * Assigns the current duration of the Score from zero to 
+  * time_node_duration.
+  */
+  set_schedule_rescale_node() {
+    this.schedule_fixed = false;
+    this.schedule_rescale_node = true;
+    this.schedule_rescale_score = false;
+  }
+  /**
+    * Rescales the Score to match time_node_duration.
+    */
+  set_schedule_rescale_score() {
+    this.schedule_fixed = false;
+    this.schedule_rescale_node = false;
+    this.schedule_rescale_score = true;
+  }
+  /**
+    * Adds the child Node to the list of immediate children of this.
     */
   add_child(child) {
-    child.parent = this;
     this.children.push(child);
   }
   /**
-    * Adjusts all intervals back to nominal values.
+    * Called by the Player recursively to begin the performance. The default 
+    * implementation does nothing but recursively call this method.
     */
-  reset_to_nominal() {
-    this.times.traversal.interval = this.times.nominal.interval;
-    this.times.traversal.onset = this.times.nominal.onset;
-  }
-  /**
-    * Adjusts the traversal intervals of this and/or the children of this 
-    * to fit each other. The default implementation does nothing.
-    */
-  update_intervals() {
-  }
-  /**
-    * Adjusts the traversal onsets of this and/or the children of this 
-    * to fit their successive intervals.
-    */
-  update_onsets() {
-    if (this.children.length > 0) {
-      let onset = 0;
-      this.children[0].times.traversal.onset = onset;
-      cycler_log("[update_onsets] child: %6d onset: %9.4f", 0, onset);
-      for (let i = 1; i < this.children.length; ++i) {
-        onset += this.children[i - 1].times.traversal.interval;
-        this.children[i].onset = onset;
-        cycler_log("[update_onsets] child: %6d onset: %9.4f", i, onset);
-     }
+  start(csound) {
+    for (let child of this.children) {
+      child.start(csound);
     }
   }
   /**
-    * Generates Events and pushes them onto the Score. These events can have 
-    * arbitrary times, usually beginning at onset 0, but will be rescaled to 
-    * match the traversal times in [onset, onset + interval). The default 
-    * implementation does nothing.
+    * Called by the Player recursively to stop the performance. The default 
+    * implementation does nothing but recursively call this method.
+    */
+   stop() {
+    for (let child of this.children) {
+       child.stop();
+    }
+  }
+  /**
+    * Optionally generates Events and pushes them onto the Score. The 
+    * times of the Events are assumed to start at 0 and their durations are 
+    * set by code, but the Score times may later be rescaled and/or delayed.
+    * The default implementation does nothing. If the score is perchance 
+    * read from a file or generated just once, keep the original score in 
+    * a separate Score and copy it into the Score argument on every call.
     */
   generate(score) {
   };
   /**
-    * Applies some transformation to all Events generated by this and the 
-    * child Nodes of this. Such transformations should not normally affect 
-    * times. The default implementation does nothing.
+    * Optionally transforms some or all Events in the Score. The default 
+    * implementation does nothing.
     */
   transform(score) {
   };
-/**
-  * Rescales the times of the Events to match [onset, onset + interval) of 
-  * this. 
-  */
-  update_times(score) {
-    let interval = this.times.traversal.interval;
-    let onset = this.times.traversal.onset;
-    score.setDuration(interval);
-    for (let i = 0; i < score.size(); ++i) {
-      let event = score.get(i);
-      let new_onset = event.getTime();
-      new_onset += onset;
-      event.setTime(new_onset);
-      score.set(i, event);
-    }
-    cycler_log("[update_times] node interval:       %9.4f score duration: %9.4f onset: %9.4f", interval, score.getDurationFromZero(), onset);
-  }
-  /** Appends to the global Score those Events of the local Score that fall 
-    * within the interval of this traversal; but retains those Events of the 
-    * local Score that fall after the interval of this traversal, adjusting 
-    * Event onsets for the next traversal.
+  /**
+    * Rescales the node times to match the Score times.
     */
-  split_overlap(global_score, local_score) {
-    const interval = this.parent.times.traversal.interval;
-    let new_local_score = new CsoundAC.Score();
-    for (let i = 0; i < this.local_score.size(); ++i) {
-      let event = this.local_score.get(i);
-      let onset = event.getTime();
-      if (onset < interval) {
-        cycler_log("[split_overlap] i: %6d interval: %9.4f global event: %s", i, interval, event.toString());
-        global_score.append_event(event);
-      } else {
-        let new_onset = onset - interval;
-        event.setTime(new_onset);
-        cycler_log("[split_overlap] i: %6d interval: %9.4f local event:  %s", i, interval, event.toString());
-        new_local_score.append_event(event);
-      }
-    }
-    this.local_score = new_local_score;
+  rescale_node(score, depth) {
+    cycler_log("[%4d][Node.rescale_node]...", depth);
+    if (this.time_scale !== 1) {
+      let original_duration = this.score.getDurationFromZero();
+      let rescaled_duration = original_duration * this.time_scale;
+      score.setDurationFromZero(rescaled_duration);
+      cycler_log("[%4d][Node.rescale_node] rescaled from original duration: %12.6f to: %12.6f", depth, original_duration, rescaled_duration);
+    } 
+    this.time_node_duration = this.score.getDurationFromZero();
+    cycler_log("[%4d][Node.rescale_node] node duration: %12.6f", depth, this.time_node_duration);
   }
   /**
-    * Traverses the directed acyclic graph defined by this and its child 
-    * Nodes, recursively generating and/or transforming Events.
+    * Rescales the Score times to match the node times.
     */
-  traverse(global_score, depth) {
-    cycler_log("[traverse] depth: %5d this: %s events: %6d", depth, this.constructor.name, global_score.size());
-    this.reset_to_nominal();
-    // Rescale the intervals of this and its immediate children 
-    // (done from the top down).
-    this.update_intervals();
-    // Recursively traverse all sub-graphs.
-    for (let child of this.children) {
-      child.traverse(global_score, depth + 1);
+  rescale_score(score, depth) {
+    cycler_log("[%4d][Node.rescale_score]...", depth);
+    this.time_score_duration = this.time_node_duration;
+    score.setDurationFromZero(this.time_score_duration);
+    cycler_log("[%4d][Node.rescale_score] node duration: %12.6f", depth, this.time_node_duration);
+  }
+  /**
+    * Updates both the cycle time and the children duration of this. The 
+    * default schedules child Nodes in sequence.
+    */
+  update_cycle_time(child) {
+    this.time_children_duration = this.time_children_duration + child.time_node_duration;
+    this.cycle_time = this.cycle_time + child.time_node_duration;
+  }
+  /**
+    * Schedules the child Score, taking into account the current cycle time,
+    * and adds it to the Score of this.
+    */
+  schedule_child(child) {
+    for (let i = 0, n = child.score.size(); i < n; ++i) {
+      let child_event = child.score.get(i);
+      let child_event_time = child_event.getTime();
+      let new_child_event_time = this.cycle_time + child_event_time;
+      child_event.setTime(new_child_event_time);
+      this.score.append_event(child_event);
+    }
+  }
+  /**
+    * Recursively calls traverse, generate, and transform, advancing the cycle  
+    * times and updating the Node durations as required. At the root node, the 
+    * cycle time always starts at 0. 
+    */
+  traverse(cycle_time, depth) {
+    cycler_log("[%4d][Node.traverse] cycle_start: %12.6f", depth, cycle_time);
+    this.score.clear();
+    this.cycle_time = cycle_time;
+    if (this.schedule_fixed === false) {
+      this.time_children_duration = 0;
+    }
+    for (let i = 0, n = this.children.length; i < n; ++i) {
+      // Accumulate Events from child Nodes.
+      let child = this.children[i];
+      child.traverse(cycle_time, depth + 1);
+      if (child.schedule_rescale_node === true) {
+        child.rescale_node(child.score, depth);
+      } else if (child.schedule_rescale_score === true) {
+        child.rescale_score(child.score, depth);
+      } else if (child.schedule_fixed === true) {
+        // Do not rescale anything.
+      }
+      // Schedule the child Score.
+      this.schedule_child(child, depth);
+      // Depending on the type of _this_ Node, reset or advance the cycle times
+      // from the _child_ times.
+      this.update_cycle_time(child);
     };
-    // Optionally, generate Events and push them on the local Score 
-    // (done from the bottom up).
-    this.generate(this.local_score);
-    // Rescale the times of any Events generated locally.
-    // Move the onsets of the immediate children of this to match their 
-    // successive intervals.
-    this.update_times(this.local_score);
-    // Postpone scheduling Events that overlap the interval of the current 
-    // traversal. The local Score may contain Events that were generated in 
-    // prior traversals for onsets after the interval of that traversal.
-    this.split_overlap(global_score, this.local_score);
-    // Optionally, transform _all_ child Events of this within the current
-    // traversal; this transformation should not change times.
-    this.transform(global_score);
+    // Optionally, generate own Events and push them on this Score.
+    this.generate(this.score);
+    // Optionally, transform all Events in this Score.
+    this.transform(this.score);
+    if (this.schedule_rescale_score === true) {
+      this.rescale_score(this.score, depth);
+    } else if (this.schedule_rescale_node === true) {
+      this.time_node_duration = this.time_children_duration;
+    }
+    cycler_log("[%4d][Node.traverse] this.score:\n%s", depth, this.score.toString());
+    cycler_log("[%4d][Node.traverse] cycle duration: %12.6f", depth, this.time_node_duration);
   };
 };
 
-/**
-  * Performs the immediate child nodes of this in sequence. The interval of 
-  * this is the sum of the intervals of its _immediate_ children. 
-  */
-class Sequence extends Node {
-  constructor() {
-    super();
-  }
-  update_intervals() {
-    let total_interval = 0;
-    let onset = 0;
-    for (let i = 0; i < this.children.length; ++i) {
-      let child = this.children[i];
-      child.times.traversal.onset = total_interval;
-      total_interval += child.times.traversal.interval;
-    }
-    this.times.traversal.interval = total_interval;
-    super.update_intervals();
-  }
-};
-
-/**
-  * Performs the immediate child nodes of this in sequence. The intervals of 
-  * the _immediate_ child nodes of this are rescaled so that their sum equals 
-  * the interval of this. 
-  */
-class Nest extends Node {
-  constructor() {
-    super();
-  }
-  update_intervals() {
-    const this_interval = this.times.traversal.interval;
-    let children_interval = 0;
-    cycler_log("Child times before nesting:");
-    for (let i = 0; i < this.children.length; ++i) {
-      let child = this.children[i];
-      child.times.traversal.onset = children_interval;
-      children_interval += child.times.traversal.interval;
-      cycler_log("child[%3i]: onset: %9.4f interval: %9.4f", i, child.times.traversal.onset, child.times.traversal.interval);
-    }
-    const scale = this_interval / children_interval;
-    cycler_log("Child times after nesting:");
-    for (let i = 0; i < this.children.length; ++i) {
-      let child = this.children[i];
-      child.times.traversal.onset *= scale;
-      child.times.traversal.interval *= scale;
-      cycler_log("child[%3i]: onset: %9.4f interval: %9.4f", i, child.times.traversal.onset, child.times.traversal.interval);
-     }
-  }
-};
-
-/**
+/** @classdesc
+  *
   * Performs the immediate child Nodes of this simultaneously. The traversal 
-  * times of the immediate child Nodes may differ from the traversal times of 
-  * this, enabling the traversal times of those children to go out of and back 
+  * times of the immediate child Nodes may differ from from each other, 
+  * enabling the traversal times of those children to go out of phase and back 
   * into phase with the traversal times of this. Enables differential canons 
-  * and other temporal structures.
+  * and other temporal structures, as well as contrapuntal sequences.
   */
 class Stack extends Node {
   constructor() {
     super();
   }
-  update_intervals() {
-    for (let child of this.children) {
-      child.times.traversal.interval = this.times.traversal.interval * child.times.nominal.interval;
-    }
+  /**
+    * Resets the cycle time and duration to play child Scores simultaneously. 
+    */
+  update_cycle_time(child) {
+    this.time_node_duration = child.time_node_duration;
+    this.cycle_time = 0;
   }
 };
 
-/**
-  * Compositions are written by creating Nodes that generate and/or transform 
-  * Events (usually notes), and adding these Nodes first to `Player.root`, and 
-  * then to children of `root`, and so on recursively.
+/** @classdesc
+  *
+  * Performs an interval of silence within a cycle of Nodes. The rest is 
+  * actually but silently performed by an instrument that has been defined 
+  * in the orchestra, so that the rest will be rescaled along with all other 
+  * times. If using the default instrument 1 causes problems, the composer 
+  * can assign a different number, or even add a dummy "rest" instrument to 
+  * the orchestra.
   */
-class Player {
-  constructor(csound) {
-    // The default root is a Nest but the composer may change this.
-    this.root = new Nest();
-    this.csound = csound;
-    this.keep_running = false;
-    // Tempo in seconds per cycle. The default value is basically 8 bars of 
-    // 4/4 at 120 bpm. In actual pieces this time will usually be much longer.
-    this.seconds_per_cycle = 16;
-    this.score = new CsoundAC.Score();
-    // This can be changed to define other systems of equal temperament.
-    this.divisions_per_octave = 12.;
-    // Not to be confused with divisions per octave for equal temperament!
+class Rest extends Node {
+   constructor(duration) {
+    super();
+    /** 
+      * The duration of this rest. The default value is 1, but this may be 
+      * overridden by the composer.
+      * @member
+      */
+    this.duration = 1;
+    if (typeof duration !== 'undefined') {
+      this.duration = duration;
+    }
+    /** 
+      * The instrument used to schedule the rest. The default value is 1, but 
+      * this may be overridden by the composer.
+      * @member
+      */
+    this.instrument = 1;
+  }
+  generate(score) {
+    score.add(this.duration, 0, 144, this.instrument, 60, 1, 0, 0, 0, 0, 0);
+  }
+};
+
+/** @classdesc
+  *
+  * Repeatedly traverses the tree rooted in this Node, and renders the 
+  * generated Score using Csound. The cycle repeats at the interval of 
+  * its root node: Node.time_node_duration. This interval is recursively 
+  * subdivided at each level of recursion.
+  */
+class Cycle extends Node {
+  constructor() {
+    super();
+    /** 
+      * The number of equally tempered divisions of the octave. The 
+      * default is 12, but the composer can change this to define other 
+      * systems of equal temperament.
+      * @member
+      */
+    this.divisions_per_octave = 12;
+    /** 
+      * Whether generated pitches will be rounded to equal temperament before 
+      * rendering. Not to be confused with _divisions per octave_!
+      * @member
+      */
     this.conform_pitches = false;
+    /** 
+      * The actual wall clock time at which rendering started.
+      * @member
+      */
     this.starting_time = 0;
+    /**
+      * The number of times that this Cycle actually as repeated.
+      * @member
+      */
     this.cycle_count = 0;
-  };
+    /**
+      * The number of times this Cycle will repeat; a negative value means 
+      * loop indefinitely. The default is to loop indefinitely.
+      * @member
+      */
+    this.cycles = -1;
+  }
+  /**
+    * Returns the current time in the AudioContext being used for rendering;
+    * one hopes that it is accurate.
+    */
   current_time() {
     return audioContext.currentTime;
   }
+  /**
+    * Returns the time in seconds from the beginning of this Cycle's 
+    * performance.
+    */
   performance_time() {
     return this.current_time() - this.starting_time;
   }
-  start() {
-    cycler_log("Starting...");
-    this.keep_running = true;
+  /**
+    * Recursively starts this Cycle and its child Nodes, using the 
+    * passed instance of Csound for rendering.
+    */
+  start(csound) {
+    cycler_log("[Cycle.start]");
+    this.csound = csound;
+    this.repeat = true;
     this.cycle_count = 0;
     this.starting_time = this.current_time();
-    this.current_rendering_time = this.performance_time();
-    this.prior_rendering_time = this.performance_time();
-    this.expected_traversal_time = 0;
+    this.current_performance_time = this.performance_time();
+    this.prior_performance_time = this.performance_time();
+    this.expected_performance_time = this.performance_time();
+    this.time_node_duration = 0;
+    this.prior_cycle_duration = 0;
+    this.begin_compute_time = 0;
+    this.end_compute_time = 0;
     this.cycle();
-  };
-  stop() {
-    this.keep_running = false;
+    super.start();
   }
   /**
-    * Sends Events generated by the current traversal _and_ within the 
-    * current traversal interval to Csound for rendering.
+    * Recursively stops this Cycle and its child Nodes.
     */
-  render() {
-    this.prior_rendering_time = this.current_rendering_time;
-    // Rescales the generated score to fit its traversal interval in real 
-    // seconds. Time 0 is the beginning of this cycle, not the beginning of 
-    // this performance; and the duration is the duration not to the last 
-    // _onset_ in the score, but to the last _off time_ in the score.
-    const traversal_interval = this.root.times.traversal.interval * this.seconds_per_cycle;
-    this.score.setDurationFromZero(traversal_interval);
-    const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
-    cycler_log("[render] traversal interval:        %9.4f score duration: %9.4f", traversal_interval, this.score.getDurationFromZero());
-    this.csound.readScore(score_text);
-    this.current_rendering_time = this.performance_time();
-    cycler_log("[render] prior_rendering_time:      %9.4f current_rendering_time: %9.4f", this.prior_rendering_time, this.current_rendering_time);
-    cycler_log("[render] actual rendering interval: %9.4f", this.current_rendering_time - this.prior_rendering_time);
-    // console.log(score_text);
+  stop() {
+    cycler_log("[Cycle.stop]");
+    this.repeat = false;
+    super.stop();
   }
   /**
-    * Generates, transforms, and renders Events, by default until stopped.
+    * Sends Events generated by the current traversal to Csound for rendering. 
+    * A Cycle is always the root of its graph with respect to actual 
+    * scheduling and rendering, starting at cycle 1, cycle time 0, and depth 1.
+    */
+  render(depth) {
+    this.prior_performance_time = this.current_performance_time;
+    this.prior_cycle_duration = this.time_node_duration;
+    const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
+    this.csound.inputMessage(score_text);
+    // As close as possible to when Csound actually starts rendering _this_ cycle.
+    this.current_performance_time = this.performance_time();
+    // As close as possible to when Csound should start rendering the _next_ cycle.
+    this.expected_performance_time = this.prior_performance_time + this.time_node_duration;
+    cycler_log("[%4d][Cycle.render] prior cycle duration: %12.6f current cycle duration: %12.6f", depth, this.prior_cycle_duration, this.time_node_duration);
+    cycler_log("[%4d][Cycle.render] prior rendering time: %12.6f current rendering time: %12.6f next rendering time: %12.6f", depth, this.prior_performance_time, this.current_performance_time, this.expected_performance_time);
+    cycler_log("[%4d][Cycle.render] score size:          %6d", depth, this.score.size());
+    ///cycler_log("[Cycle.render] score:\n%s", this.score.toString());
+  }
+  /** @classdesc
+    *
+    * Generates, transforms, and renders Events, until stopped.
     */
   cycle() {
     // Find the amount of time spent computing this traversal.
-    const current_traversal_time = this.performance_time();
-    if (this.keep_running === false) {
+    this.begin_compute_time = this.performance_time();
+    if (this.cycles !== -1) {
+      if (this.cycle_count >= this.cycles) {
+        this.stop();
+        return;
+      }
+    }
+    if (this.repeat === false) {
+      this.stop();
       return;
     }
     this.cycle_count = this.cycle_count + 1;
-    cycler_log("[cycle] cycle count: %9d", this.cycle_count);
-    this.score.clear();
-    // Generate and/or transform one traversal's worth of events, 
-    // using _traversal_ times.
-    this.root.traverse(this.score, 0);
-    // Render this traversal's pending events with Csound, 
-    // using _real_ times.
-    this.render();    
-    // Subtract time spent computing this traversal from the next traversal interval.
-    const compute_end = this.performance_time();
-    const compute_time = compute_end - current_traversal_time;
-    const traversal_interval = this.root.times.traversal.interval * this.seconds_per_cycle;
-    let timer_interval = traversal_interval - compute_time;
-    // Also correct for timer drift, which is measured every cycle.
-    // The timer drift is the difference between the actual traversal onset 
-    // and the scheduled traversal onset. The drift is positive if the actual 
-    // time exceeds the expected time, and negative if the actual time falls 
-    // short of the expected time.
-    const timer_drift = current_traversal_time - this.expected_traversal_time;
+    const cycle_time = 0;
+    const depth = 1;
+    this.traverse(cycle_time, depth);
+    this.render(depth);
+    // Correct for timer drift, which is measured every cycle.
+    let timer_drift;
+    if (this.cycle_count > 1) {
+      timer_drift = this.expected_performance_time - this.current_performance_time;
+    } else {
+      timer_drift = 0;
+    }
     // The correction applies the drift in reverse.
-    timer_interval = Math.max(0, timer_interval - timer_drift);
-    cycler_log("[cycle] traversal interval: %9.4f compute time: %9.4f timer drift: %9.4f timer interval:%9.4f", traversal_interval, compute_time, timer_drift, timer_interval);
+    let cycle_interval = Math.max(0, this.time_node_duration - timer_drift);
+    // Also correct for compute time.
+    this.end_compute_time = this.performance_time();
+    const compute_duration = this.end_compute_time - this.begin_compute_time;
+    let timer_interval = Math.max(0, cycle_interval - compute_duration);
+    cycler_log("[%4d][Cycle.cycle] count: %5d cycle interval: %12.6f compute time: %12.6f timer drift: %12.6f timer interval:%9.4f", depth, this.cycle_count, cycle_interval, compute_duration, timer_drift, timer_interval);
     let that = this;
     let closure = function () {
       that.cycle();
     };      
-    setTimeout(closure, timer_interval * 1000.);  
-    this.expected_traversal_time += traversal_interval;
+    // Repeat the cycle...
+    setTimeout(closure, 1000. * cycle_interval);  
   };    
+}
+
+/** @classdesc
+  *
+  * Compositions are written by defining Nodes that generate and/or transform 
+  * Events (usually notes), and adding these Nodes first to `Cycler.root`, and 
+  * then to children of `root`, and so on recursively. All compositions must 
+  * contain an instance of Cycle (the only Node that actually sends Events to 
+  * Csound); by default, the root Node of this is a Cycle.
+  */
+class Cycler {
+/**
+  * The constructor takes a defined instance of Csound that has already 
+  * compiled its orchestra and is already performing.
+  */
+  constructor(csound) {
+    this.csound = csound;
+    /** 
+      * The default root Node is an instance of Cycle; the composer may change 
+      * that. By default, this Cycle loops indefinitely.
+      * @member
+      */
+    this.root = new Cycle();
+  };
+  /**
+    * Starts performing and rendering this Cycle.
+    */
+  start() {
+    cycler_log("[Cycler.start]");
+    this.root.start(this.csound);
+  }
+  /**
+    * Stops performing and rendering this Cycle.
+    */
+  stop() {
+    cycler_log("[Cycler.stop]");
+    this.root.stop();
+  }
 };
-
-
-
-
-
-
