@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cycler Tests -- Simple Cycle</title>
+<title>snow-voice</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="dat.gui.js"></script>
 <script src="jquery-3.6.1.js"></script>
@@ -129,10 +129,17 @@ October 2022</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This piece serves as a unit test for cycler.js, specifically for a simple 
-score generated in a Cycle node.
+<p>This piece develops a composition using Essl's generalized circle map  
+(<a href="https://link.springer.com/chapter/10.1007/978-3-030-70210-6_44">
+Essl, G. (2021). "Iterative Phase Functions on the Circle and Their 
+Projections: Connecting Circle Maps, Waveshaping, and Phase Modulation." 
+In: Kronland-Martinet, R., Ystad, S., Aramaki, M. (eds) <b><i>Perception, 
+Representations, Image, Sound, Music. CMMR 2019. Lecture Notes in Computer 
+Science</i></b>, vol 12631. Springer, Cham.</a>).
 
- problems you have playing this piece, or any ideas for 
+<p>Another linked circle map controls the harmony of the piece.
+
+<p>Please report any problems you have playing this piece, or any ideas for 
 enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
 cloud-music issues</a>.
 
@@ -2161,15 +2168,105 @@ f 0 1000000000
             }
         };
         
-        class MidiFile extends Node {
+        class Logistic extends Node {
+          constructor() {
+            super();
+            // State to persist from cycle to cycle.
+            this.c = .8949;
+            this.y = .5;
+            this.iterations = 100;
+            this.total_iterations = 0;
+            this.bass = 36;
+            this.range = 60;
+            this.time_step = 0.125;
+            this.tyme = 0;
+            this.duration = 1;
+            this.status = 144;
+            this.instrument = 6;
+            this.key = 60;
+            this.velocity = 70;
+            this.phase = 0;
+            this.pan = 0.5;
+          }
           generate(score) {
-            try {
-              //score.load("./tango.mid");
-              //score.load("tango.mid");
-              score.load("https://localhost:8000/tango.mid");
-              cycler_log("[MidiFile.generate] loaded:\n%s", score.toString());
-            } catch (e) {
-              alert(e);
+            for (let iteration = 0; iteration < this.iterations; ++iteration, ++this.total_iterations) {
+              // Time is counted from 0 at start of Node!
+              this.tyme = iteration * this.time_step;
+              // Normalized logistic map.
+              let y1 = this.c * this.y * (1 - this.y) * 4;
+              this.y = y1;
+              this.key = Math.floor(this.bass + (this.y * this.range));
+              score.add(this.tyme, this.duration, this.status, this.instrument, this.key, this.velocity, this.phase, this.pan, 0, 0, 0);
+            }
+          }
+        };
+        
+        /**
+          * Essl's generalized circle map:
+          *
+          * y_n = p * (x_n + W + H * f((x_n-1, z_n_1, w_m) mod 1)
+          *
+          * Here y are a time series, i.e. the output "signal;" p is a 
+          * projection; x_n is the distance around the circle in [0, 1); W is 
+          * a constant phase increment in [0, 1); f is a nonlinear function;
+          * x_n-1 is the previous distance around the circle; z_n-1 is a second 
+          * independent distance around the circle with its own phase increment 
+          * w_m.
+          *
+          * Essl asserts that this equation encompasses many different audio 
+          * synthesis methods. Here I am using chaotic regimes in this equation 
+          * to generate sequences of notes.
+          *
+          * I'm having trouble digesting this, so will begin with Wolfram 
+          * MathWorld's circle map, which looks quite familiar:
+          *
+          * theta_n+1 = mod(theta_n + omega - (K / (2 * pi)) * sin(2 * pi * theta_n), 1).
+          *
+          * where theta is the angle of a point on the circle, omega is the 
+          * frequency, and K is a constant of nonlinearity.
+          */
+        
+        class CircleMap extends Node {
+          constructor() {
+            super();
+            // State to persist from cycle to cycle.
+            // State for the Csound notes and control 
+            // of generation.
+            this.status = 144;
+            this.instrument = 6;
+            this.key = 60;
+            this.velocity = 70;
+            this.phase = 0;
+            this.pan = 0.5;
+            // State for mapping iterations to notes.
+            this.iterations = 100;
+            this.total_iterations = 0;
+            this.bass = 36;
+            this.range = 60;
+            this.time_step = 0.125;
+            this.time = 0;
+            this.duration = 1;
+            // State for the circle map itself.
+            this.theta = 0;
+            this.K = 1;
+            this.omega = 0.7;
+          }
+          iterate() {
+            const theta1 = (this.theta + this.omega - 
+              (this.K / (2 * Math.PI)) * Math.sin(2 * Math.PI * this.theta)) % 1;
+            this.theta = theta1;
+          }
+          map_to_note(iteration) {
+            this.key = Math.round(this.bass + this.range * this.theta);
+            this.time = iteration * this.time_step;
+            
+          }
+          generate(score) {
+            this.time = 0;
+            for (let iteration = 0; iteration < this.iterations; ++iteration) {
+              this.iterate();
+              this.map_to_note(iteration);
+              score.add(this.time, this.duration, this.status, this.instrument, this.key, this.velocity, this.phase, this.pan, 0, 0, 0);
             }
           }
         };
@@ -2228,9 +2325,12 @@ f 0 1000000000
                                             
                             // Define the actual composition.
                             cycler = new Cycler(csound);
-                            cycler.root.cycles = 3;
-                            let midifile = new MidiFile();
-                            cycler.root.add_child(midifile);
+                            /// cycler.root.cycles = 3;
+                            let circle_map = new CircleMap();
+                            circle_map.set_schedule_fixed();
+                            ///circle_map.set_schedule_from_score();
+                            circle_map.time_node_duration = 12.5;
+                            cycler.root.add_child(circle_map);
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');
@@ -2255,6 +2355,7 @@ f 0 1000000000
                     }
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
+                    /// cycler_logging_enabled = false;
                     cycler.start();
                     $("#menu_item_play").html("Stop");
                 } else {
