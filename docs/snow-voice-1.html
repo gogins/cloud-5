@@ -52,11 +52,87 @@
     <col width="100px">
     <tr>
     <td>
-    <label for=gi_tempo>Tempo (chords/minute)</label>
+    <label for=gk_A_W>Map A frequency</label>
     <td>
-    <input class=persistent-element type=range min=.05 max=144 value=4 id=gi_tempo step=.001>
+    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_A_W step=.001>
     <td>
-    <output for=gi_tempo id=gi_tempo_output>4</output>
+    <output for=gk_A_W id=gk_A_W_output>.7</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_A_K>Map A non-linearity</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_A_K step=.001>
+    <td>
+    <output for=gk_A_K id=gk_A_K_output>1</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_A_instrument>Map A instrument</label>
+    <td>
+    <input class=persistent-element type=range min=1 max=10 value=6 id=gk_A_instrument step=.001>
+    <td>
+    <output for=gk_A_instrument id=gk_A_instrument_output>6</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_B_W>Map B frequency</label>
+    <td>
+    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_B_W step=.001>
+    <td>
+    <output for=gk_B_W id=gk_B_W_output>.7</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_B_K>Map B non-linearity</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B_K step=.001>
+    <td>
+    <output for=gk_B_K id=gk_B_K_output>1</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_B_instrument>Map B instrument</label>
+    <td>
+    <input class=persistent-element type=range min=1 max=10 value=6 id=gk_B_instrument step=.001>
+    <td>
+    <output for=gk_B_instrument id=gk_B_instrument_output>6</output>
+    </tr>
+
+   <tr>
+    <td>
+    <label for=gk_C_W>Map C frequency</label>
+    <td>
+    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_C_W step=.001>
+    <td>
+    <output for=gk_C_W id=gk_C_W_output>.7</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_C_K>Map C non-linearity</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_C_K step=.001>
+    <td>
+    <output for=gk_C_K id=gk_C_K_output>1</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_C_instrument>Map C instrument</label>
+    <td>
+    <input class=persistent-element type=range min=1 max=10 value=6 id=gk_C_instrument step=.001>
+    <td>
+    <output for=gk_C_instrument id=gk_C_instrument_output>6</output>
+    </tr>
+
+ 
+    <tr>
+    <td>
+    <label for=gk_iterations_per_second>Iterations per second</label>
+    <td>
+    <input class=persistent-element type=range min=.05 max=20 value=2 id=gk_iterations_per_second step=.001>
+    <td>
+    <output for=gk_iterations_per_second id=gk_iterations_per_second_output>4</output>
     </tr>
     <tr style="height:1em;"></tr>    
     <tr>
@@ -2133,6 +2209,7 @@ f 0 1000000000
     <script>
         var CsoundAC = null;
         var cycler = null;
+        var circle_map = null;
         var strange_attractor = null;
         var csound = null;
         var score = null;
@@ -2225,7 +2302,6 @@ f 0 1000000000
           * where theta is the angle of a point on the circle, omega is the 
           * frequency, and K is a constant of nonlinearity.
           */
-        
         class CircleMap extends Node {
           constructor() {
             super();
@@ -2259,6 +2335,7 @@ f 0 1000000000
           map_to_note(iteration) {
             this.key = Math.round(this.bass + this.range * this.theta);
             this.time = iteration * this.time_step;
+            this.duration = this.time_step * 4;
             
           }
           generate(score) {
@@ -2278,6 +2355,7 @@ f 0 1000000000
             score = new CsoundAC.Score();
             scale = new CsoundAC.Scale("F major");
             chord = scale.chord(1, 5, 3);
+            cycler = null;
             cs_random = new CsoundAC.Random();
             
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
@@ -2325,12 +2403,21 @@ f 0 1000000000
                                             
                             // Define the actual composition.
                             cycler = new Cycler(csound);
-                            /// cycler.root.cycles = 3;
-                            let circle_map = new CircleMap();
-                            circle_map.set_schedule_fixed();
-                            ///circle_map.set_schedule_from_score();
-                            circle_map.time_node_duration = 12.5;
-                            cycler.root.add_child(circle_map);
+                            stack = new Stack();
+                            cycler.root.add_child(stack);
+                            map_a = new CircleMap();
+                            map_a.set_schedule_rescale_node();
+                            stack.add_child(map_a);
+                            map_b = new CircleMap();
+                            map_b.omega = 1.05;
+                            map_b.instrument = 9;
+                            map_b.set_schedule_rescale_node();
+                            stack.add_child(map_b);
+                            map_c = new CircleMap();
+                            map_c.K = .8;
+                            map_c.instrument = 1;
+                            map_c.set_schedule_rescale_node();
+                            stack.add_child(map_c);
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');
@@ -2418,12 +2505,21 @@ f 0 1000000000
                 }
             });
             $('input').on('input', async function(event) {
-                var slider_value = parseFloat(event.target.value);
-                if (csound) {
-                    csound.SetControlChannel(event.target.id, slider_value);
+              var slider_value = parseFloat(event.target.value);
+              if (cycler !== null) {
+                if (event.target.id === 'gk_A_W') {
+                  map_a.omega = slider_value;
+                } else if (event.target.id === 'gk_A_K') {
+                  map_a.K = slider_value;
+                } else if (event.target.id === 'gk_iterations_per_second') {
+                  map_a.time_step = 1 / slider_value;
                 }
-                var output_selector = '#' + event.target.id + '_output';
-                $(output_selector).val(slider_value);
+              }
+              if (csound) {
+                csound.SetControlChannel(event.target.id, slider_value);
+              }
+              var output_selector = '#' + event.target.id + '_output';
+              $(output_selector).val(slider_value);
             });
             $('#save').on('click', function() {
                 $('.persistent-element').each(function() {
