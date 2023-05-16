@@ -130,9 +130,9 @@
     <td>
     <label for=gk_iterations_per_second>Iterations per second</label>
     <td>
-    <input class=persistent-element type=range min=.05 max=20 value=2 id=gk_iterations_per_second step=.001>
+    <input class=persistent-element type=range min=.05 max=16 value=2 id=gk_iterations_per_second step=.001>
     <td>
-    <output for=gk_iterations_per_second id=gk_iterations_per_second_output>4</output>
+    <output for=gk_iterations_per_second id=gk_iterations_per_second_output>2</output>
     </tr>
     <tr style="height:1em;"></tr>    
     <tr>
@@ -829,7 +829,7 @@ gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
 gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
 gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
 
-gk_FMWaterBell_level init -8
+gk_FMWaterBell_level init -16
 gi_FMWaterBell_attack init 0.002
 gi_FMWaterBell_release init 0.01
 gi_FMWaterBell_sustain init 20
@@ -2315,7 +2315,7 @@ f 0 1000000000
             this.phase = 0;
             this.pan = 0.5;
             // State for mapping iterations to notes.
-            this.iterations = 100;
+            this.iterations = 5;
             this.total_iterations = 0;
             this.bass = 36;
             this.range = 60;
@@ -2402,6 +2402,7 @@ f 0 1000000000
                             console.log("csound: " + csound);
                                             
                             // Define the actual composition.
+                            
                             cycler = new Cycler(csound);
                             stack = new Stack();
                             cycler.root.add_child(stack);
@@ -2507,12 +2508,22 @@ f 0 1000000000
             $('input').on('input', async function(event) {
               var slider_value = parseFloat(event.target.value);
               if (cycler !== null) {
-                if (event.target.id === 'gk_A_W') {
-                  map_a.omega = slider_value;
+                       if (event.target.id === 'gk_A_W') {
+                  window.map_a.omega = slider_value;
                 } else if (event.target.id === 'gk_A_K') {
-                  map_a.K = slider_value;
+                  window.map_a.K = slider_value;
+                } else if (event.target.id === 'gk_B_W') {
+                  window.map_b.omega = slider_value;
+                } else if (event.target.id === 'gk_B_K') {
+                  window.map_b.K = slider_value;
+                } else if (event.target.id === 'gk_C_W') {
+                  window.map_c.omega = slider_value;
+                } else if (event.target.id === 'gk_C_K') {
+                  window.map_c.K = slider_value;
                 } else if (event.target.id === 'gk_iterations_per_second') {
-                  map_a.time_step = 1 / slider_value;
+                  window.map_a.time_step = 1 / slider_value;
+                  window.map_b.time_step = 1 / slider_value;
+                  window.map_c.time_step = 1 / slider_value;
                 }
               }
               if (csound) {
@@ -2527,14 +2538,19 @@ f 0 1000000000
                 });
              });
             $('#restore').on('click', async function() {
-                $('.persistent-element').each(function() {
-                    this.value = localStorage.getItem(this.id);
-                    if (csound) {
-                        csound.SetControlChannel(this.id, parseFloat(this.value));
-                    }
-                    var output_selector = '#' + this.id + '_output';
-                    $(output_selector).val(this.value);
-                });
+              $('.persistent-element').each(function() {
+                this.value = localStorage.getItem(this.id);
+                if (csound) {
+                  csound.SetControlChannel(this.id, parseFloat(this.value));
+                }
+                var output_selector = '#' + this.id + '_output';
+                $(output_selector).val(this.value);
+                if (this.id === 'gk_iterations_per_second') {
+                  window.map_a.time_step = 1 / this.value;
+                  window.map_b.time_step = 1 / this.value;
+                  window.map_c.time_step = 1 / this.value;
+                }
+              });
             });
             $('#copy').on('click', function() {
                 let controls_json = JSON.stringify(localStorage);

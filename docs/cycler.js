@@ -195,7 +195,7 @@ this.children = new Array();
   transform(score) {
   };
   /**
-    * Rescales the node times to match the Score times.
+    * Rescales the Node times to match the Score times.
     */
   rescale_node(score, depth) {
     cycler_log("[%4d][Node.rescale_node]...", depth);
