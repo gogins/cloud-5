@@ -2527,11 +2527,22 @@ f 0 1000000000
         class Harmonizer extends Node {
           constructor() {
             super();
-            this.chord_duration = 2;
+            this.scale = new CsoundAC.Scale("F major");
+            this.chord = scale.chord(1, 5, 3);
+            this.root_progressions = [2, 3, -4, 5, -1, 3];
           }
-          process(score) {
+          transform(score) {
+            let scales = scale.modulations(chord);
+            if (scales.size() > 1) {
+                this.scale = scales.get(Math.floor(Math.random()*scales.size()));           
+                csound_message_callback(sprintf("\n%s\n\n", scale.name()));           
+            }     
+            let root_progression = this.root_progressions[Math.floor(Math.random()*this.root_progressions.length)];             
+            csound_message_callback(sprintf("\n%s\n\n", chord.eOP().name()));
+            this.chord = this.scale.transpose_degrees(this.chord, root_progression, 3)
+            CsoundAC.apply(score, this.chord, 0, 1000000, true);
           }
-        }
+        };
         
         (async function() {
             CsoundAC = await createCsoundAC(); 
@@ -2591,10 +2602,12 @@ f 0 1000000000
                             cycler = new Cycler(csound);
                             stack = new Stack();
                             cycler.root.add_child(stack);
+                            harmonizer = new Harmonizer();
                             map_a = new CircleMap();
                             map_a.instrument = 1;
                             map_a.set_schedule_rescale_node();
-                            stack.add_child(map_a);
+                            harmonizer.add_child(map_a);
+                            stack.add_child(harmonizer);
                             map_b = new CircleMap();
                             map_b.omega = 1.05;
                             map_b.instrument = 2;
