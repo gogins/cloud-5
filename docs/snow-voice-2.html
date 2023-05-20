@@ -2540,7 +2540,7 @@ f 0 1000000000
             let message = `[Harmonize.transform]:\n  progression: ${this.progression_count}\n  old scale: ${this.scale.name()}\n  chord: ${this.chord.eOP().name()} ${this.chord.toString()}\n`;
             cycler_log(message);
             csound_message_callback(message);
-            if (this.progression_count % 11 == 0) {
+            if (this.progression_count % 19 == 0) {
               let scales = this.scale.modulations_for_voices(this.chord, 3);
               if (scales.size() > 1) {
                   this.scale = scales.get(Math.floor(Math.random()*scales.size()));           
