@@ -209,7 +209,7 @@ this.children = new Array();
     cycler_log("[%4d][Node.rescale_node] node duration: %12.6f", depth, this.time_node_duration);
   }
   /**
-    * Rescales the Score times to match the node times.
+    * Rescales the Score times to match the Node times.
     */
   rescale_score(score, depth) {
     cycler_log("[%4d][Node.rescale_score]...", depth);
@@ -276,8 +276,9 @@ this.children = new Array();
     } else if (this.schedule_rescale_node === true) {
       this.time_node_duration = this.time_children_duration;
     }
-    cycler_log("[%4d][Node.traverse] this.score:\n%s", depth, this.score.toString());
-    cycler_log("[%4d][Node.traverse] cycle duration: %12.6f", depth, this.time_node_duration);
+    cycler_log("[%4d][Node.traverse] score: \n%s", depth, this.score.toString());
+    cycler_log("[%4d][Node.traverse] score duration:  %12.6f", depth, this.score.getDurationFromZero());
+    cycler_log("[%4d][Node.traverse] node duration:   %12.6f", depth, this.time_node_duration);
   };
 };
 
@@ -406,6 +407,8 @@ class Cycle extends Node {
     this.prior_cycle_duration = 0;
     this.begin_compute_time = 0;
     this.end_compute_time = 0;
+    this.actual_timeout = 0;
+    this.expected_timeout = 0;
     this.cycle();
     super.start();
   }
@@ -426,11 +429,11 @@ class Cycle extends Node {
     this.prior_performance_time = this.current_performance_time;
     this.prior_cycle_duration = this.time_node_duration;
     const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
-    this.csound.inputMessage(score_text);
     // As close as possible to when Csound actually starts rendering _this_ cycle.
     this.current_performance_time = this.performance_time();
+    this.csound.inputMessage(score_text);
     // As close as possible to when Csound should start rendering the _next_ cycle.
-    this.expected_performance_time = this.prior_performance_time + this.time_node_duration;
+    this.expected_performance_time = this.current_performance_time + this.time_node_duration;
     cycler_log("[%4d][Cycle.render] prior cycle duration: %12.6f current cycle duration: %12.6f", depth, this.prior_cycle_duration, this.time_node_duration);
     cycler_log("[%4d][Cycle.render] prior rendering time: %12.6f current rendering time: %12.6f next rendering time: %12.6f", depth, this.prior_performance_time, this.current_performance_time, this.expected_performance_time);
     cycler_log("[%4d][Cycle.render] score size:          %6d", depth, this.score.size());
@@ -442,7 +445,7 @@ class Cycle extends Node {
     */
   cycle() {
     // Find the amount of time spent computing this traversal.
-    this.begin_compute_time = this.performance_time();
+    this.begin_compute_time = this.actual_timeout = this.current_time();
     if (this.cycles !== -1) {
       if (this.cycle_count >= this.cycles) {
         this.stop();
@@ -459,16 +462,14 @@ class Cycle extends Node {
     this.traverse(cycle_time, depth);
     this.render(depth);
     // Correct for timer drift, which is measured every cycle.
-    let timer_drift;
+    let timer_drift = 0;
     if (this.cycle_count > 1) {
-      timer_drift = this.expected_performance_time - this.current_performance_time;
-    } else {
-      timer_drift = 0;
+      timer_drift = this.actual_timeout - this.expected_timeout;
     }
     // The correction applies the drift in reverse.
     let cycle_interval = Math.max(0, this.time_node_duration - timer_drift);
     // Also correct for compute time.
-    this.end_compute_time = this.performance_time();
+    this.end_compute_time = this.current_time();
     const compute_duration = this.end_compute_time - this.begin_compute_time;
     let timer_interval = Math.max(0, cycle_interval - compute_duration);
     cycler_log("[%4d][Cycle.cycle] count: %5d cycle interval: %12.6f compute time: %12.6f timer drift: %12.6f timer interval:%9.4f", depth, this.cycle_count, cycle_interval, compute_duration, timer_drift, timer_interval);
@@ -477,7 +478,8 @@ class Cycle extends Node {
       that.cycle();
     };      
     // Repeat the cycle...
-    setTimeout(closure, 1000. * cycle_interval);  
+    this.expected_timeout = this.current_time() + timer_interval;
+    setTimeout(closure, 1000. * timer_interval);  
   };    
 }
 

@@ -2511,7 +2511,7 @@ f 0 1000000000
           map_to_note(iteration) {
             this.key = Math.round(this.bass + this.range * this.theta);
             this.time = iteration * this.time_step;
-            this.duration = this.time_step * 4;
+            this.duration = this.time_step;
             
           }
           generate(score) {
