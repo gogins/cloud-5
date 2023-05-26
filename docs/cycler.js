@@ -431,7 +431,9 @@ class Cycle extends Node {
     const score_text = this.score.getCsoundScore(this.divisions_per_octave, this.conform_pitches);
     // As close as possible to when Csound actually starts rendering _this_ cycle.
     this.current_performance_time = this.performance_time();
-    this.csound.inputMessage(score_text);
+    if (this.csound) {
+      this.csound.inputMessage(score_text);
+    }
     // As close as possible to when Csound should start rendering the _next_ cycle.
     this.expected_performance_time = this.current_performance_time + this.time_node_duration;
     cycler_log("[%4d][Cycle.render] prior cycle duration: %12.6f current cycle duration: %12.6f", depth, this.prior_cycle_duration, this.time_node_duration);
