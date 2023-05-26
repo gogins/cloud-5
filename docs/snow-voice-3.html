@@ -50,103 +50,66 @@
     <col width="2*">
     <col width="5*">
     <col width="100px">
+    
     <tr>
     <td>
-    <label for=gk_A_W>Map A frequency</label>
+    <label for=gk_B1_level>gk_B1_level</label>
     <td>
-    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_A_W step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-30 id=gk_B1_level step=.001>
     <td>
-    <output for=gk_A_W id=gk_A_W_output>.7</output>
+    <output for=gk_B1_level id=gk_B1_level_output>.7</output>
     </tr>
     <tr>
     <td>
-    <label for=gk_A_K>Map A non-linearity</label>
+    <label for=gk_B1_W>gk_B1_W</label>
     <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_A_K step=.001>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B1_W step=.001>
     <td>
-    <output for=gk_A_K id=gk_A_K_output>1</output>
+    <output for=gk_B1_W id=gk_B1_W_output>1</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_B1_K>gk_B1_K</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B1_K step=.001>
+    <td>
+    <output for=gk_B1_K id=gk_B1_K_output>1</output>
     </tr>
     <tr style="height:1em;"></tr>    
-        
+    
     <tr>
     <td>
-    <label for=gk_B_W>Map B frequency</label>
+    <label for=gk_B2_level>gk_B2_level</label>
     <td>
-    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_B_W step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-30 id=gk_B2_level step=.001>
     <td>
-    <output for=gk_B_W id=gk_B_W_output>.7</output>
+    <output for=gk_B2_level id=gk_B2_level_output>.7</output>
     </tr>
     <tr>
     <td>
-    <label for=gk_B_K>Map B non-linearity</label>
+    <label for=gk_B2_W>gk_B2_W</label>
     <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B_K step=.001>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B1_W step=.001>
     <td>
-    <output for=gk_B_K id=gk_B_K_output>1</output>
+    <output for=gk_B2_W id=gk_B2_W_output>1</output>
+    </tr>
+    <tr>
+    <td>
+    <label for=gk_B2_K>gk_B2_K</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B2_K step=.001>
+    <td>
+    <output for=gk_B2_K id=gk_B2_K_output>1</output>
     </tr>
     <tr style="height:1em;"></tr>    
-       
+    
     <tr>
     <td>
-    <label for=gk_C_W>Map C frequency</label>
+    <label for=gk_global_tempo>Global tempo</label>
     <td>
-    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_C_W step=.001>
+    <input class=persistent-element type=range min=.05 max=5 value=1 id=gk_global_tempo step=.001>
     <td>
-    <output for=gk_C_W id=gk_C_W_output>.7</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk_C_K>Map C non-linearity</label>
-    <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_C_K step=.001>
-    <td>
-    <output for=gk_C_K id=gk_C_K_output>1</output>
-    </tr>
-    <tr style="height:1em;"></tr>    
-   
-<tr>
-    <td>
-    <label for=gk_D_W>Map D frequency</label>
-    <td>
-    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_D_W step=.001>
-    <td>
-    <output for=gk_D_W id=gk_D_W_output>.7</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk_D_K>Map D non-linearity</label>
-    <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_D_K step=.001>
-    <td>
-    <output for=gk_D_K id=gk_D_K_output>1</output>
-    </tr>
-    <tr style="height:1em;"></tr>    
-   
-<tr>
-    <td>
-    <label for=gk_E_W>Map E frequency</label>
-    <td>
-    <input class=persistent-element type=range min=-2 max=2 value=.7 id=gk_E_W step=.001>
-    <td>
-    <output for=gk_E_W id=gk_E_W_output>.7</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk_E_K>Map E non-linearity</label>
-    <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_E_K step=.001>
-    <td>
-    <output for=gk_E_K id=gk_E_K_output>1</output>
-    </tr>
-    <tr style="height:1em;"></tr>    
-   
-    <tr>
-    <td>
-    <label for=gk_iterations_per_second>Iterations per second</label>
-    <td>
-    <input class=persistent-element type=range min=.05 max=16 value=2 id=gk_iterations_per_second step=.001>
-    <td>
-    <output for=gk_iterations_per_second id=gk_iterations_per_second_output>2</output>
+    <output for=gk_global_tempo id=gk_global_tempo_output>1</output>
     </tr>
     <tr style="height:1em;"></tr>    
     
@@ -922,7 +885,7 @@ gk_Plucked_midi_dynamic_range init 30
 gk_Plucked_space_left_to_right chnexport "gk_Plucked_space_left_to_right", 3
 gk_Plucked_space_left_to_right init .5
 gk_Plucked_level chnexport "gk_Plucked_level", 3
-gk_Plucked_level init 50
+gk_Plucked_level init 30
 
 gi_Plucked_sine ftgen 0, 0, 65537, 10, 1
 
@@ -2493,29 +2456,29 @@ f 0 1000000000
           * frequency, and K is a constant of nonlinearity.
           */
         class CircleMap extends Node {
-          constructor() {
+          constructor(instrument_, time_step_, iterations_, bass_, range_, theta_, omega_, K_) {
             super();
             // State to persist from cycle to cycle.
             // State for the Csound notes and control 
             // of generation.
             this.status = 144;
-            this.instrument = 6;
+            this.instrument = instrument_;
             this.key = 60;
             this.velocity = 70;
             this.phase = 0;
             this.pan = 0.5;
             // State for mapping iterations to notes.
-            this.iterations = 5;
+            this.iterations = iterations_;
             this.total_iterations = 0;
-            this.bass = 36;
-            this.range = 60;
-            this.time_step = 0.125;
+            this.bass = bass_;
+            this.range = range_;
+            this.time_step = time_step_;
             this.time = 0;
             this.duration = 1;
             // State for the circle map itself.
-            this.theta = 0;
-            this.K = 1;
-            this.omega = 0.7;
+            this.theta = theta_;
+            this.K = K_;
+            this.omega = omega_;
           }
           iterate() {
             const theta1 = (this.theta + this.omega - 
@@ -2524,8 +2487,8 @@ f 0 1000000000
           }
           map_to_note(iteration) {
             this.key = Math.round(this.bass + this.range * this.theta);
-            this.time = iteration * this.time_step;
-            this.duration = this.time_step;
+            this.time = iteration * this.time_step * window.gk_global_tempo;
+            this.duration = this.time_step * window.gk_global_tempo;
             
           }
           generate(score) {
@@ -2627,45 +2590,92 @@ f 0 1000000000
                             console.log("csound: " + csound);
                                             
                             // Define the actual composition.
+                            // TODO: Define coupling as in https://arxiv.org/pdf/nlin/0210034.pdf.
+                            // No, wait, coupling makes no sense if maps iterate at different rates.
                             
                             cycler = new Cycler(csound);
+                            window.tempo = 1;
                             stack = new Stack();
                             cycler.root.add_child(stack);
+                            
                             // Global, shared by all CircleMaps.
+                            
                             harmonizer = new Harmonizer();
+                            gk_global_tempo = 1;
                             
-                            map_a = new CircleMap();
-                            map_a.instrument = 1;
-                            map_a.set_schedule_rescale_node();
-                            stack.add_child(map_a);
+                            /**
+                            // Soprano has two voices.
+                            S = new Stack();
+                            stack.add_child(S);
+                            // Voice 1 has 3 segments, 2 rests.
+                            S1 = new Cycle();
+                            S.add_child(S1);
+                            S1a = new CircleMap(10);
+                            S1.add_child(S1a);
+                            S1b = new CircleMap(1);
+                            S1.add_child(S1b);
+                            S1.add_child(new Rest(4));
+                            S1c = new CircleMap(7);
+                            S1.add_child(S1b);
+                            S1.add_child(new Rest(4));
+                            // Voice 2 has 2 segments, 2 rests.
+                            S2 = new Cycle();
+                            S.add_child(S2);
+                            S2a = new CircleMap(1);
+                            S2.add_child(S2a);
+                            S2.add_child(new Rest(5));
+                            S2b = new CircleMap(7);
+                            S2.add_child(S2b);
+                            S2.add_child(new Rest(5));
                             
-                            map_b = new CircleMap();
-                            map_b.omega = 1.05;
-                            map_b.instrument = 2;
-                            map_b.set_schedule_rescale_node();
-                            stack.add_child(map_b);
+                            // Alto has two voices.
+                            A = new Stack();
+                            stack.add_child(A);
+                            // Voice 1 has 2 segments, 2 rests.
+                            A1 = new Cycle();
+                            A.add_child(A1);
+                            A1a = new CircleMap(1);
+                            A1.add_child(A1a);
+                            A1.add_child(new Rest(6));
+                            A1b = new CircleMap(10);
+                            A1.add_child(A1b);
+                            A1.add_child(new Rest(6));
                             
-                            map_c = new CircleMap();
-                            map_c.K = .8;
-                            map_c.instrument = 7;
-                            map_c.set_schedule_rescale_node();
-                            stack.add_child(map_c);
+                            // Voice 2 has 2 rests, 2 segments.
+                            A2 = new Cycle();
+                            A.add_child(A2);
+                            A.add_child(new Rest(6));
+                            A2a = new CircleMap(1);
+                            A2.add_child(A2a);
+                            A.add_child(new Rest(6));
+                            A2b = new CircleMap(7);
+                            A2.add_child(A2b);
+                            constructor(instrument_, time_step_, iterations_, bass_, range_, theta_, omega_, K_) {
+
+*/                            
+                            // Tenor has one voice.
+                            T = new Cycle();
+                            stack.add_child(T);
+                            // Tenor has 3 segments, 2 rests.
+                            T1 = new CircleMap(6, .25, 19, 48, 24, 0, .79, 1);
+                            T.add_child(T1);
+                            T.add_child(new Rest(3));
+                            T2 = new CircleMap(1, .5, 29, 48, 24, 0, .75, .97);
+                            T.add_child(T2);
+                            T.add_child(new Rest(4));
+                            T3 = new CircleMap(10, .25, 19, 48, 24, 0, .7, 1.1);
+                            T.add_child(T3);
+
+                            // Bass has one voice.
+                            B = new Cycle();
+                            stack.add_child(B);
+                            // Bass has 2 segments, no rests.
+                            B1 = new CircleMap(4, 6, 9, 24, 48, 0, .7, 1.1);
+                            B.add_child(B1);
+                            B2 = new CircleMap(5, 3, 18, 24, 48, .6, .6, .98);
+                            B.add_child(B2);
                             
-                            map_d = new CircleMap();
-                            map_d.K = .8;
-                            map_d.instrument = 3;
-                            map_d.iterations = 6;
-                            map_d.set_schedule_rescale_node();
-                            stack.add_child(map_d);
                             
-                            map_e = new CircleMap();
-                            map_e.K = .8;
-                            map_e.instrument = 4;
-                            map_e.iterations = 7;
-              
-                            map_e.set_schedule_rescale_node();
-                            stack.add_child(map_e);
-                           
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });
@@ -2754,33 +2764,6 @@ f 0 1000000000
             $('input').on('input', async function(event) {
               var slider_value = parseFloat(event.target.value);
               if (cycler !== null) {
-                       if (event.target.id === 'gk_A_W') {
-                  window.map_a.omega = slider_value;
-                } else if (event.target.id === 'gk_A_K') {
-                  window.map_a.K = slider_value;
-                } else if (event.target.id === 'gk_B_W') {
-                  window.map_b.omega = slider_value;
-                } else if (event.target.id === 'gk_B_K') {
-                  window.map_b.K = slider_value;
-                } else if (event.target.id === 'gk_C_W') {
-                  window.map_c.omega = slider_value;
-                } else if (event.target.id === 'gk_C_K') {
-                  window.map_c.K = slider_value;
-                } else if (event.target.id === 'gk_D_W') {
-                  window.map_d.omega = slider_value;
-                } else if (event.target.id === 'gk_D_K') {
-                  window.map_d.K = slider_value;
-                } else if (event.target.id === 'gk_E_W') {
-                  window.map_e.omega = slider_value;
-                } else if (event.target.id === 'gk_E_K') {
-                  window.map_e.K = slider_value;
-                } else if (event.target.id === 'gk_iterations_per_second') {
-                  window.map_a.time_step = 4 / slider_value;
-                  window.map_b.time_step = 4 / slider_value;
-                  window.map_c.time_step = 3 / slider_value;
-                  window.map_d.time_step = 2 / slider_value;
-                  window.map_e.time_step = 1 / slider_value;
-                }
               }
               if (csound) {
                 csound.SetControlChannel(event.target.id, slider_value);
@@ -2791,23 +2774,18 @@ f 0 1000000000
             $('#save').on('click', function() {
                 $('.persistent-element').each(function() {
                     localStorage.setItem(this.id, this.value);
+                    window[this.id] = this.value;
                 });
              });
             $('#restore').on('click', async function() {
               $('.persistent-element').each(function() {
                 this.value = localStorage.getItem(this.id);
+                window[this.id] = this.value;
                 if (csound) {
                   csound.SetControlChannel(this.id, parseFloat(this.value));
                 }
                 var output_selector = '#' + this.id + '_output';
                 $(output_selector).val(this.value);
-                if (this.id === 'gk_iterations_per_second') {
-                  window.map_a.time_step = 4 / this.value;
-                  window.map_b.time_step = 4 / this.value;
-                  window.map_c.time_step = 3 / this.value;
-                  window.map_d.time_step = 2 / this.value;
-                  window.map_e.time_step = 1 / this.value;
-                }
               });
             });
             $('#copy').on('click', function() {

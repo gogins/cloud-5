@@ -68,7 +68,7 @@ function euclidean_rhythm(steps, pulses) {
   const build = function(level) {
     if (level === -1) {
       pattern.push(0);
-    else if (level === -2) {
+    } else if (level === -2) {
       pattern.push(1);
     } else {
       for (let i = 0; i < counts[level]) {
@@ -91,4 +91,38 @@ function euclidean_rhythm(steps, pulses) {
   };
   return pattern;
 };
+
+/**
+  * Applies a Euclidean rhythm to a Score, repeating the Rhythm as needed. 
+  * Events that occur at exactly the same time receive the same pulse. The 
+  * Score will be rescaled to have its original duration. Silence at the 
+  * beginning of the Score is not accounted for. The durations of notes are 
+  * not affected. A fake pulse is used to enable looping and chaining of 
+  * Scores without disrupting the rhythm.
+  */
+function apply_euclidean(euclidean, score) {
+  let onsets = [];
+  for (let step = 0; step < euclidean.length; ++step) {
+    if (euclidean[step] === 1) {
+      onsets.push(step);
+    }
+  }
+  score.Sort();
+  const original_duration = score.getDurationFromZero();
+  let prior_time = 0;
+  let current_time = 0;
+  let step = 0;
+  for (let i = 0; i < score.size(); ++i) {
+    let event = score.get(i);
+    prior_time = time;
+    current_time = event.getTime();
+    if (current_time === prior_time) {
+      let onset = 
+    }
+    
+  }
+  
+  score.setDurationFromZero(original_duration);
+};
+
 
