@@ -113,9 +113,17 @@
   
     <tr>
     <td>
+    <label for=gk_B1_K>gk_B1_W</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_B1_W step=.001>
+    <td>
+    <output for=gk_B1_W id=gk_B1_W_output>1</output>
+    </tr>
+    <tr>
+    <td>
     <label for=gk_B1_K>gk_B1_K</label>
     <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B1_K step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_B1_K step=.001>
     <td>
     <output for=gk_B1_K id=gk_B1_K_output>1</output>
     </tr>
@@ -125,7 +133,7 @@
     <td>
     <label for=gk_B2_W>gk_B2_W</label>
     <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B1_W step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_B2_W step=.001>
     <td>
     <output for=gk_B2_W id=gk_B2_W_output>1</output>
     </tr>
@@ -133,7 +141,7 @@
     <td>
     <label for=gk_B2_K>gk_B2_K</label>
     <td>
-    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B2_K step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_B2_K step=.001>
     <td>
     <output for=gk_B2_K id=gk_B2_K_output>1</output>
     </tr>
@@ -2517,8 +2525,8 @@ f 0 1000000000
             this.omega = omega_;
           }
           iterate() {
-            const theta1 = (this.theta + this.omega - 
-              (this.K / (2 * Math.PI)) * Math.sin(2 * Math.PI * this.theta)) % 1;
+            const theta1 = (this.theta + parseFloat(this.omega.value) - 
+              (parseFloat(this.K.value) / (2 * Math.PI)) * Math.sin(2 * Math.PI * this.theta)) % 1;
             this.theta = theta1;
           }
           map_to_note(iteration) {
@@ -2687,7 +2695,6 @@ f 0 1000000000
                             A2.add_child(A2b);
                             constructor(instrument_, time_step_, iterations_, bass_, range_, theta_, omega_, K_) {
 
-*/                            
                             // Tenor has one voice.
                             T = new Cycle();
                             stack.add_child(T);
@@ -2700,14 +2707,14 @@ f 0 1000000000
                             //T.add_child(new Rest(1));
                             T3 = new CircleMap(10, .25, 19, 48, 24, 0, .7, 1.1);
                             T.add_child(T3);
-
+*/
                             // Bass has one voice.
                             B = new Cycle();
                             stack.add_child(B);
                             // Bass has 2 segments, no rests.
-                            B1 = new CircleMap(4, 6, 9, 24, 48, 0, .7, 1.1);
+                            B1 = new CircleMap(4, 6, 9, 24, 48, 0, $('#gk_B1_W').get(0), $('#gk_B1_K').get(0));
                             B.add_child(B1);
-                            B2 = new CircleMap(5, 3, 18, 24, 48, .6, .6, .98);
+                            B2 = new CircleMap(5, 3, 18, 24, 48, .6, $('#gk_B2_W').get(0), $('#gk_B2_K').get(0));
                             B.add_child(B2);
                             
                             
