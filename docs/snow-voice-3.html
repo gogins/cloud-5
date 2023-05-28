@@ -90,7 +90,7 @@
     </tr>
     <tr>
     
- <tr>
+    <tr>
     <td>
     <label for=gk_Plucked_level>06 Plucked level</label>
     <td>
@@ -110,15 +110,71 @@
      
     <tr style="height:1em;"></tr>    
    
+    <tr>
+    <td>
+    <label for=gk_T1_K>gk_T1_K</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_T1_K step=.001>
+    <td>
+    <output for=gk_T1_K id=gk_T1_K_output>1</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_T1_W>gk_T1_W</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_T1_W step=.001>
+    <td>
+    <output for=gk_T1_W id=gk_T1_W_output>1</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_T2_W>gk_T2_W</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_T2_W step=.001>
+    <td>
+    <output for=gk_T2_W id=gk_T2_W_output>1</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_T2_K>gk_T2_K</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_T2_K step=.001>
+    <td>
+    <output for=gk_T2_K id=gk_T2_K_output>1</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_T3_W>gk_T3_W</label>
+    <td>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_T3_W step=.001>
+    <td>
+    <output for=gk_T3_W id=gk_T3_W_output>1</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_T3_K>gk_T3_K</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_T3_K step=.001>
+    <td>
+    <output for=gk_T3_K id=gk_T3_K_output>1</output>
+    </tr>
+    
+    <tr style="height:1em;"></tr>    
   
     <tr>
     <td>
-    <label for=gk_B1_K>gk_B1_W</label>
+    <label for=gk_B1_W>gk_B1_W</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_B1_W step=.001>
+    <input class=persistent-element type=range min=-4 max=4 value=4 id=gk_B1_W step=.001>
     <td>
     <output for=gk_B1_W id=gk_B1_W_output>1</output>
     </tr>
+    
     <tr>
     <td>
     <label for=gk_B1_K>gk_B1_K</label>
@@ -133,10 +189,11 @@
     <td>
     <label for=gk_B2_W>gk_B2_W</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=1 id=gk_B2_W step=.001>
+    <input class=persistent-element type=range min=-4 max=4 value=1 id=gk_B2_W step=.001>
     <td>
     <output for=gk_B2_W id=gk_B2_W_output>1</output>
     </tr>
+    
     <tr>
     <td>
     <label for=gk_B2_K>gk_B2_K</label>
@@ -145,13 +202,13 @@
     <td>
     <output for=gk_B2_K id=gk_B2_K_output>1</output>
     </tr>
-    <tr style="height:1em;"></tr>    
+    <tr style="height:1em;"></tr>  
     
     <tr>
     <td>
     <label for=gk_global_tempo>Global tempo</label>
     <td>
-    <input class=persistent-element type=range min=.05 max=5 value=1 id=gk_global_tempo step=.001>
+    <input class=persistent-element type=range min=.125 max=4 value=1 id=gk_global_tempo step=.001>
     <td>
     <output for=gk_global_tempo id=gk_global_tempo_output>1</output>
     </tr>
@@ -2059,7 +2116,7 @@ f 0 1000000000
                     }
                     gl.attachShader(shader_program, shader_object);
                     gl.linkProgram(shader_program);
-                    console.log("shader:" + WEBGL_debug_shaders.getTranslatedShaderSource(shader_object));
+                    ///console.log("shader:" + WEBGL_debug_shaders.getTranslatedShaderSource(shader_object));
                 }
                 status = gl.getProgramParameter(shader_program, gl.LINK_STATUS);
                 if (!status) {
@@ -2521,8 +2578,8 @@ f 0 1000000000
             this.duration = 1;
             // State for the circle map itself.
             this.theta = theta_;
-            this.K = K_;
-            this.omega = omega_;
+            this.K = document.getElementById(K_);
+            this.omega = document.getElementById(omega_);
           }
           iterate() {
             const theta1 = (this.theta + parseFloat(this.omega.value) - 
@@ -2532,7 +2589,7 @@ f 0 1000000000
           map_to_note(iteration) {
             this.key = Math.round(this.bass + this.range * this.theta);
             this.time = iteration * this.time_step * window.gk_global_tempo.value;
-            this.duration = this.time_step * window.gk_global_tempo.value;
+            this.duration = this.time_step * gk_global_tempo.value;
             
           }
           generate(score) {
@@ -2634,6 +2691,35 @@ f 0 1000000000
                             console.log("csound: " + csound);
                                             
                             // Define the actual composition.
+                            // gk_S1a_W
+                            // gk_S1a_K
+                            // gk_S1b_W
+                            // gk_S1b_K
+                            // gk_S1c_W
+                            // gk_S1c_K
+                            // gk_S2a_W
+                            // gk_S2a_K
+                            // gk_S2b_W
+                            // gk_S2b_K
+                            // gk_A1a_W
+                            // gk_A1a_K
+                            // gk_A1b_W
+                            // gk_A1b_K
+                            // gk_A2a_W
+                            // gk_A2a_K
+                            // gk_A2b_W
+                            // gk_A2b_K
+                            // gk_T1_W
+                            // gk_T1_K
+                            // gk_T2_W
+                            // gk_T2_K
+                            // gk_T3_W
+                            // gk_T3_K
+                            // gk_B1_W
+                            // gk_B1_K
+                            // gk_B2_W
+                            // gk_B2_K
+                            
                             // TODO: Define coupling as in https://arxiv.org/pdf/nlin/0210034.pdf.
                             // No, wait, coupling makes no sense if maps iterate at different rates.
                             
@@ -2646,7 +2732,7 @@ f 0 1000000000
                             
                             harmonizer = new Harmonizer();
                             
-                            /**
+/*
                             // Soprano has two voices.
                             S = new Stack();
                             stack.add_child(S);
@@ -2694,29 +2780,26 @@ f 0 1000000000
                             A2b = new CircleMap(7);
                             A2.add_child(A2b);
                             constructor(instrument_, time_step_, iterations_, bass_, range_, theta_, omega_, K_) {
-
+*/
                             // Tenor has one voice.
                             T = new Cycle();
                             stack.add_child(T);
                             // Tenor has 3 segments, 2 rests.
-                            T1 = new CircleMap(6, .25, 19, 48, 24, 0, .79, 1);
+                            T1 = new CircleMap(6, .25,  19, 48, 24, 0, "gk_T1_W", "gk_T1_K");
                             T.add_child(T1);
                             //T.add_child(new Rest(1));
-                            T2 = new CircleMap(1, .5, 29, 48, 24, 0, .75, .97);
+                            T2 = new CircleMap(1, .5,   29, 48, 24, 0, "gk_T2_W", "gk_T2_K");
                             T.add_child(T2);
                             //T.add_child(new Rest(1));
-                            T3 = new CircleMap(10, .25, 19, 48, 24, 0, .7, 1.1);
+                            T3 = new CircleMap(10, .25, 19, 48, 24, 0, "gk_T3_W", "gk_T3_K");
                             T.add_child(T3);
-*/
-                            // Bass has one voice.
                             B = new Cycle();
                             stack.add_child(B);
                             // Bass has 2 segments, no rests.
-                            B1 = new CircleMap(4, 6, 9, 24, 48, 0, $('#gk_B1_W').get(0), $('#gk_B1_K').get(0));
+                            B1 = new CircleMap(4, 6,  9, 24, 48, 0, "gk_B1_W", "gk_B1_K");
                             B.add_child(B1);
-                            B2 = new CircleMap(5, 3, 18, 24, 48, .6, $('#gk_B2_W').get(0), $('#gk_B2_K').get(0));
+                            B2 = new CircleMap(5, 3, 18, 24, 48, .6, "gk_B2_W", "gk_B2_K");
                             B.add_child(B2);
-                            
                             
                         }, function(error) {
                            csound_message_callback(error + '\n');
