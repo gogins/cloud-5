@@ -293,12 +293,15 @@ this.children = new Array();
 class Stack extends Node {
   constructor() {
     super();
+    //this.set_schedule_fixed();
   }
   /**
-    * Resets the cycle time and duration to play child Scores simultaneously. 
+    * Resets the time to play child Scores simultaneously. 
     */
   update_cycle_time(child) {
-    this.time_node_duration = child.time_node_duration;
+    //this.time_children_duration = this.time_children_duration + child.time_node_duration;
+    //this.cycle_time = this.cycle_time + child.time_node_duration;
+    this.time_children_duration = 0;
     this.cycle_time = 0;
   }
 };
@@ -332,6 +335,8 @@ class Rest extends Node {
     this.instrument = 1;
   }
   generate(score) {
+    cycler_log("      [Rest.generate]");
+    
     score.add(this.duration, 0, 144, this.instrument, 60, 1, 0, 0, 0, 0, 0);
   }
 };
@@ -365,7 +370,7 @@ class Cycle extends Node {
       */
     this.starting_time = 0;
     /**
-      * The number of times that this Cycle actually as repeated.
+      * The number of times that this Cycle actually was repeated.
       * @member
       */
     this.cycle_count = 0;

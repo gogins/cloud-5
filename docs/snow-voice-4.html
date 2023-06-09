@@ -782,8 +782,8 @@ gk_Blower_midi_dynamic_range chnexport "gk_Blower_midi_dynamic_range", 3
 
 gk_Blower_grainDensity init 90
 gk_Blower_grainDuration init 0.2
-gk_Blower_grainAmplitudeRange init 100
-gk_Blower_grainFrequencyRange init 10
+gk_Blower_grainAmplitudeRange init 200
+gk_Blower_grainFrequencyRange init 100
 gk_Blower_level init 0
 gk_Blower_midi_dynamic_range init 20
 
@@ -875,7 +875,7 @@ gk_Sweeper_midi_dynamic_range chnexport "gk_Sweeper_midi_dynamic_range", 3 ;  12
 gk_Sweeper_attack chnexport "gk_Sweeper_attack", 3 ;  .125
 gk_Sweeper_release chnexport "gk_Sweeper_release", 3 ;  .25
 gk_Sweeper_britel chnexport "gk_Sweeper_britel", 3 ;  0.1
-gk_Sweeper_briteh chnexport "gk_Sweeper_briteh", 3 ;  2.9
+gk_Sweeper_briteh chnexport "gk_Sweeper_briteh", 3 ;  1.9
 gk_Sweeper_britels chnexport "gk_Sweeper_britels", 3 ;  2
 gk_Sweeper_britehs chnexport "gk_Sweeper_britehs", 3 ;  1
 gk_Sweeper_level chnexport "gk_Sweeper_level", 3 ;  0
@@ -1366,8 +1366,8 @@ k_gain = ampdb(gk_ZakianFlute_level)
 iHz = cpsmidinn(i_midi_key)
 kHz = k(iHz)
 // Bug?
-// aenvelope transeg 1.0, 20.0, -10.0, 0.05
-aenvelope transegr 1.0, 20.0, -10.0, 0.05
+aenvelope transeg 1.0, 20.0, -10.0, 0.05
+//aenvelope transegr 1.0, 20.0, -10.0, 0.05
 ip3 = 3;;; (p3 < 3.0 ? p3 : 3.0)
 ; parameters
 ; p4 overall amplitude scaling factor
@@ -2499,39 +2499,6 @@ f 0 1000000000
             }
         };
         
-        class Logistic extends Node {
-          constructor() {
-            super();
-            // State to persist from cycle to cycle.
-            this.c = .8949;
-            this.y = .5;
-            this.iterations = 100;
-            this.total_iterations = 0;
-            this.bass = 36;
-            this.range = 60;
-            this.time_step = 0.125;
-            this.tyme = 0;
-            this.duration = 1;
-            this.status = 144;
-            this.instrument = 6;
-            this.key = 60;
-            this.velocity = 70;
-            this.phase = 0;
-            this.pan = 0.5;
-          }
-          generate(score) {
-            for (let iteration = 0; iteration < this.iterations; ++iteration, ++this.total_iterations) {
-              // Time is counted from 0 at start of Node!
-              this.tyme = iteration * this.time_step;
-              // Normalized logistic map.
-              let y1 = this.c * this.y * (1 - this.y) * 4;
-              this.y = y1;
-              this.key = Math.floor(this.bass + (this.y * this.range));
-              score.add(this.tyme, this.duration, this.status, this.instrument, this.key, this.velocity, this.phase, this.pan, 0, 0, 0);
-            }
-          }
-        };
-        
         /**
           * Essl's generalized circle map:
           *
@@ -2611,7 +2578,7 @@ f 0 1000000000
             this.scale = new CsoundAC.Scale("F major");
             this.scale_degree = 1;
             this.chord = this.scale.chord(this.scale_degree, 5, 3);
-            this.root_progressions = [2, 3, -4, 5, -1, 3];
+            this.root_progressions = [2, 3, -4, 5, -1, -3];
             this.progression_count = 0;
           }
           transform(score) {
@@ -2631,19 +2598,21 @@ f 0 1000000000
             cycler_log(message);
             csound_message_callback(message);
             let pre = score.getCsoundScore(12, false);
-            CsoundAC.apply(score, this.chord, 0, 1000000, true);
+            CsoundAC.apply(score, this.scale, 0, 1000000, true);
             let post = score.getCsoundScore(12, false);
-            if (post.search('nan') !== -1) {
+            //if (post.search('nan') !== -1) {
               let error = sprintf("pre:  %s\npost: %s\n", pre, post);
               console.log(error);
-            }
+            //}
             this.progression_count = this.progression_count + 1;
           }
         };
         
 var defaults = {"gi_3_modr_start":"1","gi_3_modr_end":"1","gk_ReverbSC_feedback":"0.89","gk_Kung2_level":"0","gk_SeidelHarmonicOscillator_level":"10.402","gk_MasterOutput_level":"23.8","gk_T1_W":"0.808","gk_A_instrument":"6","gk_C_W":"0.7","gk_Plucked_level":"15.878","gk_T3_W":"0.648","gk_B2_level":"0","gk_B1_W":"0.657","gk_B1_level":"0","gk_YiString_level":"0","gk_B_W":"0.7","gk_E_K":"1.1","gk_ReverbSC_frequency_cutoff":"12000","gi_ReverbSC_delay_modulation":"0.05","gk_A_K":"1","gk_B2_K":"1","gk_D_K":"0","gk_Harpsichord_level":"0","gk_ZakianFlute_level":"-4.446","gk_iterations_per_second":"5.198","gk_Guitar_level":"7.968","gi_Composition_tempo":"228.974","gk_B_K":"1","gi_tempo":"4","gk_E_W":"0.334","gk_B1_K":"1","gk_T2_K":"6.358","gk_B_instrument":"6","gi_Composition_density":"48.929","gk_D_W":"0.377","gk_T3_K":"1","gk_FMWaterBell_level":"0","gk_C_K":"1","gk_A_W":"0.7","gk_SeidelHarmOsc_level":"-29.7","gk_B2_W":"0.713","gk_T2_W":"0.626","gk_global_tempo":"1","gk_C_instrument":"6","gk_Sweeper_level":"0","gk_T1_K":"1","gk_Kung4_level":"0","gk_Blower_level":"-12.62"};
+defaults = {"gi_3_modr_start":"1","gi_3_modr_end":"1","gk_ReverbSC_feedback":"0.89","gk_Kung2_level":"0","gk_SeidelHarmonicOscillator_level":"10.402","gk_MasterOutput_level":"23.8","gk_T1_W":"0.542","gk_A_instrument":"6","gk_C_W":"0.7","gk_Plucked_level":"-1.214","gk_T3_W":"0.648","gk_B2_level":"0","gk_B1_W":"0.657","gk_B1_level":"0","gk_YiString_level":"0","gk_B_W":"0.7","gk_E_K":"1.1","gk_ReverbSC_frequency_cutoff":"12000","gi_ReverbSC_delay_modulation":"0.05","gk_A_K":"1","gk_B2_K":"3.197","gk_D_K":"0","gk_Harpsichord_level":"0","gk_ZakianFlute_level":"-4.446","gk_iterations_per_second":"5.198","gk_Guitar_level":"7.968","gi_Composition_tempo":"228.974","gk_B_K":"1","gi_tempo":"4","gk_E_W":"0.334","gk_B1_K":"1","gk_T2_K":"6.358","gk_B_instrument":"6","gi_Composition_density":"48.929","gk_D_W":"0.377","gk_T3_K":"1","gk_FMWaterBell_level":"0","gk_C_K":"1","gk_A_W":"0.7","gk_SeidelHarmOsc_level":"-29.7","gk_B2_W":"0.713","gk_T2_W":"0.626","gk_global_tempo":"0.242","gk_C_instrument":"6","gk_Sweeper_level":"0","gk_T1_K":"4.834","gk_Kung4_level":"0","gk_Blower_level":"-12.62"};
+defaults = {"gi_3_modr_start":"1","gi_3_modr_end":"1","gk_ReverbSC_feedback":"0.89","gk_Kung2_level":"0","gk_SeidelHarmonicOscillator_level":"10.402","gk_MasterOutput_level":"23.8","gk_T1_W":"0.715","gk_A_instrument":"6","gk_C_W":"0.7","gk_Plucked_level":"-1.214","gk_T3_W":"0.76","gk_B2_level":"0","gk_B1_W":"0.657","gk_B1_level":"0","gk_YiString_level":"0","gk_B_W":"0.7","gk_E_K":"1.1","gk_ReverbSC_frequency_cutoff":"12000","gi_ReverbSC_delay_modulation":"0.05","gk_A_K":"1","gk_B2_K":"3.197","gk_D_K":"0","gk_Harpsichord_level":"0","gk_ZakianFlute_level":"-4.446","gk_iterations_per_second":"5.198","gk_Guitar_level":"7.968","gi_Composition_tempo":"228.974","gk_B_K":"1","gi_tempo":"4","gk_E_W":"0.334","gk_B1_K":"1","gk_T2_K":"6.358","gk_B_instrument":"6","gi_Composition_density":"48.929","gk_D_W":"0.377","gk_T3_K":"9.146","gk_FMWaterBell_level":"0","gk_C_K":"1","gk_A_W":"0.7","gk_SeidelHarmOsc_level":"-34.407","gk_B2_W":"0.713","gk_T2_W":"0.626","gk_global_tempo":"0.242","gk_C_instrument":"6","gk_Sweeper_level":"0","gk_T1_K":"0.83","gk_Kung4_level":"0","gk_Blower_level":"-12.62"};
 
-        (async function() {
+(async function() {
             CsoundAC = await createCsoundAC(); 
             strange_attractor = new CsoundAC.StrangeAttractor();
             conversions = new CsoundAC.Conversions();
@@ -2737,11 +2706,10 @@ var defaults = {"gi_3_modr_start":"1","gi_3_modr_end":"1","gk_ReverbSC_feedback"
                             // Global, shared by all CircleMaps.
                             
                             harmonizer = new Harmonizer();
-                            
-/*
+
                             // Soprano has two voices.
                             S = new Stack();
-                            stack.add_child(S);
+                            //stack.add_child(S);
                             // Voice 1 has 3 segments, 2 rests.
                             S1 = new Cycle();
                             S.add_child(S1);
@@ -2765,7 +2733,7 @@ var defaults = {"gi_3_modr_start":"1","gi_3_modr_end":"1","gk_ReverbSC_feedback"
                             
                             // Alto has two voices.
                             A = new Stack();
-                            stack.add_child(A);
+                            //stack.add_child(A);
                             // Voice 1 has 2 segments, 2 rests.
                             A1 = new Cycle();
                             A.add_child(A1);
@@ -2785,30 +2753,32 @@ var defaults = {"gi_3_modr_start":"1","gi_3_modr_end":"1","gk_ReverbSC_feedback"
                             A.add_child(new Rest(6));
                             A2b = new CircleMap(7);
                             A2.add_child(A2b);
-                            constructor(instrument_, time_step_, iterations_, bass_, range_, theta_, omega_, K_) {
-*/
+                            
+                            // constructor(instrument_, time_step_, iterations_, bass_, range_, theta_, omega_, K_) {
+
                             // Tenor has one voice.
                             T = new Cycle();
                             stack.add_child(T);
                             // Tenor has 3 segments, 2 rests.
-                            T1 = new CircleMap( 6, 1,    19, 48, 24, 0, "gk_T1_W", "gk_T1_K");
+                            T1 = new CircleMap( 6, 1.3333334, 49, 48, 24, 0, "gk_T1_W", "gk_T1_K");
                             T.add_child(T1);
-                            //T.add_child(new Rest(1));
-                            T2 = new CircleMap( 1, 1,    29, 48, 24, 0, "gk_T2_W", "gk_T2_K");
+                            T.add_child(new Rest(1));
+                            T2 = new CircleMap( 1, 1.5,       29, 48, 24, 0, "gk_T2_W", "gk_T2_K");
                             T.add_child(T2);
-                            //T.add_child(new Rest(1));
-                            T3 = new CircleMap(10, 1.25, 19, 48, 24, 0, "gk_T3_W", "gk_T3_K");
+                            T.add_child(new Rest(1));
+                            T3 = new CircleMap(10, 1.25,      31, 48, 24, 0, "gk_T3_W", "gk_T3_K");
                             T.add_child(T3);
-                            
+                           
                             // Bass has one voice.
                             B = new Cycle();
                             stack.add_child(B);
                             // Bass has 2 segments, no rests.
-                            B1 = new CircleMap(4, 6,  9, 24, 48, 0, "gk_B1_W", "gk_B1_K");
+                            B1 = new CircleMap(5,  12,  9, 24, 48, 0,  "gk_B1_W", "gk_B1_K");
+                            //B1 = new CircleMap(6,  12,  9, 24, 48, 0,  "gk_B1_W", "gk_B1_K");
                             B.add_child(B1);
-                            B2 = new CircleMap(5, 3, 18, 24, 48, .6, "gk_B2_W", "gk_B2_K");
+                            B2 = new CircleMap(4,  9, 18, 24, 48, .6, "gk_B2_W", "gk_B2_K");
                             B.add_child(B2);
-                            
+                           
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });
