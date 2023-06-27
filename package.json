@@ -6,13 +6,16 @@
     "build-repl": "cp -r strudel-addons/csoundac strudel/packages/ && python3 patch-strudel.py && cd strudel && npm run setup && npm run build",
     "build": "npm run build-repl && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && python3 patch-dist.py && ls -ll dist",
     "preview": "vite preview",
-    "static": "npx serve -p 8000 dist",
-    "repl": "cd strudel/website/dist && npx serve -p 8000 .",
-    "deploy": "cp -rf dist/* docs/ && git add --force docs && git commit -a -m 'Deploying to GitHub pages.' && git push"
+    "local-server": "cd docs && python3 -m http.server",
+    "deploy": "cp -rf dist/* docs/ && git add --force docs && git commit -a -m 'Deploying to GitHub pages.' && git push",
+    "debug": "cd docs && pnpm run dev"
   },
   "dependencies": {
+    "@strudel.cycles/core": "^0.8.1",
     "ace-builds": "^1.14.0",
+    "acorn": "^8.8.1",
     "dat.gui": "^0.7.9",
+    "dependency-tree": "^9.0.0",
     "jquery": "^3.6.2",
     "p5": "^1.5.0",
     "react": "^18.2.0",
@@ -28,4 +31,3 @@
     "rollup-plugin-visualizer": "^5.8.3"
   }
 }
-

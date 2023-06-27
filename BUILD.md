@@ -31,26 +31,31 @@ I have done my best to keep these patches as few and simple as possible.
 
 ## Building
 
-To initialize the local repository, obtain dependencies, and build a static Web 
-site, run the following commands:
+To initialize the local repository, obtain dependencies, build a static Web 
+site, and run it locally, execute the following commands:
 
 ```
 pnpm install
 pnpm run setup
 pnpm run build
-pnpm run static
+pnpm run local-server
 ```
-These commands will patch Strudel with my addons, build everything, and make a 
+These commands will patch Strudel with my addons; build everything; make a 
 distributable copy of the cloud-music Web site in the `dist` directory, with 
-all resources statically available. Examine `package.json` for details. 
+all resources statically available; and run a local Web site in that 
+directory. Examine `package.json` for details. 
 
-If you see warnings or errors, don't panic unless executing `pnpm run static` 
-doesn't produce a working Web site with playable pieces.
+If you see warnings or errors, don't panic unless browsing localhost does not 
+open a working Web site with playable pieces! It may be necessary to clear the 
+browser cache to see the site.
 
-## Maintenance Note!
+## Maintenance Notes!
 
 _If at all possible_, never edit _existing_ Strudel files, always add _new_ 
 Strudel files. This is to keep discrepancies between Strudel and cloud-music 
 to an absolute minimum.
+
+Track the version of Csound for WebAssembly and update the files if a new 
+version becomes available.
 
 
