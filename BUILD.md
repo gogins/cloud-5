@@ -5,9 +5,9 @@
 This repository is a bit of a hack, but I have tried to make it as maintainable 
 as possible.
 
-The basic idea is to extend Strudel not only with Csound but also with 
-CsoundAC, and then make Strudel into an embeddable component that I can use in 
-my pieces. This is possible because the Strudel Web site serves a REPL page 
+The basic idea is to extend Strudel not only with Csound, but also with 
+CsoundAC, and then to make Strudel into an embeddable component that I can use 
+in my pieces. This is possible because the Strudel Web site serves a REPL page 
 that will run Strudel code from users via an HTTP request, which I can hijack 
 for my own purposes.
 
@@ -16,7 +16,7 @@ before actually building Strudel, this repository makes the following patches
 to Strudel head:
 
  1. Add `strudel-addons/csoundac/` to the Strudel tree. This is done 
-    automatically by `npm run build-repl`.
+    automatically by `pnpm run build-repl`.
  2. Patch `strudel/website/src/Repl.jsx` to import csoundac. There is a Python 
     script that npm will use to make this patch. If this quits working, 
     change the `patch-strudel.py` script as required.
@@ -29,20 +29,22 @@ to Strudel head:
     
 I have done my best to keep these patches as few and simple as possible.
 
-## Setting Up
-
-Run `npm run setup` to perform setup. Examine `package.json` for details. This 
-command will initialize all dependencies. 
-
 ## Building
 
-Run `npm run build-repl` and then run `npm run build` to produce a usable 
-distribution for a static Web site. Examine `package.json` for details. These  
-commands will patch Strudel with my addons, build everything, and make a 
-distributable copy of the cloud-music Web site in the `dist` directory, 
-with all resources statically available. 
+To initialize the local repository, obtain dependencies, and build a static Web 
+site, run the following commands:
 
-If you see warnings or errors, don't panic unless executing `npm run static` 
+```
+pnpm install
+pnpm run setup
+pnpm run build
+pnpm run static
+```
+These commands will patch Strudel with my addons, build everything, and make a 
+distributable copy of the cloud-music Web site in the `dist` directory, with 
+all resources statically available. Examine `package.json` for details. 
+
+If you see warnings or errors, don't panic unless executing `pnpm run static` 
 doesn't produce a working Web site with playable pieces.
 
 ## Maintenance Note!
