@@ -29,10 +29,10 @@ with open(Repl_jsx_filepath, "r+") as file:
 website_package_filepath = "strudel/website/package.json"
 print(f"Patching '{website_package_filepath}'")
 with open(website_package_filepath, "r+") as file:
-  find_this ='''import('@strudel.cycles/csound'),
+  find_this = '''    "@strudel.cycles/csound": "workspace:*",
 ];'''
-  replace_with = '''import('@strudel.cycles/csound'),
-  import('@strudel.cycles/csoundac'),
+  replace_with =  '''    "@strudel.cycles/csound": "workspace:*",
+    "@strudel.cycles/csoundac": "workspace:*",  
 ];'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
