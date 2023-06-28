@@ -75,12 +75,12 @@ export function frequencyToMidiInteger(frequency) {
   * Initializes the CsoundAC WebAssembly library. Normally, 
   * this is set in globalThis by a containing program. 
   * This function should be called from module scope in 
-  * Tidal code before creating any Patterns.
+  * Strudel code before creating any Patterns.
   */
 export function csacLoad() {
-  if (csoundac) {
-    return;
-  }
+  //if (csoundac) {
+  //  return;
+  //}
   if (globalThis.__csoundac__) {
     csoundac = globalThis.__csoundac__;
     logger(`[csacLoad]: using global ${csoundac}`, 'information');
