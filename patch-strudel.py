@@ -30,10 +30,10 @@ website_package_filepath = "strudel/website/package.json"
 print(f"Patching '{website_package_filepath}'")
 with open(website_package_filepath, "r+") as file:
   find_this = '''    "@strudel.cycles/csound": "workspace:*",
-];'''
+'''
   replace_with =  '''    "@strudel.cycles/csound": "workspace:*",
     "@strudel.cycles/csoundac": "workspace:*",  
-];'''
+'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
   print(patched_text)
