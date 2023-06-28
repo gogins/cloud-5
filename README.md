@@ -8,11 +8,15 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License<
 
 Music in the cloud by Michael Gogins. 
 
-This is real music. Each piece will play indefinitely in any standard Web browser. There may or may not be animated visuals along with the music. The listener may or may not be able to customize the piece -- perhaps quite a bit, amounting to a new piece, co-composed with me.
+This is real music. Each piece will play indefinitely in any standard Web 
+browser. There may or may not be animated visuals along with the music. The 
+listener may or may not be able to customize the piece -- perhaps quite a bit, 
+amounting to a new piece, co-composed with me.
 
 All source code for these pieces is available in the GitHub repository.
 
-The underlying technology is my WebAssembly builds of Csound and CsoundAC. Some pieces may use third party libraries.
+The underlying technology is my WebAssembly builds of Csound and CsoundAC. 
+Some pieces may use third party libraries.
 
 # Installation
 
@@ -31,9 +35,10 @@ to Strudel head:
 
  1. Add `strudel-addons/csoundac/` to the Strudel tree. This is done 
     automatically by `pnpm run build-repl`.
- 2. Patch `strudel/website/src/Repl.jsx` to import csoundac. There is a Python 
-    script that npm will use to make this patch. If this quits working, 
-    change the `patch-strudel.py` script as required.
+ 2. Patch `strudel/website/package.json` and `strudel/website/src/Repl.jsx` to 
+    import csoundac. There is a Python script that npm will use to make this 
+    patch. If this quits working, change the `patch-strudel.py` script as 
+    required.
  3. Patch the generated `strudel/website/dist/index.html` file to use relative 
     rather than absolute pathnames for imported assets. This is needed in 
     order to run the Strudel repl from GitHub pages, which are not necessarily 
@@ -52,16 +57,17 @@ site, and run it locally, execute the following commands:
 pnpm install
 pnpm run setup
 pnpm run build
-pnpm run local-server
+pnpm run debug
 ```
 These commands will patch Strudel with my addons; build everything; make a 
 distributable copy of the cloud-music Web site in the `dist` directory, with 
-all resources statically available; and run a local Web site in that 
-directory. Examine `package.json` for details. 
+all resources statically available; and run a local Web site, which is source 
+level debuggable, in that directory. Examine `package.json` for details. 
 
 If you see warnings or errors, don't panic unless browsing localhost does not 
-open a working Web site with playable pieces! It may be necessary to clear the 
-browser cache to see the site.
+open a working Web site with playable pieces! 
+
+It may be necessary to clear the ld browser cache to see the site.
 
 ## Maintenance Notes!
 
