@@ -78,9 +78,10 @@ export function frequencyToMidiInteger(frequency) {
   * Strudel code before creating any Patterns.
   */
 export function csacLoad() {
-  //if (csoundac) {
-  //  return;
-  //}
+alert('hi';
+  if (csoundac) {
+    return;
+  }
   if (globalThis.__csoundac__) {
     csoundac = globalThis.__csoundac__;
     logger(`[csacLoad]: using global ${csoundac}`, 'information');
