@@ -1,7 +1,3 @@
-import { getFrequency, logger, register } from '@strudel.cycles/core';
-import { getAudioContext } from '@strudel.cycles/webaudio';
-import { transpose } from '@strudel.cycles/tonal';
-
 /**
   * C S O U N D A C   M O D U L E   F O R   S T R U D E L
   * Author: Michael Gogins
@@ -27,7 +23,7 @@ import { transpose } from '@strudel.cycles/tonal';
   */
 
 let csoundac;
-let csac_debugging = false;
+let csac_debugging = true;
 
 /**
  * Enables or disables print statement debugging in this module.
@@ -246,7 +242,7 @@ export function csacScale(name) {
   */
 export const scaleS = register('scaleS', (current_chord, scale, scale_step, pat) => {
   return pat.withHap((hap) => {
-    new_chord = scale.chord_(scale_step, current_chord.voices());
+    let new_chord = scale.chord(scale_step, current_chord.voices(), 3);
     if (csac_debugging) logger(`[scaleS]: old chord: ${current_chord.toString()} scale step: ${scale_step} new chord: ${new_chord.toString()}`, 'debug');
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);

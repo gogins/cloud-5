@@ -8,38 +8,38 @@ import os.path
 # We don't want to patch any file more than once.
 
   
-'''
-Integrates CsoundAC into the Strudel Web site and REPL.
-'''
-Repl_jsx_filepath = "strudel/website/src/repl/Repl.jsx"
-print(f"Patching '{Repl_jsx_filepath}'")
-with open(Repl_jsx_filepath, "r+") as file:
-  find_this ='''import('@strudel.cycles/csound'),
-];'''
-  replace_with = '''import('@strudel.cycles/csound'),
-  import('@strudel.cycles/csoundac'),
-];'''
-  text = file.read()
-  patched_text = text.replace(find_this, replace_with)
-  print(patched_text)
-  file.seek(0)
-  file.truncate()
-  file.write(patched_text)
+#~ '''
+#~ Integrates CsoundAC into the Strudel Web site and REPL.
+#~ '''
+#~ Repl_jsx_filepath = "strudel/website/src/repl/Repl.jsx"
+#~ print(f"Patching '{Repl_jsx_filepath}'")
+#~ with open(Repl_jsx_filepath, "r+") as file:
+  #~ find_this ='''import('@strudel.cycles/csound'),
+#~ ];'''
+  #~ replace_with = '''import('@strudel.cycles/csound'),
+  #~ import('@strudel.cycles/csoundac'),
+#~ ];'''
+  #~ text = file.read()
+  #~ patched_text = text.replace(find_this, replace_with)
+  #~ print(patched_text)
+  #~ file.seek(0)
+  #~ file.truncate()
+  #~ file.write(patched_text)
   
-website_package_filepath = "strudel/website/package.json"
-print(f"Patching '{website_package_filepath}'")
-with open(website_package_filepath, "r+") as file:
-  find_this = '''    "@strudel.cycles/csound": "workspace:*",
-'''
-  replace_with =  '''    "@strudel.cycles/csound": "workspace:*",
-    "@strudel.cycles/csoundac": "workspace:*",  
-'''
-  text = file.read()
-  patched_text = text.replace(find_this, replace_with)
-  print(patched_text)
-  file.seek(0)
-  file.truncate()
-  file.write(patched_text)
+#~ website_package_filepath = "strudel/website/package.json"
+#~ print(f"Patching '{website_package_filepath}'")
+#~ with open(website_package_filepath, "r+") as file:
+  #~ find_this = '''    "@strudel.cycles/csound": "workspace:*",
+#~ '''
+  #~ replace_with =  '''    "@strudel.cycles/csound": "workspace:*",
+    #~ "@strudel.cycles/csoundac": "workspace:*",  
+#~ '''
+  #~ text = file.read()
+  #~ patched_text = text.replace(find_this, replace_with)
+  #~ print(patched_text)
+  #~ file.seek(0)
+  #~ file.truncate()
+  #~ file.write(patched_text)
 
 '''
 Workaround for a bug in Csound's handling of string pfields; Strudel controls 

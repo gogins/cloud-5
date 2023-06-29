@@ -62,11 +62,11 @@
 
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
 <!--
-    
-csacLoad();
-csacDebugging(true);
-let chord = csacChord('AbM9');
-let scale = csacScale('Ab major');
+const csac = await import('/csoundac.mjs');
+csac.csacLoad();
+csac.csacDebugging(true);
+let chord = csac.csacChord('AbM9');
+let scale = csac.csacScale('Ab major');
 
 stack(
   "<0 [1, 5, 8] 2 3 4 5 6 7 8 9 10>"

@@ -67,7 +67,7 @@ level debuggable, in that directory. Examine `package.json` for details.
 If you see warnings or errors, don't panic unless browsing localhost does not 
 open a working Web site with playable pieces! 
 
-It may be necessary to clear the ld browser cache to see the site.
+It may be necessary to clear the browser cache to see the site.
 
 ## Maintenance Notes!
 
@@ -77,6 +77,20 @@ to an absolute minimum.
 
 Track the version of Csound for WebAssembly and update the files if a new 
 version becomes available.
+
+## Extending Strudel
+
+For pieces that use Strudel's REPL, it is possible to add new user-defined 
+Patterns and perhaps other functions to Strudel without rebuilding Strudel.
+
+1. Write a static `MyModule.mjs` file in the Web root (the `docs` directory).
+2. Do not import anything that will already have been imported by the Strudel 
+   REPL itself.
+3. Call Strudel's `register` function to integrate any new Patterns into 
+   Strudel.
+4. Don't forget, your Strudel patch has to `import'(MyModule.mjs');`
+
+
 
 
 
