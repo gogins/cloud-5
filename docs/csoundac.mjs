@@ -22,6 +22,7 @@
   * appropriate Patterns, where they may be modified by reference.
   */
 
+let csound;
 let csoundac;
 let csac_debugging = true;
 
@@ -63,8 +64,10 @@ export function csacLoad() {
     return;
   }
   if (globalThis.__csoundac__) {
+    csound = globalThis.__csound__;
+    csound.message(`[csacLoad]: using global ${csound}`);
     csoundac = globalThis.__csoundac__;
-    logger(`[csacLoad]: using global ${csoundac}`, 'information');
+    csound.message(`[csacLoad]: using global ${csoundac}`);
   }
 }
 
@@ -79,7 +82,7 @@ export function csacCopy(a, b) {
     let a_pitch = a.getPitch(voice);
     let b_pitch = b.getPitch(voice);
     b.setPitch(voice, a_pitch);
-    // if (csac_debugging) logger(`voice ${voice}: a: ${a_pitch} old b: ${b_pitch} new b: ${b.getPitch(voice)}`);
+    // if (csac_debugging) csound.message(`voice ${voice}: a: ${a_pitch} old b: ${b_pitch} new b: ${b.getPitch(voice)}`);
   }
 }
 
@@ -95,9 +98,9 @@ export function csacCopy(a, b) {
   */
 export function csacChord(name) {
   csacLoad();
-  if (csac_debugging) logger('[csacChord] Creating Chord...', 'debug');
+  if (csac_debugging) csound.message('[csacChord] Creating Chord...');
   let chord_ = csoundac.chordForName(name);
-  if (csac_debugging) logger(`[csacChord] ${chord_.toString()}`, 'debug');
+  if (csac_debugging) csound.message(`[csacChord] ${chord_.toString()}`);
   return chord_;
 }
 
@@ -110,7 +113,7 @@ export const chordT = register('chordT', (current_chord, semitones, pat) => {
     let new_chord = current_chord.T(semitones);
     if (csac_debugging) {
         let message = `[chordT]: ${current_chord.toString()} ${current_chord.eOP().name()} T(${semitones}) =>\n[chordT]: ${new_chord.toString()} ${new_chord.name()}`
-        logger(message, 'debug');
+        csound.message(message);
     }
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
@@ -126,7 +129,7 @@ export const chordI = register('chordI', (current_chord, center, pat) => {
     let new_chord = current_chord.I(center);
     if (csac_debugging) {
         let message = `[chordI]: ${current_chord.toString()} ${current_chord.eOP().name()} I(${center}) =>\n[chordI]: ${new_chord.toString()} ${new_chord.eOP().name()}`
-        logger(message, 'debug');
+        csound.message(message);
     }
     ///current_chord = new_chord;
     csacCopy(new_chord, current_chord);
@@ -146,7 +149,7 @@ export const chordK = register('chordK', (current_chord, pat) => {
     let new_chord = current_chord.K();
     if (csac_debugging) {
         let message = `[chordK]: ${current_chord.toString()} ${current_chord.eOP().name()} K =>\n[ChordK]: ${new_chord.toString()} ${new_chord.eOP().name()}`
-        logger(message, 'debug');
+        csound.message(message);
     }
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
@@ -167,7 +170,7 @@ export const chordQ = register('chordQ', (current_chord, modality, semitones, pa
     let new_chord = current_chord.Q(semitones, modality, 1.);
     if (csac_debugging) {
         let message = `[chordQ]: ${current_chord.toString()} ${current_chord.eOP().name()} Q(${semitones}) =>\n[chordQ]: ${new_chord.toString()} ${new_chord.eOP().name()}`
-        logger(message, 'debug');
+        csound.message(message);
     }
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
@@ -184,13 +187,13 @@ export const chordNV = register('chordNV', (chord_, pat) => {
     try {
       frequency = getFrequency(hap);
     } catch(error) {
-      logger('[chordNV] not a note!', 'warning');
+      csound.message('[chordNV] not a note!', 'warning');
       return;
     }
     let current_midi_key = frequencyToMidiInteger(frequency);
     let new_midi_key = csoundac.closestPitch(current_midi_key, chord_);
     let result = hap.withValue(() => new_midi_key);
-    if (csac_debugging) logger(`[chordNV]: ${chord_.toString()} ${chord_.eOP().name()} old note: ${current_midi_key} new note: ${result.value}`, 'debug');
+    if (csac_debugging) csound.message(`[chordNV]: ${chord_.toString()} ${chord_.eOP().name()} old note: ${current_midi_key} new note: ${result.value}`);
     return result;
   });
 });
@@ -205,13 +208,13 @@ export const chordN = register('chordN', (chord_, pat) => {
     try {
       frequency = getFrequency(hap);
     } catch(error) {
-      logger('[chordN] not a note!', 'warning');
+      csound.message('[chordN] not a note!', 'warning');
       return;
     }
     let current_midi_key = frequencyToMidiInteger(frequency);
     let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, chord_.epcs());
     let result = hap.withValue(() => new_midi_key);
-    if (csac_debugging) logger(`[chordN]: ${chord_.toString()} ${chord_.eOP().name()} old note: ${current_midi_key} new note: ${result.value}`, 'debug');
+    if (csac_debugging) csound.message(`[chordN]: ${chord_.toString()} ${chord_.eOP().name()} old note: ${current_midi_key} new note: ${result.value}`);
     return result;
   });
 });
@@ -228,9 +231,9 @@ export const chordN = register('chordN', (chord_, pat) => {
   */
 export function csacScale(name) {
   csacLoad();
-  if (csac_debugging) logger('[csacScale] Creating Scale...', 'debug');
+  if (csac_debugging) csound.message('[csacScale] Creating Scale...');
   let scale_ = csoundac.scaleForName(name);
-  if (csac_debugging) logger(`[csacScale] ${scale_.name()}`, 'debug');
+  if (csac_debugging) csound.message(`[csacScale] ${scale_.name()}`);
   return scale_;
 }
 
@@ -243,7 +246,7 @@ export function csacScale(name) {
 export const scaleS = register('scaleS', (current_chord, scale, scale_step, pat) => {
   return pat.withHap((hap) => {
     let new_chord = scale.chord(scale_step, current_chord.voices(), 3);
-    if (csac_debugging) logger(`[scaleS]: old chord: ${current_chord.toString()} scale step: ${scale_step} new chord: ${new_chord.toString()}`, 'debug');
+    if (csac_debugging) csound.message(`[scaleS]: old chord: ${current_chord.toString()} scale step: ${scale_step} new chord: ${new_chord.toString()}`);
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
   });
@@ -258,7 +261,7 @@ export const scaleS = register('scaleS', (current_chord, scale, scale_step, pat)
 export const scaleT = register('scaleT', (scale_, current_chord, scale_steps, pat) => {
   return pat.withHap((hap) => {
     let new_chord = scale_.transpose_degrees(current_chord, scale_steps, 3);
-    if (csac_debugging) logger(`[scaleT]: old chord: ${current_chord.toString()} scale steps: ${scale_steps} new chord: ${new_chord.toString()}`, 'debug');
+    if (csac_debugging) csound.message(`[scaleT]: old chord: ${current_chord.toString()} scale steps: ${scale_steps} new chord: ${new_chord.toString()}`);
     csacCopy(new_chord, current_chord);
     return hap.withValue(() => hap.value);
   });
@@ -282,13 +285,13 @@ export const scaleM = register('scaleM', (current_scale, pivot_chord, index, pat
       wrapped_index = index % modulation_count;
       new_scale = possible_modulations.get(wrapped_index);
       if (csac_debugging) {
-        let message = `
+        let message_ = `
 [scaleM]: modulating in: ${current_scale.toString()} ${current_scale.name()} 
 [scaleM]: from pivot:    ${pivot_chord_eop.toString()} ${pivot_chord_eop.name()}
 [scaleM]: modulations:   ${modulation_count} => ${wrapped_index}
 [scaleM]: modulated to:  ${new_scale.toString()} ${new_scale.name()}
 `;
-        logger(message, 'debug');
+        csound.message(message_);
       }
       csacCopy(new_scale, current_scale);
     }
@@ -306,13 +309,13 @@ export const scaleN = register('scaleN', (scale_, pat) => {
     try {
       frequency = getFrequency(hap);
     } catch(error) {
-      logger('[scaleN] not a note!', 'warning');
+      csound.message('[scaleN] not a note!', 'warning');
       return;
     }
     let current_midi_key = frequencyToMidiInteger(frequency);
     let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, scale_);
     let result = hap.withValue(() => new_midi_key);
-    if (csac_debugging) logger(`[scaleN]: old note: ${current_midi_key} new note: ${new_midi_key}`, 'debug');
+    if (csac_debugging) csound.message(`[scaleN]: old note: ${current_midi_key} new note: ${new_midi_key}`);
     return result;
   });
 });
@@ -330,7 +333,7 @@ export const scaleN = register('scaleN', (scale_, pat) => {
   * generating harmonies and voicings by independently varying P, I, T, and V.
   */
 export function csacPitv(voices, range) {
-  if (csac_debugging) logger('[csacPitv] Creating PITV group...', 'debug');
+  if (csac_debugging) csound.message('[csacPitv] Creating PITV group...');
   csacLoad();
   let pitv = new csoundac.PITV();
   pitv.initialize(voices, range, 1., false);
@@ -349,7 +352,7 @@ export function csacPitv(voices, range) {
 export const pitvP = register('pitvP', (pitv, P, pat) => {
   return pat.withHap((hap) => {
     pitv.P = P;
-    if (csac_debugging) logger(`[pitvP]: ${pitv.P}`, 'debug');
+    if (csac_debugging) csound.message(`[pitvP]: ${pitv.P}`);
     return hap.withValue(() => hap.value);
   });
 });
@@ -361,7 +364,7 @@ export const pitvP = register('pitvP', (pitv, P, pat) => {
 export const pitvI = register('pitvI', (pitv, I, pat) => {
   return pat.withHap((hap) => {
     pitv.I = I;
-    logger(`[pitvI]: ${pitv.I}`, 'debug');
+    csound.message(`[pitvI]: ${pitv.I}`);
     return hap.withValue(() => hap.value);
   });
 });
@@ -374,7 +377,7 @@ export const pitvI = register('pitvI', (pitv, I, pat) => {
 export const pitvT = register('pitvT', (pitv, T, pat) => {
   return pat.withHap((hap) => {
     pitv.T = T;
-    if (csac_debugging) logger(`[pitvT]: ${pitv.T}`, 'debug');
+    if (csac_debugging) csound.message(`[pitvT]: ${pitv.T}`);
     return hap.withValue(() => hap.value);
   });
 });
@@ -386,7 +389,7 @@ export const pitvT = register('pitvT', (pitv, T, pat) => {
 export const pitvV = register('pitvV', (pitv, V, pat) => {
   return pat.withHap((hap) => {
     pitv.V = V;
-    if (csac_debugging) logger(`[pitvV]: ${pitv.V}`, 'debug');
+    if (csac_debugging) csound.message(`[pitvV]: ${pitv.V}`);
     return hap.withValue(() => hap.value);
   });
 });
@@ -402,14 +405,14 @@ export const pitvNV = register('pitvNV', (pitv, pat) => {
     try {
       frequency = getFrequency(hap);
     } catch(error) {
-      logger('[pitvNV] not a note!', 'warning');
+      csound.message('[pitvNV] not a note!', 'warning');
       return;
     }
     let current_midi_key = frequencyToMidiInteger(frequency);
     let voiced_chord = pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, true).get(0);
     let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
     let result = hap.withValue(() => new_midi_key);
-    if (csac_debugging) logger(`[pitvNV]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`, 'debug');
+    if (csac_debugging) csound.message(`[pitvNV]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`);
     return result;
   });
 });
@@ -425,7 +428,7 @@ export const pitvN = register('pitvN', (pitv, pat) => {
     try {
       frequency = getFrequency(hap);
     } catch(error) {
-      logger('[pitvNV] not a note!', 'warning');
+      csound.message('[pitvNV] not a note!', 'warning');
       return;
     }
     let current_midi_key = frequencyToMidiInteger(frequency);
@@ -433,7 +436,7 @@ export const pitvN = register('pitvN', (pitv, pat) => {
     let pcs_ = chord_.epcs();
     let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, pcs_);
     let result = hap.withValue(() => new_midi_key);
-    if (csac_debugging) logger(`[pitvN]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`, 'debug');
+    if (csac_debugging) csound.message(`[pitvN]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`);
     /// console.log(`[pitvN]: old note: ${current_midi_key} new note: ${new_midi_key} result.value: ${result.value}`);
     return result;
   });

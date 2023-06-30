@@ -84,11 +84,12 @@ For pieces that use Strudel's REPL, it is possible to add new user-defined
 Patterns and perhaps other functions to Strudel without rebuilding Strudel.
 
 1. Write a static `MyModule.mjs` file in the Web root (the `docs` directory).
-2. Do not import anything that will already have been imported by the Strudel 
-   REPL itself.
+2. Do _not_ import anything that will already have been imported by the 
+   Strudel REPL itself -- which is essentially all of Strudel.
 3. Call Strudel's `register` function to integrate any new Patterns into 
    Strudel.
-4. Don't forget, your Strudel patch has to `import'(MyModule.mjs');`
+4. Don't forget, your Strudel patch has to `import'(MyModule.mjs');` first 
+   thing.
 
 
 
