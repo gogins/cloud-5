@@ -68,8 +68,8 @@ csac.Debug(true);
   "<0 [1, 5, 8] 2 3 4 5 6 7 8 9 10>"
   .off(-1/4, x => x.sub(9))
   .transpose(40)
-  .acScale('Ab major')
-  .acN().note().csoundm("<4 9>")
+  .acChord('DM9')
+  .acCN().note().csoundm("<4 9>")
  .pianoroll({maxMidi:120,minMidi:16})
  
 -->

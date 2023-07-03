@@ -68,7 +68,6 @@ let csoundac = globalThis.__csoundac__;
   * "-8 [2,4,6]"
   * .acScale('C major') // Creates a CsoundAC Scale. 
   * .acSS("<0 -1 -2 -3 -4 -5 -6 -4>") // Generates a pattern of Chords from scale steps of the Scale.
-  * .acCK // Applies the K operation to the chords.
   * .acCN() // Moves the notes in the topmost Pattern to the K'd Chords.
   */
 
@@ -224,15 +223,19 @@ export function Pitv(voices, range) {
   */
 export const acChord = register('acChord', function (chord, pat) {
   return pat.withHap((hap) => {
-    let ac_chord;
-    if (typeof id == 'string') {
-        ac_chord = new csoundac.chordForName(chorc);
-        if (csac_debugging) diagnostic(`[acChord]: created ${ac_chord.toString()}\n`);
+    if (isHapWhole(hap)) {
+        let ac_chord;
+        if (typeof chord == 'string') {
+            ac_chord = new csoundac.chordForName(chord);
+            if (csac_debugging) diagnostic(`[acChord]: created ${ac_chord.toString()}\n`);
+        } else {
+            ac_chord = chord;
+            if (csac_debugging) diagnostic(`[acChord]: using ${ac_chord.toString()}\n`);
+        }
+        return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
     } else {
-        ac_chord = chord;
-        if (csac_debugging) diagnostic(`[acChord]: using ${ac_chord.toString()}\n`);
+        return hap;
     }
-    return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
    });
 });  
 
