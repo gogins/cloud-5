@@ -42,7 +42,7 @@ a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.o
 
 These are not finished pieces. I am still figuring out how to compose them. 
 However, because they use new facilities, here they are if you want to play 
-with then and examine their code. Comments are welcome (as issues in the 
+with them and examine their code. Comments are welcome (as issues in the 
 cloud-music repository).
 
 - [CsoundAC Example 1](ac_example_1.html).
@@ -89,14 +89,14 @@ case that a composer will write new software as libraries or other resources
 to support a number of their musical compositions.
 
 To develop this kind of software in your fork of cloud-music, keep in mind 
-that the cloud-music project uses [npm](https://www.npmjs.com/), which of 
+that the cloud-music project uses [pnpm](https://www.npmjs.com/), which of 
 course must first be installed. 
 
 If you just want to work in the context of a Web site created in your fork of 
 cloud-music, then just writing static code in the `public` directory would be 
 fine, and by far the easiest. 
 
-Otherwise, take a look at [BUILD.md](https://github.com/gogins/cloud-music/blob/main/BUILD.md)
+Otherwise, take a look at [README.md](https://github.com/gogins/cloud-music/blob/main/README.md)
 and at the build system files such as `package.json`.
 
 

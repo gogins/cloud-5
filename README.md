@@ -21,8 +21,8 @@ Some pieces may use third party libraries.
 
 # Installation
 
-This repository is a bit of a hack, but I have tried to make it as maintainable 
-as possible.
+This repository is a bit of a hack, but I have tried to make it as 
+maintainable as possible.
 
 The basic idea is to extend Strudel not only with Csound, but also with 
 CsoundAC, and then to make Strudel into an embeddable component that I can use 
@@ -35,18 +35,21 @@ before actually building Strudel, this repository makes the following patches
 to Strudel head:
 
  1. Make some minor patches to the Strudel source code. There is a Python 
-    script that npm will use to make this patch. If this quits working, change 
-    the `patch-strudel.py` script as required.
+    script that npm will use to make these patches. If this quits working, 
+    change the `patch-strudel.py` script as required.
  2. Patch the generated `strudel/website/dist/index.html` file to use relative 
     rather than absolute pathnames for imported assets. This is needed in 
-    order to run the Strudel repl from GitHub pages, which are not necessarily 
-    at the root of their Web server. There is a Python script that npm will use 
-    to make this patch. If this quits working, change the `patch-dist.py` 
+    order to run the Strudel REPL from GitHub pages, which are not necessarily 
+    at the root of their Web server. There is a Python script that npm will 
+    use to make this patch. If this quits working, change the `patch-dist.py` 
     script as required.
     
 I have done my best to keep these patches as few and simple as possible.
 
 ## Building
+
+Install [pnpm](https://www.npmjs.com/package/pnpm), which cloud-music and 
+Strudel use rather than npm.
 
 To initialize the local repository, obtain dependencies, build a static Web 
 site, and run it locally, execute the following commands:
@@ -65,12 +68,12 @@ level debuggable, in that directory. Examine `package.json` for details.
 If you see warnings or errors, don't panic unless browsing localhost does not 
 open a working Web site with playable pieces! 
 
-It may be necessary to clear the browser cache to see the site.
+It may be necessary to clear the browser cache to see the pieces.
 
 ## Maintenance Notes!
 
 _If at all possible_, never edit _existing_ Strudel files, always add _new_ 
-Strudel files. This is to keep discrepancies between Strudel and cloud-music 
+Strudel files. This is to keep conflicts between Strudel and cloud-music 
 to an absolute minimum.
 
 Track the version of [Csound for WebAssembly]
