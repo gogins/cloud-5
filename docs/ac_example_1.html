@@ -65,14 +65,14 @@
 
 const csac = await import('/csoundac.mjs');
 csac.debug(true);
-
-run(36)
+let modality = csac.acChord('F7');
+run(8).cat("5, 7, 12, 3".fast(3))
 .slow(6)
 .transpose(40)
-.acChord('FM7').acCT("1 9 2 10".slow(12))
+.acChord('F7').acCT("0 7 2 12".slow(5))
 .acCN()
 .note()
-.csoundm("1 9")
+.csoundm("1 9".slow("7"))
 .pianoroll({maxMidi:84,minMidi:24})
 
 -->

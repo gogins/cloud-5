@@ -14,10 +14,8 @@
   * from the CsoundAC library for algorithmic composition into the 
   * Strudel (Tidal Cycles-based) JavaScript pattern language.
   *
-  * Scales, Chords, and operations upon them are applied for whole Haps, and 
-  * the results are inserted as objects into the Hap context. The resulting 
-  * Patterns must still go through the Strudel note Pattern in order to 
-  * trigger audio output.
+  * The resulting Patterns must still go through the Strudel note Pattern 
+  * in order to trigger audio output.
   */
 
 let csac_debugging = true;
@@ -262,7 +260,6 @@ export const acCT = register('acCT', (semitones, pat) => {
   */
 export const acCI = register('acCI', (pitch, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_chord;
         if (!hap.context.ac_chord) {
           throw new Error('Can only use acCI after .acChord\n');
@@ -275,9 +272,6 @@ export const acCI = register('acCI', (pitch, pat) => {
         }
         ac_chord = new_chord;
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -317,7 +311,6 @@ export const acCK = register('acCK', (pat) => {
   */
 export const acCQ = register('acCQ', (semitones, modality, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_chord;
         if (!hap.context.ac_chord) {
           throw new Error('Can only use acCQ after .acChord\n');
@@ -330,9 +323,6 @@ export const acCQ = register('acCQ', (semitones, modality, pat) => {
         }
         ac_chord = new_chord;
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -375,8 +365,7 @@ export const acCN = register('acCN', (pat) => {
   */
 export const acScale = register('acScale', function (scale, pat) {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
-        let ac_scale;
+         let ac_scale;
         if (typeof scale == 'string') {
             ac_scale = new csoundac.Scale(scale);
             if (csac_debugging) diagnostic(`[acScale]: created ${ac_scale.toString()}\n`);
@@ -386,9 +375,6 @@ export const acScale = register('acScale', function (scale, pat) {
         }
         if (csac_debugging) diagnostic(`[acScale]: hap: ${hap.show()}\n`);
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_scale});
-    } else {
-        return hap;
-    }
    });
 });  
 
@@ -399,7 +385,6 @@ export const acScale = register('acScale', function (scale, pat) {
   */
 export const acSS = register('acSS', (scale_step, voices, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_scale;
         if (!hap.context.ac_scale) {
           throw new Error('Can only use acSS after .acChord.\n');
@@ -408,9 +393,6 @@ export const acSS = register('acSS', (scale_step, voices, pat) => {
         if (csac_debugging) diagnostic(`[acSS]: old chord: ${current_chord.toString()} scale step: ${scale_step} new chord: ${new_chord.toString()}`);
         let result = hap.withValue(() => (isObject ? { ...hap.value, ac_chord } : ac_chord)).setContext({ ...hap.context, ac_chord });
         return result;
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -421,7 +403,6 @@ export const acSS = register('acSS', (scale_step, voices, pat) => {
   */
 export const acST = register('acST', (scale_steps, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_scale;
         if (!hap.context.ac_scale) {
           throw new Error('Can only use acST after .acScale\n');
@@ -436,9 +417,6 @@ export const acST = register('acST', (scale_steps, pat) => {
         if (csac_debugging) diagnostic(`[acST]: old chord: ${ac_chord.toString()} scale steps: ${scale_steps} new chord: ${new_chord.toString()}`);
         ac_chord = new_chord;
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -451,7 +429,6 @@ export const acST = register('acST', (scale_steps, pat) => {
   */
 export const acSM = register('acSM', (index, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_scale;
         if (!hap.context.ac_scale) {
           throw new Error('Can only use acSM after .acScale\n');
@@ -484,9 +461,6 @@ export const acSM = register('acSM', (index, pat) => {
         }
         let result = hap.withValue(() => (isObject ? { ...hap.value, ac_scale } : new_midi_key)).setContext({ ...hap.context, ac_scale });
         return result;
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -496,7 +470,6 @@ export const acSM = register('acSM', (index, pat) => {
   */
 export const acSN = register('acSN', (pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_scale;
         if (!hap.context.ac_scale) {
           throw new Error('Can only use acSN after .acScale.\n');
@@ -516,9 +489,6 @@ export const acSN = register('acSN', (pat) => {
         if (csac_debugging) diagnostic(`[acSN]: ${ac_scale.toString()} ${ac_scale.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
         if (csac_debugging) diagnostic(`[acSN]: hap: ${hap.show()}\n`);
         return result;
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -528,16 +498,12 @@ export const acSN = register('acSN', (pat) => {
   */
 export const acPitv = register('acPitv', function (pitv, pat) {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_pitv = pitv;
         if (csac_debugging) {
             diagnostic(`[acPitv]: using ${ac_pitv.toString()}\n`);
             pitv.list(true, false, false);
         }
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_pitv});
-    } else {
-        return hap;
-    }
    });
 });  
 
@@ -547,7 +513,6 @@ export const acPitv = register('acPitv', function (pitv, pat) {
   */
 export const acPP = register('acPP', (P, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_pitv;
         if (!hap.context.ac_pitv) {
           throw new Error('Can only use acPP after .acPitv.\n');
@@ -556,9 +521,6 @@ export const acPP = register('acPP', (P, pat) => {
         ac_pitv.P = P;
         if (csac_debugging) diagnostic(`[acPP]: ${ac_pitv.P}`);
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_pitv});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -568,7 +530,6 @@ export const acPP = register('acPP', (P, pat) => {
   */
 export const acPI = register('acPI', (I, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_pitv;
         if (!hap.context.ac_pitv) {
           throw new Error('Can only use acPI after .acPitv.\n');
@@ -577,9 +538,6 @@ export const acPI = register('acPI', (I, pat) => {
         ac_pitv.I = I;
         if (csac_debugging) diagnostic(`[acPI]: ${ac_pitv.I}`);
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_pitv});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -590,7 +548,6 @@ export const acPI = register('acPI', (I, pat) => {
   */
 export const acPT = register('acPT', (T, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_pitv;
         if (!hap.context.ac_pitv) {
           throw new Error('Can only use acPI after .acPitv.\n');
@@ -599,9 +556,6 @@ export const acPT = register('acPT', (T, pat) => {
         ac_pitv.T = T;
         if (csac_debugging) diagnostic(`[acPT]: ${ac_pitv.T}`);
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_pitv});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -611,8 +565,7 @@ export const acPT = register('acPT', (T, pat) => {
   */
 export const acPV = register('acPV', (V, pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
-        let ac_pitv;
+         let ac_pitv;
         if (!hap.context.ac_pitv) {
           throw new Error('Can only use acPV after .acPitv.\n');
         }
@@ -620,9 +573,6 @@ export const acPV = register('acPV', (V, pat) => {
         ac_pitv.V = V;
         if (csac_debugging) diagnostic(`[acPV]: ${ac_pitv.V}`);
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_pitv});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -632,7 +582,6 @@ export const acPV = register('acPV', (V, pat) => {
   */
 export const acPC = register('acPC', (pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_pitv;
         if (!hap.context.ac_pitv) {
           throw new Error('Can only use acPV after .acPitv.\n');
@@ -649,9 +598,6 @@ export const acPC = register('acPC', (pat) => {
         let result = hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
         if (csac_debugging) diagnostic(`[acCN]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
         return result;
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -662,7 +608,6 @@ export const acPC = register('acPC', (pat) => {
   */
 export const acPN = register('acPN', (pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_pitv;
         if (!hap.context.ac_pitv) {
           throw new Error('Can only use acPV after .acPitv.\n');
@@ -682,9 +627,6 @@ export const acPN = register('acPN', (pat) => {
         let result = hap.withValue(() => new_midi_key);
          if (csac_debugging) diagnostic(`[acPNV]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
         return result;
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -695,7 +637,6 @@ export const acPN = register('acPN', (pat) => {
   */
 export const acPNV = register('acPNV', (pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_pitv;
         if (!hap.context.ac_pitv) {
           throw new Error('Can only use acPV after .acPitv.\n');
@@ -714,9 +655,6 @@ export const acPNV = register('acPNV', (pat) => {
         let result = hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
         if (csac_debugging) diagnostic(`[acPNV]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
         return result;
-    } else {
-        return hap;
-    }
   });
 });
 
