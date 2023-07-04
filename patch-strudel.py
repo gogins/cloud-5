@@ -1,6 +1,6 @@
 #!/bin/python3
 '''
-Patching Strudel to import csoundac.mjs...
+Patching Strudel...
 '''
 import os
 import os.path

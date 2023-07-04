@@ -86,7 +86,7 @@ const isHapWhole = function(hap) {
 /**
  * Enables or disables print statement debugging in this module.
  */
-export function Debug(enabled) {
+export function debug(enabled) {
     csac_debugging = enabled;
 }
 
@@ -95,7 +95,7 @@ export function Debug(enabled) {
   * log.
   */
 export function diagnostic(message) {
-    const text = `[csoundac]${message}`;
+    const text = `[csac]${message}`;
     logger(text, 'debug');
     if (csound) csound.message(text);
 };
@@ -223,19 +223,15 @@ export function Pitv(voices, range) {
   */
 export const acChord = register('acChord', function (chord, pat) {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
-        let ac_chord;
-        if (typeof chord == 'string') {
-            ac_chord = new csoundac.chordForName(chord);
-            if (csac_debugging) diagnostic(`[acChord]: created ${ac_chord.toString()}\n`);
-        } else {
-            ac_chord = chord;
-            if (csac_debugging) diagnostic(`[acChord]: using ${ac_chord.toString()}\n`);
-        }
-        return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
+    let ac_chord;
+    if (typeof chord == 'string') {
+        ac_chord = new csoundac.chordForName(chord);
+        if (csac_debugging) diagnostic(`[acChord]: created ${ac_chord.toString()}\n`);
     } else {
-        return hap;
+        ac_chord = chord;
+        if (csac_debugging) diagnostic(`[acChord]: using ${ac_chord.toString()}\n`);
     }
+    return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
    });
 });  
 
@@ -245,7 +241,6 @@ export const acChord = register('acChord', function (chord, pat) {
   */
 export const acCT = register('acCT', (semitones, pat) => {
     return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
         let ac_chord;
         if (!hap.context.ac_chord) {
             throw new Error('Can only use acCT after .acChord\n');
@@ -253,14 +248,11 @@ export const acCT = register('acCT', (semitones, pat) => {
         ac_chord = hap.context.ac_chord;
         let new_chord = ac_chord.T(semitones);
         if (csac_debugging) {
-            let message = `[acCT]: ${ac_chord.toString()} ${ac_chord.eOP().name()} T(${semitones}) =>\n[acCT]: ${new_chord.toString()} ${ac_chord.eOP().name()}`
+            let message = `[acCT]: ${ac_chord.toString()} ${ac_chord.eOP().name()} T(${semitones}) =>\n[csac][acCT]: ${new_chord.toString()} ${new_chord.eOP().name()}\n`
             diagnostic(message);
         }
         ac_chord = new_chord;
         return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
-    } else {
-        return hap;
-    }
   });
 });
 
@@ -298,22 +290,18 @@ export const acCI = register('acCI', (pitch, pat) => {
   */
 export const acCK = register('acCK', (pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
-        let ac_chord;
-        if (!hap.context.ac_chord) {
-          throw new Error('Can only use acCK after .acChord\n');
-        }
-        ac_chord = hap.context.ac_chord;
-        let new_chord = ac_chord.K();
-        if (csac_debugging) {
-            let message = `[acCK]: ${ac_chord.toString()} ${ac_chord.eOP().name()} K =>\n[acCK]: ${new_chord.toString()} ${new_chord.eOP().name()}`
-            diagnostic(message);
-        }
-        ac_chord = new_chord;
-        return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
-    } else {
-        return hap;
+    let ac_chord;
+    if (!hap.context.ac_chord) {
+      throw new Error('Can only use acCK after .acChord\n');
     }
+    ac_chord = hap.context.ac_chord;
+    let new_chord = ac_chord.K();
+    if (csac_debugging) {
+        let message = `[acCK]: ${ac_chord.toString()} ${ac_chord.eOP().name()} K =>\n[csac][acCK]: ${new_chord.toString()} ${new_chord.eOP().name()}\n`
+        diagnostic(message);
+    }
+    ac_chord = new_chord;
+    return hap.withValue(() => hap.value).setContext({ ...hap.context, ac_chord});
   });
 });
 
@@ -354,29 +342,30 @@ export const acCQ = register('acCQ', (semitones, modality, pat) => {
   */
 export const acCN = register('acCN', (pat) => {
   return pat.withHap((hap) => {
-    if (isHapWhole(hap)) {
-        let ac_chord;
-        if (!hap.context.ac_chord) {
-          throw new Error('Can only use acCN after .acChord.\n');
-        }
-        ac_chord = hap.context.ac_chord;
-        let frequency;
-        try {
-          frequency = getFrequency(hap);
-        } catch(error) {
-          diagnostic('[acCN] not a note!\n');
-          return;
-        }
-        let current_midi_key = frequencyToMidiInteger(frequency);
-        let epcs = ac_chord.epcs();
-        let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-        let result = hap.withValue(() => new_midi_key);
-        if (csac_debugging) diagnostic(`[acCN]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
-        if (csac_debugging) diagnostic(`[acCN]: hap: ${hap.show()}\n`);
-        return result;
-    } else {
-        return hap;
+    let ac_chord;
+    if (!hap.context.ac_chord) {
+      throw new Error('Can only use acCN after .acChord.\n');
     }
+    ac_chord = hap.context.ac_chord;
+    let frequency;
+    try {
+      frequency = getFrequency(hap);
+    } catch(error) {
+      diagnostic('[acCN] not a note!\n');
+      return;
+    }
+    let current_midi_key = frequencyToMidiInteger(frequency);
+    let epcs = ac_chord.epcs();
+    let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+    //let result = hap.withValue(() => new_midi_key);
+    //let result = hap.withValue(() => (isObject ? { ...hap.value, note } : note)).setContext({ ...hap.context, ac_chord });
+    let result = hap.withValue(() => note).setContext({ ...hap.context, ac_chord });
+    if (csac_debugging) {
+        diagnostic(`[acCN]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
+        diagnostic(`[acCN]: old hap: ${hap.show()}\n`);
+        diagnostic(`[acCN]: new hap: ${result.show()}\n`);
+    }
+    return result;
   });
 });
 

@@ -45,17 +45,7 @@ However, because they use new facilities, here they are if you want to play
 with then and examine their code. Comments are welcome (as issues in the 
 cloud-music repository).
 
-- [Chord Example](chord_example.html).
-
-- [PITV Example](pitv_example.html).
-
-- [Scale Example](scale_example.html).
-
-- [Scale Example 2](scale_example_2.html).
-
-- [Scale Example 3](scale_example_3.html).
-
-- [Scale Example 4](scale_example_4.html).
+- [CsoundAC Example 1](ac_example_1.html).
 
 ## cloud-music as a Studio and/or Development Environment
 

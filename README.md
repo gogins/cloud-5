@@ -15,7 +15,8 @@ amounting to a new piece, co-composed with me.
 
 All source code for these pieces is available in the GitHub repository.
 
-The underlying technology is my WebAssembly builds of Csound and CsoundAC. 
+The underlying technology is my [WebAssembly builds of Csound and CsoundAC]
+(https://github.com/gogins/csound-wasm). 
 Some pieces may use third party libraries.
 
 # Installation
@@ -33,13 +34,10 @@ To this end, Strudel is included in this repository as a Git submodule. But,
 before actually building Strudel, this repository makes the following patches 
 to Strudel head:
 
- 1. Add `strudel-addons/csoundac/` to the Strudel tree. This is done 
-    automatically by `pnpm run build-repl`.
- 2. Patch `strudel/website/package.json` and `strudel/website/src/Repl.jsx` to 
-    import csoundac. There is a Python script that npm will use to make this 
-    patch. If this quits working, change the `patch-strudel.py` script as 
-    required.
- 3. Patch the generated `strudel/website/dist/index.html` file to use relative 
+ 1. Make some minor patches to the Strudel source code. There is a Python 
+    script that npm will use to make this patch. If this quits working, change 
+    the `patch-strudel.py` script as required.
+ 2. Patch the generated `strudel/website/dist/index.html` file to use relative 
     rather than absolute pathnames for imported assets. This is needed in 
     order to run the Strudel repl from GitHub pages, which are not necessarily 
     at the root of their Web server. There is a Python script that npm will use 
@@ -60,7 +58,7 @@ pnpm run build
 pnpm run debug
 ```
 These commands will patch Strudel with my addons; build everything; make a 
-distributable copy of the cloud-music Web site in the `dist` directory, with 
+distributable copy of the cloud-music Web site in the `docs` directory, with 
 all resources statically available; and run a local Web site, which is source 
 level debuggable, in that directory. Examine `package.json` for details. 
 
@@ -75,21 +73,26 @@ _If at all possible_, never edit _existing_ Strudel files, always add _new_
 Strudel files. This is to keep discrepancies between Strudel and cloud-music 
 to an absolute minimum.
 
-Track the version of Csound for WebAssembly and update the files if a new 
-version becomes available.
+Track the version of [Csound for WebAssembly]
+(https://github.com/gogins/csound-wasm) and update the files if a new version 
+becomes available.
 
 ## Extending Strudel
 
-For pieces that use Strudel's REPL, it is possible to add new user-defined 
-Patterns and perhaps other functions to Strudel without rebuilding Strudel.
+For cloud-music pieces that use Strudel's REPL, it is possible to add new 
+user-defined Patterns and perhaps other functions to Strudel _without 
+rebuilding Strudel_.
 
-1. Write a static `MyModule.mjs` file in the Web root (the `docs` directory).
+1. Write a static `MyModule.mjs` module in the Web root (the `docs` 
+   directory).
 2. Do _not_ import anything that will already have been imported by the 
    Strudel REPL itself -- which is essentially all of Strudel.
 3. Call Strudel's `register` function to integrate any new Patterns into 
    Strudel.
-4. Don't forget, your Strudel patch has to `import'(MyModule.mjs');` first 
-   thing.
+4. Don't forget, any Strudel piece that uses MyModule has to 
+  `import('/MyModule.mjs');` first thing!
+   
+The `csoundac.mjs` module is an example of such a plugin.
 
 
 
