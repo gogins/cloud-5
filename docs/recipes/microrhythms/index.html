@@ -268,7 +268,7 @@
 <h1 id="microrhythms">Microrhythms<a aria-hidden="true" tabIndex="-1" href="/recipes/microrhythms#microrhythms"><span class="icon icon-link"></span></a></h1>
 <p>Inspired by this <a href="https://www.youtube.com/watch?v=or7B6vI3jOo">Mini-Lecture on Microrhythm Notation</a>, let’s look at how we can express microrhythms with Strudel.</p>
 <p>The timestamps of the first rhythm are <code>0 1/5 1/2 2/3 1</code>. We could naively express this with a stack:</p>
-<astro-island uid="1hsErJ" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;s(\&quot;hh\&quot;).struct(\n  stack(\n    \&quot;x\&quot;, // 0\n    \&quot;~ x ~@3\&quot;, // 1/5\n    \&quot;~ x\&quot;, // 1/2\n    \&quot;~@2 x\&quot; // 2/3\n))&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;hh&quot;).struct(
+<astro-island uid="1hsErJ" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;s(\&quot;hh\&quot;).struct(\n  stack(\n    \&quot;x\&quot;, // 0\n    \&quot;~ x ~@3\&quot;, // 1/5\n    \&quot;~ x\&quot;, // 1/2\n    \&quot;~@2 x\&quot; // 2/3\n))&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;hh&quot;).struct(
   stack(
     &quot;x&quot;, // 0
     &quot;~ x ~@3&quot;, // 1/5
@@ -288,10 +288,10 @@
 <li>1 - 2/3 = 1/3 = 10/30</li>
 </ul>
 <p>Using those, we can now express the rhythm much shorter:</p>
-<astro-island uid="2uQxuj" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;s(\&quot;hh\&quot;).struct(\&quot;x@6 x@9 x@5 x@10\&quot;)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;hh&quot;).struct(&quot;x@6 x@9 x@5 x@10&quot;)</pre></astro-island>
+<astro-island uid="2uQxuj" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;s(\&quot;hh\&quot;).struct(\&quot;x@6 x@9 x@5 x@10\&quot;)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;hh&quot;).struct(&quot;x@6 x@9 x@5 x@10&quot;)</pre></astro-island>
 <p>The problems of the first notation are now fixed: it is much shorter and the durations are correct.
 Still, this notation involved calculating the durations by hand, which could be automated:</p>
-<astro-island uid="2qKvfV" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;Pattern.prototype.micro = function (...timestamps) {\n  const durations = timestamps.map((x, i, a) =&gt; {\n    const next = i &lt; a.length-1 ? a[i+1] : 1;\n    return next - a[i]\n  })\n  return this.struct(timeCat(...durations.map(d =&gt; [d, 1]))).late(timestamps[0])\n}\ns(&#39;hh&#39;).micro(0, 1/5, 1/2, 2/3)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>Pattern.prototype.micro = function (...timestamps) {
+<astro-island uid="2qKvfV" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;Pattern.prototype.micro = function (...timestamps) {\n  const durations = timestamps.map((x, i, a) =&gt; {\n    const next = i &lt; a.length-1 ? a[i+1] : 1;\n    return next - a[i]\n  })\n  return this.struct(timeCat(...durations.map(d =&gt; [d, 1]))).late(timestamps[0])\n}\ns(&#39;hh&#39;).micro(0, 1/5, 1/2, 2/3)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>Pattern.prototype.micro = function (...timestamps) {
   const durations = timestamps.map((x, i, a) =&gt; {
     const next = i &lt; a.length-1 ? a[i+1] : 1;
     return next - a[i]
@@ -301,7 +301,7 @@ Still, this notation involved calculating the durations by hand, which could be 
 s(&#x27;hh&#x27;).micro(0, 1/5, 1/2, 2/3)</pre></astro-island>
 <p>This notation is even shorter and it allows directly filling in the timestamps!</p>
 <p>This is the second example of the video:</p>
-<astro-island uid="ZeCEGX" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;Pattern.prototype.micro = function (...timestamps) {\n  const durations = timestamps.map((x, i, a) =&gt; {\n    const next = i &lt; a.length-1 ? a[i+1] : 1;\n    return next - a[i]\n  })\n  return this.struct(timeCat(...durations.map(d =&gt; [d, 1]))).late(timestamps[0])\n}\ns(&#39;hh&#39;).micro(0, 1/6, 2/5, 2/3, 3/4)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>Pattern.prototype.micro = function (...timestamps) {
+<astro-island uid="ZeCEGX" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;Pattern.prototype.micro = function (...timestamps) {\n  const durations = timestamps.map((x, i, a) =&gt; {\n    const next = i &lt; a.length-1 ? a[i+1] : 1;\n    return next - a[i]\n  })\n  return this.struct(timeCat(...durations.map(d =&gt; [d, 1]))).late(timestamps[0])\n}\ns(&#39;hh&#39;).micro(0, 1/6, 2/5, 2/3, 3/4)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>Pattern.prototype.micro = function (...timestamps) {
   const durations = timestamps.map((x, i, a) =&gt; {
     const next = i &lt; a.length-1 ? a[i+1] : 1;
     return next - a[i]

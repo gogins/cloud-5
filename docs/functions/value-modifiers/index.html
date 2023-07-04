@@ -269,28 +269,28 @@
 Let’s now look more closely at how these <code>param(eter) functions</code> work.</p>
 <h1 id="parameter-functions">Parameter Functions<a aria-hidden="true" tabIndex="-1" href="/functions/value-modifiers#parameter-functions"><span class="icon icon-link"></span></a></h1>
 <p>A very powerful feature of tidal patterns is that each parameter can be controlled independently:</p>
-<script>(self.Astro=self.Astro||{}).only=t=>{(async()=>await(await t())())()},window.dispatchEvent(new Event("astro:only"));</script><astro-island uid="Z2goExa" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;c a f e\&quot;)\n.cutoff(\&quot;&lt;500 1000 2000 [4000 8000]&gt;\&quot;)\n.gain(.8)\n.s(&#39;sawtooth&#39;)\n.log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<script>(self.Astro=self.Astro||{}).only=t=>{(async()=>await(await t())())()},window.dispatchEvent(new Event("astro:only"));</script><astro-island uid="Z2goExa" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;c a f e\&quot;)\n.cutoff(\&quot;&lt;500 1000 2000 [4000 8000]&gt;\&quot;)\n.gain(.8)\n.s(&#39;sawtooth&#39;)\n.log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>In this example, the parameters <code>note</code>, <code>cutoff</code>, <code>gain</code> and <code>s</code> are controlled independently by either patterns or plain values (numbers / text).
 After pressing play, we can observe the time and parameter values of each event (hap) in the output created by <code>.log()</code>.</p>
 <h2 id="plain-vs-parameterized-values">Plain vs Parameterized Values<a aria-hidden="true" tabIndex="-1" href="/functions/value-modifiers#plain-vs-parameterized-values"><span class="icon icon-link"></span></a></h2>
 <p>Patterns that are not wrapped inside a param function will contain unlabeled <code>plain values</code>:</p>
-<astro-island uid="Zk0Nkw" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;&lt;c e g&gt;\&quot;.log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="Zk0Nkw" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;&lt;c e g&gt;\&quot;.log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>This will not generate any sound output, because Strudel could only guess which param is meant by these letters.</p>
 <p>Now compare that to the version wrapped in <code>note</code>:</p>
-<astro-island uid="Z19gvP6" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;&lt;c e g&gt;\&quot;).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="Z19gvP6" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;&lt;c e g&gt;\&quot;).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>Now it is clear that these letters are meant to be played as notes.
 Under the hood, the <code>note</code> function (as well as all other param functions)
 will wrap each plain value in an object. If the note function did not exist, we would need to write:</p>
-<astro-island uid="7thbA" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat({note:&#39;c&#39;},{note:&#39;e&#39;},{note:&#39;g&#39;}).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="7thbA" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat({note:&#39;c&#39;},{note:&#39;e&#39;},{note:&#39;g&#39;}).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>This will have the same output, though it is rather unwieldy to read and write.</p>
 <h2 id="wrapping-parameter-functions">Wrapping Parameter Functions<a aria-hidden="true" tabIndex="-1" href="/functions/value-modifiers#wrapping-parameter-functions"><span class="icon icon-link"></span></a></h2>
 <p>To avoid too much nesting, param functions can also be chained like this:</p>
-<astro-island uid="pSkPV" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat(&#39;c&#39;, &#39;e&#39;, &#39;g&#39;).note().log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="pSkPV" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat(&#39;c&#39;, &#39;e&#39;, &#39;g&#39;).note().log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>This is equivalent to <code>note(cat(&#39;c&#39;,&#39;e&#39;,&#39;g&#39;)).log()</code>.</p>
 <p>You can use this with any function that declares a type (like <code>n</code>, <code>s</code>, <code>note</code>, <code>freq</code> etc), just make sure to leave the parens empty!</p>
 <h2 id="plain-value-modification">Plain Value Modification<a aria-hidden="true" tabIndex="-1" href="/functions/value-modifiers#plain-value-modification"><span class="icon icon-link"></span></a></h2>
 <p>Patterns of plain values can be modified with any of the following operators:</p>
-<astro-island uid="1AlvuO" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;50 60 70\&quot;.add(\&quot;&lt;0 1 2&gt;\&quot;).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="1AlvuO" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;50 60 70\&quot;.add(\&quot;&lt;0 1 2&gt;\&quot;).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>Here, the add function modifies the numbers on the left.
 Again, there is no output because these numbers have no meaning without a param.</p>
 <h2 id="param-value-modification">Param Value Modification<a aria-hidden="true" tabIndex="-1" href="/functions/value-modifiers#param-value-modification"><span class="icon icon-link"></span></a></h2>
@@ -298,25 +298,25 @@ Again, there is no output because these numbers have no meaning without a param.
 <ul>
 <li>
 <p>Use the operator on the plain value pattern, inside the param function:</p>
-<astro-island uid="8M3nR" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;.add(\&quot;&lt;0 1 2&gt;\&quot;)).room(.1).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="8M3nR" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;.add(\&quot;&lt;0 1 2&gt;\&quot;)).room(.1).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 </li>
 <li>
 <p>Similarly, use the operator on the plain value pattern and wrap it later:</p>
-<astro-island uid="1DvqXH" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;50 60 70\&quot;.add(\&quot;&lt;0 1 2&gt;\&quot;).note().room(.1).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="1DvqXH" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;50 60 70\&quot;.add(\&quot;&lt;0 1 2&gt;\&quot;).note().room(.1).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 </li>
 <li>
 <p>Specify which param should be modified inside the operator function:</p>
-<astro-island uid="Z13tJk6" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;).room(.1).add(note(\&quot;&lt;0 1 2&gt;\&quot;)).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="Z13tJk6" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;).room(.1).add(note(\&quot;&lt;0 1 2&gt;\&quot;)).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 </li>
 <li>
 <p>Modify <em>all</em> numeral params:</p>
-<astro-island uid="Z2d7Te2" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;).room(.1).add(\&quot;&lt;0 1 2&gt;\&quot;).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="Z2d7Te2" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;).room(.1).add(\&quot;&lt;0 1 2&gt;\&quot;).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 </li>
 </ul>
 <p>Which of these 3 ways to use strongly depends on the context!
 Note that the order of chaining param functions also matters!
 In the last example, the <code>room</code> value would not have changed if it was applied later:</p>
-<astro-island uid="1lHqdP" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;).add(\&quot;&lt;0 1 2&gt;\&quot;).room(.1).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="1lHqdP" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;50 60 70\&quot;).add(\&quot;&lt;0 1 2&gt;\&quot;).room(.1).log()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>This shows how the execution of the chained functions goes from left to right.
 In this case, the <code>.add</code> will only modify what’s on the left side.</p>
 <h1 id="operators">Operators<a aria-hidden="true" tabIndex="-1" href="/functions/value-modifiers#operators"><span class="icon icon-link"></span></a></h1>
@@ -363,9 +363,9 @@ Returns a new pattern with values scaled to the given min/max range.</p></div><u
 Returns a new pattern with just numbers.</p></div><ul></ul><div class="space-y-2"><pre>ratio(&quot;1, 5:4, 3:2&quot;).mul(110).freq().s(&quot;piano&quot;).slow(2)</pre></div></astro-island>
 <h1 id="custom-parameters">Custom Parameters<a aria-hidden="true" tabIndex="-1" href="/functions/value-modifiers#custom-parameters"><span class="icon icon-link"></span></a></h1>
 <p>You can also create your own parameters:</p>
-<astro-island uid="24yJLN" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;let x = createParam(&#39;x&#39;)\nx(sine.range(0, 200))\n&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="24yJLN" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;let x = createParam(&#39;x&#39;)\nx(sine.range(0, 200))\n&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>Multiple params can also be created in a more consice way, using <code>createParams</code>:</p>
-<astro-island uid="1oDdIy" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;let { x, y } = createParams(&#39;x&#39;, &#39;y&#39;);\nx(sine.range(0, 200)).y(cosine.range(0, 200));\n&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="1oDdIy" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;let { x, y } = createParams(&#39;x&#39;, &#39;y&#39;);\nx(sine.range(0, 200)).y(cosine.range(0, 200));\n&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>Note that these params will not do anything until you give them meaning in your custom output!</p>
 <p>From modifying parameters we transition to the concept of <a href="/learn/signals">Signals</a>.</p>
           

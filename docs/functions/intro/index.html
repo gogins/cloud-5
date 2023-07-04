@@ -269,15 +269,15 @@
 At the core of Strudel, everything is made of functions.</p>
 <p>For example, everything you can do with the Mini-Notation can also be done with a function.
 This Pattern in Mini Notation:</p>
-<script>(self.Astro=self.Astro||{}).only=t=>{(async()=>await(await t())())()},window.dispatchEvent(new Event("astro:only"));</script><astro-island uid="1xIcLv" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;c3 eb3 g3\&quot;)&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<script>(self.Astro=self.Astro||{}).only=t=>{(async()=>await(await t())())()},window.dispatchEvent(new Event("astro:only"));</script><astro-island uid="1xIcLv" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;c3 eb3 g3\&quot;)&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>is equivalent to this Pattern without Mini Notation:</p>
-<astro-island uid="1JVlqG" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(seq(\&quot;c3\&quot;, \&quot;eb3\&quot;, \&quot;g3\&quot;))&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="1JVlqG" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(seq(\&quot;c3\&quot;, \&quot;eb3\&quot;, \&quot;g3\&quot;))&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>Similarly, there is an equivalent function for every aspect of the mini notation.</p>
 <p>Which representation to use is a matter of context. As a rule of thumb, functions
 are better suited in a larger context, while mini notation is more practical for individiual rhythms.</p>
 <h2 id="limits-of-mini-notation">Limits of Mini Notation<a aria-hidden="true" tabIndex="-1" href="/functions/intro#limits-of-mini-notation"><span class="icon icon-link"></span></a></h2>
 <p>While the Mini Notation is a powerful way to write rhythms concisely, it also has its limits. Take this example:</p>
-<astro-island uid="Z1itqXz" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;stack(\n  note(\&quot;c2 eb2(3,8)\&quot;).s(&#39;sawtooth&#39;).cutoff(800),\n  s(\&quot;bd,~ sd,hh*4\&quot;)\n)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>stack(
+<astro-island uid="Z1itqXz" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;stack(\n  note(\&quot;c2 eb2(3,8)\&quot;).s(&#39;sawtooth&#39;).cutoff(800),\n  s(\&quot;bd,~ sd,hh*4\&quot;)\n)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>stack(
   note(&quot;c2 eb2(3,8)&quot;).s(&#x27;sawtooth&#x27;).cutoff(800),
   s(&quot;bd,~ sd,hh*4&quot;)
 )</pre></astro-island>
@@ -285,21 +285,21 @@ are better suited in a larger context, while mini notation is more practical for
 While stack is also available as <code>,</code> in mini notation, we cannot use it here, because we have different types of sounds.</p>
 <h2 id="combining-patterns">Combining Patterns<a aria-hidden="true" tabIndex="-1" href="/functions/intro#combining-patterns"><span class="icon icon-link"></span></a></h2>
 <p>You can freely mix JS patterns, mini patterns and values! For example, this pattern:</p>
-<astro-island uid="2uQ1It" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat(\n  stack(\&quot;g3\&quot;,\&quot;b3\&quot;,\&quot;e4\&quot;),\n  stack(\&quot;a3\&quot;,\&quot;c3\&quot;,\&quot;e4\&quot;),\n  stack(\&quot;b3\&quot;,\&quot;d3\&quot;,\&quot;fs4\&quot;),\n  stack(\&quot;b3\&quot;,\&quot;e4\&quot;,\&quot;g4\&quot;)\n).note()&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>cat(
+<astro-island uid="2uQ1It" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat(\n  stack(\&quot;g3\&quot;,\&quot;b3\&quot;,\&quot;e4\&quot;),\n  stack(\&quot;a3\&quot;,\&quot;c3\&quot;,\&quot;e4\&quot;),\n  stack(\&quot;b3\&quot;,\&quot;d3\&quot;,\&quot;fs4\&quot;),\n  stack(\&quot;b3\&quot;,\&quot;e4\&quot;,\&quot;g4\&quot;)\n).note()&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>cat(
   stack(&quot;g3&quot;,&quot;b3&quot;,&quot;e4&quot;),
   stack(&quot;a3&quot;,&quot;c3&quot;,&quot;e4&quot;),
   stack(&quot;b3&quot;,&quot;d3&quot;,&quot;fs4&quot;),
   stack(&quot;b3&quot;,&quot;e4&quot;,&quot;g4&quot;)
 ).note()</pre></astro-island>
 <p>…is equivalent to:</p>
-<astro-island uid="Z29yg2j" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat(\n  \&quot;g3,b3,e4\&quot;,\n  \&quot;a3,c3,e4\&quot;,\n  \&quot;b3,d3,f#4\&quot;,\n  \&quot;b3,e4,g4\&quot;\n).note()&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>cat(
+<astro-island uid="Z29yg2j" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;cat(\n  \&quot;g3,b3,e4\&quot;,\n  \&quot;a3,c3,e4\&quot;,\n  \&quot;b3,d3,f#4\&quot;,\n  \&quot;b3,e4,g4\&quot;\n).note()&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>cat(
   &quot;g3,b3,e4&quot;,
   &quot;a3,c3,e4&quot;,
   &quot;b3,d3,f#4&quot;,
   &quot;b3,e4,g4&quot;
 ).note()</pre></astro-island>
 <p>… as well as:</p>
-<astro-island uid="Z1Rtyg4" component-url="/_astro/MiniRepl.2846ad2d.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;&lt;[g3,b3,e4] [a3,c3,e4] [b3,d3,f#4] [b3,e4,g4]&gt;\&quot;)&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<astro-island uid="Z1Rtyg4" component-url="/_astro/MiniRepl.f25a1600.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;note(\&quot;&lt;[g3,b3,e4] [a3,c3,e4] [b3,d3,f#4] [b3,e4,g4]&gt;\&quot;)&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
 <p>While mini notation is almost always shorter, it only has a handful of modifiers: * / ! @.
 When using JS patterns, there is a lot more you can do.</p>
 <p>Next, let’s look at how you can <a href="/learn/factories">create patterns</a></p>
