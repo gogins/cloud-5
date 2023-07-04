@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "setup": "npm install && git submodule update --init --recursive --remote && cd strudel && git checkout main && git stash && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
-    "build-repl": "cp docs/csoundac.mjs docs/chunks/ && python3 patch-strudel.py && cd strudel && npm run setup && npm run build",
-    "build": "npm run build-repl && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && python3 patch-dist.py && ls -ll dist",
+    "setup": "pnpm install && git submodule update --init --recursive --remote && cd strudel && git checkout main && git stash && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
+    "build-repl": "cp docs/csoundac.mjs docs/chunks/ && python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
+    "build": "pnpm run build-repl && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && python3 patch-dist.py && ls -ll dist",
     "debug": "cd docs && python3 -m http.server",
     "deploy": "cp -rf dist/* docs/ && git add --force docs && git commit -a -m 'Deploying to GitHub pages.' && git push"
   },
