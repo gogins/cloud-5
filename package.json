@@ -1,18 +1,18 @@
 {
   "scripts": {
     "setup": "pnpm install && git submodule update --init --recursive --remote && cd strudel && git checkout main && git stash && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
-    "build-repl": "cp docs/csoundac.mjs docs/chunks/ && python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
-    "build": "pnpm run build-repl && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && python3 patch-dist.py && ls -ll dist",
+    "build-strudel": "python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
+    "build": "pnpm run build-strudel && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && python3 patch-dist.py && cp -rf dist/* docs/ && rm docs/CNAME && ls -ll docs",
     "debug": "cd docs && python3 -m http.server",
-    "deploy": "cp -rf dist/* docs/ && git add --force docs && git commit -a -m 'Deploying to GitHub pages.' && git push"
+    "deploy": "git add --force docs && git commit -a -m 'Deploying to GitHub pages.' && git push"
   },
   "dependencies": {
+    "@strudel.cycles/core": "^0.8.2",
     "ace-builds": "^1.14.0",
     "acorn": "^8.8.1",
     "dat.gui": "^0.7.9",
     "dependency-tree": "^9.0.0",
     "jquery": "^3.6.2",
-    "p5": "^1.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sprintf-js": "^1.1.2",
