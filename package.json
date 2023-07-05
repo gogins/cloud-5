@@ -4,7 +4,6 @@
     "build-strudel": "python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
     "build": "pnpm run build-strudel && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && rm dist/CNAME && python3 patch-dist.py && ls -ll dist",
     "debug": "cd docs && python3 -m http.server",
-    "deploy": "git add --force dist && git commit -a -m 'Deploying to GitHub pages.' && git push"
   },
   "dependencies": {
     "@strudel.cycles/core": "^0.8.2",

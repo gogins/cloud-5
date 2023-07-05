@@ -61,7 +61,7 @@ pnpm run build
 pnpm run debug
 ```
 These commands will patch Strudel with my addons; build everything; make a 
-distributable copy of the cloud-music Web site in the `docs` directory, with 
+distributable copy of the cloud-music Web site in the `dist` directory, with 
 all resources statically available; and run a local Web site, which is source 
 level debuggable, in that directory. Examine `package.json` for details. 
 
@@ -69,6 +69,11 @@ If you see warnings or errors, don't panic unless browsing localhost does not
 open a working Web site with playable pieces! 
 
 It may be necessary to clear the browser cache to see the pieces.
+
+## Deployment
+
+Build this project, then copy the entire contents of the `dist` directory 
+to your own Web site's public HTML directory.
 
 ## Maintenance Notes!
 
@@ -96,6 +101,7 @@ rebuilding Strudel_.
   `import('/MyModule.mjs');` first thing!
    
 The `csoundac.mjs` module is an example of such a plugin.
+
 
 
 
