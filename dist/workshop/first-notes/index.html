@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en" class="initial dark">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v2.3.2">
+
+<link rel="icon" type="image/svg+xml" href="favicon.ico">
+
+<meta name="description" content="Strudel is a music live coding environment for the browser, porting the TidalCycles pattern language to JavaScript.">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/apple-icon-180.png" sizes="180x180">
+<meta name="theme-color" content="#222222">
+
+<base href="/">
+
+<!-- Scrollable a11y code helper -->
+<script src="./make-scrollable-code-focusable.js"></script>
+
+
+<!-- this does not work for some reason: -->
+<!-- <style is:global define:vars={strudelTheme}></style> -->
+<!-- the following variables are just a fallback to make sure everything is readable without JS -->
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+
+    <!-- Page Metadata --><link rel="canonical" href="https://strudel.tidalcycles.org/workshop/first-notes/">
+
+<!-- OpenGraph Tags -->
+<meta property="og:title" content="First Notes 🚀 Strudel">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://strudel.tidalcycles.org/workshop/first-notes/">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta property="og:image:alt" content="Strudel Logo">
+<meta name="description" property="og:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta property="og:site_name" content="Strudel">
+
+<!-- Twitter Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site">
+<meta name="twitter:title" content="First Notes 🚀 Strudel">
+<meta name="twitter:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta name="twitter:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta name="twitter:image:alt" content="Strudel Logo">
+    <title>
+      First Notes 🌀 Strudel
+    </title>
+  <link rel="stylesheet" href="/_astro/first-effects.f224cf90.css" />
+<link rel="stylesheet" href="/_astro/intro.0f120bc7.css" />
+<link rel="stylesheet" href="/_astro/first-effects.af72a2b1.css" />
+<link rel="stylesheet" href="/_astro/first-effects.56b16646.css" /><script type="module" src="/_astro/hoisted.908dc6d4.js"></script></head>
+
+  <body class="h-app-height text-gray-50 bg-background">
+    <div class="w-full h-full space-y-4 flex flex-col">
+      <header class="max-w-full fixed top-0 w-full z-[100]">
+        <nav class="flex justify-between py-2 px-4 items-center h-14 max-h-14 bg-lineHighlight text-foreground astro-2W66RQV5" title="Top Navigation">
+  <div class="flex overflow-visible items-center grow astro-2W66RQV5" style="overflow:visible">
+    <a href="/" class="flex items-center text-2xl space-x-2 astro-2W66RQV5">
+      <h1 class="font-bold flex space-x-2 items-baseline text-xl astro-2W66RQV5">
+        <span class="astro-2W66RQV5">🌀</span>
+        <div class="flex space-x-1 items-baseline astro-2W66RQV5">
+          <span class=" astro-2W66RQV5">strudel</span>
+          <span class="text-sm astro-2W66RQV5">DOCS</span>
+        </div>
+      </h1>
+    </a>
+  </div>
+  
+  <div class="search-item h-10 astro-2W66RQV5">
+    <!-- <Search client:idle /> -->
+  </div>
+  <a href="./" class="hidden md:flex cursor-pointer items-center space-x-1 astro-2W66RQV5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 astro-2W66RQV5"><path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd"></path></svg><span class="astro-2W66RQV5">go to REPL</span>
+  </a>
+  <div class="md:hidden astro-2W66RQV5">
+    <style>astro-island,astro-slot{display:contents}</style><script>(self.Astro=self.Astro||{}).idle=t=>{const e=async()=>{await(await t())()};"requestIdleCallback"in window?window.requestIdleCallback(e):setTimeout(e,200)},window.dispatchEvent(new Event("astro:idle"));var l;{const c={0:t=>t,1:t=>JSON.parse(t,o),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(JSON.parse(t,o)),5:t=>new Set(JSON.parse(t,o)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(JSON.parse(t)),9:t=>new Uint16Array(JSON.parse(t)),10:t=>new Uint32Array(JSON.parse(t))},o=(t,s)=>{if(t===""||!Array.isArray(s))return s;const[e,n]=s;return e in c?c[e](n):void 0};customElements.get("astro-island")||customElements.define("astro-island",(l=class extends HTMLElement{constructor(){super(...arguments);this.hydrate=()=>{if(!this.hydrator||this.parentElement&&this.parentElement.closest("astro-island[ssr]"))return;const s=this.querySelectorAll("astro-slot"),e={},n=this.querySelectorAll("template[data-astro-template]");for(const r of n){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(const r of s){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("name")||"default"]=r.innerHTML)}const a=this.hasAttribute("props")?JSON.parse(this.getAttribute("props"),o):{};this.hydrator(this)(this.Component,a,e,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),window.removeEventListener("astro:hydrate",this.hydrate),window.dispatchEvent(new CustomEvent("astro:hydrate"))}}connectedCallback(){!this.hasAttribute("await-children")||this.firstChild?this.childrenConnectedCallback():new MutationObserver((s,e)=>{e.disconnect(),this.childrenConnectedCallback()}).observe(this,{childList:!0})}async childrenConnectedCallback(){window.addEventListener("astro:hydrate",this.hydrate);let s=this.getAttribute("before-hydration-url");s&&await import(s),this.start()}start(){const s=JSON.parse(this.getAttribute("opts")),e=this.getAttribute("client");if(Astro[e]===void 0){window.addEventListener(`astro:${e}`,()=>this.start(),{once:!0});return}Astro[e](async()=>{const n=this.getAttribute("renderer-url"),[a,{default:r}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),i=this.getAttribute("component-export")||"default";if(!i.includes("."))this.Component=a[i];else{this.Component=a;for(const d of i.split("."))this.Component=this.Component[d]}return this.hydrator=r,this.hydrate},s,this)}attributeChangedCallback(){this.hydrator&&this.hydrate()}},l.observedAttributes=["props"],l))}</script><astro-island uid="MX3bB" component-url="/_astro/MobileNav.922de2c4.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;sidebar&quot;:[0,{&quot;Workshop&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Getting Started\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/getting-started\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Notes\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-notes\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/pattern-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Recap\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/recap\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Workshop in German\&quot;],\&quot;link\&quot;:[0,\&quot;de/workshop/getting-started\&quot;]}]]&quot;],&quot;Making Sound&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Samples\&quot;],\&quot;link\&quot;:[0,\&quot;learn/samples\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Synths\&quot;],\&quot;link\&quot;:[0,\&quot;learn/synths\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Audio Effects\&quot;],\&quot;link\&quot;:[0,\&quot;learn/effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;MIDI &amp; OSC\&quot;],\&quot;link\&quot;:[0,\&quot;learn/input-output\&quot;]}]]&quot;],&quot;More&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Mini-Notation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/mini-notation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Coding syntax\&quot;],\&quot;link\&quot;:[0,\&quot;learn/code\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Offline\&quot;],\&quot;link\&quot;:[0,\&quot;learn/pwa\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/patterns\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Alignment\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/alignment\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Strudel vs Tidal\&quot;],\&quot;link\&quot;:[0,\&quot;learn/strudel-vs-tidal\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Music metadata\&quot;],\&quot;link\&quot;:[0,\&quot;learn/metadata\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;CSound\&quot;],\&quot;link\&quot;:[0,\&quot;learn/csound\&quot;]}]]&quot;],&quot;Pattern Functions&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Introduction\&quot;],\&quot;link\&quot;:[0,\&quot;functions/intro\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Creating Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;learn/factories\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Time Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/time-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Control Parameters\&quot;],\&quot;link\&quot;:[0,\&quot;functions/value-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Signals\&quot;],\&quot;link\&quot;:[0,\&quot;learn/signals\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Conditional Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/conditional-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Accumulation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/accumulation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Tonal Functions\&quot;],\&quot;link\&quot;:[0,\&quot;learn/tonal\&quot;]}]]&quot;],&quot;Development&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;REPL\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/repl\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Packages\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/packages\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Docs\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/docs\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Testing\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/testing\&quot;]}]]&quot;]}]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MobileNav&quot;,&quot;value&quot;:true}" await-children=""><nav data-headlessui-state=""><button class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" id="headlessui-disclosure-button-:R1:" type="button" aria-expanded="false" data-headlessui-state=""><span class="sr-only">Open main menu</span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button></nav></astro-island>
+  </div>
+</nav>
+      </header>
+      <main class="relative pt-16">
+        <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
+          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed h-full">
+            <nav aria-labelledby="grid-left" class="max-h-full overflow-auto pb-20 text-foreground">
+  <ul>
+    <li>
+          <div class="nav-group pb-4">
+            <h2>Workshop</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/getting-started">
+                      Getting Started
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-sounds">
+                      First Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block bg-lineHighlight" href="/workshop/first-notes" aria-current="page">
+                      First Notes
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-effects">
+                      First Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/pattern-effects">
+                      Pattern Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/recap">
+                      Recap
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/getting-started">
+                      Workshop in German
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Making Sound</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/samples">
+                      Samples
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/synths">
+                      Synths
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/effects">
+                      Audio Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/input-output">
+                      MIDI &amp; OSC
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>More</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/mini-notation">
+                      Mini-Notation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/code">
+                      Coding syntax
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/pwa">
+                      Offline
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/patterns">
+                      Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/alignment">
+                      Pattern Alignment
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/strudel-vs-tidal">
+                      Strudel vs Tidal
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/metadata">
+                      Music metadata
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/csound">
+                      CSound
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Pattern Functions</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/intro">
+                      Introduction
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/factories">
+                      Creating Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/time-modifiers">
+                      Time Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/value-modifiers">
+                      Control Parameters
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/signals">
+                      Signals
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/conditional-modifiers">
+                      Conditional Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/accumulation">
+                      Accumulation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/tonal">
+                      Tonal Functions
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Development</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/repl">
+                      REPL
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/sounds">
+                      Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/packages">
+                      Packages
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/docs">
+                      Docs
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/testing">
+                      Testing
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li>
+  </ul>
+</nav>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    var target = document.querySelector('[aria-current="page"]');
+    if (target && target.offsetTop > window.innerHeight - 100) {
+      document.querySelector('.nav-groups').scrollTop = target.offsetTop;
+    }
+  });
+</script>
+          </aside>
+          <article id="article" class="content astro-J75B3YUS">
+  <section class="main-section astro-J75B3YUS">
+    <!-- TODO: add dropdown toc on mobile -->
+    <div class="prose dark:prose-invert max-w-full pb-8 astro-J75B3YUS">
+      
+            <h1 id="first-notes">First Notes<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#first-notes"><span class="icon icon-link"></span></a></h1>
+<p>Let’s look at how we can play notes</p>
+<h2 id="numbers-and-notes">numbers and notes<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#numbers-and-notes"><span class="icon icon-link"></span></a></h2>
+<p><strong>play notes with numbers</strong></p>
+<script>(self.Astro=self.Astro||{}).visible=(s,c,n)=>{const r=async()=>{await(await s())()};let i=new IntersectionObserver(e=>{for(const t of e)if(t.isIntersecting){i.disconnect(),r();break}});for(let e=0;e<n.children.length;e++){const t=n.children[e];i.observe(t)}},window.dispatchEvent(new Event("astro:visible"));</script><astro-island uid="1VSDdc" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;48 52 55 59\&quot;).sound(\&quot;piano\&quot;)&quot;],&quot;claviature&quot;:[0,true],&quot;claviatureLabels&quot;:[0,{&quot;C2&quot;:[0,36],&quot;Db2&quot;:[0,37],&quot;D2&quot;:[0,38],&quot;Eb2&quot;:[0,39],&quot;E2&quot;:[0,40],&quot;F2&quot;:[0,41],&quot;Gb2&quot;:[0,42],&quot;G2&quot;:[0,43],&quot;Ab2&quot;:[0,44],&quot;A2&quot;:[0,45],&quot;Bb2&quot;:[0,46],&quot;B2&quot;:[0,47],&quot;C3&quot;:[0,48],&quot;Db3&quot;:[0,49],&quot;D3&quot;:[0,50],&quot;Eb3&quot;:[0,51],&quot;E3&quot;:[0,52],&quot;F3&quot;:[0,53],&quot;Gb3&quot;:[0,54],&quot;G3&quot;:[0,55],&quot;Ab3&quot;:[0,56],&quot;A3&quot;:[0,57],&quot;Bb3&quot;:[0,58],&quot;B3&quot;:[0,59],&quot;C4&quot;:[0,60],&quot;Db4&quot;:[0,61],&quot;D4&quot;:[0,62],&quot;Eb4&quot;:[0,63],&quot;E4&quot;:[0,64],&quot;F4&quot;:[0,65],&quot;Gb4&quot;:[0,66],&quot;G4&quot;:[0,67],&quot;Ab4&quot;:[0,68],&quot;A4&quot;:[0,69],&quot;Bb4&quot;:[0,70],&quot;B4&quot;:[0,71],&quot;C5&quot;:[0,72],&quot;Db5&quot;:[0,73],&quot;D5&quot;:[0,74],&quot;Eb5&quot;:[0,75],&quot;E5&quot;:[0,76],&quot;F5&quot;:[0,77],&quot;Gb5&quot;:[0,78],&quot;G5&quot;:[0,79],&quot;Ab5&quot;:[0,80],&quot;A5&quot;:[0,81],&quot;Bb5&quot;:[0,82],&quot;B5&quot;:[0,83],&quot;C6&quot;:[0,84]}]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;48 52 55 59&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try out different numbers!</p><p>Try decimal numbers, like 55.5</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>play notes with letters</strong></p>
+<astro-island uid="f9xni" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c e g b\&quot;).sound(\&quot;piano\&quot;)&quot;],&quot;claviature&quot;:[0,true],&quot;claviatureLabels&quot;:[0,{&quot;c3&quot;:[0,&quot;c&quot;],&quot;d3&quot;:[0,&quot;d&quot;],&quot;e3&quot;:[0,&quot;e&quot;],&quot;f3&quot;:[0,&quot;f&quot;],&quot;g3&quot;:[0,&quot;g&quot;],&quot;a3&quot;:[0,&quot;a&quot;],&quot;b3&quot;:[0,&quot;b&quot;]}]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c e g b&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try out different letters (a - g).</p><p>Can you find melodies that are actual words? Hint: ☕ 😉 ⚪</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>add flats or sharps to play the black keys</strong></p>
+<astro-island uid="Z14lyhx" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;db eb gb ab bb\&quot;).sound(\&quot;piano\&quot;)&quot;],&quot;claviature&quot;:[0,true],&quot;claviatureLabels&quot;:[0,{&quot;db3&quot;:[0,&quot;db&quot;],&quot;eb3&quot;:[0,&quot;eb&quot;],&quot;gb3&quot;:[0,&quot;gb&quot;],&quot;ab3&quot;:[0,&quot;ab&quot;],&quot;bb3&quot;:[0,&quot;bb&quot;]}]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;db eb gb ab bb&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+<astro-island uid="ZU7NHV" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c# d# f# g# a#\&quot;).sound(\&quot;piano\&quot;)&quot;],&quot;claviature&quot;:[0,true],&quot;claviatureLabels&quot;:[0,{&quot;c#3&quot;:[0,&quot;c#&quot;],&quot;d#3&quot;:[0,&quot;d#&quot;],&quot;f#3&quot;:[0,&quot;f#&quot;],&quot;g#3&quot;:[0,&quot;g#&quot;],&quot;a#3&quot;:[0,&quot;a#&quot;]}]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c# d# f# g# a#&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+<p><strong>play notes with letters in different octaves</strong></p>
+<astro-island uid="Z15YJqk" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c2 e3 g4 b5\&quot;).sound(\&quot;piano\&quot;)&quot;],&quot;claviature&quot;:[0,true],&quot;claviatureLabels&quot;:[0,{&quot;C2&quot;:[0,&quot;C2&quot;],&quot;Db2&quot;:[0,&quot;Db2&quot;],&quot;D2&quot;:[0,&quot;D2&quot;],&quot;Eb2&quot;:[0,&quot;Eb2&quot;],&quot;E2&quot;:[0,&quot;E2&quot;],&quot;F2&quot;:[0,&quot;F2&quot;],&quot;Gb2&quot;:[0,&quot;Gb2&quot;],&quot;G2&quot;:[0,&quot;G2&quot;],&quot;Ab2&quot;:[0,&quot;Ab2&quot;],&quot;A2&quot;:[0,&quot;A2&quot;],&quot;Bb2&quot;:[0,&quot;Bb2&quot;],&quot;B2&quot;:[0,&quot;B2&quot;],&quot;C3&quot;:[0,&quot;C3&quot;],&quot;Db3&quot;:[0,&quot;Db3&quot;],&quot;D3&quot;:[0,&quot;D3&quot;],&quot;Eb3&quot;:[0,&quot;Eb3&quot;],&quot;E3&quot;:[0,&quot;E3&quot;],&quot;F3&quot;:[0,&quot;F3&quot;],&quot;Gb3&quot;:[0,&quot;Gb3&quot;],&quot;G3&quot;:[0,&quot;G3&quot;],&quot;Ab3&quot;:[0,&quot;Ab3&quot;],&quot;A3&quot;:[0,&quot;A3&quot;],&quot;Bb3&quot;:[0,&quot;Bb3&quot;],&quot;B3&quot;:[0,&quot;B3&quot;],&quot;C4&quot;:[0,&quot;C4&quot;],&quot;Db4&quot;:[0,&quot;Db4&quot;],&quot;D4&quot;:[0,&quot;D4&quot;],&quot;Eb4&quot;:[0,&quot;Eb4&quot;],&quot;E4&quot;:[0,&quot;E4&quot;],&quot;F4&quot;:[0,&quot;F4&quot;],&quot;Gb4&quot;:[0,&quot;Gb4&quot;],&quot;G4&quot;:[0,&quot;G4&quot;],&quot;Ab4&quot;:[0,&quot;Ab4&quot;],&quot;A4&quot;:[0,&quot;A4&quot;],&quot;Bb4&quot;:[0,&quot;Bb4&quot;],&quot;B4&quot;:[0,&quot;B4&quot;],&quot;C5&quot;:[0,&quot;C5&quot;],&quot;Db5&quot;:[0,&quot;Db5&quot;],&quot;D5&quot;:[0,&quot;D5&quot;],&quot;Eb5&quot;:[0,&quot;Eb5&quot;],&quot;E5&quot;:[0,&quot;E5&quot;],&quot;F5&quot;:[0,&quot;F5&quot;],&quot;Gb5&quot;:[0,&quot;Gb5&quot;],&quot;G5&quot;:[0,&quot;G5&quot;],&quot;Ab5&quot;:[0,&quot;Ab5&quot;],&quot;A5&quot;:[0,&quot;A5&quot;],&quot;Bb5&quot;:[0,&quot;Bb5&quot;],&quot;B5&quot;:[0,&quot;B5&quot;],&quot;C6&quot;:[0,&quot;C6&quot;]}]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c2 e3 g4 b5&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try out different octaves (1-8)</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>If you are not comfortable with the note letter system, it should be easier to use numbers instead.
+Most of the examples below will use numbers for that reason.
+We will also look at ways to make it easier to play the right notes later.</p>
+<h2 id="changing-the-sound">changing the sound<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#changing-the-sound"><span class="icon icon-link"></span></a></h2>
+<p>Just like with unpitched sounds, we can change the sound of our notes with <code>sound</code>:</p>
+<astro-island uid="ZGXKRc" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;36 43, 52 59 62 64\&quot;).sound(\&quot;piano\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;36 43, 52 59 62 64&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try out different sounds:</p><ul>
+<li>gm_electric_guitar_muted</li>
+<li>gm_acoustic_bass</li>
+<li>gm_voice_oohs</li>
+<li>gm_blown_bottle</li>
+<li>sawtooth</li>
+<li>square</li>
+<li>triangle</li>
+<li>how about bd, sd or hh?</li>
+<li>remove <code>.sound(&#39;...&#39;)</code> completely</li>
+</ul></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>switch between sounds</strong></p>
+<astro-island uid="Z1o1frE" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;48 67 63 [62, 58]\&quot;)\n.sound(\&quot;piano gm_electric_guitar_muted\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;48 67 63 [62, 58]&quot;)
+.sound(&quot;piano gm_electric_guitar_muted&quot;)</pre></astro-island>
+<p><strong>stack multiple sounds</strong></p>
+<astro-island uid="1DN0Il" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;48 67 63 [62, 58]\&quot;)\n.sound(\&quot;piano, gm_electric_guitar_muted\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;48 67 63 [62, 58]&quot;)
+.sound(&quot;piano, gm_electric_guitar_muted&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>The <code>note</code> and <code>sound</code> patterns are combined!</p><p>We will see more ways to combine patterns later..</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<h2 id="longer-sequences">Longer Sequences<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#longer-sequences"><span class="icon icon-link"></span></a></h2>
+<p><strong>Divide sequences with <code>/</code> to slow them down</strong></p>
+
+<astro-island uid="Zdrkz3" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;[36 34 41 39]/4\&quot;).sound(\&quot;gm_acoustic_bass\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;[36 34 41 39]/4&quot;).sound(&quot;gm_acoustic_bass&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>The <code>/4</code> plays the sequence in brackets over 4 cycles (=4s).</p><p>So each of the 4 notes is 1s long.</p><p>Try adding more notes inside the brackets and notice how it gets faster.</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>Because it is so common to just play one thing per cycle, you can..</p>
+<p><strong>Play one per cycle with &lt; &gt;</strong></p>
+<astro-island uid="RqNTG" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;&lt;36 34 41 39&gt;\&quot;).sound(\&quot;gm_acoustic_bass\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;&lt;36 34 41 39&gt;&quot;).sound(&quot;gm_acoustic_bass&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try adding more notes inside the brackets and notice how it does <strong>not</strong> get faster.</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>Play one sequence per cycle</strong></p>
+
+<astro-island uid="ZxvbhP" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;&lt;[36 48]*4 [34 46]*4 [41 53]*4 [39 51]*4&gt;/2\&quot;)\n.sound(\&quot;gm_acoustic_bass\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;&lt;[36 48]*4 [34 46]*4 [41 53]*4 [39 51]*4&gt;/2&quot;)
+.sound(&quot;gm_acoustic_bass&quot;)</pre></astro-island>
+<p><strong>Alternate between multiple things</strong></p>
+<astro-island uid="Z7zuMf" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;60 &lt;63 62 65 63&gt;\&quot;)\n.sound(\&quot;gm_xylophone\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;60 &lt;63 62 65 63&gt;&quot;)
+.sound(&quot;gm_xylophone&quot;)</pre></astro-island>
+<p>This is also useful for unpitched sounds:</p>
+<astro-island uid="Z1Ss9qf" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd*2, ~ &lt;sd cp&gt;, [~ hh]*2\&quot;)\n.bank(\&quot;RolandTR909\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd*2, ~ &lt;sd cp&gt;, [~ hh]*2&quot;)
+.bank(&quot;RolandTR909&quot;)</pre></astro-island>
+<h2 id="scales">Scales<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#scales"><span class="icon icon-link"></span></a></h2>
+<p>Finding the right notes can be difficult.. Scales are here to help:</p>
+<astro-island uid="71rCg" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;0 2 4 &lt;[6,8] [7,9]&gt;\&quot;)\n.scale(\&quot;C:minor\&quot;).sound(\&quot;piano\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;0 2 4 &lt;[6,8] [7,9]&gt;&quot;)
+.scale(&quot;C:minor&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try out different numbers. Any number should sound good!</p><p>Try out different scales:</p><ul>
+<li>C:major</li>
+<li>A2:minor</li>
+<li>D:dorian</li>
+<li>G:mixolydian</li>
+<li>A2:minor:pentatonic</li>
+<li>F:major:pentatonic</li>
+</ul></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>automate scales</strong></p>
+<p>Just like anything, we can automate the scale with a pattern:</p>
+<astro-island uid="ZDud03" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;&lt;0 -3&gt;, 2 4 &lt;[6,8] [7,9]&gt;\&quot;)\n.scale(\&quot;&lt;C:major D:mixolydian&gt;/4\&quot;)\n.sound(\&quot;piano\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;&lt;0 -3&gt;, 2 4 &lt;[6,8] [7,9]&gt;&quot;)
+.scale(&quot;&lt;C:major D:mixolydian&gt;/4&quot;)
+.sound(&quot;piano&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>If you have no idea what these scale mean, don’t worry.
+These are just labels for different sets of notes that go well together.</p><p>Take your time and you’ll find scales you like!</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<h2 id="repeat--elongate">Repeat &amp; Elongate<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#repeat--elongate"><span class="icon icon-link"></span></a></h2>
+<p><strong>Elongate with @</strong></p>
+<astro-island uid="Z2fcGLw" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c@3 eb\&quot;).sound(\&quot;gm_acoustic_bass\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c@3 eb&quot;).sound(&quot;gm_acoustic_bass&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Not using <code>@</code> is like using <code>@1</code>. In the above example, c is 3 units long and eb is 1 unit long.</p><p>Try changing that number!</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>Elongate within sub-sequences</strong></p>
+<astro-island uid="h6GN4" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;&lt;[4@2 4] [5@2 5] [6@2 6] [5@2 5]&gt;*2\&quot;)\n.scale(\&quot;&lt;C2:mixolydian F2:mixolydian&gt;/4\&quot;)\n.sound(\&quot;gm_acoustic_bass\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;&lt;[4@2 4] [5@2 5] [6@2 6] [5@2 5]&gt;*2&quot;)
+.scale(&quot;&lt;C2:mixolydian F2:mixolydian&gt;/4&quot;)
+.sound(&quot;gm_acoustic_bass&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>This groove is called a <code>shuffle</code>.
+Each beat has two notes, where the first is twice as long as the second.
+This is also sometimes called triplet swing. You’ll often find it in blues and jazz.</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>Replicate</strong></p>
+<astro-island uid="gSSQ3" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c!2 [eb,&lt;g a bb a&gt;]\&quot;).sound(\&quot;piano\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c!2 [eb,&lt;g a bb a&gt;]&quot;).sound(&quot;piano&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try switching between <code>!</code>, <code>*</code> and <code>@</code></p><p>What’s the difference?</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<h2 id="recap">Recap<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#recap"><span class="icon icon-link"></span></a></h2>
+<p>Let’s recap what we’ve learned in this chapter:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Concept</th><th>Syntax</th><th>Example</th></tr></thead><tbody><tr><td>Slow down</td><td>/</td><td><astro-island uid="I5oqd" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;[c a f e]/2\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;[c a f e]/2&quot;)</pre></astro-island></td></tr><tr><td>Alternate</td><td>&lt;&gt;</td><td><astro-island uid="k3KpF" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c &lt;e g&gt;\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c &lt;e g&gt;&quot;)</pre></astro-island></td></tr><tr><td>Elongate</td><td>@</td><td><astro-island uid="Z1MImOt" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c@3 e\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c@3 e&quot;)</pre></astro-island></td></tr><tr><td>Replicate</td><td>!</td><td><astro-island uid="SYh6f" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c!3 e\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c!3 e&quot;)</pre></astro-island></td></tr></tbody></table>
+<p>New functions:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Name</th><th>Description</th><th>Example</th></tr></thead><tbody><tr><td>note</td><td>set pitch as number or letter</td><td><astro-island uid="Z1reIvT" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;b g e c\&quot;).sound(\&quot;piano\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;b g e c&quot;).sound(&quot;piano&quot;)</pre></astro-island></td></tr><tr><td>scale</td><td>interpret <code>n</code> as scale degree</td><td><astro-island uid="bipxF" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;6 4 2 0\&quot;).scale(\&quot;C:minor\&quot;).sound(\&quot;piano\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;6 4 2 0&quot;).scale(&quot;C:minor&quot;).sound(&quot;piano&quot;)</pre></astro-island></td></tr><tr><td>stack</td><td>play patterns in parallel (read on)</td><td><astro-island uid="Z1m2oPc" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;stack(s(\&quot;bd sd\&quot;),note(\&quot;c eb g\&quot;))&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>stack(s(&quot;bd sd&quot;),note(&quot;c eb g&quot;))</pre></astro-island></td></tr></tbody></table>
+<h2 id="examples">Examples<a aria-hidden="true" tabIndex="-1" href="/workshop/first-notes#examples"><span class="icon icon-link"></span></a></h2>
+<p><strong>Classy Bassline</strong></p>
+<astro-island uid="Z1rIfa1" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;&lt;[c2 c3]*4 [bb1 bb2]*4 [f2 f3]*4 [eb2 eb3]*4&gt;/2\&quot;)\n.sound(\&quot;gm_synth_bass_1\&quot;)\n.lpf(800) // &lt;-- we&#39;ll learn about this soon&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;&lt;[c2 c3]*4 [bb1 bb2]*4 [f2 f3]*4 [eb2 eb3]*4&gt;/2&quot;)
+.sound(&quot;gm_synth_bass_1&quot;)
+.lpf(800) // &lt;-- we&#x27;ll learn about this soon</pre></astro-island>
+<p><strong>Classy Melody</strong></p>
+<astro-island uid="Jb6ng" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(`&lt;\n[~ 0] 2 [0 2] [~ 2]\n[~ 0] 1 [0 1] [~ 1]\n[~ 0] 3 [0 3] [~ 3]\n[~ 0] 2 [0 2] [~ 2]\n&gt;*2`).scale(\&quot;C4:minor\&quot;)\n.sound(\&quot;gm_synth_strings_1\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(`&lt;
+[~ 0] 2 [0 2] [~ 2]
+[~ 0] 1 [0 1] [~ 1]
+[~ 0] 3 [0 3] [~ 3]
+[~ 0] 2 [0 2] [~ 2]
+&gt;*2`).scale(&quot;C4:minor&quot;)
+.sound(&quot;gm_synth_strings_1&quot;)</pre></astro-island>
+<p><strong>Classy Drums</strong></p>
+<astro-island uid="ZsP0yE" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd*2, ~ &lt;sd cp&gt;, [~ hh]*2\&quot;)\n.bank(\&quot;RolandTR909\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd*2, ~ &lt;sd cp&gt;, [~ hh]*2&quot;)
+.bank(&quot;RolandTR909&quot;)</pre></astro-island>
+<p><strong>If there just was a way to play all the above at the same time…</strong></p>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>It’s called <code>stack</code> 😙</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<astro-island uid="Z1yQKkQ" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;stack(\n  note(\&quot;&lt;[c2 c3]*4 [bb1 bb2]*4 [f2 f3]*4 [eb2 eb3]*4&gt;/2\&quot;)\n  .sound(\&quot;gm_synth_bass_1\&quot;).lpf(800),\n  n(`&lt;\n  [~ 0] 2 [0 2] [~ 2]\n  [~ 0] 1 [0 1] [~ 1]\n  [~ 0] 3 [0 3] [~ 3]\n  [~ 0] 2 [0 2] [~ 2]\n  &gt;*2`).scale(\&quot;C4:minor\&quot;)\n  .sound(\&quot;gm_synth_strings_1\&quot;),\n  sound(\&quot;bd*2, ~ &lt;sd cp&gt;, [~ hh]*2\&quot;)\n  .bank(\&quot;RolandTR909\&quot;)\n)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>stack(
+  note(&quot;&lt;[c2 c3]*4 [bb1 bb2]*4 [f2 f3]*4 [eb2 eb3]*4&gt;/2&quot;)
+  .sound(&quot;gm_synth_bass_1&quot;).lpf(800),
+  n(`&lt;
+  [~ 0] 2 [0 2] [~ 2]
+  [~ 0] 1 [0 1] [~ 1]
+  [~ 0] 3 [0 3] [~ 3]
+  [~ 0] 2 [0 2] [~ 2]
+  &gt;*2`).scale(&quot;C4:minor&quot;)
+  .sound(&quot;gm_synth_strings_1&quot;),
+  sound(&quot;bd*2, ~ &lt;sd cp&gt;, [~ hh]*2&quot;)
+  .bank(&quot;RolandTR909&quot;)
+)</pre></astro-island>
+<p>This is starting to sound like actual music! We have sounds, we have notes, now the last piece of the puzzle is missing: <a href="/workshop/first-effects">effects</a></p>
+          
+    </div>
+  </section>
+  <nav class="block sm:hidden astro-J75B3YUS">
+    <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/workshop/first-notes.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  </nav>
+</article>
+          <aside class="fixed right-0 h-full overflow-auto pr-4 pl-0 pb-16 hidden xl:block" title="Table of Contents">
+            <nav aria-labelledby="grid-right" class="w-64 text-foreground">
+  <script>(self.Astro=self.Astro||{}).media=(s,a)=>{const t=async()=>{await(await s())()};if(a.value){const e=matchMedia(a.value);e.matches?t():e.addEventListener("change",t,{once:!0})}},window.dispatchEvent(new Event("astro:media"));</script><astro-island uid="DsOtC" component-url="/_astro/TableOfContents.e29bc9c6.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;headings&quot;:[1,&quot;[[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;first-notes\&quot;],\&quot;text\&quot;:[0,\&quot;First Notes\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;numbers-and-notes\&quot;],\&quot;text\&quot;:[0,\&quot;numbers and notes\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;changing-the-sound\&quot;],\&quot;text\&quot;:[0,\&quot;changing the sound\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;longer-sequences\&quot;],\&quot;text\&quot;:[0,\&quot;Longer Sequences\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;scales\&quot;],\&quot;text\&quot;:[0,\&quot;Scales\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;repeat--elongate\&quot;],\&quot;text\&quot;:[0,\&quot;Repeat &amp; Elongate\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;recap\&quot;],\&quot;text\&quot;:[0,\&quot;Recap\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;examples\&quot;],\&quot;text\&quot;:[0,\&quot;Examples\&quot;]}]]&quot;],&quot;currentPage&quot;:[0,&quot;/workshop/first-notes&quot;]}" ssr="" client="media" opts="{&quot;name&quot;:&quot;TableOfContents&quot;,&quot;value&quot;:&quot;(min-width: 50em)&quot;}" await-children=""><ul><li class="w-full"><a href="/workshop/first-notes#first-notes" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-4">First Notes</a></li><li class="w-full"><a href="/workshop/first-notes#numbers-and-notes" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">numbers and notes</a></li><li class="w-full"><a href="/workshop/first-notes#changing-the-sound" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">changing the sound</a></li><li class="w-full"><a href="/workshop/first-notes#longer-sequences" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Longer Sequences</a></li><li class="w-full"><a href="/workshop/first-notes#scales" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Scales</a></li><li class="w-full"><a href="/workshop/first-notes#repeat--elongate" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Repeat &amp; Elongate</a></li><li class="w-full"><a href="/workshop/first-notes#recap" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Recap</a></li><li class="w-full"><a href="/workshop/first-notes#examples" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Examples</a></li></ul></astro-island>
+  <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/workshop/first-notes.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  <!-- <AvatarList path={currentPage} /> -->
+</nav>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </body></html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en" class="initial dark">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v2.3.2">
+
+<link rel="icon" type="image/svg+xml" href="favicon.ico">
+
+<meta name="description" content="Strudel is a music live coding environment for the browser, porting the TidalCycles pattern language to JavaScript.">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/apple-icon-180.png" sizes="180x180">
+<meta name="theme-color" content="#222222">
+
+<base href="/">
+
+<!-- Scrollable a11y code helper -->
+<script src="./make-scrollable-code-focusable.js"></script>
+
+
+<!-- this does not work for some reason: -->
+<!-- <style is:global define:vars={strudelTheme}></style> -->
+<!-- the following variables are just a fallback to make sure everything is readable without JS -->
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+
+    <!-- Page Metadata --><link rel="canonical" href="https://strudel.tidalcycles.org/learn/colors/">
+
+<!-- OpenGraph Tags -->
+<meta property="og:title" content="Colors 🚀 Strudel">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://strudel.tidalcycles.org/learn/colors/">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta property="og:image:alt" content="Strudel Logo">
+<meta name="description" property="og:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta property="og:site_name" content="Strudel">
+
+<!-- Twitter Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site">
+<meta name="twitter:title" content="Colors 🚀 Strudel">
+<meta name="twitter:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta name="twitter:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta name="twitter:image:alt" content="Strudel Logo">
+    <title>
+      Colors 🌀 Strudel
+    </title>
+  <link rel="stylesheet" href="/_astro/first-effects.f224cf90.css" />
+<link rel="stylesheet" href="/_astro/first-effects.af72a2b1.css" />
+<link rel="stylesheet" href="/_astro/first-effects.56b16646.css" />
+<link rel="stylesheet" href="/_astro/intro.0f120bc7.css" /><script type="module" src="/_astro/hoisted.908dc6d4.js"></script></head>
+
+  <body class="h-app-height text-gray-50 bg-background">
+    <div class="w-full h-full space-y-4 flex flex-col">
+      <header class="max-w-full fixed top-0 w-full z-[100]">
+        <nav class="flex justify-between py-2 px-4 items-center h-14 max-h-14 bg-lineHighlight text-foreground astro-2W66RQV5" title="Top Navigation">
+  <div class="flex overflow-visible items-center grow astro-2W66RQV5" style="overflow:visible">
+    <a href="/" class="flex items-center text-2xl space-x-2 astro-2W66RQV5">
+      <h1 class="font-bold flex space-x-2 items-baseline text-xl astro-2W66RQV5">
+        <span class="astro-2W66RQV5">🌀</span>
+        <div class="flex space-x-1 items-baseline astro-2W66RQV5">
+          <span class=" astro-2W66RQV5">strudel</span>
+          <span class="text-sm astro-2W66RQV5">DOCS</span>
+        </div>
+      </h1>
+    </a>
+  </div>
+  
+  <div class="search-item h-10 astro-2W66RQV5">
+    <!-- <Search client:idle /> -->
+  </div>
+  <a href="./" class="hidden md:flex cursor-pointer items-center space-x-1 astro-2W66RQV5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 astro-2W66RQV5"><path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd"></path></svg><span class="astro-2W66RQV5">go to REPL</span>
+  </a>
+  <div class="md:hidden astro-2W66RQV5">
+    <style>astro-island,astro-slot{display:contents}</style><script>(self.Astro=self.Astro||{}).idle=t=>{const e=async()=>{await(await t())()};"requestIdleCallback"in window?window.requestIdleCallback(e):setTimeout(e,200)},window.dispatchEvent(new Event("astro:idle"));var l;{const c={0:t=>t,1:t=>JSON.parse(t,o),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(JSON.parse(t,o)),5:t=>new Set(JSON.parse(t,o)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(JSON.parse(t)),9:t=>new Uint16Array(JSON.parse(t)),10:t=>new Uint32Array(JSON.parse(t))},o=(t,s)=>{if(t===""||!Array.isArray(s))return s;const[e,n]=s;return e in c?c[e](n):void 0};customElements.get("astro-island")||customElements.define("astro-island",(l=class extends HTMLElement{constructor(){super(...arguments);this.hydrate=()=>{if(!this.hydrator||this.parentElement&&this.parentElement.closest("astro-island[ssr]"))return;const s=this.querySelectorAll("astro-slot"),e={},n=this.querySelectorAll("template[data-astro-template]");for(const r of n){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(const r of s){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("name")||"default"]=r.innerHTML)}const a=this.hasAttribute("props")?JSON.parse(this.getAttribute("props"),o):{};this.hydrator(this)(this.Component,a,e,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),window.removeEventListener("astro:hydrate",this.hydrate),window.dispatchEvent(new CustomEvent("astro:hydrate"))}}connectedCallback(){!this.hasAttribute("await-children")||this.firstChild?this.childrenConnectedCallback():new MutationObserver((s,e)=>{e.disconnect(),this.childrenConnectedCallback()}).observe(this,{childList:!0})}async childrenConnectedCallback(){window.addEventListener("astro:hydrate",this.hydrate);let s=this.getAttribute("before-hydration-url");s&&await import(s),this.start()}start(){const s=JSON.parse(this.getAttribute("opts")),e=this.getAttribute("client");if(Astro[e]===void 0){window.addEventListener(`astro:${e}`,()=>this.start(),{once:!0});return}Astro[e](async()=>{const n=this.getAttribute("renderer-url"),[a,{default:r}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),i=this.getAttribute("component-export")||"default";if(!i.includes("."))this.Component=a[i];else{this.Component=a;for(const d of i.split("."))this.Component=this.Component[d]}return this.hydrator=r,this.hydrate},s,this)}attributeChangedCallback(){this.hydrator&&this.hydrate()}},l.observedAttributes=["props"],l))}</script><astro-island uid="MX3bB" component-url="/_astro/MobileNav.922de2c4.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;sidebar&quot;:[0,{&quot;Workshop&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Getting Started\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/getting-started\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Notes\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-notes\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/pattern-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Recap\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/recap\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Workshop in German\&quot;],\&quot;link\&quot;:[0,\&quot;de/workshop/getting-started\&quot;]}]]&quot;],&quot;Making Sound&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Samples\&quot;],\&quot;link\&quot;:[0,\&quot;learn/samples\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Synths\&quot;],\&quot;link\&quot;:[0,\&quot;learn/synths\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Audio Effects\&quot;],\&quot;link\&quot;:[0,\&quot;learn/effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;MIDI &amp; OSC\&quot;],\&quot;link\&quot;:[0,\&quot;learn/input-output\&quot;]}]]&quot;],&quot;More&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Mini-Notation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/mini-notation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Coding syntax\&quot;],\&quot;link\&quot;:[0,\&quot;learn/code\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Offline\&quot;],\&quot;link\&quot;:[0,\&quot;learn/pwa\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/patterns\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Alignment\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/alignment\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Strudel vs Tidal\&quot;],\&quot;link\&quot;:[0,\&quot;learn/strudel-vs-tidal\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Music metadata\&quot;],\&quot;link\&quot;:[0,\&quot;learn/metadata\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;CSound\&quot;],\&quot;link\&quot;:[0,\&quot;learn/csound\&quot;]}]]&quot;],&quot;Pattern Functions&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Introduction\&quot;],\&quot;link\&quot;:[0,\&quot;functions/intro\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Creating Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;learn/factories\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Time Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/time-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Control Parameters\&quot;],\&quot;link\&quot;:[0,\&quot;functions/value-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Signals\&quot;],\&quot;link\&quot;:[0,\&quot;learn/signals\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Conditional Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/conditional-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Accumulation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/accumulation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Tonal Functions\&quot;],\&quot;link\&quot;:[0,\&quot;learn/tonal\&quot;]}]]&quot;],&quot;Development&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;REPL\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/repl\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Packages\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/packages\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Docs\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/docs\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Testing\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/testing\&quot;]}]]&quot;]}]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MobileNav&quot;,&quot;value&quot;:true}" await-children=""><nav data-headlessui-state=""><button class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" id="headlessui-disclosure-button-:R1:" type="button" aria-expanded="false" data-headlessui-state=""><span class="sr-only">Open main menu</span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button></nav></astro-island>
+  </div>
+</nav>
+      </header>
+      <main class="relative pt-16">
+        <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
+          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed h-full">
+            <nav aria-labelledby="grid-left" class="max-h-full overflow-auto pb-20 text-foreground">
+  <ul>
+    <li>
+          <div class="nav-group pb-4">
+            <h2>Workshop</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/getting-started">
+                      Getting Started
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-sounds">
+                      First Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-notes">
+                      First Notes
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-effects">
+                      First Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/pattern-effects">
+                      Pattern Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/recap">
+                      Recap
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/getting-started">
+                      Workshop in German
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Making Sound</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/samples">
+                      Samples
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/synths">
+                      Synths
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/effects">
+                      Audio Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/input-output">
+                      MIDI &amp; OSC
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>More</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/mini-notation">
+                      Mini-Notation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/code">
+                      Coding syntax
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/pwa">
+                      Offline
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/patterns">
+                      Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/alignment">
+                      Pattern Alignment
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/strudel-vs-tidal">
+                      Strudel vs Tidal
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/metadata">
+                      Music metadata
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/csound">
+                      CSound
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Pattern Functions</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/intro">
+                      Introduction
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/factories">
+                      Creating Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/time-modifiers">
+                      Time Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/value-modifiers">
+                      Control Parameters
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/signals">
+                      Signals
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/conditional-modifiers">
+                      Conditional Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/accumulation">
+                      Accumulation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/tonal">
+                      Tonal Functions
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Development</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/repl">
+                      REPL
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/sounds">
+                      Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/packages">
+                      Packages
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/docs">
+                      Docs
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/testing">
+                      Testing
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li>
+  </ul>
+</nav>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    var target = document.querySelector('[aria-current="page"]');
+    if (target && target.offsetTop > window.innerHeight - 100) {
+      document.querySelector('.nav-groups').scrollTop = target.offsetTop;
+    }
+  });
+</script>
+          </aside>
+          <article id="article" class="content astro-J75B3YUS">
+  <section class="main-section astro-J75B3YUS">
+    <!-- TODO: add dropdown toc on mobile -->
+    <div class="prose dark:prose-invert max-w-full pb-8 astro-J75B3YUS">
+      
+            <h1 id="colors">Colors<a aria-hidden="true" tabIndex="-1" href="/learn/colors#colors"><span class="icon icon-link"></span></a></h1>
+<div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>aliceblue</div><div style="background-color:#f0f8ff"></div><div style="background-color:aliceblue;color:#f0f8ff">aliceblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>antiquewhite</div><div style="background-color:#faebd7"></div><div style="background-color:antiquewhite;color:#faebd7">antiquewhite</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>aqua</div><div style="background-color:#00ffff"></div><div style="background-color:aqua;color:#00ffff">aqua</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>aquamarine</div><div style="background-color:#7fffd4"></div><div style="background-color:aquamarine;color:#7fffd4">aquamarine</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>azure</div><div style="background-color:#f0ffff"></div><div style="background-color:azure;color:#f0ffff">azure</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>beige</div><div style="background-color:#f5f5dc"></div><div style="background-color:beige;color:#f5f5dc">beige</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>bisque</div><div style="background-color:#ffe4c4"></div><div style="background-color:bisque;color:#ffe4c4">bisque</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>black</div><div style="background-color:#000000"></div><div style="background-color:black;color:#000000">black</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>blanchedalmond</div><div style="background-color:#ffebcd"></div><div style="background-color:blanchedalmond;color:#ffebcd">blanchedalmond</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>blue</div><div style="background-color:#0000ff"></div><div style="background-color:blue;color:#0000ff">blue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>blueviolet</div><div style="background-color:#8a2be2"></div><div style="background-color:blueviolet;color:#8a2be2">blueviolet</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>brown</div><div style="background-color:#a52a2a"></div><div style="background-color:brown;color:#a52a2a">brown</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>burlywood</div><div style="background-color:#deb887"></div><div style="background-color:burlywood;color:#deb887">burlywood</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>cadetblue</div><div style="background-color:#5f9ea0"></div><div style="background-color:cadetblue;color:#5f9ea0">cadetblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>chartreuse</div><div style="background-color:#7fff00"></div><div style="background-color:chartreuse;color:#7fff00">chartreuse</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>chocolate</div><div style="background-color:#d2691e"></div><div style="background-color:chocolate;color:#d2691e">chocolate</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>coral</div><div style="background-color:#ff7f50"></div><div style="background-color:coral;color:#ff7f50">coral</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>cornflowerblue</div><div style="background-color:#6495ed"></div><div style="background-color:cornflowerblue;color:#6495ed">cornflowerblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>cornsilk</div><div style="background-color:#fff8dc"></div><div style="background-color:cornsilk;color:#fff8dc">cornsilk</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>crimson</div><div style="background-color:#dc143c"></div><div style="background-color:crimson;color:#dc143c">crimson</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>cyan</div><div style="background-color:#00ffff"></div><div style="background-color:cyan;color:#00ffff">cyan</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkblue</div><div style="background-color:#00008b"></div><div style="background-color:darkblue;color:#00008b">darkblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkcyan</div><div style="background-color:#008b8b"></div><div style="background-color:darkcyan;color:#008b8b">darkcyan</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkgoldenrod</div><div style="background-color:#b8860b"></div><div style="background-color:darkgoldenrod;color:#b8860b">darkgoldenrod</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkgray</div><div style="background-color:#a9a9a9"></div><div style="background-color:darkgray;color:#a9a9a9">darkgray</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkgreen</div><div style="background-color:#006400"></div><div style="background-color:darkgreen;color:#006400">darkgreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkgrey</div><div style="background-color:#a9a9a9"></div><div style="background-color:darkgrey;color:#a9a9a9">darkgrey</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkkhaki</div><div style="background-color:#bdb76b"></div><div style="background-color:darkkhaki;color:#bdb76b">darkkhaki</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkmagenta</div><div style="background-color:#8b008b"></div><div style="background-color:darkmagenta;color:#8b008b">darkmagenta</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkolivegreen</div><div style="background-color:#556b2f"></div><div style="background-color:darkolivegreen;color:#556b2f">darkolivegreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkorange</div><div style="background-color:#ff8c00"></div><div style="background-color:darkorange;color:#ff8c00">darkorange</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkorchid</div><div style="background-color:#9932cc"></div><div style="background-color:darkorchid;color:#9932cc">darkorchid</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkred</div><div style="background-color:#8b0000"></div><div style="background-color:darkred;color:#8b0000">darkred</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darksalmon</div><div style="background-color:#e9967a"></div><div style="background-color:darksalmon;color:#e9967a">darksalmon</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkseagreen</div><div style="background-color:#8fbc8f"></div><div style="background-color:darkseagreen;color:#8fbc8f">darkseagreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkslateblue</div><div style="background-color:#483d8b"></div><div style="background-color:darkslateblue;color:#483d8b">darkslateblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkslategray</div><div style="background-color:#2f4f4f"></div><div style="background-color:darkslategray;color:#2f4f4f">darkslategray</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkslategrey</div><div style="background-color:#2f4f4f"></div><div style="background-color:darkslategrey;color:#2f4f4f">darkslategrey</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkturquoise</div><div style="background-color:#00ced1"></div><div style="background-color:darkturquoise;color:#00ced1">darkturquoise</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>darkviolet</div><div style="background-color:#9400d3"></div><div style="background-color:darkviolet;color:#9400d3">darkviolet</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>deeppink</div><div style="background-color:#ff1493"></div><div style="background-color:deeppink;color:#ff1493">deeppink</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>deepskyblue</div><div style="background-color:#00bfff"></div><div style="background-color:deepskyblue;color:#00bfff">deepskyblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>dimgray</div><div style="background-color:#696969"></div><div style="background-color:dimgray;color:#696969">dimgray</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>dimgrey</div><div style="background-color:#696969"></div><div style="background-color:dimgrey;color:#696969">dimgrey</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>dodgerblue</div><div style="background-color:#1e90ff"></div><div style="background-color:dodgerblue;color:#1e90ff">dodgerblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>firebrick</div><div style="background-color:#b22222"></div><div style="background-color:firebrick;color:#b22222">firebrick</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>floralwhite</div><div style="background-color:#fffaf0"></div><div style="background-color:floralwhite;color:#fffaf0">floralwhite</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>forestgreen</div><div style="background-color:#228b22"></div><div style="background-color:forestgreen;color:#228b22">forestgreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>fuchsia</div><div style="background-color:#ff00ff"></div><div style="background-color:fuchsia;color:#ff00ff">fuchsia</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>gainsboro</div><div style="background-color:#dcdcdc"></div><div style="background-color:gainsboro;color:#dcdcdc">gainsboro</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>ghostwhite</div><div style="background-color:#f8f8ff"></div><div style="background-color:ghostwhite;color:#f8f8ff">ghostwhite</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>gold</div><div style="background-color:#ffd700"></div><div style="background-color:gold;color:#ffd700">gold</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>goldenrod</div><div style="background-color:#daa520"></div><div style="background-color:goldenrod;color:#daa520">goldenrod</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>gray</div><div style="background-color:#808080"></div><div style="background-color:gray;color:#808080">gray</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>green</div><div style="background-color:#008000"></div><div style="background-color:green;color:#008000">green</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>greenyellow</div><div style="background-color:#adff2f"></div><div style="background-color:greenyellow;color:#adff2f">greenyellow</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>grey</div><div style="background-color:#808080"></div><div style="background-color:grey;color:#808080">grey</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>honeydew</div><div style="background-color:#f0fff0"></div><div style="background-color:honeydew;color:#f0fff0">honeydew</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>hotpink</div><div style="background-color:#ff69b4"></div><div style="background-color:hotpink;color:#ff69b4">hotpink</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>indianred</div><div style="background-color:#cd5c5c"></div><div style="background-color:indianred;color:#cd5c5c">indianred</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>indigo</div><div style="background-color:#4b0082"></div><div style="background-color:indigo;color:#4b0082">indigo</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>ivory</div><div style="background-color:#fffff0"></div><div style="background-color:ivory;color:#fffff0">ivory</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>khaki</div><div style="background-color:#f0e68c"></div><div style="background-color:khaki;color:#f0e68c">khaki</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lavender</div><div style="background-color:#e6e6fa"></div><div style="background-color:lavender;color:#e6e6fa">lavender</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lavenderblush</div><div style="background-color:#fff0f5"></div><div style="background-color:lavenderblush;color:#fff0f5">lavenderblush</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lawngreen</div><div style="background-color:#7cfc00"></div><div style="background-color:lawngreen;color:#7cfc00">lawngreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lemonchiffon</div><div style="background-color:#fffacd"></div><div style="background-color:lemonchiffon;color:#fffacd">lemonchiffon</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightblue</div><div style="background-color:#add8e6"></div><div style="background-color:lightblue;color:#add8e6">lightblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightcoral</div><div style="background-color:#f08080"></div><div style="background-color:lightcoral;color:#f08080">lightcoral</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightcyan</div><div style="background-color:#e0ffff"></div><div style="background-color:lightcyan;color:#e0ffff">lightcyan</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightgoldenrodyellow</div><div style="background-color:#fafad2"></div><div style="background-color:lightgoldenrodyellow;color:#fafad2">lightgoldenrodyellow</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightgray</div><div style="background-color:#d3d3d3"></div><div style="background-color:lightgray;color:#d3d3d3">lightgray</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightgreen</div><div style="background-color:#90ee90"></div><div style="background-color:lightgreen;color:#90ee90">lightgreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightgrey</div><div style="background-color:#d3d3d3"></div><div style="background-color:lightgrey;color:#d3d3d3">lightgrey</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightpink</div><div style="background-color:#ffb6c1"></div><div style="background-color:lightpink;color:#ffb6c1">lightpink</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightsalmon</div><div style="background-color:#ffa07a"></div><div style="background-color:lightsalmon;color:#ffa07a">lightsalmon</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightseagreen</div><div style="background-color:#20b2aa"></div><div style="background-color:lightseagreen;color:#20b2aa">lightseagreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightskyblue</div><div style="background-color:#87cefa"></div><div style="background-color:lightskyblue;color:#87cefa">lightskyblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightslategray</div><div style="background-color:#778899"></div><div style="background-color:lightslategray;color:#778899">lightslategray</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightslategrey</div><div style="background-color:#778899"></div><div style="background-color:lightslategrey;color:#778899">lightslategrey</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightsteelblue</div><div style="background-color:#b0c4de"></div><div style="background-color:lightsteelblue;color:#b0c4de">lightsteelblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lightyellow</div><div style="background-color:#ffffe0"></div><div style="background-color:lightyellow;color:#ffffe0">lightyellow</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>lime</div><div style="background-color:#00ff00"></div><div style="background-color:lime;color:#00ff00">lime</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>limegreen</div><div style="background-color:#32cd32"></div><div style="background-color:limegreen;color:#32cd32">limegreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>linen</div><div style="background-color:#faf0e6"></div><div style="background-color:linen;color:#faf0e6">linen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>magenta</div><div style="background-color:#ff00ff"></div><div style="background-color:magenta;color:#ff00ff">magenta</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>maroon</div><div style="background-color:#800000"></div><div style="background-color:maroon;color:#800000">maroon</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumaquamarine</div><div style="background-color:#66cdaa"></div><div style="background-color:mediumaquamarine;color:#66cdaa">mediumaquamarine</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumblue</div><div style="background-color:#0000cd"></div><div style="background-color:mediumblue;color:#0000cd">mediumblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumorchid</div><div style="background-color:#ba55d3"></div><div style="background-color:mediumorchid;color:#ba55d3">mediumorchid</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumpurple</div><div style="background-color:#9370db"></div><div style="background-color:mediumpurple;color:#9370db">mediumpurple</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumseagreen</div><div style="background-color:#3cb371"></div><div style="background-color:mediumseagreen;color:#3cb371">mediumseagreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumslateblue</div><div style="background-color:#7b68ee"></div><div style="background-color:mediumslateblue;color:#7b68ee">mediumslateblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumspringgreen</div><div style="background-color:#00fa9a"></div><div style="background-color:mediumspringgreen;color:#00fa9a">mediumspringgreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumturquoise</div><div style="background-color:#48d1cc"></div><div style="background-color:mediumturquoise;color:#48d1cc">mediumturquoise</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mediumvioletred</div><div style="background-color:#c71585"></div><div style="background-color:mediumvioletred;color:#c71585">mediumvioletred</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>midnightblue</div><div style="background-color:#191970"></div><div style="background-color:midnightblue;color:#191970">midnightblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mintcream</div><div style="background-color:#f5fffa"></div><div style="background-color:mintcream;color:#f5fffa">mintcream</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>mistyrose</div><div style="background-color:#ffe4e1"></div><div style="background-color:mistyrose;color:#ffe4e1">mistyrose</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>moccasin</div><div style="background-color:#ffe4b5"></div><div style="background-color:moccasin;color:#ffe4b5">moccasin</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>navajowhite</div><div style="background-color:#ffdead"></div><div style="background-color:navajowhite;color:#ffdead">navajowhite</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>navy</div><div style="background-color:#000080"></div><div style="background-color:navy;color:#000080">navy</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>oldlace</div><div style="background-color:#fdf5e6"></div><div style="background-color:oldlace;color:#fdf5e6">oldlace</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>olive</div><div style="background-color:#808000"></div><div style="background-color:olive;color:#808000">olive</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>olivedrab</div><div style="background-color:#6b8e23"></div><div style="background-color:olivedrab;color:#6b8e23">olivedrab</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>orange</div><div style="background-color:#ffa500"></div><div style="background-color:orange;color:#ffa500">orange</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>orangered</div><div style="background-color:#ff4500"></div><div style="background-color:orangered;color:#ff4500">orangered</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>orchid</div><div style="background-color:#da70d6"></div><div style="background-color:orchid;color:#da70d6">orchid</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>palegoldenrod</div><div style="background-color:#eee8aa"></div><div style="background-color:palegoldenrod;color:#eee8aa">palegoldenrod</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>palegreen</div><div style="background-color:#98fb98"></div><div style="background-color:palegreen;color:#98fb98">palegreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>paleturquoise</div><div style="background-color:#afeeee"></div><div style="background-color:paleturquoise;color:#afeeee">paleturquoise</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>palevioletred</div><div style="background-color:#db7093"></div><div style="background-color:palevioletred;color:#db7093">palevioletred</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>papayawhip</div><div style="background-color:#ffefd5"></div><div style="background-color:papayawhip;color:#ffefd5">papayawhip</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>peachpuff</div><div style="background-color:#ffdab9"></div><div style="background-color:peachpuff;color:#ffdab9">peachpuff</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>peru</div><div style="background-color:#cd853f"></div><div style="background-color:peru;color:#cd853f">peru</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>pink</div><div style="background-color:#ffc0cb"></div><div style="background-color:pink;color:#ffc0cb">pink</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>plum</div><div style="background-color:#dda0dd"></div><div style="background-color:plum;color:#dda0dd">plum</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>powderblue</div><div style="background-color:#b0e0e6"></div><div style="background-color:powderblue;color:#b0e0e6">powderblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>purple</div><div style="background-color:#800080"></div><div style="background-color:purple;color:#800080">purple</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>red</div><div style="background-color:#ff0000"></div><div style="background-color:red;color:#ff0000">red</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>rosybrown</div><div style="background-color:#bc8f8f"></div><div style="background-color:rosybrown;color:#bc8f8f">rosybrown</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>royalblue</div><div style="background-color:#4169e1"></div><div style="background-color:royalblue;color:#4169e1">royalblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>saddlebrown</div><div style="background-color:#8b4513"></div><div style="background-color:saddlebrown;color:#8b4513">saddlebrown</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>salmon</div><div style="background-color:#fa8072"></div><div style="background-color:salmon;color:#fa8072">salmon</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>sandybrown</div><div style="background-color:#f4a460"></div><div style="background-color:sandybrown;color:#f4a460">sandybrown</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>seagreen</div><div style="background-color:#2e8b57"></div><div style="background-color:seagreen;color:#2e8b57">seagreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>seashell</div><div style="background-color:#fff5ee"></div><div style="background-color:seashell;color:#fff5ee">seashell</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>sienna</div><div style="background-color:#a0522d"></div><div style="background-color:sienna;color:#a0522d">sienna</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>silver</div><div style="background-color:#c0c0c0"></div><div style="background-color:silver;color:#c0c0c0">silver</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>skyblue</div><div style="background-color:#87ceeb"></div><div style="background-color:skyblue;color:#87ceeb">skyblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>slateblue</div><div style="background-color:#6a5acd"></div><div style="background-color:slateblue;color:#6a5acd">slateblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>slategray</div><div style="background-color:#708090"></div><div style="background-color:slategray;color:#708090">slategray</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>slategrey</div><div style="background-color:#708090"></div><div style="background-color:slategrey;color:#708090">slategrey</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>snow</div><div style="background-color:#fffafa"></div><div style="background-color:snow;color:#fffafa">snow</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>springgreen</div><div style="background-color:#00ff7f"></div><div style="background-color:springgreen;color:#00ff7f">springgreen</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>steelblue</div><div style="background-color:#4682b4"></div><div style="background-color:steelblue;color:#4682b4">steelblue</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>tan</div><div style="background-color:#d2b48c"></div><div style="background-color:tan;color:#d2b48c">tan</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>teal</div><div style="background-color:#008080"></div><div style="background-color:teal;color:#008080">teal</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>thistle</div><div style="background-color:#d8bfd8"></div><div style="background-color:thistle;color:#d8bfd8">thistle</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>tomato</div><div style="background-color:#ff6347"></div><div style="background-color:tomato;color:#ff6347">tomato</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>turquoise</div><div style="background-color:#40e0d0"></div><div style="background-color:turquoise;color:#40e0d0">turquoise</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>violet</div><div style="background-color:#ee82ee"></div><div style="background-color:violet;color:#ee82ee">violet</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>wheat</div><div style="background-color:#f5deb3"></div><div style="background-color:wheat;color:#f5deb3">wheat</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>white</div><div style="background-color:#ffffff"></div><div style="background-color:white;color:#ffffff">white</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>whitesmoke</div><div style="background-color:#f5f5f5"></div><div style="background-color:whitesmoke;color:#f5f5f5">whitesmoke</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>yellow</div><div style="background-color:#ffff00"></div><div style="background-color:yellow;color:#ffff00">yellow</div></div></div><div class="py-1"><div class="grid gap-2 grid-cols-3"><div>yellowgreen</div><div style="background-color:#9acd32"></div><div style="background-color:yellowgreen;color:#9acd32">yellowgreen</div></div></div></div>
+          
+    </div>
+  </section>
+  <nav class="block sm:hidden astro-J75B3YUS">
+    <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/learn/colors.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  </nav>
+</article>
+          <aside class="fixed right-0 h-full overflow-auto pr-4 pl-0 pb-16 hidden xl:block" title="Table of Contents">
+            <nav aria-labelledby="grid-right" class="w-64 text-foreground">
+  <script>(self.Astro=self.Astro||{}).media=(s,a)=>{const t=async()=>{await(await s())()};if(a.value){const e=matchMedia(a.value);e.matches?t():e.addEventListener("change",t,{once:!0})}},window.dispatchEvent(new Event("astro:media"));</script><astro-island uid="2eJSG0" component-url="/_astro/TableOfContents.e29bc9c6.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;headings&quot;:[1,&quot;[[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;colors\&quot;],\&quot;text\&quot;:[0,\&quot;Colors\&quot;]}]]&quot;],&quot;currentPage&quot;:[0,&quot;/learn/colors&quot;]}" ssr="" client="media" opts="{&quot;name&quot;:&quot;TableOfContents&quot;,&quot;value&quot;:&quot;(min-width: 50em)&quot;}" await-children=""><ul><li class="w-full"><a href="/learn/colors#colors" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-4">Colors</a></li></ul></astro-island>
+  <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/learn/colors.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  <!-- <AvatarList path={currentPage} /> -->
+</nav>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </body></html>

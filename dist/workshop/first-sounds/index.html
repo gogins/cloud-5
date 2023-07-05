@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en" class="initial dark">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v2.3.2">
+
+<link rel="icon" type="image/svg+xml" href="favicon.ico">
+
+<meta name="description" content="Strudel is a music live coding environment for the browser, porting the TidalCycles pattern language to JavaScript.">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/apple-icon-180.png" sizes="180x180">
+<meta name="theme-color" content="#222222">
+
+<base href="/">
+
+<!-- Scrollable a11y code helper -->
+<script src="./make-scrollable-code-focusable.js"></script>
+
+
+<!-- this does not work for some reason: -->
+<!-- <style is:global define:vars={strudelTheme}></style> -->
+<!-- the following variables are just a fallback to make sure everything is readable without JS -->
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+
+    <!-- Page Metadata --><link rel="canonical" href="https://strudel.tidalcycles.org/workshop/first-sounds/">
+
+<!-- OpenGraph Tags -->
+<meta property="og:title" content="First Sounds 🚀 Strudel">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://strudel.tidalcycles.org/workshop/first-sounds/">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta property="og:image:alt" content="Strudel Logo">
+<meta name="description" property="og:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta property="og:site_name" content="Strudel">
+
+<!-- Twitter Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site">
+<meta name="twitter:title" content="First Sounds 🚀 Strudel">
+<meta name="twitter:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta name="twitter:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta name="twitter:image:alt" content="Strudel Logo">
+    <title>
+      First Sounds 🌀 Strudel
+    </title>
+  <link rel="stylesheet" href="/_astro/first-effects.f224cf90.css" />
+<link rel="stylesheet" href="/_astro/first-effects.af72a2b1.css" />
+<link rel="stylesheet" href="/_astro/intro.0f120bc7.css" />
+<link rel="stylesheet" href="/_astro/first-effects.56b16646.css" /><script type="module" src="/_astro/hoisted.908dc6d4.js"></script></head>
+
+  <body class="h-app-height text-gray-50 bg-background">
+    <div class="w-full h-full space-y-4 flex flex-col">
+      <header class="max-w-full fixed top-0 w-full z-[100]">
+        <nav class="flex justify-between py-2 px-4 items-center h-14 max-h-14 bg-lineHighlight text-foreground astro-2W66RQV5" title="Top Navigation">
+  <div class="flex overflow-visible items-center grow astro-2W66RQV5" style="overflow:visible">
+    <a href="/" class="flex items-center text-2xl space-x-2 astro-2W66RQV5">
+      <h1 class="font-bold flex space-x-2 items-baseline text-xl astro-2W66RQV5">
+        <span class="astro-2W66RQV5">🌀</span>
+        <div class="flex space-x-1 items-baseline astro-2W66RQV5">
+          <span class=" astro-2W66RQV5">strudel</span>
+          <span class="text-sm astro-2W66RQV5">DOCS</span>
+        </div>
+      </h1>
+    </a>
+  </div>
+  
+  <div class="search-item h-10 astro-2W66RQV5">
+    <!-- <Search client:idle /> -->
+  </div>
+  <a href="./" class="hidden md:flex cursor-pointer items-center space-x-1 astro-2W66RQV5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 astro-2W66RQV5"><path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd"></path></svg><span class="astro-2W66RQV5">go to REPL</span>
+  </a>
+  <div class="md:hidden astro-2W66RQV5">
+    <style>astro-island,astro-slot{display:contents}</style><script>(self.Astro=self.Astro||{}).idle=t=>{const e=async()=>{await(await t())()};"requestIdleCallback"in window?window.requestIdleCallback(e):setTimeout(e,200)},window.dispatchEvent(new Event("astro:idle"));var l;{const c={0:t=>t,1:t=>JSON.parse(t,o),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(JSON.parse(t,o)),5:t=>new Set(JSON.parse(t,o)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(JSON.parse(t)),9:t=>new Uint16Array(JSON.parse(t)),10:t=>new Uint32Array(JSON.parse(t))},o=(t,s)=>{if(t===""||!Array.isArray(s))return s;const[e,n]=s;return e in c?c[e](n):void 0};customElements.get("astro-island")||customElements.define("astro-island",(l=class extends HTMLElement{constructor(){super(...arguments);this.hydrate=()=>{if(!this.hydrator||this.parentElement&&this.parentElement.closest("astro-island[ssr]"))return;const s=this.querySelectorAll("astro-slot"),e={},n=this.querySelectorAll("template[data-astro-template]");for(const r of n){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(const r of s){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("name")||"default"]=r.innerHTML)}const a=this.hasAttribute("props")?JSON.parse(this.getAttribute("props"),o):{};this.hydrator(this)(this.Component,a,e,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),window.removeEventListener("astro:hydrate",this.hydrate),window.dispatchEvent(new CustomEvent("astro:hydrate"))}}connectedCallback(){!this.hasAttribute("await-children")||this.firstChild?this.childrenConnectedCallback():new MutationObserver((s,e)=>{e.disconnect(),this.childrenConnectedCallback()}).observe(this,{childList:!0})}async childrenConnectedCallback(){window.addEventListener("astro:hydrate",this.hydrate);let s=this.getAttribute("before-hydration-url");s&&await import(s),this.start()}start(){const s=JSON.parse(this.getAttribute("opts")),e=this.getAttribute("client");if(Astro[e]===void 0){window.addEventListener(`astro:${e}`,()=>this.start(),{once:!0});return}Astro[e](async()=>{const n=this.getAttribute("renderer-url"),[a,{default:r}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),i=this.getAttribute("component-export")||"default";if(!i.includes("."))this.Component=a[i];else{this.Component=a;for(const d of i.split("."))this.Component=this.Component[d]}return this.hydrator=r,this.hydrate},s,this)}attributeChangedCallback(){this.hydrator&&this.hydrate()}},l.observedAttributes=["props"],l))}</script><astro-island uid="MX3bB" component-url="/_astro/MobileNav.922de2c4.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;sidebar&quot;:[0,{&quot;Workshop&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Getting Started\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/getting-started\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Notes\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-notes\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/pattern-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Recap\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/recap\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Workshop in German\&quot;],\&quot;link\&quot;:[0,\&quot;de/workshop/getting-started\&quot;]}]]&quot;],&quot;Making Sound&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Samples\&quot;],\&quot;link\&quot;:[0,\&quot;learn/samples\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Synths\&quot;],\&quot;link\&quot;:[0,\&quot;learn/synths\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Audio Effects\&quot;],\&quot;link\&quot;:[0,\&quot;learn/effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;MIDI &amp; OSC\&quot;],\&quot;link\&quot;:[0,\&quot;learn/input-output\&quot;]}]]&quot;],&quot;More&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Mini-Notation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/mini-notation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Coding syntax\&quot;],\&quot;link\&quot;:[0,\&quot;learn/code\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Offline\&quot;],\&quot;link\&quot;:[0,\&quot;learn/pwa\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/patterns\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Alignment\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/alignment\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Strudel vs Tidal\&quot;],\&quot;link\&quot;:[0,\&quot;learn/strudel-vs-tidal\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Music metadata\&quot;],\&quot;link\&quot;:[0,\&quot;learn/metadata\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;CSound\&quot;],\&quot;link\&quot;:[0,\&quot;learn/csound\&quot;]}]]&quot;],&quot;Pattern Functions&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Introduction\&quot;],\&quot;link\&quot;:[0,\&quot;functions/intro\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Creating Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;learn/factories\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Time Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/time-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Control Parameters\&quot;],\&quot;link\&quot;:[0,\&quot;functions/value-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Signals\&quot;],\&quot;link\&quot;:[0,\&quot;learn/signals\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Conditional Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/conditional-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Accumulation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/accumulation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Tonal Functions\&quot;],\&quot;link\&quot;:[0,\&quot;learn/tonal\&quot;]}]]&quot;],&quot;Development&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;REPL\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/repl\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Packages\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/packages\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Docs\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/docs\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Testing\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/testing\&quot;]}]]&quot;]}]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MobileNav&quot;,&quot;value&quot;:true}" await-children=""><nav data-headlessui-state=""><button class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" id="headlessui-disclosure-button-:R1:" type="button" aria-expanded="false" data-headlessui-state=""><span class="sr-only">Open main menu</span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button></nav></astro-island>
+  </div>
+</nav>
+      </header>
+      <main class="relative pt-16">
+        <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
+          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed h-full">
+            <nav aria-labelledby="grid-left" class="max-h-full overflow-auto pb-20 text-foreground">
+  <ul>
+    <li>
+          <div class="nav-group pb-4">
+            <h2>Workshop</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/getting-started">
+                      Getting Started
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block bg-lineHighlight" href="/workshop/first-sounds" aria-current="page">
+                      First Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-notes">
+                      First Notes
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-effects">
+                      First Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/pattern-effects">
+                      Pattern Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/recap">
+                      Recap
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/getting-started">
+                      Workshop in German
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Making Sound</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/samples">
+                      Samples
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/synths">
+                      Synths
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/effects">
+                      Audio Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/input-output">
+                      MIDI &amp; OSC
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>More</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/mini-notation">
+                      Mini-Notation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/code">
+                      Coding syntax
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/pwa">
+                      Offline
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/patterns">
+                      Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/alignment">
+                      Pattern Alignment
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/strudel-vs-tidal">
+                      Strudel vs Tidal
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/metadata">
+                      Music metadata
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/csound">
+                      CSound
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Pattern Functions</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/intro">
+                      Introduction
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/factories">
+                      Creating Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/time-modifiers">
+                      Time Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/value-modifiers">
+                      Control Parameters
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/signals">
+                      Signals
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/conditional-modifiers">
+                      Conditional Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/accumulation">
+                      Accumulation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/tonal">
+                      Tonal Functions
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Development</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/repl">
+                      REPL
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/sounds">
+                      Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/packages">
+                      Packages
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/docs">
+                      Docs
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/testing">
+                      Testing
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li>
+  </ul>
+</nav>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    var target = document.querySelector('[aria-current="page"]');
+    if (target && target.offsetTop > window.innerHeight - 100) {
+      document.querySelector('.nav-groups').scrollTop = target.offsetTop;
+    }
+  });
+</script>
+          </aside>
+          <article id="article" class="content astro-J75B3YUS">
+  <section class="main-section astro-J75B3YUS">
+    <!-- TODO: add dropdown toc on mobile -->
+    <div class="prose dark:prose-invert max-w-full pb-8 astro-J75B3YUS">
+      
+            <h1 id="first-sounds">First Sounds<a aria-hidden="true" tabIndex="-1" href="/workshop/first-sounds#first-sounds"><span class="icon icon-link"></span></a></h1>
+<p>This is the first chapter of the Strudel Workshop, nice to have you on board!</p>
+<h2 id="code-fields">Code Fields<a aria-hidden="true" tabIndex="-1" href="/workshop/first-sounds#code-fields"><span class="icon icon-link"></span></a></h2>
+<p>The workshop is full of interactive code fields. Let’s learn how to use those. Here is one:</p>
+<script>(self.Astro=self.Astro||{}).visible=(s,c,n)=>{const r=async()=>{await(await s())()};let i=new IntersectionObserver(e=>{for(const t of e)if(t.isIntersecting){i.disconnect(),r();break}});for(let e=0;e<n.children.length;e++){const t=n.children[e];i.observe(t)}},window.dispatchEvent(new Event("astro:visible"));</script><astro-island uid="Z1uAuRz" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;casio\&quot;)&quot;],&quot;dirt&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;casio&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><ol>
+<li>⬆️ click into the text field above ⬆️</li>
+<li>press <code>ctrl</code>+<code>enter</code> to play</li>
+<li>change <code>casio</code> to <code>metal</code></li>
+<li>press <code>ctrl</code>+<code>enter</code> to update</li>
+<li>press <code>ctrl</code>+<code>.</code> to stop</li>
+</ol></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>Congratulations, you are now live coding!</p>
+<h2 id="sounds">Sounds<a aria-hidden="true" tabIndex="-1" href="/workshop/first-sounds#sounds"><span class="icon icon-link"></span></a></h2>
+<p>We have just played a sound with <code>sound</code> like this:</p>
+<astro-island uid="Z2s85jO" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;casio\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;casio&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p><code>casio</code> is one of many standard sounds.</p><p>Try out a few other sounds:</p><pre class="astro-code" style="background-color:#0d1117;overflow-x:auto"><code><span class="line"><span style="color:#c9d1d9">insect wind jazz metal east crow casio space numbers</span></span></code></pre><p>You might hear a little pause while the sound is loading</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>Change Sample Number with :</strong></p>
+<p>One Sound can contain multiple samples (audio files).</p>
+<p>You can select the sample by appending <code>:</code> followed by a number to the name:</p>
+<astro-island uid="1vJ31D" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;casio:1\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;casio:1&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try different sound / sample number combinations.</p><p>Not adding a number is like doing <code>:0</code></p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>Now you know how to use different sounds.
+For now we’ll stick to this little selection of sounds, but we’ll find out how to load your own sounds later.</p>
+<h2 id="drum-sounds">Drum Sounds<a aria-hidden="true" tabIndex="-1" href="/workshop/first-sounds#drum-sounds"><span class="icon icon-link"></span></a></h2>
+<p>By default, Strudel comes with a wide selection of drum sounds:</p>
+<astro-island uid="1VYBTO" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd hh sd oh\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd hh sd oh&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>These letter combinations stand for different parts of a drum set:</p><ul>
+<li><code>bd</code> = <strong>b</strong>ass <strong>d</strong>rum</li>
+<li><code>sd</code> = <strong>s</strong>nare <strong>d</strong>rum</li>
+<li><code>rim</code> = <strong>rim</strong>shot</li>
+<li><code>hh</code> = <strong>h</strong>i<strong>h</strong>at</li>
+<li><code>oh</code> = <strong>o</strong>pen <strong>h</strong>ihat</li>
+</ul><p>Try out different drum sounds!</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>To change the sound character of our drums, we can use <code>bank</code> to change the drum machine:</p>
+<astro-island uid="Z1DoY6u" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd hh sd oh\&quot;).bank(\&quot;RolandTR909\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd hh sd oh&quot;).bank(&quot;RolandTR909&quot;)</pre></astro-island>
+<p>In this example <code>RolandTR909</code> is the name of the drum machine that we’re using.
+It is a famous drum machine for house and techno beats.</p>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try changing <code>RolandTR909</code> to one of</p><ul>
+<li><code>AkaiLinn</code></li>
+<li><code>RhythmAce</code></li>
+<li><code>RolandTR808</code></li>
+<li><code>RolandTR707</code></li>
+<li><code>ViscoSpaceDrum</code></li>
+</ul><p>There are a lot more, but let’s keep it simple for now</p><p>🦥 Pro-Tip: Mark a name via double click. Then just copy and paste!</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<h2 id="sequences">Sequences<a aria-hidden="true" tabIndex="-1" href="/workshop/first-sounds#sequences"><span class="icon icon-link"></span></a></h2>
+<p>In the last example, we already saw that you can play multiple sounds in a sequence by separating them with a space:</p>
+<astro-island uid="Z1A1yh5" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd hh sd hh\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd hh sd hh&quot;)</pre></astro-island>
+<p>Notice how the currently playing sound is highlighted in the code and also visualized below.</p>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try adding more sounds to the sequence!</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>The longer the sequence, the faster it runs</strong></p>
+<astro-island uid="2tOoRG" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd bd hh bd rim bd hh bd\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd bd hh bd rim bd hh bd&quot;)</pre></astro-island>
+<p>The content of a sequence will be squished into what’s called a cycle.</p>
+<p><strong>One way to change the tempo is using <code>cpm</code></strong></p>
+<astro-island uid="1wjukk" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd bd hh bd rim bd hh bd\&quot;).cpm(40)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd bd hh bd rim bd hh bd&quot;).cpm(40)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>cpm = cycles per minute</p><p>By default, the tempo is 60 cycles per minute = 1 cycle per second.</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>We will look at other ways to change the tempo later!</p>
+<p><strong>Add a rests in a sequence with ’~’</strong></p>
+<astro-island uid="29U5PD" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd hh ~ rim\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd hh ~ rim&quot;)</pre></astro-island>
+<p><strong>Sub-Sequences with [brackets]</strong></p>
+<astro-island uid="Z12t7Rq" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd [hh hh] sd [hh bd]\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd [hh hh] sd [hh bd]&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Try adding more sounds inside a bracket!</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>Similar to the whole sequence, the content of a sub-sequence will be squished to the its own length.</p>
+<p><strong>Multiplication: Speed things up</strong></p>
+<astro-island uid="ZmTVAw" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd hh*2 rim hh*3\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd hh*2 rim hh*3&quot;)</pre></astro-island>
+<p><strong>Multiplication: Speed up sequences</strong></p>
+<astro-island uid="bG2GB" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd [hh rim]*2\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd [hh rim]*2&quot;)</pre></astro-island>
+<p><strong>Multiplication: Speeeeeeeeed things up</strong></p>
+<astro-island uid="f8JAm" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd hh*16 rim hh*8\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd hh*16 rim hh*8&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Pitch = really fast rhythm</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>Sub-Sub-Sequences with [[brackets]]</strong></p>
+<astro-island uid="ZnT6Kk" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd [[rim rim] hh]\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd [[rim rim] hh]&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>You can go as deep as you want!</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>Play sequences in parallel with comma</strong></p>
+<astro-island uid="ZgDq2f" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;hh hh hh, bd casio\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;hh hh hh, bd casio&quot;)</pre></astro-island>
+<p>You can use as many commas as you want:</p>
+<astro-island uid="19G3Ts" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;hh hh hh, bd bd, ~ casio\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;hh hh hh, bd bd, ~ casio&quot;)</pre></astro-island>
+<p>Commas can also be used inside sub-sequences:</p>
+<astro-island uid="zTN1G" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;hh hh hh, bd [bd,casio]\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;hh hh hh, bd [bd,casio]&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Notice how the 2 above are the same?</p><p>It is quite common that there are many ways to express the same idea.</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p><strong>Multiple Lines with backticks</strong></p>
+<astro-island uid="Z13wsEw" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(`bd*2, ~ cp, \n~ ~ ~ oh, hh*4,\n[~ casio]*2`)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(`bd*2, ~ cp, 
+~ ~ ~ oh, hh*4,
+[~ casio]*2`)</pre></astro-island>
+<p><strong>selecting sample numbers separately</strong></p>
+<p>Instead of using ”:”, we can also use the <code>n</code> function to select sample numbers:</p>
+<astro-island uid="fC6rM" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;0 1 [4 2] 3*2\&quot;).sound(\&quot;jazz\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;0 1 [4 2] 3*2&quot;).sound(&quot;jazz&quot;)</pre></astro-island>
+<p>This is shorter and more readable than:</p>
+<astro-island uid="9w19r" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;jazz:0 jazz:1 [jazz:4 jazz:2] jazz:3*2\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;jazz:0 jazz:1 [jazz:4 jazz:2] jazz:3*2&quot;)</pre></astro-island>
+<h2 id="recap">Recap<a aria-hidden="true" tabIndex="-1" href="/workshop/first-sounds#recap"><span class="icon icon-link"></span></a></h2>
+<p>Now we’ve learned the basics of the so called Mini-Notation, the rhythm language of Tidal.
+This is what we’ve leared so far:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Concept</th><th>Syntax</th><th>Example</th></tr></thead><tbody><tr><td>Sequence</td><td>space</td><td><astro-island uid="1V0BuP" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd bd sd hh\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd bd sd hh&quot;)</pre></astro-island></td></tr><tr><td>Sample Number</td><td>:x</td><td><astro-island uid="2slK4b" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;hh:0 hh:1 hh:2 hh:3\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;hh:0 hh:1 hh:2 hh:3&quot;)</pre></astro-island></td></tr><tr><td>Rests</td><td>~</td><td><astro-island uid="NoOw1" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;metal ~ jazz jazz:1\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;metal ~ jazz jazz:1&quot;)</pre></astro-island></td></tr><tr><td>Sub-Sequences</td><td>[]</td><td><astro-island uid="1kNpH6" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd wind [metal jazz] hh\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd wind [metal jazz] hh&quot;)</pre></astro-island></td></tr><tr><td>Sub-Sub-Sequences</td><td>[[]]</td><td><astro-island uid="ZcPAzG" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd [metal [jazz sd]]\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd [metal [jazz sd]]&quot;)</pre></astro-island></td></tr><tr><td>Speed up</td><td>*</td><td><astro-island uid="Z27amg3" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd*2 cp*3\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd*2 cp*3&quot;)</pre></astro-island></td></tr><tr><td>Parallel</td><td>,</td><td><astro-island uid="ZP5pOF" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd*2, hh*2 [hh oh]\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd*2, hh*2 [hh oh]&quot;)</pre></astro-island></td></tr></tbody></table>
+<p>The Mini-Notation is usually used inside some function. These are the functions we’ve seen so far:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Name</th><th>Description</th><th>Example</th></tr></thead><tbody><tr><td>sound</td><td>plays the sound of the given name</td><td><astro-island uid="Zm9w6P" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;)</pre></astro-island></td></tr><tr><td>bank</td><td>selects the sound bank</td><td><astro-island uid="2c3G7y" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;).bank(\&quot;RolandTR909\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;).bank(&quot;RolandTR909&quot;)</pre></astro-island></td></tr><tr><td>cpm</td><td>sets the tempo in cycles per minute</td><td><astro-island uid="1DIsgM" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;).cpm(90)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;).cpm(90)</pre></astro-island></td></tr><tr><td>n</td><td>select sample number</td><td><astro-island uid="ZzfIG4" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;0 1 4 2\&quot;).sound(\&quot;jazz\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;0 1 4 2&quot;).sound(&quot;jazz&quot;)</pre></astro-island></td></tr></tbody></table>
+<h2 id="examples">Examples<a aria-hidden="true" tabIndex="-1" href="/workshop/first-sounds#examples"><span class="icon icon-link"></span></a></h2>
+<p><strong>Basic rock beat</strong></p>
+<astro-island uid="Z15ohtu" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd, hh*4\&quot;).bank(\&quot;RolandTR505\&quot;).cpm(100/2)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd, hh*4&quot;).bank(&quot;RolandTR505&quot;).cpm(100/2)</pre></astro-island>
+<p><strong>Classic house</strong></p>
+<astro-island uid="Z1LKrzA" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd*2, ~ cp, [~ hh]*2\&quot;).bank(\&quot;RolandTR909\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd*2, ~ cp, [~ hh]*2&quot;).bank(&quot;RolandTR909&quot;)</pre></astro-island>
+<div class="py-1 px-6 pr-10 bg-lineHighlight relative mb-4">
+  <div><p>Notice that the two patterns are extremely similar.
+Certain drum patterns are reused across genres.</p></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 absolute top-4 right-4"><path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z"></path></svg>
+  <!-- <MusicalNoteIcon className="w-5 h-5 absolute top-4 right-4" /> -->
+</div>
+<p>We Will Rock you</p>
+<astro-island uid="2lixfh" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd*2 cp\&quot;).bank(\&quot;RolandTR707\&quot;).cpm(81/2)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd*2 cp&quot;).bank(&quot;RolandTR707&quot;).cpm(81/2)</pre></astro-island>
+<p><strong>Yellow Magic Orchestra - Firecracker</strong></p>
+<astro-island uid="Z2jwdEC" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd, ~ ~ ~ hh ~ hh ~ ~, ~ perc ~ perc:1*2\&quot;)\n.bank(\&quot;RolandCompurhythm1000\&quot;)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd, ~ ~ ~ hh ~ hh ~ ~, ~ perc ~ perc:1*2&quot;)
+.bank(&quot;RolandCompurhythm1000&quot;)</pre></astro-island>
+<p><strong>Imitation of a 16 step sequencer</strong></p>
+<astro-island uid="pBgxP" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(`\n[~  ~  oh ~ ] [~  ~  ~  ~ ] [~  ~  ~  ~ ] [~  ~  ~  ~ ],\n[hh hh ~  ~ ] [hh ~  hh ~ ] [hh ~  hh ~ ] [hh ~  hh ~ ],\n[~  ~  ~  ~ ] [cp ~  ~  ~ ] [~  ~  ~  ~ ] [cp ~  ~  ~ ],\n[bd ~  ~  ~ ] [~  ~  ~  bd] [~  ~  bd ~ ] [~  ~  ~  bd]\n`).cpm(90/4)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(`
+[~  ~  oh ~ ] [~  ~  ~  ~ ] [~  ~  ~  ~ ] [~  ~  ~  ~ ],
+[hh hh ~  ~ ] [hh ~  hh ~ ] [hh ~  hh ~ ] [hh ~  hh ~ ],
+[~  ~  ~  ~ ] [cp ~  ~  ~ ] [~  ~  ~  ~ ] [cp ~  ~  ~ ],
+[bd ~  ~  ~ ] [~  ~  ~  bd] [~  ~  bd ~ ] [~  ~  ~  bd]
+`).cpm(90/4)</pre></astro-island>
+<p><strong>Another one</strong></p>
+<astro-island uid="Z1b8M4a" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(`\n[~  ~  ~  ~ ] [~  ~  ~  ~ ] [~  ~  ~  ~ ] [~  ~  oh:1 ~ ],\n[hh hh hh hh] [hh hh hh hh] [hh hh hh hh] [hh hh ~  ~ ],\n[~  ~  ~  ~ ] [cp ~  ~  ~ ] [~  ~  ~  ~ ] [~  cp ~  ~ ],\n[bd bd ~  ~ ] [~  ~  bd ~ ] [bd bd ~ bd ] [~  ~  ~  ~ ]\n`).bank(\&quot;RolandTR808\&quot;).cpm(88/4)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(`
+[~  ~  ~  ~ ] [~  ~  ~  ~ ] [~  ~  ~  ~ ] [~  ~  oh:1 ~ ],
+[hh hh hh hh] [hh hh hh hh] [hh hh hh hh] [hh hh ~  ~ ],
+[~  ~  ~  ~ ] [cp ~  ~  ~ ] [~  ~  ~  ~ ] [~  cp ~  ~ ],
+[bd bd ~  ~ ] [~  ~  bd ~ ] [bd bd ~ bd ] [~  ~  ~  ~ ]
+`).bank(&quot;RolandTR808&quot;).cpm(88/4)</pre></astro-island>
+<p><strong>Not your average drums</strong></p>
+<astro-island uid="2epA96" component-url="/_astro/MiniRepl.089c64b2.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(`jazz*2, \ninsect [crow metal] ~ ~, \n~ space:4 ~ space:1,\n~ wind`)\n.cpm(100/2)&quot;],&quot;punchcard&quot;:[0,true]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(`jazz*2, 
+insect [crow metal] ~ ~, 
+~ space:4 ~ space:1,
+~ wind`)
+.cpm(100/2)</pre></astro-island>
+<p>Now that we know the basics of how to make beats, let’s look at how we can play <a href="/workshop/first-notes">notes</a></p>
+          
+    </div>
+  </section>
+  <nav class="block sm:hidden astro-J75B3YUS">
+    <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/workshop/first-sounds.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  </nav>
+</article>
+          <aside class="fixed right-0 h-full overflow-auto pr-4 pl-0 pb-16 hidden xl:block" title="Table of Contents">
+            <nav aria-labelledby="grid-right" class="w-64 text-foreground">
+  <script>(self.Astro=self.Astro||{}).media=(s,a)=>{const t=async()=>{await(await s())()};if(a.value){const e=matchMedia(a.value);e.matches?t():e.addEventListener("change",t,{once:!0})}},window.dispatchEvent(new Event("astro:media"));</script><astro-island uid="fXlUi" component-url="/_astro/TableOfContents.e29bc9c6.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;headings&quot;:[1,&quot;[[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;first-sounds\&quot;],\&quot;text\&quot;:[0,\&quot;First Sounds\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;code-fields\&quot;],\&quot;text\&quot;:[0,\&quot;Code Fields\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;sounds\&quot;],\&quot;text\&quot;:[0,\&quot;Sounds\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;drum-sounds\&quot;],\&quot;text\&quot;:[0,\&quot;Drum Sounds\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;sequences\&quot;],\&quot;text\&quot;:[0,\&quot;Sequences\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;recap\&quot;],\&quot;text\&quot;:[0,\&quot;Recap\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;examples\&quot;],\&quot;text\&quot;:[0,\&quot;Examples\&quot;]}]]&quot;],&quot;currentPage&quot;:[0,&quot;/workshop/first-sounds&quot;]}" ssr="" client="media" opts="{&quot;name&quot;:&quot;TableOfContents&quot;,&quot;value&quot;:&quot;(min-width: 50em)&quot;}" await-children=""><ul><li class="w-full"><a href="/workshop/first-sounds#first-sounds" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-4">First Sounds</a></li><li class="w-full"><a href="/workshop/first-sounds#code-fields" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Code Fields</a></li><li class="w-full"><a href="/workshop/first-sounds#sounds" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Sounds</a></li><li class="w-full"><a href="/workshop/first-sounds#drum-sounds" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Drum Sounds</a></li><li class="w-full"><a href="/workshop/first-sounds#sequences" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Sequences</a></li><li class="w-full"><a href="/workshop/first-sounds#recap" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Recap</a></li><li class="w-full"><a href="/workshop/first-sounds#examples" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Examples</a></li></ul></astro-island>
+  <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/workshop/first-sounds.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  <!-- <AvatarList path={currentPage} /> -->
+</nav>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </body></html>

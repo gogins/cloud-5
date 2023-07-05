@@ -75,6 +75,11 @@ To create a new composition, simply create a new HTML file. You can copy one
 of my existing pieces as a template and modify it, or you can create a new HTML 
 file from scratch.
 
+**__Important note!__** If you are simply using cloud-music to write pieces, 
+write them in the `dist` directory. However, if you are going to build 
+cloud-music yourself, for example to keep up with new releases of Strudel, 
+then write your pieces in the `public` directory, and build cloud-music.
+
 Although cloud-music renders audio only in real time, it is easy to use an 
 audio loopback driver to route audio from the system output to an audio 
 recorder and save the recording as a soundfile. On my MacBook Pro, I have been 
