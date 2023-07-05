@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en" class="initial dark">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v2.3.2">
+
+<link rel="icon" type="image/svg+xml" href="favicon.ico">
+
+<meta name="description" content="Strudel is a music live coding environment for the browser, porting the TidalCycles pattern language to JavaScript.">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/apple-icon-180.png" sizes="180x180">
+<meta name="theme-color" content="#222222">
+
+<base href="/">
+
+<!-- Scrollable a11y code helper -->
+<script src="./make-scrollable-code-focusable.js"></script>
+
+
+<!-- this does not work for some reason: -->
+<!-- <style is:global define:vars={strudelTheme}></style> -->
+<!-- the following variables are just a fallback to make sure everything is readable without JS -->
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+
+    <!-- Page Metadata --><link rel="canonical" href="https://strudel.tidalcycles.org/de/workshop/recap/">
+
+<!-- OpenGraph Tags -->
+<meta property="og:title" content="Recap 🚀 Strudel">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://strudel.tidalcycles.org/de/workshop/recap/">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta property="og:image:alt" content="Strudel Logo">
+<meta name="description" property="og:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta property="og:site_name" content="Strudel">
+
+<!-- Twitter Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site">
+<meta name="twitter:title" content="Recap 🚀 Strudel">
+<meta name="twitter:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta name="twitter:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta name="twitter:image:alt" content="Strudel Logo">
+    <title>
+      Recap 🌀 Strudel
+    </title>
+  <link rel="stylesheet" href="/_astro/first-effects.f224cf90.css" />
+<link rel="stylesheet" href="/_astro/first-effects.af72a2b1.css" />
+<link rel="stylesheet" href="/_astro/intro.0f120bc7.css" />
+<link rel="stylesheet" href="/_astro/first-effects.56b16646.css" /><script type="module" src="/_astro/hoisted.908dc6d4.js"></script></head>
+
+  <body class="h-app-height text-gray-50 bg-background">
+    <div class="w-full h-full space-y-4 flex flex-col">
+      <header class="max-w-full fixed top-0 w-full z-[100]">
+        <nav class="flex justify-between py-2 px-4 items-center h-14 max-h-14 bg-lineHighlight text-foreground astro-2W66RQV5" title="Top Navigation">
+  <div class="flex overflow-visible items-center grow astro-2W66RQV5" style="overflow:visible">
+    <a href="/" class="flex items-center text-2xl space-x-2 astro-2W66RQV5">
+      <h1 class="font-bold flex space-x-2 items-baseline text-xl astro-2W66RQV5">
+        <span class="astro-2W66RQV5">🌀</span>
+        <div class="flex space-x-1 items-baseline astro-2W66RQV5">
+          <span class=" astro-2W66RQV5">strudel</span>
+          <span class="text-sm astro-2W66RQV5">DOCS</span>
+        </div>
+      </h1>
+    </a>
+  </div>
+  
+  <div class="search-item h-10 astro-2W66RQV5">
+    <!-- <Search client:idle /> -->
+  </div>
+  <a href="./" class="hidden md:flex cursor-pointer items-center space-x-1 astro-2W66RQV5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 astro-2W66RQV5"><path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd"></path></svg><span class="astro-2W66RQV5">go to REPL</span>
+  </a>
+  <div class="md:hidden astro-2W66RQV5">
+    <style>astro-island,astro-slot{display:contents}</style><script>(self.Astro=self.Astro||{}).idle=t=>{const e=async()=>{await(await t())()};"requestIdleCallback"in window?window.requestIdleCallback(e):setTimeout(e,200)},window.dispatchEvent(new Event("astro:idle"));var l;{const c={0:t=>t,1:t=>JSON.parse(t,o),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(JSON.parse(t,o)),5:t=>new Set(JSON.parse(t,o)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(JSON.parse(t)),9:t=>new Uint16Array(JSON.parse(t)),10:t=>new Uint32Array(JSON.parse(t))},o=(t,s)=>{if(t===""||!Array.isArray(s))return s;const[e,n]=s;return e in c?c[e](n):void 0};customElements.get("astro-island")||customElements.define("astro-island",(l=class extends HTMLElement{constructor(){super(...arguments);this.hydrate=()=>{if(!this.hydrator||this.parentElement&&this.parentElement.closest("astro-island[ssr]"))return;const s=this.querySelectorAll("astro-slot"),e={},n=this.querySelectorAll("template[data-astro-template]");for(const r of n){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(const r of s){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("name")||"default"]=r.innerHTML)}const a=this.hasAttribute("props")?JSON.parse(this.getAttribute("props"),o):{};this.hydrator(this)(this.Component,a,e,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),window.removeEventListener("astro:hydrate",this.hydrate),window.dispatchEvent(new CustomEvent("astro:hydrate"))}}connectedCallback(){!this.hasAttribute("await-children")||this.firstChild?this.childrenConnectedCallback():new MutationObserver((s,e)=>{e.disconnect(),this.childrenConnectedCallback()}).observe(this,{childList:!0})}async childrenConnectedCallback(){window.addEventListener("astro:hydrate",this.hydrate);let s=this.getAttribute("before-hydration-url");s&&await import(s),this.start()}start(){const s=JSON.parse(this.getAttribute("opts")),e=this.getAttribute("client");if(Astro[e]===void 0){window.addEventListener(`astro:${e}`,()=>this.start(),{once:!0});return}Astro[e](async()=>{const n=this.getAttribute("renderer-url"),[a,{default:r}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),i=this.getAttribute("component-export")||"default";if(!i.includes("."))this.Component=a[i];else{this.Component=a;for(const d of i.split("."))this.Component=this.Component[d]}return this.hydrator=r,this.hydrate},s,this)}attributeChangedCallback(){this.hydrator&&this.hydrate()}},l.observedAttributes=["props"],l))}</script><astro-island uid="MX3bB" component-url="/_astro/MobileNav.922de2c4.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;sidebar&quot;:[0,{&quot;Workshop&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Getting Started\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/getting-started\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Notes\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-notes\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/pattern-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Recap\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/recap\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Workshop in German\&quot;],\&quot;link\&quot;:[0,\&quot;de/workshop/getting-started\&quot;]}]]&quot;],&quot;Making Sound&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Samples\&quot;],\&quot;link\&quot;:[0,\&quot;learn/samples\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Synths\&quot;],\&quot;link\&quot;:[0,\&quot;learn/synths\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Audio Effects\&quot;],\&quot;link\&quot;:[0,\&quot;learn/effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;MIDI &amp; OSC\&quot;],\&quot;link\&quot;:[0,\&quot;learn/input-output\&quot;]}]]&quot;],&quot;More&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Mini-Notation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/mini-notation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Coding syntax\&quot;],\&quot;link\&quot;:[0,\&quot;learn/code\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Offline\&quot;],\&quot;link\&quot;:[0,\&quot;learn/pwa\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/patterns\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Alignment\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/alignment\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Strudel vs Tidal\&quot;],\&quot;link\&quot;:[0,\&quot;learn/strudel-vs-tidal\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Music metadata\&quot;],\&quot;link\&quot;:[0,\&quot;learn/metadata\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;CSound\&quot;],\&quot;link\&quot;:[0,\&quot;learn/csound\&quot;]}]]&quot;],&quot;Pattern Functions&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Introduction\&quot;],\&quot;link\&quot;:[0,\&quot;functions/intro\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Creating Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;learn/factories\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Time Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/time-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Control Parameters\&quot;],\&quot;link\&quot;:[0,\&quot;functions/value-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Signals\&quot;],\&quot;link\&quot;:[0,\&quot;learn/signals\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Conditional Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/conditional-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Accumulation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/accumulation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Tonal Functions\&quot;],\&quot;link\&quot;:[0,\&quot;learn/tonal\&quot;]}]]&quot;],&quot;Development&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;REPL\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/repl\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Packages\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/packages\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Docs\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/docs\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Testing\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/testing\&quot;]}]]&quot;]}]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MobileNav&quot;,&quot;value&quot;:true}" await-children=""><nav data-headlessui-state=""><button class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" id="headlessui-disclosure-button-:R1:" type="button" aria-expanded="false" data-headlessui-state=""><span class="sr-only">Open main menu</span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button></nav></astro-island>
+  </div>
+</nav>
+      </header>
+      <main class="relative pt-16">
+        <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
+          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed h-full">
+            <nav aria-labelledby="grid-left" class="max-h-full overflow-auto pb-20 text-foreground">
+  <ul>
+    <li>
+          <div class="nav-group pb-4">
+            <h2>Workshop</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/getting-started">
+                      Intro
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/first-sounds">
+                      Erste Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/first-notes">
+                      Erste Töne
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/first-effects">
+                      Erste Effekte
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/pattern-effects">
+                      Pattern Effekte
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block bg-lineHighlight" href="/de/workshop/recap" aria-current="page">
+                      Rückblick
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/getting-started">
+                      Mehr Seiten auf Englisch
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li>
+  </ul>
+</nav>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    var target = document.querySelector('[aria-current="page"]');
+    if (target && target.offsetTop > window.innerHeight - 100) {
+      document.querySelector('.nav-groups').scrollTop = target.offsetTop;
+    }
+  });
+</script>
+          </aside>
+          <article id="article" class="content astro-J75B3YUS">
+  <section class="main-section astro-J75B3YUS">
+    <!-- TODO: add dropdown toc on mobile -->
+    <div class="prose dark:prose-invert max-w-full pb-8 astro-J75B3YUS">
+      
+            <h1 id="workshop-rückblick">Workshop Rückblick<a aria-hidden="true" tabIndex="-1" href="/de/workshop/recap#workshop-rückblick"><span class="icon icon-link"></span></a></h1>
+<p>Diese Seite ist eine Auflistung aller im Workshop enthaltenen Funktionen.</p>
+<h2 id="mini-notation">Mini Notation<a aria-hidden="true" tabIndex="-1" href="/de/workshop/recap#mini-notation"><span class="icon icon-link"></span></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Concept</th><th>Syntax</th><th>Example</th></tr></thead><tbody><tr><td>Sequence</td><td>space</td><td><script>(self.Astro=self.Astro||{}).visible=(s,c,n)=>{const r=async()=>{await(await s())()};let i=new IntersectionObserver(e=>{for(const t of e)if(t.isIntersecting){i.disconnect(),r();break}});for(let e=0;e<n.children.length;e++){const t=n.children[e];i.observe(t)}},window.dispatchEvent(new Event("astro:visible"));</script><astro-island uid="1EVgPw" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd bd sn hh\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd bd sn hh&quot;)</pre></astro-island></td></tr><tr><td>Sample Nummer</td><td>:x</td><td><astro-island uid="1HMsnq" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;hh:0 hh:1 hh:2 hh:3\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;hh:0 hh:1 hh:2 hh:3&quot;)</pre></astro-island></td></tr><tr><td>Pausen</td><td>~</td><td><astro-island uid="3PwPg" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;metal ~ jazz jazz:1\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;metal ~ jazz jazz:1&quot;)</pre></astro-island></td></tr><tr><td>Unter-Sequences</td><td>[]</td><td><astro-island uid="Z2i862P" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd wind [metal jazz] hh\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd wind [metal jazz] hh&quot;)</pre></astro-island></td></tr><tr><td>Unter-Unter-Sequences</td><td>[[]]</td><td><astro-island uid="Z16m3B2" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd [metal [jazz sn]]\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd [metal [jazz sn]]&quot;)</pre></astro-island></td></tr><tr><td>Schneller</td><td>*</td><td><astro-island uid="ZGSOBU" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sn*2 cp*3\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sn*2 cp*3&quot;)</pre></astro-island></td></tr><tr><td>Slow down</td><td>/</td><td><astro-island uid="2gLWi0" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;[c a f e]/2\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;[c a f e]/2&quot;)</pre></astro-island></td></tr><tr><td>Parallel</td><td>,</td><td><astro-island uid="ZJXgJS" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd*2, hh*2 [hh oh]\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd*2, hh*2 [hh oh]&quot;)</pre></astro-island></td></tr><tr><td>Alternieren</td><td>&lt;&gt;</td><td><astro-island uid="Z8Skjz" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c &lt;e g&gt;\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c &lt;e g&gt;&quot;)</pre></astro-island></td></tr><tr><td>Verlängern</td><td>@</td><td><astro-island uid="Z2ifj43" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c@3 e\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c@3 e&quot;)</pre></astro-island></td></tr><tr><td>Wiederholen</td><td>!</td><td><astro-island uid="oskQF" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c!3 e\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c!3 e&quot;)</pre></astro-island></td></tr></tbody></table>
+<h2 id="sounds">Sounds<a aria-hidden="true" tabIndex="-1" href="/de/workshop/recap#sounds"><span class="icon icon-link"></span></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Name</th><th>Description</th><th>Example</th></tr></thead><tbody><tr><td>sound</td><td>spielt den sound mit namen</td><td><astro-island uid="1QAs3x" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;)</pre></astro-island></td></tr><tr><td>bank</td><td>wählt die soundbank</td><td><astro-island uid="1nmeKP" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;).bank(\&quot;RolandTR909\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;).bank(&quot;RolandTR909&quot;)</pre></astro-island></td></tr><tr><td>n</td><td>wählt sample mit nummer</td><td><astro-island uid="QYSmV" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;0 1 4 2\&quot;).sound(\&quot;jazz\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;0 1 4 2&quot;).sound(&quot;jazz&quot;)</pre></astro-island></td></tr></tbody></table>
+<h2 id="notes">Notes<a aria-hidden="true" tabIndex="-1" href="/de/workshop/recap#notes"><span class="icon icon-link"></span></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Name</th><th>Description</th><th>Example</th></tr></thead><tbody><tr><td>note</td><td>wählt note per zahl oder buchstabe</td><td><astro-island uid="1dXse6" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;b g e c\&quot;).sound(\&quot;piano\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;b g e c&quot;).sound(&quot;piano&quot;)</pre></astro-island></td></tr><tr><td>n + scale</td><td>wählt note n in skala</td><td><astro-island uid="qjU7J" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;6 4 2 0\&quot;).scale(\&quot;C:minor\&quot;).sound(\&quot;piano\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;6 4 2 0&quot;).scale(&quot;C:minor&quot;).sound(&quot;piano&quot;)</pre></astro-island></td></tr><tr><td>stack</td><td>spielt mehrere patterns parallel</td><td><astro-island uid="1iKb0J" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;stack(s(\&quot;bd sd\&quot;),note(\&quot;c eb g\&quot;))&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>stack(s(&quot;bd sd&quot;),note(&quot;c eb g&quot;))</pre></astro-island></td></tr></tbody></table>
+<h2 id="audio-effekte">Audio Effekte<a aria-hidden="true" tabIndex="-1" href="/de/workshop/recap#audio-effekte"><span class="icon icon-link"></span></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>name</th><th>example</th></tr></thead><tbody><tr><td>lpf</td><td><astro-island uid="1liKCy" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c2 c3\&quot;).s(\&quot;sawtooth\&quot;).lpf(\&quot;&lt;400 2000&gt;\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c2 c3&quot;).s(&quot;sawtooth&quot;).lpf(&quot;&lt;400 2000&gt;&quot;)</pre></astro-island></td></tr><tr><td>vowel</td><td><astro-island uid="2nqHUW" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;note(\&quot;c3 eb3 g3\&quot;).s(\&quot;sawtooth\&quot;).vowel(\&quot;&lt;a e i o&gt;\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>note(&quot;c3 eb3 g3&quot;).s(&quot;sawtooth&quot;).vowel(&quot;&lt;a e i o&gt;&quot;)</pre></astro-island></td></tr><tr><td>gain</td><td><astro-island uid="1OKFpg" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;hh*8\&quot;).gain(\&quot;[.25 1]*2\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;hh*8&quot;).gain(&quot;[.25 1]*2&quot;)</pre></astro-island></td></tr><tr><td>delay</td><td><astro-island uid="Z98ogq" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;bd rim\&quot;).delay(.5)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;bd rim&quot;).delay(.5)</pre></astro-island></td></tr><tr><td>room</td><td><astro-island uid="M6A6l" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;bd rim\&quot;).room(.5)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;bd rim&quot;).room(.5)</pre></astro-island></td></tr><tr><td>pan</td><td><astro-island uid="1scojh" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;bd rim\&quot;).pan(\&quot;0 1\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;bd rim&quot;).pan(&quot;0 1&quot;)</pre></astro-island></td></tr><tr><td>speed</td><td><astro-island uid="ZOKWIm" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;bd rim\&quot;).speed(\&quot;&lt;1 2 -1 -2&gt;\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;bd rim&quot;).speed(&quot;&lt;1 2 -1 -2&gt;&quot;)</pre></astro-island></td></tr><tr><td>range</td><td><astro-island uid="ZxAGSG" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;hh*16\&quot;).lpf(saw.range(200,4000))&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;hh*16&quot;).lpf(saw.range(200,4000))</pre></astro-island></td></tr></tbody></table>
+<h2 id="pattern-effects">Pattern Effects<a aria-hidden="true" tabIndex="-1" href="/de/workshop/recap#pattern-effects"><span class="icon icon-link"></span></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>name</th><th>description</th><th>example</th></tr></thead><tbody><tr><td>cpm</td><td>tempo in cycles pro minute</td><td><astro-island uid="Z9p5lj" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;).cpm(90)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;).cpm(90)</pre></astro-island></td></tr><tr><td>fast</td><td>schneller</td><td><astro-island uid="Zl9nC8" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;).fast(2)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;).fast(2)</pre></astro-island></td></tr><tr><td>slow</td><td>langsamer</td><td><astro-island uid="ZABGrh" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;sound(\&quot;bd sd\&quot;).slow(2)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>sound(&quot;bd sd&quot;).slow(2)</pre></astro-island></td></tr><tr><td>rev</td><td>rückwärts</td><td><astro-island uid="ZhIyF9" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;0 2 4 6\&quot;).scale(\&quot;C:minor\&quot;).rev()&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;0 2 4 6&quot;).scale(&quot;C:minor&quot;).rev()</pre></astro-island></td></tr><tr><td>jux</td><td>ein stereo-kanal modifizieren</td><td><astro-island uid="ZbXuit" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;0 2 4 6\&quot;).scale(\&quot;C:minor\&quot;).jux(rev)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;0 2 4 6&quot;).scale(&quot;C:minor&quot;).jux(rev)</pre></astro-island></td></tr><tr><td>add</td><td>addiert zahlen oder noten</td><td><astro-island uid="Zl6zc6" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;n(\&quot;0 2 4 6\&quot;.add(\&quot;&lt;0 1 2 1&gt;\&quot;)).scale(\&quot;C:minor\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>n(&quot;0 2 4 6&quot;.add(&quot;&lt;0 1 2 1&gt;&quot;)).scale(&quot;C:minor&quot;)</pre></astro-island></td></tr><tr><td>ply</td><td>jedes element schneller machen</td><td><astro-island uid="1tInK3" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;bd sd\&quot;).ply(\&quot;&lt;1 2 3&gt;\&quot;)&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;bd sd&quot;).ply(&quot;&lt;1 2 3&gt;&quot;)</pre></astro-island></td></tr><tr><td>off</td><td>verzögert eine modifizierte kopie</td><td><astro-island uid="ZFcK9T" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;hideHeader&quot;:[0,true],&quot;tune&quot;:[0,&quot;s(\&quot;bd sd, hh*4\&quot;).off(1/8, x=&gt;x.speed(2))&quot;]}" ssr="" client="visible" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>s(&quot;bd sd, hh*4&quot;).off(1/8, x=&gt;x.speed(2))</pre></astro-island></td></tr></tbody></table>
+          
+    </div>
+  </section>
+  <nav class="block sm:hidden astro-J75B3YUS">
+    <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/de/workshop/recap.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  </nav>
+</article>
+          <aside class="fixed right-0 h-full overflow-auto pr-4 pl-0 pb-16 hidden xl:block" title="Table of Contents">
+            <nav aria-labelledby="grid-right" class="w-64 text-foreground">
+  <script>(self.Astro=self.Astro||{}).media=(s,a)=>{const t=async()=>{await(await s())()};if(a.value){const e=matchMedia(a.value);e.matches?t():e.addEventListener("change",t,{once:!0})}},window.dispatchEvent(new Event("astro:media"));</script><astro-island uid="1c7KpB" component-url="/_astro/TableOfContents.e29bc9c6.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;headings&quot;:[1,&quot;[[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;workshop-rückblick\&quot;],\&quot;text\&quot;:[0,\&quot;Workshop Rückblick\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;mini-notation\&quot;],\&quot;text\&quot;:[0,\&quot;Mini Notation\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;sounds\&quot;],\&quot;text\&quot;:[0,\&quot;Sounds\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;notes\&quot;],\&quot;text\&quot;:[0,\&quot;Notes\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;audio-effekte\&quot;],\&quot;text\&quot;:[0,\&quot;Audio Effekte\&quot;]}],[0,{\&quot;depth\&quot;:[0,2],\&quot;slug\&quot;:[0,\&quot;pattern-effects\&quot;],\&quot;text\&quot;:[0,\&quot;Pattern Effects\&quot;]}]]&quot;],&quot;currentPage&quot;:[0,&quot;/de/workshop/recap&quot;]}" ssr="" client="media" opts="{&quot;name&quot;:&quot;TableOfContents&quot;,&quot;value&quot;:&quot;(min-width: 50em)&quot;}" await-children=""><ul><li class="w-full"><a href="/de/workshop/recap#workshop-rückblick" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-4">Workshop Rückblick</a></li><li class="w-full"><a href="/de/workshop/recap#mini-notation" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Mini Notation</a></li><li class="w-full"><a href="/de/workshop/recap#sounds" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Sounds</a></li><li class="w-full"><a href="/de/workshop/recap#notes" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Notes</a></li><li class="w-full"><a href="/de/workshop/recap#audio-effekte" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Audio Effekte</a></li><li class="w-full"><a href="/de/workshop/recap#pattern-effects" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-9">Pattern Effects</a></li></ul></astro-island>
+  <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/de/workshop/recap.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  <!-- <AvatarList path={currentPage} /> -->
+</nav>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </body></html>

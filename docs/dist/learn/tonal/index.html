@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en" class="initial dark">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v2.3.2">
+
+<link rel="icon" type="image/svg+xml" href="favicon.ico">
+
+<meta name="description" content="Strudel is a music live coding environment for the browser, porting the TidalCycles pattern language to JavaScript.">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/apple-icon-180.png" sizes="180x180">
+<meta name="theme-color" content="#222222">
+
+<base href="/">
+
+<!-- Scrollable a11y code helper -->
+<script src="./make-scrollable-code-focusable.js"></script>
+
+
+<!-- this does not work for some reason: -->
+<!-- <style is:global define:vars={strudelTheme}></style> -->
+<!-- the following variables are just a fallback to make sure everything is readable without JS -->
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+
+    <!-- Page Metadata --><link rel="canonical" href="https://strudel.tidalcycles.org/learn/tonal/">
+
+<!-- OpenGraph Tags -->
+<meta property="og:title" content="Tonal Functions 🚀 Strudel">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://strudel.tidalcycles.org/learn/tonal/">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta property="og:image:alt" content="Strudel Logo">
+<meta name="description" property="og:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta property="og:site_name" content="Strudel">
+
+<!-- Twitter Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site">
+<meta name="twitter:title" content="Tonal Functions 🚀 Strudel">
+<meta name="twitter:description" content="Strudel is a music live coding editor that brings TidalCycles to the browser.">
+<meta name="twitter:image" content="https://strudel.tidalcycles.org/icon.png">
+<meta name="twitter:image:alt" content="Strudel Logo">
+    <title>
+      Tonal Functions 🌀 Strudel
+    </title>
+  <link rel="stylesheet" href="/_astro/first-effects.f224cf90.css" />
+<link rel="stylesheet" href="/_astro/first-effects.af72a2b1.css" />
+<link rel="stylesheet" href="/_astro/first-effects.56b16646.css" />
+<link rel="stylesheet" href="/_astro/intro.0f120bc7.css" /><script type="module" src="/_astro/hoisted.908dc6d4.js"></script></head>
+
+  <body class="h-app-height text-gray-50 bg-background">
+    <div class="w-full h-full space-y-4 flex flex-col">
+      <header class="max-w-full fixed top-0 w-full z-[100]">
+        <nav class="flex justify-between py-2 px-4 items-center h-14 max-h-14 bg-lineHighlight text-foreground astro-2W66RQV5" title="Top Navigation">
+  <div class="flex overflow-visible items-center grow astro-2W66RQV5" style="overflow:visible">
+    <a href="/" class="flex items-center text-2xl space-x-2 astro-2W66RQV5">
+      <h1 class="font-bold flex space-x-2 items-baseline text-xl astro-2W66RQV5">
+        <span class="astro-2W66RQV5">🌀</span>
+        <div class="flex space-x-1 items-baseline astro-2W66RQV5">
+          <span class=" astro-2W66RQV5">strudel</span>
+          <span class="text-sm astro-2W66RQV5">DOCS</span>
+        </div>
+      </h1>
+    </a>
+  </div>
+  
+  <div class="search-item h-10 astro-2W66RQV5">
+    <!-- <Search client:idle /> -->
+  </div>
+  <a href="./" class="hidden md:flex cursor-pointer items-center space-x-1 astro-2W66RQV5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="w-5 h-5 astro-2W66RQV5"><path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd"></path></svg><span class="astro-2W66RQV5">go to REPL</span>
+  </a>
+  <div class="md:hidden astro-2W66RQV5">
+    <style>astro-island,astro-slot{display:contents}</style><script>(self.Astro=self.Astro||{}).idle=t=>{const e=async()=>{await(await t())()};"requestIdleCallback"in window?window.requestIdleCallback(e):setTimeout(e,200)},window.dispatchEvent(new Event("astro:idle"));var l;{const c={0:t=>t,1:t=>JSON.parse(t,o),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(JSON.parse(t,o)),5:t=>new Set(JSON.parse(t,o)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(JSON.parse(t)),9:t=>new Uint16Array(JSON.parse(t)),10:t=>new Uint32Array(JSON.parse(t))},o=(t,s)=>{if(t===""||!Array.isArray(s))return s;const[e,n]=s;return e in c?c[e](n):void 0};customElements.get("astro-island")||customElements.define("astro-island",(l=class extends HTMLElement{constructor(){super(...arguments);this.hydrate=()=>{if(!this.hydrator||this.parentElement&&this.parentElement.closest("astro-island[ssr]"))return;const s=this.querySelectorAll("astro-slot"),e={},n=this.querySelectorAll("template[data-astro-template]");for(const r of n){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(const r of s){const i=r.closest(this.tagName);!i||!i.isSameNode(this)||(e[r.getAttribute("name")||"default"]=r.innerHTML)}const a=this.hasAttribute("props")?JSON.parse(this.getAttribute("props"),o):{};this.hydrator(this)(this.Component,a,e,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),window.removeEventListener("astro:hydrate",this.hydrate),window.dispatchEvent(new CustomEvent("astro:hydrate"))}}connectedCallback(){!this.hasAttribute("await-children")||this.firstChild?this.childrenConnectedCallback():new MutationObserver((s,e)=>{e.disconnect(),this.childrenConnectedCallback()}).observe(this,{childList:!0})}async childrenConnectedCallback(){window.addEventListener("astro:hydrate",this.hydrate);let s=this.getAttribute("before-hydration-url");s&&await import(s),this.start()}start(){const s=JSON.parse(this.getAttribute("opts")),e=this.getAttribute("client");if(Astro[e]===void 0){window.addEventListener(`astro:${e}`,()=>this.start(),{once:!0});return}Astro[e](async()=>{const n=this.getAttribute("renderer-url"),[a,{default:r}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),i=this.getAttribute("component-export")||"default";if(!i.includes("."))this.Component=a[i];else{this.Component=a;for(const d of i.split("."))this.Component=this.Component[d]}return this.hydrator=r,this.hydrate},s,this)}attributeChangedCallback(){this.hydrator&&this.hydrate()}},l.observedAttributes=["props"],l))}</script><astro-island uid="MX3bB" component-url="/_astro/MobileNav.922de2c4.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;sidebar&quot;:[0,{&quot;Workshop&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Getting Started\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/getting-started\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Notes\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-notes\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;First Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/first-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Effects\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/pattern-effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Recap\&quot;],\&quot;link\&quot;:[0,\&quot;workshop/recap\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Workshop in German\&quot;],\&quot;link\&quot;:[0,\&quot;de/workshop/getting-started\&quot;]}]]&quot;],&quot;Making Sound&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Samples\&quot;],\&quot;link\&quot;:[0,\&quot;learn/samples\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Synths\&quot;],\&quot;link\&quot;:[0,\&quot;learn/synths\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Audio Effects\&quot;],\&quot;link\&quot;:[0,\&quot;learn/effects\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;MIDI &amp; OSC\&quot;],\&quot;link\&quot;:[0,\&quot;learn/input-output\&quot;]}]]&quot;],&quot;More&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Mini-Notation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/mini-notation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Coding syntax\&quot;],\&quot;link\&quot;:[0,\&quot;learn/code\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Offline\&quot;],\&quot;link\&quot;:[0,\&quot;learn/pwa\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/patterns\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Pattern Alignment\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/alignment\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Strudel vs Tidal\&quot;],\&quot;link\&quot;:[0,\&quot;learn/strudel-vs-tidal\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Music metadata\&quot;],\&quot;link\&quot;:[0,\&quot;learn/metadata\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;CSound\&quot;],\&quot;link\&quot;:[0,\&quot;learn/csound\&quot;]}]]&quot;],&quot;Pattern Functions&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;Introduction\&quot;],\&quot;link\&quot;:[0,\&quot;functions/intro\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Creating Patterns\&quot;],\&quot;link\&quot;:[0,\&quot;learn/factories\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Time Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/time-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Control Parameters\&quot;],\&quot;link\&quot;:[0,\&quot;functions/value-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Signals\&quot;],\&quot;link\&quot;:[0,\&quot;learn/signals\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Conditional Modifiers\&quot;],\&quot;link\&quot;:[0,\&quot;learn/conditional-modifiers\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Accumulation\&quot;],\&quot;link\&quot;:[0,\&quot;learn/accumulation\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Tonal Functions\&quot;],\&quot;link\&quot;:[0,\&quot;learn/tonal\&quot;]}]]&quot;],&quot;Development&quot;:[1,&quot;[[0,{\&quot;text\&quot;:[0,\&quot;REPL\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/repl\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Sounds\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/sounds\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Packages\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/packages\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Docs\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/docs\&quot;]}],[0,{\&quot;text\&quot;:[0,\&quot;Testing\&quot;],\&quot;link\&quot;:[0,\&quot;technical-manual/testing\&quot;]}]]&quot;]}]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MobileNav&quot;,&quot;value&quot;:true}" await-children=""><nav data-headlessui-state=""><button class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" id="headlessui-disclosure-button-:R1:" type="button" aria-expanded="false" data-headlessui-state=""><span class="sr-only">Open main menu</span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button></nav></astro-island>
+  </div>
+</nav>
+      </header>
+      <main class="relative pt-16">
+        <div class="h-full top-0 overflow-auto min-w-[300px] flex xl:justify-center pr-4 pl-4 md:pl-[300px] xl:pl-0">
+          <aside title="Site Navigation" class="w-[300px] px-6 left-0 hidden md:block fixed h-full">
+            <nav aria-labelledby="grid-left" class="max-h-full overflow-auto pb-20 text-foreground">
+  <ul>
+    <li>
+          <div class="nav-group pb-4">
+            <h2>Workshop</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/getting-started">
+                      Getting Started
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-sounds">
+                      First Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-notes">
+                      First Notes
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/first-effects">
+                      First Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/pattern-effects">
+                      Pattern Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/workshop/recap">
+                      Recap
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/de/workshop/getting-started">
+                      Workshop in German
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Making Sound</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/samples">
+                      Samples
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/synths">
+                      Synths
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/effects">
+                      Audio Effects
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/input-output">
+                      MIDI &amp; OSC
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>More</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/mini-notation">
+                      Mini-Notation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/code">
+                      Coding syntax
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/pwa">
+                      Offline
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/patterns">
+                      Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/alignment">
+                      Pattern Alignment
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/strudel-vs-tidal">
+                      Strudel vs Tidal
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/metadata">
+                      Music metadata
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/csound">
+                      CSound
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Pattern Functions</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/intro">
+                      Introduction
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/factories">
+                      Creating Patterns
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/time-modifiers">
+                      Time Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/functions/value-modifiers">
+                      Control Parameters
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/signals">
+                      Signals
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/conditional-modifiers">
+                      Conditional Modifiers
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/learn/accumulation">
+                      Accumulation
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block bg-lineHighlight" href="/learn/tonal" aria-current="page">
+                      Tonal Functions
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li><li>
+          <div class="nav-group pb-4">
+            <h2>Development</h2>
+            <ul>
+              <li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/repl">
+                      REPL
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/sounds">
+                      Sounds
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/packages">
+                      Packages
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/docs">
+                      Docs
+                    </a>
+                  </li><li class="">
+                    <a class="pl-4 py-0.5 w-full hover:bg-lineHighlight block" href="/technical-manual/testing">
+                      Testing
+                    </a>
+                  </li>
+            </ul>
+          </div>
+        </li>
+  </ul>
+</nav>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    var target = document.querySelector('[aria-current="page"]');
+    if (target && target.offsetTop > window.innerHeight - 100) {
+      document.querySelector('.nav-groups').scrollTop = target.offsetTop;
+    }
+  });
+</script>
+          </aside>
+          <article id="article" class="content astro-J75B3YUS">
+  <section class="main-section astro-J75B3YUS">
+    <!-- TODO: add dropdown toc on mobile -->
+    <div class="prose dark:prose-invert max-w-full pb-8 astro-J75B3YUS">
+      
+            <h1 id="tonal-functions">Tonal Functions<a aria-hidden="true" tabIndex="-1" href="/learn/tonal#tonal-functions"><span class="icon icon-link"></span></a></h1>
+<p>These functions use <a href="https://github.com/tonaljs/tonal">tonaljs</a> to provide helpers for musical operations.</p>
+<h3 id="scalename">scale(name)<a aria-hidden="true" tabIndex="-1" href="/learn/tonal#scalename"><span class="icon icon-link"></span></a></h3>
+<p>Turns numbers into notes in the scale (zero indexed). Also sets scale for other scale operations, like scaleTranspose.</p>
+<astro-island uid="1nAoK" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;0 2 4 6 4 2\&quot;\n.scale(\&quot;C2:major C2:minor\&quot;).slow(2))\n.note().s(\&quot;piano\&quot;)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>&quot;0 2 4 6 4 2&quot;
+.scale(&quot;C2:major C2:minor&quot;).slow(2))
+.note().s(&quot;piano&quot;)</pre></astro-island>
+<p>Note that the scale root is octaved here. You can also omit the octave, then index zero will default to octave 3.</p>
+<p>All the available scale names can be found <a href="https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts">here</a>.</p>
+<h3 id="transposesemitones">transpose(semitones)<a aria-hidden="true" tabIndex="-1" href="/learn/tonal#transposesemitones"><span class="icon icon-link"></span></a></h3>
+<p>Transposes all notes to the given number of semitones:</p>
+<script>(self.Astro=self.Astro||{}).only=t=>{(async()=>await(await t())())()},window.dispatchEvent(new Event("astro:only"));</script><astro-island uid="Z134YiP" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;c2 c3\&quot;.fast(2).transpose(\&quot;&lt;0 -2 5 3&gt;\&quot;.slow(2)).note()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<p>This method gets really exciting when we use it with a pattern as above.</p>
+<p>Instead of numbers, scientific interval notation can be used as well:</p>
+<astro-island uid="Z187Pff" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;c2 c3\&quot;.fast(2).transpose(\&quot;&lt;1P -2M 4P 3m&gt;\&quot;.slow(2)).note()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<h3 id="scaletransposesteps">scaleTranspose(steps)<a aria-hidden="true" tabIndex="-1" href="/learn/tonal#scaletransposesteps"><span class="icon icon-link"></span></a></h3>
+<p>Transposes notes inside the scale by the number of steps:</p>
+<astro-island uid="1Xz61F" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;-8 [2,4,6]\&quot;\n.scale(&#39;C4 bebop major&#39;)\n.scaleTranspose(\&quot;&lt;0 -1 -2 -3 -4 -5 -6 -4&gt;\&quot;)\n.note()&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>&quot;-8 [2,4,6]&quot;
+.scale(&#x27;C4 bebop major&#x27;)
+.scaleTranspose(&quot;&lt;0 -1 -2 -3 -4 -5 -6 -4&gt;&quot;)
+.note()</pre></astro-island>
+<h3 id="voicingsrange">voicings(range?)<a aria-hidden="true" tabIndex="-1" href="/learn/tonal#voicingsrange"><span class="icon icon-link"></span></a></h3>
+<p>Turns chord symbols into voicings, using the smoothest voice leading possible:</p>
+<astro-island uid="26DSsO" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;stack(\&quot;&lt;C^7 A7 Dm7 G7&gt;\&quot;.voicings(&#39;lefthand&#39;), \&quot;&lt;C3 A2 D3 G2&gt;\&quot;).note()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<h3 id="rootnotesoctave--2">rootNotes(octave = 2)<a aria-hidden="true" tabIndex="-1" href="/learn/tonal#rootnotesoctave--2"><span class="icon icon-link"></span></a></h3>
+<p>Turns chord symbols into root notes of chords in given octave.</p>
+<astro-island uid="ieeKt" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;&lt;C^7 A7b13 Dm7 G7&gt;\&quot;.rootNotes(3).note()&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island>
+<p>Together with layer, struct and voicings, this can be used to create a basic backing track:</p>
+<astro-island uid="1bLYjx" component-url="/_astro/MiniRepl.dd28bdbd.js" component-export="MiniRepl" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;tune&quot;:[0,&quot;\&quot;&lt;C^7 A7b13 Dm7 G7&gt;\&quot;.layer(\n  x =&gt; x.voicings(&#39;lefthand&#39;).struct(\&quot;~ x\&quot;).note(),\n  x =&gt; x.rootNotes(2).note().s(&#39;sawtooth&#39;).cutoff(800)\n)&quot;]}" ssr="" client="idle" opts="{&quot;name&quot;:&quot;MiniRepl&quot;,&quot;value&quot;:true}" await-children=""><pre>&quot;&lt;C^7 A7b13 Dm7 G7&gt;&quot;.layer(
+  x =&gt; x.voicings(&#x27;lefthand&#x27;).struct(&quot;~ x&quot;).note(),
+  x =&gt; x.rootNotes(2).note().s(&#x27;sawtooth&#x27;).cutoff(800)
+)</pre></astro-island>
+<p>So far, we’ve stayed within the browser. <a href="/learn/input-output">MIDI and OSC</a> are ways to break out of it.</p>
+          
+    </div>
+  </section>
+  <nav class="block sm:hidden astro-J75B3YUS">
+    <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/learn/tonal.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  </nav>
+</article>
+          <aside class="fixed right-0 h-full overflow-auto pr-4 pl-0 pb-16 hidden xl:block" title="Table of Contents">
+            <nav aria-labelledby="grid-right" class="w-64 text-foreground">
+  <script>(self.Astro=self.Astro||{}).media=(s,a)=>{const t=async()=>{await(await s())()};if(a.value){const e=matchMedia(a.value);e.matches?t():e.addEventListener("change",t,{once:!0})}},window.dispatchEvent(new Event("astro:media"));</script><astro-island uid="1RDjjq" component-url="/_astro/TableOfContents.e29bc9c6.js" component-export="default" renderer-url="/_astro/client.e0ccf4ae.js" props="{&quot;headings&quot;:[1,&quot;[[0,{\&quot;depth\&quot;:[0,1],\&quot;slug\&quot;:[0,\&quot;tonal-functions\&quot;],\&quot;text\&quot;:[0,\&quot;Tonal Functions\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;scalename\&quot;],\&quot;text\&quot;:[0,\&quot;scale(name)\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;transposesemitones\&quot;],\&quot;text\&quot;:[0,\&quot;transpose(semitones)\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;scaletransposesteps\&quot;],\&quot;text\&quot;:[0,\&quot;scaleTranspose(steps)\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;voicingsrange\&quot;],\&quot;text\&quot;:[0,\&quot;voicings(range?)\&quot;]}],[0,{\&quot;depth\&quot;:[0,3],\&quot;slug\&quot;:[0,\&quot;rootnotesoctave--2\&quot;],\&quot;text\&quot;:[0,\&quot;rootNotes(octave = 2)\&quot;]}]]&quot;],&quot;currentPage&quot;:[0,&quot;/learn/tonal&quot;]}" ssr="" client="media" opts="{&quot;name&quot;:&quot;TableOfContents&quot;,&quot;value&quot;:&quot;(min-width: 50em)&quot;}" await-children=""><ul><li class="w-full"><a href="/learn/tonal#tonal-functions" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-4">Tonal Functions</a></li><li class="w-full"><a href="/learn/tonal#scalename" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-12">scale(name)</a></li><li class="w-full"><a href="/learn/tonal#transposesemitones" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-12">transpose(semitones)</a></li><li class="w-full"><a href="/learn/tonal#scaletransposesteps" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-12">scaleTranspose(steps)</a></li><li class="w-full"><a href="/learn/tonal#voicingsrange" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-12">voicings(range?)</a></li><li class="w-full"><a href="/learn/tonal#rootnotesoctave--2" class="py-0.5 block cursor-pointer w-full border-l-4 border-lineHighlight hover:bg-lineHighlight pl-12">rootNotes(octave = 2)</a></li></ul></astro-island>
+  <ul class="px-4 py-4">
+  <li>
+        <a class="flex items-center space-x-2" href="https://github.com/tidalcycles/strudel/tree/main/website/src/pages/learn/tonal.mdx" target="_blank">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen" class="svg-inline--fa fa-pen fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z"></path>
+          </svg>
+          <span>Edit this page</span>
+        </a>
+      </li>
+  <li class="header-link depth-2">
+        <a href="https://discord.com/invite/HGEdXmRkzT" target="_blank" class="flex items-center space-x-2">
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment-alt" class="svg-inline--fa fa-comment-alt fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="1em" width="1em">
+            <path fill="currentColor" d="M448 0H64C28.7 0 0 28.7 0 64v288c0 35.3 28.7 64 64 64h96v84c0 9.8 11.2 15.5 19.1 9.7L304 416h144c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64z"></path>
+          </svg>
+          <span>Join our community</span>
+        </a>
+      </li>
+</ul>
+  <!-- <AvatarList path={currentPage} /> -->
+</nav>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </body></html>

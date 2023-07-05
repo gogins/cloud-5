@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<head>
+  <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<meta name="generator" content="Astro v2.3.2">
+
+<link rel="icon" type="image/svg+xml" href="favicon.ico">
+
+<meta name="description" content="Strudel is a music live coding environment for the browser, porting the TidalCycles pattern language to JavaScript.">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/apple-icon-180.png" sizes="180x180">
+<meta name="theme-color" content="#222222">
+
+<base href="/">
+
+<!-- Scrollable a11y code helper -->
+<script src="./make-scrollable-code-focusable.js"></script>
+
+
+<!-- this does not work for some reason: -->
+<!-- <style is:global define:vars={strudelTheme}></style> -->
+<!-- the following variables are just a fallback to make sure everything is readable without JS -->
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+
+<link rel="stylesheet" href="/_astro/first-effects.f224cf90.css" />
+<link rel="stylesheet" href="/_astro/first-effects.af72a2b1.css" /><script type="module" src="/_astro/hoisted.908dc6d4.js"></script></head>
+<body class="bg-slate-800">
+  <div class="prose prose-invert p-2">
+        <h1 id="my-patterns">my-patterns</h1>
+<p>This directory can be used to save your own patterns, which then get
+made into a pattern swatch.</p>
+<p>Example: <a href="https://felixroos.github.io/strudel/swatch/">https://felixroos.github.io/strudel/swatch/</a></p>
+<h2 id="deploy">deploy</h2>
+<h3 id="1-fork-the-strudel-repo-on-github">1. fork the <a href="https://github.com/tidalcycles/strudel.git">strudel repo on github</a></h3>
+<h3 id="2-clone-your-fork-to-your-machine-git-clone-httpsgithubcomyour-usernamestrudelgit-strudel--cd-strudel">2. clone your fork to your machine <code>git clone https://github.com/&#x3C;your-username>/strudel.git strudel &#x26;&#x26; cd strudel</code></h3>
+<h3 id="3-create-a-separate-branch-like-git-branch-patternuary--git-checkout-patternuary">3. create a separate branch like <code>git branch patternuary &#x26;&#x26; git checkout patternuary</code></h3>
+<h3 id="4-save-one-or-more-txt-files-in-the-my-patterns-folder">4. save one or more .txt files in the my-patterns folder</h3>
+<h3 id="5-edit-websitepubliccname-to-contain-your-usernamegithubiostrudel">5. edit <code>website/public/CNAME</code> to contain <code>&#x3C;your-username>.github.io/strudel</code></h3>
+<h3 id="6-edit-websiteastroconfigmjs-to-use-site-httpsyour-usernamegithubio-and-base-strudel-like-this">6. edit <code>website/astro.config.mjs</code> to use site: <code>https://&#x3C;your-username>.github.io</code> and base <code>/strudel</code>, like this</h3>
+<pre is:raw="" class="astro-code" style="background-color: #0d1117; overflow-x: auto;"><code><span class="line"><span style="color: #FF7B72">const</span><span style="color: #C9D1D9"> </span><span style="color: #79C0FF">site</span><span style="color: #C9D1D9"> </span><span style="color: #FF7B72">=</span><span style="color: #C9D1D9"> </span><span style="color: #A5D6FF">'https://&#x3C;your-username>.github.io'</span><span style="color: #C9D1D9">;</span></span>
+<span class="line"><span style="color: #FF7B72">const</span><span style="color: #C9D1D9"> </span><span style="color: #79C0FF">base</span><span style="color: #C9D1D9"> </span><span style="color: #FF7B72">=</span><span style="color: #C9D1D9"> </span><span style="color: #A5D6FF">'/strudel'</span><span style="color: #C9D1D9">;</span></span></code></pre>
+<h3 id="7-commit--push-the-changes">7. commit &#x26; push the changes</h3>
+<pre is:raw="" class="astro-code" style="background-color: #0d1117; overflow-x: auto;"><code><span class="line"><span style="color: #C9D1D9">git add </span><span style="color: #79C0FF">.</span><span style="color: #C9D1D9"> </span><span style="color: #FF7B72">&#x26;&#x26;</span><span style="color: #C9D1D9"> git commit -m </span><span style="color: #A5D6FF">"site config"</span><span style="color: #C9D1D9"> </span><span style="color: #FF7B72">&#x26;&#x26;</span><span style="color: #C9D1D9"> git push --set-upstream origin</span></span></code></pre>
+<h3 id="8-deploy-to-github-pages">8. deploy to github pages</h3>
+<ul>
+<li>go to settings -> pages and select “Github Actions” as source</li>
+<li>go to settings -> environments -> github-pages and press the edit button next to <code>main</code> and type in <code>patternuary</code> (under “Deployment branches”)</li>
+<li>go to Actions -> <code>Build and Deploy</code> and click <code>Run workflow</code> with branch <code>patternuary</code></li>
+</ul>
+<h3 id="9-view-your-patterns-at-your-usernamegithubiostrudelswatch">9. view your patterns at <code>&#x3C;your-username>.github.io/strudel/swatch/</code></h3>
+<p>Alternatively, github pages allows you to use a custom domain, like <a href="https://mycooldomain.org/swatch/">https://mycooldomain.org/swatch/</a>. <a href="https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site">See their documentation for details</a>.</p>
+<h3 id="10-optional-automatic-deployment">10. optional: automatic deployment</h3>
+<p>If you want to automatically deploy your site on push, go to <code>deploy.yml</code> and change <code>workflow_dispatch</code> to <code>push</code>.</p>
+<h2 id="running-locally">running locally</h2>
+<ul>
+<li>install dependencies with <code>npm run setup</code></li>
+<li>run dev server with <code>npm run repl</code> and open <code>http://localhost:3000/strudel/swatch/</code></li>
+</ul>
+<h2 id="tests-fail">tests fail?</h2>
+<p>Your tests might fail if the code does not follow prettiers format.
+In that case, run <code>npm run codeformat</code>. To disable that, remove <code>npm run format-check</code> from <code>test.yml</code></p>
+<h2 id="updating-your-fork">updating your fork</h2>
+<p>To update your fork, you can pull the main branch and merge it into your <code>patternuary</code> branch.</p>
+      </div>
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 p-2 select-none">
+    
+  </div>
+</body>
