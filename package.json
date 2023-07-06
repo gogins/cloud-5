@@ -3,7 +3,7 @@
     "setup": "pnpm install && git submodule update --init --recursive --remote && cd strudel && git checkout main && git stash && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
     "build": "pnpm run build-strudel && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && rm dist/CNAME && python3 patch-dist.py && ls -ll dist",
-    "debug": "cd docs && python3 -m http.server",
+    "debug": "cd dist && python3 -m http.server"
   },
   "dependencies": {
     "@strudel.cycles/core": "^0.8.2",

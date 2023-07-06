@@ -7,7 +7,7 @@ import os.path
 
 # We don't want to patch any file more than once.
 
-  0'''
+'''
 Workaround for a bug in Csound's handling of string pfields; Strudel controls 
 passed in p6 as a string have to be omitted to preserve other pfields.
 '''

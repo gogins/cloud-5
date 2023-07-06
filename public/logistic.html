@@ -63,10 +63,10 @@
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
 <!--
 
-csacLoad();
-csacDebugging(true);
-let chord = csacChord('AbM9');
-let scale = csacScale('Ab major');
+const csac = await import('/csoundac.mjs');
+csac.debug(true);
+let chord = csac.Chord('AbM9');
+let scale = csac.Scale('Ab major');
 
 const c = .88;
 let y = .5;
@@ -80,7 +80,7 @@ const logistic = function(pat, hap) {
    };
 
 pure()
- .userpattern(logistic)
+ .acG(logistic)
  .note()
  .csoundm(6)
  .pianoroll({cycles:16,maxMidi:127,minMidi:0})
