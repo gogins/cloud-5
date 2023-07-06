@@ -739,7 +739,7 @@ export const acG = register('acG', (closure, pat) => {
         let result = closure(pat, hap);
         result = hap.withValue(() => result);
         if (csac_debugging) {
-            diagnostic(`[acG]: result.value: ${result.value} hasOnset: ${hap.hasOnset()}`, 'debug');
+            diagnostic(`[acG]: result.value: ${result.value}\n`, 'debug');
             logger(hap.show());
         }
         return result;
