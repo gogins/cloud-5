@@ -739,8 +739,8 @@ export const acG = register('acG', (closure, pat) => {
         let result = closure(pat, hap);
         result = hap.withValue(() => result);
         if (csac_debugging) {
-            diagnostic(`[acG]: result.value: ${result.value}\n`, 'debug');
-            logger(hap.show());
+            diagnostic(`[acG]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
+            diagnostic(`[acG]: ${hap.show()}\n`);
         }
         return result;
     });

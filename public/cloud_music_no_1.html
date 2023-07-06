@@ -27,8 +27,17 @@
   z-index: 1;
 }
 </style>
-</head></head>
+</head>
 <body id="body" class="w3-medium w3-text-sand" style="height:100vh;">
+    <script>
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+            for (let name of names)
+                caches.delete(name);
+                console.log(`deleted ${name} from caches.`);
+            });
+        }
+    </script>
     <!------------------------------------------------------------------------
     This piece consists of an actual composition, which may include a Csound 
     orchestra, WebGL, a GLSL shader, JavaScript for generating scores (perhaps
