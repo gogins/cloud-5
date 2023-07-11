@@ -1,0 +1,57 @@
+/**
+ * Classes can be used to define stateful Patterns; such classes must have an 
+ * 'evaluate' method that sets a 'value' property, which could be of any type. 
+ * Using classes makes it easy to encapsulate different collections of state.
+ */
+class Logistic {
+    constructor(c, y) {
+        this.c = c;
+        this.y = y;
+        this.value = 36;
+    }
+    evaluate() {
+        let y1 = 4 * this.c * this.y * (1 - this.y);
+        this.value = Math.round(y1 * 36 + 36);
+        console.log('[Logistic.evaluate] y: ', this.y, ' y1: ', y1, ' midi_key: ', this.value);
+        this.y = y1;
+     }
+};
+let logistic = new Logistic(.98, .5);
+
+/**
+ * This function turns an instance of a `stateful` object into a Pattern; 
+ * `stateful.evaluate` is called when the pattern is triggered, and the 
+ * already computed value is accessed in every query in that cycle. The key 
+ * is to assign the `onTrigger` closure to the Hap.context. The `stateful` 
+ * object must be created in the outer scope of the Pattern.
+ */
+const statefulPattern = register('statefulPattern', (stateful, pat) => {
+    let result = pat.withHap((hap) => {
+        console.log('[statefulPattern][withValue] stateful.value:', logistic.value);
+        console.log('[statefulPattern][withValue] hap:', JSON.stringify(hap));
+        let onTrigger = (t, hap) => {
+            logistic.evaluate();
+            console.log('[statefulPattern][onTrigger] time:', t, '\nhap:', JSON.stringify(hap));
+        }
+        let dominantTrigger = false;
+        return hap.withValue(() => stateful.value).setContext({
+            ...hap.context,
+            onTrigger,
+            dominantTrigger
+        });
+    });
+    return result;
+});
+
+pure(0)
+    .statefulPattern(logistic)
+    .fast(2)
+    .note()
+    // This works.
+    .piano()
+    // The following line, if uncommented, does not work!
+    // The csound and csoundm patterns are not triggered.
+    //.csound(6)
+    // The piano roll does not work! _All_ the notes it shows 
+    // have the pitch of the last triggered note.
+    .pianoroll({cycles:32,maxMidi:127,minMidi:0})

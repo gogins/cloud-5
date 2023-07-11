@@ -75,7 +75,7 @@ const isObject = val => val && typeof val === 'object' && !Array.isArray(val);
  * that whole will use the Score or Chord of the whole, and will not create 
  * spurious operations.
  */
-const isHapWhole = function(hap) {
+export const isHapWhole = function(hap) {
     let isWhole = (hap.whole.begin.equals(hap.part.begin) && hap.whole.end.equals(hap.part.end));
     return isWhole;
 }
@@ -91,7 +91,7 @@ export function debug(enabled) {
  * Prints a diagnostic message to both the Strudel logger and the Csound 
  * log.
  */
-export function diagnostic(message) {
+export const diagnostic = function(message) {
     const text = `[csac]${message}`;
     logger(text, 'debug');
     if (csound) csound.message(text);
@@ -737,11 +737,15 @@ export const acPNV = register('acPNV', (pat) => {
 export const acG = register('acG', (closure, pat) => {
     return pat.withHap((hap) => {
         let result = closure(pat, hap);
-        result = hap.withValue(() => result);
+        result = pat.withValue(x => result);
         if (csac_debugging) {
-            diagnostic(`[acG]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
-            diagnostic(`[acG]: ${hap.show()}\n`);
+            ///diagnostic(`[acG]: result: time: ${getTime()} duration: ${result.duration} ${result.show()}`);
+            ///diagnostic(`[acG]: isHapWhole: ${isHapWhole(result)} hasOnset: ${result.hasOnset()}\n`);
+            diagnostic(`[acG]: new Pattern: ${result}\n`);
         }
         return result;
     });
 });
+
+
+
