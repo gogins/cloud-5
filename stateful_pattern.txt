@@ -27,7 +27,10 @@ let logistic = new Logistic(.98, .5);
  */
 const statefulPattern = register('statefulPattern', (stateful, pat) => {
     let result = pat.withHap((hap) => {
-        console.log('[statefulPattern][withValue] stateful.value:', logistic.value);
+        // Round this to tenths of milliseconds.
+        let tyme = getAudioContext().currentTime;
+        let haps = pat.queryArc(0, 1);
+        console.log('[statefulPattern][withValue] time:', tyme, '\nstateful.value:', logistic.value);
         console.log('[statefulPattern][withValue] hap:', JSON.stringify(hap));
         let onTrigger = (t, hap) => {
             logistic.evaluate();
