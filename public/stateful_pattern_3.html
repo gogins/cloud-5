@@ -108,33 +108,41 @@ let isTriggerHap = function(hap) {
  * This function turns an instance of a `stateful` object into a Pattern; 
  * `stateful.evaluate` is called when if the pattern would have been 
  * triggered, and the already computed value is accessed in every query in 
- * that span. The `stateful` object must be created in the outer scope of the 
- * Pattern.
+ * that span. The `stateful` object must have been created in the outer scope \
+ * of the Pattern.
  *
  * For our purposes, the 'trigger' occurs when the Hap as an onset, Hap.whole 
  * equals Hap.part, and the current time has advanced past any previous 
  * 'triggers.'
  */
 let prior_trigger_time = 0;//getAudioContext().currentTime;
-const statefulPattern = register('statefulPattern', (stateful, pat) => {
-    let result = pat.withHap((hap) => {
-        let current_time = getAudioContext().currentTime;
-        if (isTriggerHap(hap) && (current_time !== prior_trigger_time)) {
-            stateful.evaluate();
-            console.log('[statefulPattern][isTriggerHap] prior/current time:', prior_trigger_time, current_time, '\nhap:', hap.show());
-            console.log('[statefulPattern][isTriggerHap] stateful.value:', stateful.value, '\n');
-            prior_trigger_time = current_time;
-        }
-        console.log('[statefulPattern][withValue] prior/current time:', prior_trigger_time, current_time, '\nhap:', hap.show());
-        console.log('[statefulPattern][withValue] stateful.value:', stateful.value, '\n');
-        return hap.withValue(() => stateful.value);
+const registerStateful = async function(name, stateful) {
+    let result = await register(name, (stateful, pat) => {
+        return pat.withHap((hap) => {
+            let current_time = getAudioContext().currentTime;//currentTime();
+            console.log('[registerStateful][withHap] current_time:', current_time, '\nstateful.value:', stateful.value);
+            console.log('[registerStateful][withHap] hap:', JSON.stringify(hap, null, 4));
+            let onTrigger = (t, hap, duration, cps) => {;
+                stateful.evaluate();
+                console.log('[registerStateful][onTrigger] time:', t, 'duration:', duration, 'cps:', cps, '\nhap:', JSON.stringify(hap, null, 4));
+            }
+            let dominantTrigger = false;
+            let new_hap = hap.withValue(() => stateful.value).setContext({
+                ...hap.context,
+                onTrigger,
+                dominantTrigger
+            });
+            return new_hap;
+
+        });
     });
     return result;
-});
+};
 
+let logisticPattern = registerStateful('logisticPattern', logistic);
 
 pure(0)
-    .statefulPattern(logistic)
+    .logisticPattern(logistic)
     .fast(2)
     .note()
     //.piano()
