@@ -85,15 +85,19 @@ class Logistic {
         this.y = y;
         this.value = 36;
         this.evaluation_time = 0;
+        this.prior_evaluation_time = 0;
         this.ticks = 0;
+        this.delta_time = 0;
     }
     evaluate() {
-        this.evaluation_time = getAudioContext().currentTime;
+        this.ticks = 0;
+        this.prior_evaluation_time = this.evalution_time;
+        this.evaluation_time = getAudioContext()?.currentTime;
+        this.delta_time = this.evaluation_time - this.prior_evaluation_time;
         let y1 = 4 * this.c * this.y * (1 - this.y);
         this.value = Math.round(y1 * 36 + 36);
         console.log('[Logistic.evaluate] evaluation time:', this.evaluation_time, 'ticks:', this.ticks, 'y:', this.y, 'y1:', y1, 'value:', this.value);
         this.y = y1;
-        this.ticks = 0;
     }
     get_value() {
         this.ticks = this.ticks + 1;
@@ -115,11 +119,13 @@ const registerStateful = async function(name) {
         return pat.withHap((hap) => {
             let current_time = getAudioContext().currentTime;
             let delta_time = current_time - stateful.evaluation_time;
-            if (hap.hasOnset() && (current_time !== stateful.evaluation_time)) {
+            if (hap.part.begin.equals(hap.whole.begin) && (hap.part.duration.equals(hap.whole.duration))) {
                 stateful.evaluate();
-                console.log('[registerStateful][onTrigger] current time:', current_time, '\nhap:', JSON.stringify({hap, stateful}, null, 4));
+                //console.log('[registerStateful][onTrigger] current time:', current_time, '\nhap:', JSON.stringify({hap, stateful}, null, 4));
+                console.log('[registerStateful][onTrigger] current time:', current_time, hap.show());
             }
-            console.log('[registerStateful][withHap] current time:', current_time, '\nhap:', JSON.stringify({hap, stateful}, null, 4));
+            //console.log('[registerStateful][withHap] current time:', current_time, '\nhap:', JSON.stringify({hap, stateful}, null, 4));
+            console.log('[registerStateful][withHap] current time:', current_time, hap.show());
             return hap.withValue(() => stateful.get_value());
         });
     });
