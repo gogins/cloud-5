@@ -116,17 +116,19 @@ let logistic = new Logistic(.98, .5);
  */
 const registerStateful = function(name, stateful) {
     return register(name, (stateful, pat) => {
-        return pat.withHap((hap) => {
+        let patWithHap = pat.withHap((hap) => {
             let current_time = getAudioContext().currentTime;
             let delta_time = current_time - stateful.evaluation_time;
             let dominant = true;
             //console.log('[registerStateful][withHap] current time:', current_time, '\nhap:', JSON.stringify({hap, stateful}, null, 4));
             console.log('[registerStateful][withHap] current time:', current_time, hap.show());
-            return hap.withValue(() => stateful.get_value()).onTrigger((...args) => {
+            return hap.withValue(() => stateful.get_value());
+        });
+        patWithHap.onTrigger((...args) => {
                     stateful.evaluate();
                     console.log('[registerStateful][onTrigger] current time:', current_time, hap.show());
-            });
         });
+        return patWithHap;
     });
 };
 
