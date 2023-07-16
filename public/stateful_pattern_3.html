@@ -84,11 +84,12 @@ class Logistic {
         this.c = c;
         this.y = y;
         this.value = 36;
+        this.queries = 0;
     }
     evaluate() {
         let y1 = 4 * this.c * this.y * (1 - this.y);
         this.value = Math.round(y1 * 36 + 36);
-        console.log('[Logistic.evaluate] y: ', this.y, ' y1: ', y1, ' midi_key: ', this.value);
+        console.log('[Logistic.evaluate]:', JSON.stringify{this}, null, 4);
         this.y = y1;
      }
 };
@@ -110,31 +111,28 @@ let isTriggerHap = function(hap) {
  * triggered, and the already computed value is accessed in every query in 
  * that span. The `stateful` object must have been created in the outer scope \
  * of the Pattern.
- *
- * For our purposes, the 'trigger' occurs when the Hap as an onset, Hap.whole 
- * equals Hap.part, and the current time has advanced past any previous 
- * 'triggers.'
  */
 let prior_trigger_time = 0;//getAudioContext().currentTime;
 const registerStateful = async function(name, stateful) {
     let result = await register(name, (stateful, pat) => {
         return pat.withHap((hap) => {
             let current_time = getAudioContext().currentTime;//currentTime();
-            console.log('[registerStateful][withHap] current_time:', current_time, '\nstateful.value:', stateful.value);
-            console.log('[registerStateful][withHap] hap:', JSON.stringify(hap, null, 4));
+            stateful.queries = stateful.queries + 1;
+            console.log('[registerStateful][withHap]:', JSON.stringify({current_time, hap, stateful}, null, 4));
             let onTrigger = (t, hap, duration, cps) => {;
+                let prior_queries = stateful.queries;
+                stateful.queries = 0;
                 stateful.evaluate();
-                console.log('[registerStateful][onTrigger] time:', t, 'duration:', duration, 'cps:', cps, '\nhap:', JSON.stringify(hap, null, 4));
+                console.log('[registerStateful][onTrigger]:', JSON.stringify({t, hap, duration, cps, prior_queries, stateful}, null, 4));
             }
-            let dominantTrigger = false;
-            let new_hap = hap.withValue(() => stateful.value).setContext({
+            let v = stateful.value;
+            let dominant = false;
+            return hap.withValue(() => v).setContext({
                 ...hap.context,
-                onTrigger,
-                dominantTrigger
+                onTrigger: onTrigger,
+                dominantTrigger: dominant
             });
-            return new_hap;
-
-        });
+         });
     });
     return result;
 };

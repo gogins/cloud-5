@@ -120,13 +120,13 @@ const registerStateful = function(name, stateful) {
             let current_time = getAudioContext().currentTime;
             let delta_time = current_time - stateful.evaluation_time;
             let dominant = true;
-            //console.log('[registerStateful][withHap] current time:', current_time, '\nhap:', JSON.stringify({hap, stateful}, null, 4));
             console.log('[registerStateful][withHap] current time:', current_time, hap.show());
-            return hap.withValue(() => stateful.get_value());
+            const v = stateful.get_value();
+            return hap.withValue(() => v);
         });
         patWithHap.onTrigger((...args) => {
-                    stateful.evaluate();
-                    console.log('[registerStateful][onTrigger] current time:', current_time, hap.show());
+            stateful.evaluate();
+            console.log('[registerStateful][onTrigger] current time:', current_time, hap.show());
         });
         return patWithHap;
     });
