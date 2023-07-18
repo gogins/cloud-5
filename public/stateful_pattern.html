@@ -76,6 +76,12 @@
 <!--
 
 /**
+ * Import the `csoundac` module, which also exports the `csoundn` output 
+ * Pattern.
+ */
+const csac = await import('../csoundac.mjs');
+csac.diagnostic('Hello, world!');
+/**
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
  * Using classes makes it easy to encapsulate different collections of state.
@@ -138,7 +144,7 @@ const logisticPattern = registerStateful('logisticPattern', logistic);
 pure(0)
     .logisticPattern(logistic)
     .fast(2)
-    .note().csoundn("6")
+    .note().csoundo("6")
     //.piano()
     //.csoundn("6")
     // The piano roll does not work! _All_ the notes it shows 

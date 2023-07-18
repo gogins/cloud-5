@@ -158,6 +158,40 @@ export function Clone(a, b) {
     }
 }
 
+export const csoundo = register('csoundo', (instrument, pat) => {
+  let p1 = instrument;
+  //~ if (typeof instrument === 'string') {
+    //~ p1 = ['{', instrument, '}'].join();
+  //~ }
+  return pat.onTrigger((tidal_time, hap) => {
+    if (!csound) {
+      diagnostic('[csoundn]: Csound is not yet loaded.');
+      return;
+    }
+    if (typeof hap.value !== 'object') {
+      throw new Error('[csoundn] only supports objects as hap values');
+    }
+    // Time in seconds counting from now.
+    const p2 = tidal_time - getAudioContext().currentTime;
+    const p3 = hap.duration.valueOf() + 0;
+    const frequency = getFrequency(hap);
+    // Translate frequency to MIDI key number _without_ rounding.
+    const C4 = 261.62558;
+    let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
+    const p4 = octave * 12.0 - 36.0;
+    // We prefer floating point precision, but over the MIDI range [0, 127].
+    const p5 = 127 * (hap.context?.velocity ?? 0.9);
+    // The Strudel controls as a string.
+    //~ const p6 = Object.entries({ ...hap.value, frequency })
+      //~ .flat()
+      //~ .join('/');
+    const i_statement = ['i', p1, p2, p3, p4, p5, '\n'].join(' ');
+    hap.value.note = Math.round(p4);
+    diagnostic('[csoundo][onTrigger]:' + JSON.stringify({tidal_time, i_statement, hap}, null, 4));
+    csound.inputMessage(i_statement);
+  }, false).sound('sine').gain(0)
+});
+    
 /**
  * Creates and initializes a CsoundAC Chord object. This function should be 
  * called from module scope in Strudel code before creating any Patterns. The 
