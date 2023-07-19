@@ -109,46 +109,17 @@ class Logistic {
         this.delta_time = this.current_time - this.prior_time;
         this.prior_time = this.current_time;
     }
-};
+}
+
 const logistic = new Logistic(.998, .5);
 
-/**
- * This function turns an instance of a `stateful` object into a Pattern; 
- * `stateful.evaluate` is called when the Pattern is triggered, and the 
- * computed value is then accessed by every query in that span. The `stateful` 
- * object must have been created in the outer scope of the Pattern.
- */
-const registerStateful = async function(name, stateful) {
-    let result = await register(name, (stateful, pat) => {
-        return pat.withHap((hap) => {
-            stateful.current_time = getAudioContext().currentTime;
-            console.log('[registerStateful][withHap]:', JSON.stringify({hap, stateful}, null, 4));
-            let onTrigger = (t, hap, duration, cps) => {
-                stateful.evaluate();
-                console.log('[registerStateful][onTrigger]:', JSON.stringify({t, hap, duration, cps, stateful}, null, 4));
-            }
-            let v = stateful.value;
-            let dominant = true;
-            return hap.withValue(() => v).setContext({
-                ...hap.context,
-                onTrigger: onTrigger,
-                dominantTrigger: dominant,
-            });
-         });
-    });
-    return result;
-};
-
-const logisticPattern = registerStateful('logisticPattern', logistic);
+const logisticPattern = csac.registerStateful('logisticPattern', logistic);
 
 pure(0)
     .logisticPattern(logistic)
     .fast(2)
-    .note().csoundo("6")
-    //.piano()
-    //.csoundn("6")
-    // The piano roll does not work! _All_ the notes it shows 
-    // have the pitch of the last triggered note.
+    .note().csoundn("6")
+    // The piano roll does not work!
     .pianoroll({cycles:32,maxMidi:127,minMidi:0})    
     
     -->

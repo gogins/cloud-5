@@ -16,10 +16,14 @@
  *
  * The resulting Patterns must still go through the Strudel note Pattern 
  * in order to trigger audio output.
+ *
+ * Code in this module, as with all other modules directly imported in code 
+ * run by the Strudel REPL, must not use template strings.
  */
 let csac_debugging = true;
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
+let audioContext = new AudioContext();
 
 /** 
  * The following Patterns are defined in this module:
@@ -92,7 +96,7 @@ export function debug(enabled) {
  * log.
  */
 export const diagnostic = function(message) {
-    const text = `[csac]${message}`;
+    const text = '[csac]' + message;
     logger(text, 'debug');
     if (csound) csound.message(text);
 };
@@ -154,11 +158,26 @@ export function Clone(a, b) {
         let a_pitch = a.getPitch(voice);
         let b_pitch = b.getPitch(voice);
         b.setPitch(voice, a_pitch);
-        // if (csac_debugging) diagnostic(`voice ${voice}: a: ${a_pitch} old b: ${b_pitch} new b: ${b.getPitch(voice)}`);
+        if (csac_debugging) diagnostic(['[voice ', voice, 'a:', a_pitch, 'old b:', b_pitch, 'new b:', b.getPitch(voice)].join(' '));
     }
 }
 
-export const csoundo = register('csoundo', (instrument, pat) => {
+/**
+ * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
+ * translated to these Csound pfields:
+ *
+ *  p1 -- Csound instrument either as a number (1-based, can be a fraction),
+ *        or as a string name.
+ *  p2 -- time in beats (usually seconds) from start of performance.
+ *  p3 -- duration in beats (usually seconds).
+ *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
+ *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
+ *  p6 -- Strudel controls, as a string.
+ * 
+ * This variant of 'strudel.csoundm' is a workaround that uses a non-dominant 
+ * trigger with a silent 'sound' to get the desired trigger semantics.
+ */
+export const csoundn = register('csoundn', (instrument, pat) => {
   let p1 = instrument;
   //~ if (typeof instrument === 'string') {
     //~ p1 = ['{', instrument, '}'].join();
@@ -169,10 +188,10 @@ export const csoundo = register('csoundo', (instrument, pat) => {
       return;
     }
     if (typeof hap.value !== 'object') {
-      throw new Error('[csoundn] only supports objects as hap values');
+      throw new Error('[csoundn] supports only objects as hap values.');
     }
     // Time in seconds counting from now.
-    const p2 = tidal_time - getAudioContext().currentTime;
+    const p2 = tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
     const frequency = getFrequency(hap);
     // Translate frequency to MIDI key number _without_ rounding.
@@ -187,11 +206,61 @@ export const csoundo = register('csoundo', (instrument, pat) => {
       //~ .join('/');
     const i_statement = ['i', p1, p2, p3, p4, p5, '\n'].join(' ');
     hap.value.note = Math.round(p4);
-    diagnostic('[csoundo][onTrigger]:' + JSON.stringify({tidal_time, i_statement, hap}, null, 4));
+    diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({tidal_time, i_statement, hap}, null, 4));
     csound.inputMessage(i_statement);
   }, false).sound('sine').gain(0)
 });
-    
+
+/**
+ * A Pattern that calls a stateful object that may be defined in a user level 
+ * Strudel patch. To be used something like this:
+ *
+ * class Logistic {
+ *     constructor(c, y) {
+ *         this.c = c;
+ *         this.y = y;
+ *         this.value = 36;
+ *         this.prior_time = 0;
+ *         this.current_time = 0;
+ *         this.delta_time = 0;
+ *     }
+ *     evaluate() {
+ *         let y1 = 4 * this.c * this.y * (1 - this.y);
+ *         this.value = Math.round(y1 * 36 + 36);
+ *         console.log('[Logistic.evaluate]:', JSON.stringify(this, null, 4));
+ *         this.y = y1;
+ *         this.delta_time = this.current_time - this.prior_time;
+ *         this.prior_time = this.current_time;
+ *     }
+ * }
+ 
+ * const logistic = new Logistic(.998, .5);
+ * 
+ * const logisticPattern = csac.registerStateful('logisticPattern', logistic);
+ *
+ * pure(1).logisticPattern(logistic)
+ */
+export const registerStateful = function(name, stateful) {
+    let result = register(name, (stateful, pat) => {
+        return pat.withHap((hap) => {
+            stateful.current_time = audioContext.currentTime;
+            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful}, null, 4));
+            let onTrigger = (t, hap, duration, cps) => {
+                stateful.evaluate();
+                diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4));
+            }
+            let v = stateful.value;
+            let dominant = true;
+            return hap.withValue(() => v).setContext({
+                ...hap.context,
+                onTrigger: onTrigger,
+                dominantTrigger: dominant,
+            });
+         });
+    });
+    return result;
+};
+
 /**
  * Creates and initializes a CsoundAC Chord object. This function should be 
  * called from module scope in Strudel code before creating any Patterns. The 
@@ -205,7 +274,7 @@ export const csoundo = register('csoundo', (instrument, pat) => {
 export function Chord(name) {
     if (csac_debugging) diagnostic('[csacChord] Creating Chord...');
     let chord_ = csoundac.chordForName(name);
-    if (csac_debugging) diagnostic(`[csacChord] ${chord_.toString()}`);
+    if (csac_debugging) diagnostic('[csacChord]:' + chord_.toString());
     return chord_;
 }
 
@@ -222,7 +291,7 @@ export function Chord(name) {
 export function Scale(name) {
     if (csac_debugging) diagnostic('[Scale] Creating Scale...');
     let scale_ = csoundac.scaleForName(name);
-    if (csac_debugging) diagnostic(`[Scale] ${scale_.name()}`);
+    if (csac_debugging) diagnostic('[Scale] ' + scale_.name());
     return scale_;
 }
 
@@ -260,10 +329,10 @@ export const acChord = register('acChord', function(chord, pat) {
         let ac_chord;
         if (typeof chord == 'string') {
             ac_chord = new csoundac.chordForName(chord);
-            if (csac_debugging) diagnostic(`[acChord]: created ${ac_chord.toString()}\n`);
+            if (csac_debugging) diagnostic('[acChord]: created ' + ac_chord.toString());
         } else {
             ac_chord = chord;
-            if (csac_debugging) diagnostic(`[acChord]: using ${ac_chord.toString()}\n`);
+            if (csac_debugging) diagnostic('[acChord]: using ' + ac_chord.toString());
         }
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
@@ -285,7 +354,7 @@ export const acCT = register('acCT', (semitones, pat) => {
         ac_chord = hap.context.ac_chord;
         let new_chord = ac_chord.T(semitones);
         if (csac_debugging) {
-            let message = `[acCT]: ${ac_chord.toString()} ${ac_chord.eOP().name()} T(${semitones}) =>\n[csac][acCT]: ${new_chord.toString()} ${new_chord.eOP().name()}\n`
+            let message = ['[acCT]: ', ac_chord.toString(), ac_chord.eOP().name(), 'T(', semitones, ') =>\nsac][acCT]:', new_chord.toString(), new_chord.eOP().name()].join(' ');
             diagnostic(message);
         }
         ac_chord = new_chord;
@@ -309,7 +378,7 @@ export const acCI = register('acCI', (pitch, pat) => {
         ac_chord = hap.context.ac_chord;
         let new_chord = ac_chord.I(pitch);
         if (csac_debugging) {
-            let message = `[acCI]: ${ac_chord.toString()} ${ac_chord.eOP().name()} I(${pitch}) =>\n[acCI]: ${new_chord.toString()} ${new_chord.eOP().name()}`
+            let message = ['[acCI]: ', ac_chord.toString(), ac_chord.eOP().name(), 'I() =>\nsac][acCI]:', new_chord.toString(), new_chord.eOP().name()].join(' ');
             diagnostic(message);
         }
         ac_chord = new_chord;
@@ -336,7 +405,7 @@ export const acCK = register('acCK', (pat) => {
         ac_chord = hap.context.ac_chord;
         let new_chord = ac_chord.K();
         if (csac_debugging) {
-            let message = `[acCK]: ${ac_chord.toString()} ${ac_chord.eOP().name()} K =>\n[csac][acCK]: ${new_chord.toString()} ${new_chord.eOP().name()}\n`
+            let message = ['[acCK]: ', ac_chord.toString(), ac_chord.eOP().name(), 'K() =>\n[csac][acCK]:', new_chord.toString(), new_chord.eOP().name()].join(' ');
             diagnostic(message);
         }
         ac_chord = new_chord;
@@ -366,7 +435,7 @@ export const acCQ = register('acCQ', (semitones, modality, pat) => {
         ac_chord = hap.context.ac_chord;
         let new_chord = ac_chord.Q(semitones, modality, 1.);
         if (csac_debugging) {
-            let message = `[acCQ]: ${ac_chord.toString()} ${ac_chord.eOP().name()} Q(${semitones}) =>\n[acCQ]: ${new_chord.toString()} ${new_chord.eOP().name()}`
+            let message = ['[acCQ]: ', ac_chord.toString(), ac_chord.eOP().name(), 'Q(', semitones, ') =>\n[csac][acCQ]:', new_chord.toString(), new_chord.eOP().name()].join(' ');
             diagnostic(message);
         }
         ac_chord = new_chord;
@@ -392,7 +461,7 @@ export const acCN = register('acCN', (pat) => {
         try {
             frequency = getFrequency(hap);
         } catch (error) {
-            diagnostic('[acCN] not a note!\n');
+            diagnostic('[acCN] not a note!');
             return;
         }
         let current_midi_key = frequencyToMidiInteger(frequency);
@@ -405,9 +474,9 @@ export const acCN = register('acCN', (pat) => {
             ac_chord
         });
         if (csac_debugging) {
-            diagnostic(`[acCN]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
-            diagnostic(`[acCN]: old hap: ${hap.show()}\n`);
-            diagnostic(`[acCN]: new hap: ${result.show()}\n`);
+            diagnostic(['[acCN]:', ac_chord.toString(), ac_chord.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value].join(' '));
+            diagnostic('[acCN]: old hap: ' + hap.show());
+            diagnostic('[acCN]: new hap: ' + result.show());
         }
         return result;
     });
@@ -422,12 +491,12 @@ export const acScale = register('acScale', function(scale, pat) {
         let ac_scale;
         if (typeof scale == 'string') {
             ac_scale = new csoundac.Scale(scale);
-            if (csac_debugging) diagnostic(`[acScale]: created ${ac_scale.toString()}\n`);
+            if (csac_debugging) diagnostic('[acScale]: created ' + ac_scale.toString());
         } else {
             ac_scale = scale;
-            if (csac_debugging) diagnostic(`[acScale]: using ${ac_scale.toString()}\n`);
+            if (csac_debugging) diagnostic('[acScale]: using ' + ac_scale.toString());
         }
-        if (csac_debugging) diagnostic(`[acScale]: hap: ${hap.show()}\n`);
+        if (csac_debugging) diagnostic('[acScale]: hap: ' + hap.show());
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
             ac_scale
@@ -447,7 +516,7 @@ export const acSS = register('acSS', (scale_step, voices, pat) => {
             throw new Error('Can only use acSS after .acChord.\n');
         }
         let ac_chord = ac_scale.chord(scale_step, voices, 3);
-        if (csac_debugging) diagnostic(`[acSS]: old chord: ${current_chord.toString()} scale step: ${scale_step} new chord: ${new_chord.toString()}`);
+        if (csac_debugging) diagnostic(['[acSS]: old chord:', current_chord.toString(), 'scale step:', scale_step, 'new chord:', new_chord.toString()].join(' '));
         let result = hap.withValue(() => (isObject ? {
             ...hap.value,
             ac_chord
@@ -477,7 +546,7 @@ export const acST = register('acST', (scale_steps, pat) => {
         }
         ac_chord = hap.context.ac_chord;
         let new_chord = ac_scale.transpose_degrees(ac_chord, scale_steps, 3);
-        if (csac_debugging) diagnostic(`[acST]: old chord: ${ac_chord.toString()} scale steps: ${scale_steps} new chord: ${new_chord.toString()}`);
+        if (csac_debugging) diagnostic(['[acST]: old chord:', ac_chord.toString(), 'scale steps:', scale_steps, 'new chord:', new_chord.toString()].join(' '));
         ac_chord = new_chord;
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
@@ -514,14 +583,14 @@ export const acSM = register('acSM', (index, pat) => {
             wrapped_index = index % modulation_count;
             new_scale = possible_modulations.get(wrapped_index);
             if (csac_debugging) {
-                let message_ = `
-[acSM]: modulating in: ${ac_scale.toString()} ${ac_scale.name()} 
-[acSM]: from pivot:    ${pivot_chord_eop.toString()} ${pivot_chord_eop.name()}
-[acSM]: modulations:   ${modulation_count} => ${wrapped_index}
-[acSM]: modulated to:  ${new_scale.toString()} ${new_scale.name()}
-`;
+                let message_ = [
+'[acSM]: modulating in:', ac_scale.toString(), ac_scale.name(), '\n',
+'[acSM]: from pivot:   ', pivot_chord_eop.toString(), pivot_chord_eop.name(), '\n',
+'[acSM]: modulations:  ', modulation_count, '=>', wrapped_index, '\n',
+'[acSM]: modulated to: ', new_scale.toString(), new_scale.name()
+].join(' ');
                 diagnostic(message_);
-                diagnostic(`[acSM]: hap: ${hap.show()}\n`);
+                diagnostic('[acSM]: hap: ' + hap.show());
             }
             ac_scale = new_scale;
         }
@@ -559,20 +628,20 @@ export const acSN = register('acSN', (pat) => {
         let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
         let result = hap.withValue(() => new_midi_key);
         if (csac_debugging) diagnostic(`[acSN]: ${ac_scale.toString()} ${ac_scale.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
-        if (csac_debugging) diagnostic(`[acSN]: hap: ${hap.show()}\n`);
+        if (csac_debugging) diagnostic('[acSN]: hap: ' + hap.show());
         return result;
     });
 });
 
 /**
- * A Pattern that inserts a CsoundAC PITV object intoto its context. The PITV 
+ * A Pattern that inserts a CsoundAC PITV object into its context. The PITV 
  * object must have been previously created.
  */
 export const acPitv = register('acPitv', function(pitv, pat) {
     return pat.withHap((hap) => {
         let ac_pitv = pitv;
         if (csac_debugging) {
-            diagnostic(`[acPitv]: using ${ac_pitv.toString()}\n`);
+            diagnostic('[acPitv]: using ' + ac_pitv.toString());
             pitv.list(true, false, false);
         }
         return hap.withValue(() => hap.value).setContext({
@@ -594,7 +663,7 @@ export const acPP = register('acPP', (P, pat) => {
         }
         ac_pitv = hap.context.ac_pitv;
         ac_pitv.P = P;
-        if (csac_debugging) diagnostic(`[acPP]: ${ac_pitv.P}`);
+        if (csac_debugging) diagnostic('[acPP]: ' + ac_pitv.P);
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
             ac_pitv
@@ -614,7 +683,7 @@ export const acPI = register('acPI', (I, pat) => {
         }
         ac_pitv = hap.context.ac_pitv;
         ac_pitv.I = I;
-        if (csac_debugging) diagnostic(`[acPI]: ${ac_pitv.I}`);
+        if (csac_debugging) diagnostic('[acPI]: ' + ac_pitv.I);
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
             ac_pitv
@@ -635,7 +704,7 @@ export const acPT = register('acPT', (T, pat) => {
         }
         ac_pitv = hap.context.ac_pitv;
         ac_pitv.T = T;
-        if (csac_debugging) diagnostic(`[acPT]: ${ac_pitv.T}`);
+        if (csac_debugging) diagnostic('[acPT]: ' + ac_pitv.T);
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
             ac_pitv
@@ -655,7 +724,7 @@ export const acPV = register('acPV', (V, pat) => {
         }
         ac_pitv = hap.context.ac_pitv;
         ac_pitv.V = V;
-        if (csac_debugging) diagnostic(`[acPV]: ${ac_pitv.V}`);
+        if (csac_debugging) diagnostic('[acPV]: ' + ac_pitv.V);
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
             ac_pitv
@@ -678,7 +747,7 @@ export const acPC = register('acPC', (pat) => {
         try {
             frequency = getFrequency(hap);
         } catch (error) {
-            diagnostic('[acPC] not a note!', 'warning');
+            diagnostic('[acPC] not a note!');
             return;
         }
         let ac_chord = ac_pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, true).get(0);
@@ -686,7 +755,7 @@ export const acPC = register('acPC', (pat) => {
             ...hap.context,
             ac_chord
         });
-        if (csac_debugging) diagnostic(`[acCN]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
+        if (csac_debugging) diagnostic(['[acCN]:', ac_chord.toString(), ac_chord.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value].join(' '));
         return result;
     });
 });
@@ -715,7 +784,7 @@ export const acPN = register('acPN', (pat) => {
         let epcs = ac_chord.epcs();
         let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
         let result = hap.withValue(() => new_midi_key);
-        if (csac_debugging) diagnostic(`[acPNV]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
+        if (csac_debugging) diagnostic(['[acPNV]:', ac_chord.toString(), ac_chord.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value].join(' '));
         return result;
     });
 });
@@ -736,7 +805,7 @@ export const acPNV = register('acPNV', (pat) => {
         try {
             frequency = getFrequency(hap);
         } catch (error) {
-            diagnostic('[acPC] not a note!', 'warning');
+            diagnostic('[acPC] not a note!');
             return;
         }
         let current_midi_key = frequencyToMidiInteger(frequency);
@@ -746,40 +815,8 @@ export const acPNV = register('acPNV', (pat) => {
             ...hap.context,
             ac_chord
         });
-        if (csac_debugging) diagnostic(`[acPNV]: ${ac_chord.toString()} ${ac_chord.eOP().name()} old note: ${current_midi_key} new note: ${result.value}\n`);
+        if (csac_debugging) diagnostic(['[acPNV]:', ac_chord.toString(), ac_chord.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value].join(' '));
         return result;
     });
 });
-
-/**
- * A Pattern that calls a closure that may be defined in a user level 
- * Strudel patch. To be used something like this:
- *
- * const c = .88;
- * let y = .5;
- * const logistic = function(pat, hap) {
- *   // In many cases, the closure should be computed only at the beginning 
- *   // of its cycle.
- *   if (hap.hasOnset() == true) {
- *     y = 4 * c * y * (1 - y);
- *   }
- *   let midi_key = Math.round(y * 36 + 36);
- *   return midi_key;
- * };
- * .acG(logistic)
- */
-export const acG = register('acG', (closure, pat) => {
-    return pat.withHap((hap) => {
-        let result = closure(pat, hap);
-        result = pat.withValue(x => result);
-        if (csac_debugging) {
-            ///diagnostic(`[acG]: result: time: ${getTime()} duration: ${result.duration} ${result.show()}`);
-            ///diagnostic(`[acG]: isHapWhole: ${isHapWhole(result)} hasOnset: ${result.hasOnset()}\n`);
-            diagnostic(`[acG]: new Pattern: ${result}\n`);
-        }
-        return result;
-    });
-});
-
-
 
