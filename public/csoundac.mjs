@@ -195,7 +195,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       throw new Error('[csoundn] supports only objects as hap values.');
     }
     // Time in seconds counting from now.
-    const p2 = tidal_time - audioContext.currentTime;
+    const p2 = 0; /// TODO: tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
     const frequency = getFrequency(hap);
     // Translate frequency to MIDI key number _without_ rounding.
@@ -228,19 +228,19 @@ export const csoundn = register('csoundn', (instrument, pat) => {
  *         this.current_time = 0;
  *         this.delta_time = 0;
  *     }
- *     evaluate() {
+ *     evaluate(hap) {
  *         let y1 = 4 * this.c * this.y * (1 - this.y);
  *         this.value = Math.round(y1 * 36 + 36);
- *         console.log('[Logistic.evaluate]:', JSON.stringify(this, null, 4));
+ *         console.log('[Logistic.evaluate]:', JSON.stringify({this}, null, 4));
  *         this.y = y1;
  *         this.delta_time = this.current_time - this.prior_time;
  *         this.prior_time = this.current_time;
  *     }
  * }
- 
+ *
  * const logistic = new Logistic(.998, .5);
  * 
- * const logisticPattern = csac.registerStateful('logisticPattern', logistic);
+ * const logisticPattern = csac.registerStateful('logisticPattern', logistic, logistic.evaluate);
  *
  * pure(1).logisticPattern(logistic)
  */
@@ -250,11 +250,32 @@ export const registerStateful = function(name, stateful) {
             stateful.current_time = audioContext.currentTime;
             diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful}, null, 4) + '\n');
             let onTrigger = (t, hap, duration, cps) => {
-                stateful.evaluate();
+                stateful.evaluate(hap);
                 diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
             }
             let v = stateful.value;
-            let dominant = true;
+            let dominant = false;
+            return hap.withValue(() => v).setContext({
+                ...hap.context,
+                onTrigger: onTrigger,
+                dominantTrigger: dominant,
+            });
+         });
+    });
+    return result;
+};
+
+export const registerStateful1 = function(name, stateful, p1) {
+    let result = register(name, (stateful, p1, pat) => {
+        return pat.withHap((hap) => {
+            stateful.current_time = audioContext.currentTime;
+            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful}, null, 4) + '\n');
+            let onTrigger = (t, hap, duration, cps) => {
+                stateful.evaluate(hap, p1);
+                diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
+            }
+            let v = stateful.value;
+            let dominant = false;
             return hap.withValue(() => v).setContext({
                 ...hap.context,
                 onTrigger: onTrigger,
@@ -331,16 +352,38 @@ export function Pitv(voices, range) {
 export const acChord = register('acChord', function(chord, pat) {
     return pat.withHap((hap) => {
         let ac_chord;
-        if (typeof chord == 'string') {
-            ac_chord = new csoundac.chordForName(chord);
-            if (csac_debugging) diagnostic('[acChord]: created ' + ac_chord.toString() + '\n');
-        } else {
-            ac_chord = chord;
-            if (csac_debugging) diagnostic('[acChord]: using ' + ac_chord.toString() + '\n');
+        if (!('ac_chord' in hap.context)) {
+            if (typeof chord == 'string') {
+                ac_chord = new csoundac.chordForName(chord);
+                if (csac_debugging) diagnostic('[acChord]: created ' + ac_chord.toString() + '\n');
+            } else {
+                ac_chord = chord;
+                if (csac_debugging) diagnostic('[acChord]: using ' + ac_chord.toString() + '\n');
+            }
+            if (csac_debugging) {
+                let message = ['[acChord]: ', ac_chord.toString(), ac_chord.eOP().name(), '\n'].join(' ');
+                diagnostic(message);
+            }
         }
+        let onTrigger = (t, hap, duration, cps) => {
+            if (typeof chord == 'string') {
+                ac_chord = new csoundac.chordForName(chord);
+                if (csac_debugging) diagnostic('[acChord][onTrigger]: created ' + ac_chord.toString() + '\n');
+            } else {
+                ac_chord = chord;
+                if (csac_debugging) diagnostic('[acChord][onTrigger]: using ' + ac_chord.toString() + '\n');
+            }
+            if (csac_debugging) {
+                let message = ['[acChord][onTrigger]: ', ac_chord.toString(), ac_chord.eOP().name(), '\n'].join(' ');
+                diagnostic(message);
+            }
+        };
+        let dominant = false;
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
-            ac_chord
+            ac_chord: acChord,
+            onTrigger: onTrigger,
+            dominantTrigger: dominant,
         });
     });
 });
@@ -353,18 +396,25 @@ export const acCT = register('acCT', (semitones, pat) => {
     return pat.withHap((hap) => {
         let ac_chord;
         if (!hap.context.ac_chord) {
-            throw new Error('Can only use acCT after .acChord\n');
+            diagnostic('[acCT][withHap]: Can only use acCT after .acChord\n');
+            return;
         }
         ac_chord = hap.context.ac_chord;
-        let new_chord = ac_chord.T(semitones);
-        if (csac_debugging) {
-            let message = ['[acCT]: ', ac_chord.toString(), ac_chord.eOP().name(), 'T(', semitones, ') =>\nsac][acCT]:', new_chord.toString(), new_chord.eOP().name(), '\n'].join(' ');
-            diagnostic(message);
-        }
-        ac_chord = new_chord;
+        diagnostic('[acCT][withHap]:' + JSON.stringify({hap, ac_chord}, null, 4) + '\n');
+        let onTrigger = (t, hap, duration, cps) => {
+            let new_chord = ac_chord.T(semitones);
+            if (csac_debugging) {
+                let message = ['[acCT][onTrigger]: ', ac_chord.toString(), ac_chord.eOP().name(), 'T(', semitones, ') =>\nsac][acCT]:', new_chord.toString(), new_chord.eOP().name(), '\n'].join(' ');
+                diagnostic(message);
+            }
+            ac_chord = new_chord;
+        };
+        let dominant = true;
         return hap.withValue(() => hap.value).setContext({
             ...hap.context,
-            ac_chord
+            ac_chord,
+            onTrigger: onTrigger,
+            dominantTrigger: dominant,
         });
     });
 });
