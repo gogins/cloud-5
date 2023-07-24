@@ -113,7 +113,7 @@ class Logistic {
 
 const logistic = new Logistic(.998, .5);
 
-const logisticPattern = csac.registerStateful('logisticPattern', logistic);
+const logisticPattern = csac.registerStateful('logisticPattern', logistic, logistic.evaluate);
 
 pure(0)
     .logisticPattern(logistic)

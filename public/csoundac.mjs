@@ -32,48 +32,6 @@ let audioContext = new AudioContext();
 /** 
  * The following Patterns are defined in this module:
  *
- * acChord:    Insert a CsoundAC Chord into the Pattern's context.
- * acCT:       Transpose the Chord in the Pattern's context.
- * acCI:       Invert the Chord in the Pattern's context.
- * acCK:       Apply the interchange by inversion operation to the Chord in 
- *             the Pattern's context.
- * acCQ:       Apply the contextual transposition operation to the Chord in 
- *             the Pattern's context.
- * acCN:       Move notes in the Pattern to fit the pitch-class set of the 
- *             Chord in the Pattern's context.
- * acScale:    Insert a CsoundAC Scale into the Pattern's context.
- * acSS:       Insert the Chord at the specified scale step of the Scale in 
- *             the Pattern's context, into the context.
- * acST:       Transpose the Chord in the Pattern's context by the specified 
- *             number of scale steps in the Scale in the context.
- * acSM:       Modulate from the Scale in the Pattern's context, using the 
- *             Chord in the context as a pivot, choosing one of the possible 
- *             modulations by index.
- * acSN:       Move notes in the Pattern to fit the Scale in the Pattern's 
- *             context.
- * acPitv:     Insert a CsoundAC PITV group into the Pattern's context.
- * acPP:       Set the prime form index of the PITV element in the Pattern's 
- *             context.
- * acPI:       Set the inversion index of the PITV element in the Pattern's 
- *             context.
- * acPT:       Set the transposition index of the PITV element in the 
- *             Pattern's context.
- * acPV:       Set the voicing index of the PITV element in the Pattern's 
- *             context.
- * acPC:       Insert the Chord corresponding to the PITV element into the 
- *             Pattern's context.
- * acPN:       Move notes in the Pattern to fit the pitch-class set of the 
- *             element of the PITV 
- *             group in the Pattern's context.
- * acPNV:      Move notes in the Pattern to fit the element of the PITV 
- *             group in the Pattern's context.
- *
- * This is the design pattern for usage:
- *
- * "-8 [2,4,6]"
- * .acScale('C major') // Creates a CsoundAC Scale. 
- * .acSS("<0 -1 -2 -3 -4 -5 -6 -4>") // Generates a pattern of Chords from scale steps of the Scale.
- * .acCN() // Moves the notes in the topmost Pattern to the K'd Chords.
  */
 
 const isObject = val => val && typeof val === 'object' && !Array.isArray(val);
@@ -215,6 +173,90 @@ export const csoundn = register('csoundn', (instrument, pat) => {
   }, false).sound('sine').gain(0)
 });
 
+export class StatefulPatterns {
+    constructor() {
+    }
+    
+    Probably need to slice 'arguments' to match needs.
+    
+    /**
+     * This class automatically registers (most of) its member functions as 
+     * Strudel Patterns. Member functions have signature 'Pat(...args)', where 
+     * the names of the member functions are the same as the names of the 
+     * corresponding Patterns, the first element of 'args' is the first 
+     * argument to the Pattern, and the last element of 'args' is the Hap for 
+     * the Pattern. The corresponding Pattern functions uave signature 
+     * 'Pat(..args)', where the name of the Pattern is the same as the name of 
+     * the corresponding class member function, but the first element of 
+     * 'args' is an instance of the class, and the last element of 'args' is 
+     * the Hap for the Pattern. The member functions will be called by Strudel 
+     * both on triggers, and to modify or set the values of the Hap for the 
+     * Pattern, in the usual way for Patterns. Thus, all state for these 
+     * Patterns is held in class instances, and the automatically registered 
+     * Patterns invoke the corresponding member functions of such instances. 
+     * 
+     * Please note, thanks to the dual nature of the generated Patterns, 
+     * Hap values must be retained by the Pattern unless they are explicitly 
+     * modified or assigned by the member function; in other words, all values 
+     * returned by the class member functions are returned in the Hap.value,
+     * so any number of values may be returned as properties of Hap.value, 
+     * often 'note' but anything else as well.
+     */
+    registerMethods() {
+        for (let name of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+            let method = this[name];
+            if (!(method instanceof Function)) continue;
+            if (method.name === 'constructor') continue;
+            if (method.name === 'registerMethods') continue;
+            console.log(method, name);
+            let instance = this;
+            let result = register(method.name, (instance, pat) => {
+                let pat = args[args.length -1];
+                return pat.withHap((hap) => {
+                    instance.current_time = audioContext.currentTime;
+                    diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                    let onTrigger = (t, hap, duration, cps) => {
+                        // In the method call, the Hap value will normally be 
+                        // updated, not replaced, e.g. 'hap.value = 
+                        // {..hap.value, note: 47}.;
+                        method.call(instance, hap);
+                        diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
+                    }
+                    let note = instance.value;
+                    let dominant = false;
+                    ///return hap.withValue(() => (isObject ? { ...hap.value, note } : note)).setContext({
+                    return hap.withValue(() => note).setContext({
+                        ...hap.context,
+                        onTrigger: onTrigger,
+                        dominantTrigger: dominant,
+                    });
+                 });
+            });
+        }
+    }
+    /**
+     * Signature for a Pattern implemented by a member function:
+     */
+    method_a(hap, ...args) {
+    }
+    method_b() {
+    }
+}
+
+export class DerivedStatefulPatterns extends StatefulPatterns {
+    constructor() {
+        super();
+        this.registerMethods();
+    }
+    method_c() {
+    }
+    method_d() {
+    }
+}
+
+
+let statefulPatterns = new DerivedStatefulPatterns();
+
 /**
  * A Pattern that calls a stateful object that may be defined in a user level 
  * Strudel patch. To be used something like this:
@@ -244,14 +286,66 @@ export const csoundn = register('csoundn', (instrument, pat) => {
  *
  * pure(1).logisticPattern(logistic)
  */
-export const registerStateful = function(name, stateful) {
+export const registerStateful = function(name, stateful, evaluator) {
+    diagnostic('[registerStateful][withHap]:' + JSON.stringify({name, stateful, evaluator}, null, 4) + '\n');
     let result = register(name, (stateful, pat) => {
         return pat.withHap((hap) => {
             stateful.current_time = audioContext.currentTime;
-            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful}, null, 4) + '\n');
+            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful, evaluator}, null, 4) + '\n');
             let onTrigger = (t, hap, duration, cps) => {
-                stateful.evaluate(hap);
+                evaluator.call(stateful, hap);
                 diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
+            }
+            let note = stateful.value;
+            let dominant = false;
+            ///return hap.withValue(() => (isObject ? { ...hap.value, note } : note)).setContext({
+            return hap.withValue(() => note).setContext({
+                ...hap.context,
+                onTrigger: onTrigger,
+                dominantTrigger: dominant,
+            });
+         });
+    });
+    return result;
+};
+
+/**
+ * Form of registerStateful that passes one parameter to the stateful evaluator.
+ */
+export const registerStateful1 = function(name, stateful, evaluator, p1) {
+    diagnostic('[registerStateful][withHap]:' + JSON.stringify({name, stateful, evaluator, p1}, null, 4) + '\n');
+    let result = register(name, (stateful, p1, pat) => {
+        return pat.withHap((hap) => {
+            stateful.current_time = audioContext.currentTime;
+            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful, evaluator, p1}, null, 4) + '\n');
+            let onTrigger = (t, hap, duration, cps) => {
+                evaluator.call(stateful, hap, p1);
+                diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful, p1}, null, 4) + '\n');
+            }
+            hap.value.note = stateful.value;;
+            let dominant = false;
+            return hap.withValue(() => hap.value).setContext({
+                ...hap.context,
+                onTrigger: onTrigger,
+                dominantTrigger: dominant,
+            });
+         });
+    });
+    return result;
+};
+
+/**
+ * Form of registerStateful that passes two parameters to the stateful evaluator.
+ */
+export const registerStateful2 = function(name, stateful, evaluator, p1, p2) {
+    diagnostic('[registerStateful][withHap]:' + JSON.stringify({name, stateful, evaluator, p1, p2}, null, 4) + '\n');
+    let result = register(name, (stateful, p1, pat) => {
+        return pat.withHap((hap) => {
+            stateful.current_time = audioContext.currentTime;
+            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful, evaluator, p1}, null, 4) + '\n');
+            let onTrigger = (t, hap, duration, cps) => {
+                evaluator.call(stateful, hap, p1, p2);
+                diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful, p1, p2}, null, 4) + '\n');
             }
             let v = stateful.value;
             let dominant = false;
@@ -265,26 +359,6 @@ export const registerStateful = function(name, stateful) {
     return result;
 };
 
-export const registerStateful1 = function(name, stateful, p1) {
-    let result = register(name, (stateful, p1, pat) => {
-        return pat.withHap((hap) => {
-            stateful.current_time = audioContext.currentTime;
-            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful}, null, 4) + '\n');
-            let onTrigger = (t, hap, duration, cps) => {
-                stateful.evaluate(hap, p1);
-                diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
-            }
-            let v = stateful.value;
-            let dominant = false;
-            return hap.withValue(() => v).setContext({
-                ...hap.context,
-                onTrigger: onTrigger,
-                dominantTrigger: dominant,
-            });
-         });
-    });
-    return result;
-};
 
 /**
  * Creates and initializes a CsoundAC Chord object. This function should be 
@@ -344,197 +418,126 @@ export function Pitv(voices, range) {
     return pitv;
 }
 
-/**
- * A Pattern that inserts a CsoundAC Chord object into its context. The chord 
- * can be either the string name of a CsoundAC Chord, or a previously created 
- * Chord object.
- */
-export const acChord = register('acChord', function(chord, pat) {
-    return pat.withHap((hap) => {
-        let ac_chord;
-        if (!('ac_chord' in hap.context)) {
-            if (typeof chord == 'string') {
-                ac_chord = new csoundac.chordForName(chord);
-                if (csac_debugging) diagnostic('[acChord]: created ' + ac_chord.toString() + '\n');
+export class ChordOperations {
+    constructor(chord_id, modality_id) {
+        if (typeof chord_id == 'string') {
+            this.ac_chord = new csoundac.chordForName(chord_id);
+            if (csac_debugging) diagnostic('[ChordOperations]: created new chord.\n');
+        } else {
+            this.ac_chord = chord_id;
+            if (csac_debugging) diagnostic('[ChordOperations]: using existing chord.\n');
+        }
+        if (csac_debugging) {
+            let message = ['[ChordOperations] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' ');
+            diagnostic(message);
+        }
+        if (typeof modality_id == 'undefined') {
+            this.ac_modality = this.ac_chord;
+        } else {
+            if (typeof modality_id == 'string') {
+                this.ac_modality = new csoundac.chordForName(modality_id);
+                if (csac_debugging) diagnostic('[ChordOperations]: created new chord.\n');
             } else {
-                ac_chord = chord;
-                if (csac_debugging) diagnostic('[acChord]: using ' + ac_chord.toString() + '\n');
+                this.ac_modality = modality_id;
+                if (csac_debugging) diagnostic('[ChordOperations]: using existing chord.\n');
             }
             if (csac_debugging) {
-                let message = ['[acChord]: ', ac_chord.toString(), ac_chord.eOP().name(), '\n'].join(' ');
+                let message = ['[ChordOperations] modality:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' ');
                 diagnostic(message);
             }
         }
-        let onTrigger = (t, hap, duration, cps) => {
-            if (typeof chord == 'string') {
-                ac_chord = new csoundac.chordForName(chord);
-                if (csac_debugging) diagnostic('[acChord][onTrigger]: created ' + ac_chord.toString() + '\n');
-            } else {
-                ac_chord = chord;
-                if (csac_debugging) diagnostic('[acChord][onTrigger]: using ' + ac_chord.toString() + '\n');
-            }
-            if (csac_debugging) {
-                let message = ['[acChord][onTrigger]: ', ac_chord.toString(), ac_chord.eOP().name(), '\n'].join(' ');
-                diagnostic(message);
-            }
-        };
-        let dominant = false;
-        return hap.withValue(() => hap.value).setContext({
-            ...hap.context,
-            ac_chord: acChord,
-            onTrigger: onTrigger,
-            dominantTrigger: dominant,
-        });
-    });
-});
-
-/**
- * A Pattern that transposes the Chord in its context by the specified number 
- * of semitones. This enables transposing Chords in a patternified way.
- */
-export const acCT = register('acCT', (semitones, pat) => {
-    return pat.withHap((hap) => {
-        let ac_chord;
-        if (!hap.context.ac_chord) {
-            diagnostic('[acCT][withHap]: Can only use acCT after .acChord\n');
-            return;
+    }
+    /**
+     * Applies a Chord or chord name to this.
+     */
+    C(hap, chord_id) {
+        if (typeof chord_id == 'string') {
+            this.ac_chord = new csoundac.chordForName(chord_id);
+            if (csac_debugging) diagnostic('[ChordOperations]: created new chord.\n');
+        } else {
+            this.ac_chord = chord_id;
+            if (csac_debugging) diagnostic('[ChordOperations]: using existing chord.\n');
         }
-        ac_chord = hap.context.ac_chord;
-        diagnostic('[acCT][withHap]:' + JSON.stringify({hap, ac_chord}, null, 4) + '\n');
-        let onTrigger = (t, hap, duration, cps) => {
-            let new_chord = ac_chord.T(semitones);
-            if (csac_debugging) {
-                let message = ['[acCT][onTrigger]: ', ac_chord.toString(), ac_chord.eOP().name(), 'T(', semitones, ') =>\nsac][acCT]:', new_chord.toString(), new_chord.eOP().name(), '\n'].join(' ');
-                diagnostic(message);
-            }
-            ac_chord = new_chord;
-        };
-        let dominant = true;
-        return hap.withValue(() => hap.value).setContext({
-            ...hap.context,
-            ac_chord,
-            onTrigger: onTrigger,
-            dominantTrigger: dominant,
-        });
-    });
-});
-
-/**
- * A Pattern that reflects the Chord in its context in the specified pitch. 
- * This enables inverting Chords in a patternified way. The pitch is normally 0.
- */
-export const acCI = register('acCI', (pitch, pat) => {
-    return pat.withHap((hap) => {
-        let ac_chord;
-        if (!hap.context.ac_chord) {
-            throw new Error('Can only use acCI after .acChord\n');
-        }
-        ac_chord = hap.context.ac_chord;
-        let new_chord = ac_chord.I(pitch);
         if (csac_debugging) {
-            let message = ['[acCI]: ', ac_chord.toString(), ac_chord.eOP().name(), 'I() =>\nsac][acCI]:', new_chord.toString(), new_chord.eOP().name(), '\n'].join(' ');
+            let message = ['[ChordOperations] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' ');
             diagnostic(message);
         }
-        ac_chord = new_chord;
-        return hap.withValue(() => hap.value).setContext({
-            ...hap.context,
-            ac_chord
-        });
-    });
-});
-
-/**
- * A Pattern that transforms the Chord in its context using the interchange by 
- * inversion operation of the Generalized Contextual Group of Fiore and 
- * Satyendra. This enables exchanging a "major" sounding pitch-class set with 
- * the corresponding "minor" sounding pitch-class set, and vice versa, in a 
- * patternified way.
- */
-export const acCK = register('acCK', (pat) => {
-    return pat.withHap((hap) => {
-        let ac_chord;
-        if (!hap.context.ac_chord) {
-            throw new Error('Can only use acCK after .acChord\n');
+    }
+    /**
+     * Applies a transposition to this.
+     */
+    T(hap, semitones) {
+        if (csac_debugging) diagnostic(['[ChordOperations][T] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+        this.ac_chord = this.ac_chord.T(semitones);
+        if (csac_debugging) diagnostic(['[ChordOperations][T] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
+    }
+    /**
+     * Applies an inversion to this. The 
+     * default center of reflection is 0.
+     */
+    I(hap, center) {
+        if (typeof center === 'undefined') {
+            center = 0;
         }
-        ac_chord = hap.context.ac_chord;
-        let new_chord = ac_chord.K();
-        if (csac_debugging) {
-            let message = ['[acCK]: ', ac_chord.toString(), ac_chord.eOP().name(), 'K() =>\n[csac][acCK]:', new_chord.toString(), new_chord.eOP().name(), '\n'].join(' ');
-            diagnostic(message);
-        }
-        ac_chord = new_chord;
-        return hap.withValue(() => hap.value).setContext({
-            ...hap.context,
-            ac_chord
-        });
-    });
-});
-
-/**
- * A Pattern that transforms the Chord in its context using the contextual 
- * transposition operation of the Generalized Contextual Group of Fiore and 
- * Satyendra. This enables tranposing the specified Chord by the specified 
- * number of semitones _up_ if the Chord is a _transposed_ form of the 
- * modality Chord, and by the specified number of semitones _down_ if the 
- * Chord is an _inverted_ form of the modality Chord. This enables applying 
- * contextual transpositions to Chords in a patternified way. The modality 
- * must be a previously created Chord or Scale.
- */
-export const acCQ = register('acCQ', (semitones, modality, pat) => {
-    return pat.withHap((hap) => {
-        let ac_chord;
-        if (!hap.context.ac_chord) {
-            throw new Error('Can only use acCQ after .acChord\n');
-        }
-        ac_chord = hap.context.ac_chord;
-        let new_chord = ac_chord.Q(semitones, modality, 1.);
-        if (csac_debugging) {
-            let message = ['[acCQ]: ', ac_chord.toString(), ac_chord.eOP().name(), 'Q(', semitones, ') =>\n[csac][acCQ]:', new_chord.toString(), new_chord.eOP().name(), '\n'].join(' ');
-            diagnostic(message);
-        }
-        ac_chord = new_chord;
-        return hap.withValue(() => hap.value).setContext({
-            ...hap.context,
-            ac_chord
-        });
-    });
-});
-
-/**
- * A Pattern that conforms notes to the closest _pitch-class set_ of the 
- * CsoundAC Chord that is in its context.
- */
-export const acCN = register('acCN', (pat) => {
-    return pat.withHap((hap) => {
-        let ac_chord;
-        if (!hap.context.ac_chord) {
-            throw new Error('Can only use acCN after .acChord.\n');
-        }
-        ac_chord = hap.context.ac_chord;
+        if (csac_debugging) diagnostic(['[ChordOperations][I] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+        this.ac_chord = this.ac_chord.I(center);
+        if (csac_debugging) diagnostic(['[ChordOperations][I] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
+     }
+    /**
+     * Applies the interchange by inversion operation of the Generalized 
+     * Contextual Group of Fiore and Satyendra to this.
+     */
+    K(hap) {
+        if (csac_debugging) diagnostic(['[ChordOperations][K] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+        this.ac_chord = this.ac_chord.K();
+        if (csac_debugging) diagnostic(['[ChordOperations][K] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
+    }
+    /**
+     * Applies the contexual transposition operation of the Generalized 
+     * Contextual Group of Fiore and Satyendra to this. The modality 
+     * is set in the constructor of this class.
+     */
+    Q(hap, semitones) {
+        if (csac_debugging) diagnostic(['[ChordOperations][Q] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+        this.ac_chord = this.ac_chord.Q(semitones, this.modality);
+        if (csac_debugging) diagnostic(['[ChordOperations][Q] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
+    }
+    /**
+     * Applies the Chord of this to the note of the Hap, i.e., 
+     * moves the note of the hap to the nearest pitch-class of the Chord.
+     */
+    N(hap) {
         let frequency;
         try {
             frequency = getFrequency(hap);
         } catch (error) {
-            diagnostic('[acCN] not a note!\n');
+            diagnostic('[apply] not a note!\n');
             return;
         }
         let current_midi_key = frequencyToMidiInteger(frequency);
         let epcs = ac_chord.epcs();
+        if (csac_debugging) diagnostic(['[ChordOperations][N] current note:    ', current_midi_key, '\n'].join(' '));
         let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-        //let result = hap.withValue(() => new_midi_key);
-        //let result = hap.withValue(() => (isObject ? { ...hap.value, note } : note)).setContext({ ...hap.context, ac_chord });
-        let result = hap.withValue(() => note).setContext({
-            ...hap.context,
-            ac_chord
-        });
-        if (csac_debugging) {
-            diagnostic(['[acCN]:', ac_chord.toString(), ac_chord.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value, '\n'].join(' '));
-            diagnostic('[acCN]: old hap: ' + hap.show() + '\n');
-            diagnostic('[acCN]: new hap: ' + result.show() + '\n');
-        }
-        return result;
-    });
-});
+        if (csac_debugging) diagnostic(['[ChordOperations][N] transformed note:', tnote, '\n\n'].join(' '));
+        hap.value = note;
+    }
+}
+ 
+export const chordOperations = new ChordOperations('CM9');
+ 
+export const acC  = registerStateful1('acC',  chordOperations, chordOperations.C, 'CM9');
+export const acCT = registerStateful1('acCT', chordOperations, chordOperations.T, 5);
+export const acCI = registerStateful1('acCI', chordOperations, chordOperations.I, 0);
+export const acCK = registerStateful( 'acCK', chordOperations, chordOperations.K);
+export const acCQ = registerStateful1('acCQ', chordOperations, chordOperations.Q, 3);
+export const acCN = registerStateful ('acCN', chordOperations, chordOperations.N);
+
+class ScaleOperations {
+}
+
+class PitvOperations {
+}
+
 
 /**
  * A Pattern that inserts a CsoundAC Scale object into its context. The scale can 
