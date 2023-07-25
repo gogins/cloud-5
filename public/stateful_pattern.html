@@ -92,8 +92,11 @@ csac.diagnostic('Hello, world!');
  * per second, and so on; also, there should be exactly 1 call to `evaluate`
  * for every note triggered by the Pattern.
  */
-class Logistic {
-    constructor(c, y) {
+class LogisticPattern extends csac.StatefulPatterns {
+    constructor(c = .998, y = .5) {
+        super();
+        this.registerMethods();
+        // Initial values.
         this.c = c;
         this.y = y;
         this.value = 36;
@@ -101,22 +104,24 @@ class Logistic {
         this.current_time = 0;
         this.delta_time = 0;
     }
-    evaluate() {
+    /**
+     * Patternify the 'c' coefficient of the logistic equation.
+     */
+    Logistic(c, hap) {
+        this.c = c;
         let y1 = 4 * this.c * this.y * (1 - this.y);
         this.value = Math.round(y1 * 36 + 36);
-        console.log('[Logistic.evaluate]:', JSON.stringify(this, null, 4));
+        console.log('[LogisticPattern.Logistic]:', JSON.stringify(this, null, 4));
         this.y = y1;
         this.delta_time = this.current_time - this.prior_time;
         this.prior_time = this.current_time;
     }
 }
 
-const logistic = new Logistic(.998, .5);
-
-const logisticPattern = csac.registerStateful('logisticPattern', logistic, logistic.evaluate);
+let logisticInstance = new LogisticPattern();
 
 pure(0)
-    .logisticPattern(logistic)
+    .Logistic(logisticInstance, .995)
     .fast(2)
     .note().csoundn("6")
     // The piano roll does not work!
