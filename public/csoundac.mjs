@@ -139,6 +139,9 @@ export function Clone(a, b) {
  * This variant of 'strudel.csoundm' is a workaround that uses a non-dominant 
  * trigger with a silent 'sound' to get the desired trigger semantics.
  */
+
+var triggerSequence = 0;
+
 export const csoundn = register('csoundn', (instrument, pat) => {
   let p1 = instrument;
   //~ if (typeof instrument === 'string') {
@@ -152,6 +155,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     if (typeof hap.value !== 'object') {
       throw new Error('[csoundn] supports only objects as hap values.');
     }
+    triggerSequence = triggerSequence + 1;
     // Time in seconds counting from now.
     const p2 = 0; /// TODO: tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
@@ -168,10 +172,28 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       //~ .join('/');
     const i_statement = ['i', p1, p2, p3, p4, p5, '\n'].join(' ');
     hap.value.note = Math.round(p4);
-    diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({tidal_time, i_statement, hap}, null, 4) + '\n');
+    diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({triggerSequence, tidal_time, i_statement, hap}, null, 4) + '\n');
     csound.inputMessage(i_statement);
   }, false).sound('sine').gain(0)
 });
+
+/*
+ onTrigger(onTrigger, dominant = true) {
+    return this.withHap((hap) =>
+      hap.setContext({
+        ...hap.context,
+        onTrigger: (...args) => {
+          if (!dominant && hap.context.onTrigger) {
+            hap.context.onTrigger(...args);
+          }
+          onTrigger(...args);
+        },
+        // we need this to know later if the default trigger should still fire
+        dominantTrigger: dominant,
+      }),
+    );
+  }
+*/
 
 /**
  * This class automatically registers (most of) its member functions as 
@@ -222,11 +244,10 @@ export class StatefulPatterns {
                                 diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
                                 method.call(instance, hap);
                             }
-                            let dominant = false;
                             return hap.withValue(() => instance.value).setContext({
                                 ...hap.context,
                                 onTrigger: onTrigger,
-                                dominantTrigger: dominant,
+                                dominantTrigger: false,
                             });
                          });
                     });
@@ -236,14 +257,14 @@ export class StatefulPatterns {
                             instance.current_time = audioContext.currentTime;
                             diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
                             let onTrigger = (t, hap, duration, cps) => {
-                                diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
+                                triggerSequence = triggerSequence + 1;
+                                diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({triggerSequence, t, hap, duration, cps, instance}, null, 4) + '\n');
                                 method.call(instance, p2, hap);
                             }
-                            let dominant = false;
                             return hap.withValue(() => instance.value).setContext({
                                 ...hap.context,
                                 onTrigger: onTrigger,
-                                dominantTrigger: dominant,
+                                dominantTrigger: false,
                             });
                          });
                     });
@@ -256,11 +277,10 @@ export class StatefulPatterns {
                                 diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
                                 method.call(instance, p2, p3, hap);
                             }
-                            let dominant = false;
                             return hap.withValue(() => instance.value).setContext({
                                 ...hap.context,
                                 onTrigger: onTrigger,
-                                dominantTrigger: dominant,
+                                dominantTrigger: false,
                             });
                          });
                     });
@@ -310,12 +330,11 @@ export const registerStateful = function(name, stateful, evaluator) {
                 diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
             }
             let note = stateful.value;
-            let dominant = false;
             ///return hap.withValue(() => (isObject ? { ...hap.value, note } : note)).setContext({
             return hap.withValue(() => note).setContext({
                 ...hap.context,
                 onTrigger: onTrigger,
-                dominantTrigger: dominant,
+                dominantTrigger: false,
             });
          });
     });
@@ -381,42 +400,23 @@ export function Pitv(voices, range) {
 }
 
 export class ChordPatterns extends StatefulPatterns {
-    constructor(chord_id) {
+    constructor(chord, modality) {
         super();
-        this.registerMethods();
-        if (typeof chord_id == 'string') {
-            this.ac_chord = new csoundac.chordForName(chord_id);
-            if (csac_debugging) diagnostic('[ChordPatterns]: created new chord.\n');
-        } else {
-            this.ac_chord = chord_id;
-            if (csac_debugging) diagnostic('[ChordPatterns]: using existing chord.\n');
-        }
-        if (csac_debugging) {
-            let message = ['[ChordPatterns] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' ');
-            diagnostic(message);
-        }
-        if (typeof modality_id == 'undefined') {
+        this.ac_chord = chord;
+        if (csac_debugging) diagnostic('[ChordPatterns]: using existing chord.\n');
+        if (typeof modality == 'undefined') {
             this.ac_modality = this.ac_chord;
         } else {
-            if (typeof modality_id == 'string') {
-                this.ac_modality = new csoundac.chordForName(modality_id);
-                if (csac_debugging) diagnostic('[ChordPatterns]: created new chord.\n');
-            } else {
-                this.ac_modality = modality_id;
-                if (csac_debugging) diagnostic('[ChordPatterns]: using existing chord.\n');
-            }
-            if (csac_debugging) {
-                let message = ['[ChordPatterns] modality:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' ');
-                diagnostic(message);
-            }
+            this.ac_modality = this.ac_chord;
         }
+        this.registerMethods();
     }
     /**
      * Applies a Chord or chord name to this.
      */
     acC(chord_id, hap) {
-        if (typeof chord_id == 'string') {
-            this.ac_chord = new csoundac.chordForName(chord_id);
+        if (typeof chord_id === 'string') {
+            this.ac_chord = csoundac.chordForName(chord_id);
             if (csac_debugging) diagnostic('[ChordPatterns.acC]: created new chord.\n');
         } else {
             this.ac_chord = chord_id;
