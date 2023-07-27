@@ -34,28 +34,6 @@ let audioContext = new AudioContext();
  *
  */
 
-const isObject = val => val && typeof val === 'object' && !Array.isArray(val);
-
-//~ /**
- //~ * CsoundAC operations are applied to whole Haps only, so that Haps within 
- //~ * that whole will use the Score or Chord of the whole, and will not create 
- //~ * spurious operations.
- //~ */
-//~ export const isHapWhole = function(hap) {
-    //~ let isWhole = (hap.whole.begin.equals(hap.part.begin) && hap.whole.end.equals(hap.part.end));
-    //~ return isWhole;
-//~ }
-
-//~ export const isTriggerHap = (pat, hap) => {
-    //~ if (hap.hasOnset() === false) {
-        //~ return false;
-    //~ }
-    //~ if (hap.whole.equals(hap.part) === false) {
-        //~ return false;
-    //~ }
-    //~ return true;
-//~ };
-
 /**
  * Enables or disables print statement debugging in this module.
  */
@@ -150,8 +128,6 @@ export function Clone(a, b) {
  * trigger with a silent 'sound' to get the desired trigger semantics.
  */
 
-var triggerSequence = 0;
-
 export const csoundn = register('csoundn', (instrument, pat) => {
   let p1 = instrument;
   if (typeof instrument === 'string') {
@@ -165,7 +141,6 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     if (typeof hap.value !== 'object') {
       throw new Error('[csoundn] supports only objects as hap values.');
     }
-    triggerSequence = triggerSequence + 1;
     // Time in seconds counting from now.
     const p2 = 0; /// TODO: tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
@@ -182,7 +157,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       .join('/') + '\"';
     const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
     hap.value.note = Math.round(p4);
-    if (csac_debugging) diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({triggerSequence, tidal_time, i_statement, hap}, null, 4) + '\n');
+    if (csac_debugging) diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({tidal_time, i_statement, hap}, null, 4) + '\n');
     csound.inputMessage(i_statement);
     // Gain of 0 is a workaround; all triggers are based on WebAudio, and 'note' 
     // has a default of 'sine' that must be silenced here so that Csound can be heard.
@@ -202,6 +177,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
  */
 export class StatefulPatterns {
     constructor() {
+        this.registerMethods();
     }
     registerMethods() {
         for (let name of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
@@ -274,7 +250,6 @@ export class StatefulPatterns {
                                 instance.current_time = audioContext.currentTime;
                                 if (csac_debugging) diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 let onTrigger = (t, hap, duration, cps) => {
-                                    triggerSequence = triggerSequence + 1;
                                     method.call(instance, p2, hap);
                                 }
                                 return hap.withValue(() => instance.value).setContext({
@@ -346,7 +321,6 @@ export const registerStateful = function(name, stateful, evaluator) {
                 if (csac_debugging) diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
             }
             let note = stateful.value;
-            ///return hap.withValue(() => (isObject ? { ...hap.value, note } : note)).setContext({
             return hap.withValue(() => note).setContext({
                 ...hap.context,
                 onTrigger: onTrigger,
@@ -425,7 +399,6 @@ export class ChordPatterns extends StatefulPatterns {
         } else {
             this.ac_modality = this.ac_chord;
         }
-        this.registerMethods();
     }
     /**
      * Applies a Chord or chord name to this.
