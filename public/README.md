@@ -49,9 +49,10 @@ a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.o
 
 ### Experiments
 
-I am working out how to use CsoundAC in the Strudel REPL. The most important 
-thing is to import the `csoundac.mjs` module in your Strudel patch. To see how 
-this is done, look at the following piece. Comments and suggestions are 
+I am working on supporting the use of CsoundAC in the Strudel REPL. The most 
+important thing is to import the `csoundac.mjs` module in your Strudel patch. 
+To see how this is done, look at the following pieces. At the present time, 
+these are also the unit tests fr `csoundac.mjs`. Comments and suggestions are 
 wecome.
 
 - [CsoundAC Example 1](ac_example_1.html).

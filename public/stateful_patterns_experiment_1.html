@@ -74,23 +74,51 @@
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
 <!--
 
-window.count = window.count || 40;
-window.up = window.up ?? true;
+/**
+ * Patterns that have access to global state, which can involve 
+ * extended calculations.
+ *
+ * First there is the concept of a object that is to be called when an event 
+ * is triggered. Like any other object, this one can hold state in its own 
+ * scope. It should be created in a scope that includes the Pattern.
+ */
+ class Logistic {
+    constructor(c, y) {
+        this.c = c;
+        this.y = y;
+        this.value = 36;
+    }
+    on_trigger() {
+        let y1 = 4 * this.c * this.y * (1 - this.y);
+        this.value = Math.round(y1 * 36 + 36);
+        console.log('[Logistic] y: ', this.y, ' y1: ', y1, ' midi_key: ', this.value);
+        this.y = y1;
+        return this.value;
+    }
+};
 
-"x x [x@3 x]"
-    .onTrigger((t, hap)=>{
-        console.log('trigger time',count,hap.value)
-        if(count >= 80) {
-            window.up = false;
-        } else if(count <= 40) {
-            window.up = true
-        }
-            count+=window.up?1:-1
-        }, false)
-    .withValue((v)=>{
-        return count;
-        })
+/**
+ * This is a tiny improvement over Roos' workaround. What needs to happen is 
+ * for the withValue and the onTrigger to be encapsulated.
+ * 
+ * Whether onTrigger comes before withValue, or vice versa, does not seem 
+ * to matter.
+ */
+let logistic = new Logistic(.998, .5);
+pure(1)
+    .withValue((x) => {
+      logistic.value;
+      console.log('withValue', logistic.value);
+      return logistic.value;
+    })
+    .onTrigger((t, pat) => {
+      logistic.on_trigger();
+      console.log('onTrigger', t, pat);
+    }, false)
+    .fast(4)
     .note()
+    .piano()
+    .pianoroll({cycles:32,maxMidi:127,minMidi:0})
   
 -->
     </strudel-repl-component>

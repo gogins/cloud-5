@@ -72,21 +72,63 @@
 <!-- BEGIN define "Strudel" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
+    
 <!--
 
-const csac = await import('/csoundac.mjs');
-csac.debug(true);
-let modality = csac.acChord('F7');
-run(8).cat("5, 7, 12, 3".fast(3))
-.slow(6)
-.transpose(40)
-.acChord('F7').acCT("0 7 2 12".slow(5))
-.acCN()
-.note()
-.csoundm("1 9".slow("7"))
-.pianoroll({maxMidi:84,minMidi:24})
+/**
+ * Import the `csoundac` module, which also exports the `csoundn` output 
+ * Pattern.
+ */
+const csac = await import('../csoundac.mjs');
+csac.diagnostic('Hello, world!');
+/**
+ * Classes can be used to define stateful Patterns; such classes can have an 
+ * 'evaluate' method that sets a 'value' property, which could be of any type. 
+ * Using classes makes it easy to encapsulate different collections of state.
+ *
+ * This particular `stateful` class is instrumented with debug information to 
+ * prove whether or not evaluations are triggered when they should be, e.g. 
+ * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
+ * per second, and so on; also, there should be exactly 1 call to `evaluate`
+ * for every note triggered by the Pattern.
+ */
+class LogisticPattern extends csac.StatefulPatterns {
+    constructor(c = .998, y = .5) {
+        super();
+        this.registerMethods();
+        // Initial values.
+        this.c = c;
+        this.y = y;
+        this.value = 36;
+        this.prior_time = 0;
+        this.current_time = 0;
+        this.delta_time = 0;
+    }
+    /**
+     * Patternify the 'c' coefficient of the logistic equation.
+     */
+    Logistic(c, hap) {
+        this.c = c;
+        let y1 = 4 * this.c * this.y * (1 - this.y);
+        this.value = Math.round(y1 * 36 + 36);
+        console.log('[LogisticPattern.Logistic]:', JSON.stringify(this, null, 4));
+        this.y = y1;
+        this.delta_time = this.current_time - this.prior_time;
+        this.prior_time = this.current_time;
+    }
+}
 
--->
+let logisticInstance = new LogisticPattern();
+
+pure(0)
+    .Logistic(logisticInstance, .995)
+    .fast(2)
+    .note().csoundn("6")
+    // The piano roll does not work!
+    .pianoroll({cycles:32,maxMidi:127,minMidi:0})    
+    
+    -->
+    
     </strudel-repl-component>
 
 <!-- END define "Strudel" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
