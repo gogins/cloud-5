@@ -154,9 +154,9 @@ var triggerSequence = 0;
 
 export const csoundn = register('csoundn', (instrument, pat) => {
   let p1 = instrument;
-  //~ if (typeof instrument === 'string') {
-    //~ p1 = ['{', instrument, '}'].join();
-  //~ }
+  if (typeof instrument === 'string') {
+    p1 = ['{', instrument, '}'].join();
+  }
   return pat.onTrigger((tidal_time, hap) => {
     if (!csound) {
       diagnostic('[csoundn]: Csound is not yet loaded.\n');
@@ -177,13 +177,15 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     // We prefer floating point precision, but over the MIDI range [0, 127].
     const p5 = 127 * (hap.context?.velocity ?? 0.9);
     // The Strudel controls as a string.
-    //~ const p6 = Object.entries({ ...hap.value, frequency })
-      //~ .flat()
-      //~ .join('/');
-    const i_statement = ['i', p1, p2, p3, p4, p5, '\n'].join(' ');
+    const p6 = '\"' + Object.entries({ ...hap.value, frequency })
+      .flat()
+      .join('/') + '\"';
+    const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
     hap.value.note = Math.round(p4);
-    diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({triggerSequence, tidal_time, i_statement, hap}, null, 4) + '\n');
+    if (csac_debugging) diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({triggerSequence, tidal_time, i_statement, hap}, null, 4) + '\n');
     csound.inputMessage(i_statement);
+    // Gain of 0 is a workaround; all triggers are based on WebAudio, and 'note' 
+    // has a default of 'sine' that must be silenced here so that Csound can be heard.
   }, false).gain(0);
 });
 
@@ -207,7 +209,7 @@ export class StatefulPatterns {
             if ((method instanceof Function) &&
                 (method.name !== this.constructor.name) && 
                 (method.name !== 'registerMethods')) {
-                diagnostic('[StatefulPatterns][registerMethods]:' + JSON.stringify({method}, null, 4) + '\n');
+                if (csac_debugging) diagnostic('[StatefulPatterns][registerMethods]:' + JSON.stringify({method}, null, 4) + '\n');
                 let instance = this;
                 // Problem: the Pattern function must explicitly declare its 
                 // parameters. We can't push that information from the class 
@@ -226,7 +228,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
+                                if (csac_debugging) diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 method.call(instance, hap);
                                 return hap.withValue(() => hap.value);
                              });
@@ -235,7 +237,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
+                                if (csac_debugging) ('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 method.call(instance, hap);
                                 return hap.withValue(() => hap.value);
                              });
@@ -244,7 +246,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, p3, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
+                                if (csac_debugging) ('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 method.call(instance, hap);
                                 return hap.withValue(() => hap.value);
                             });
@@ -255,7 +257,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
+                                if (csac_debugging) diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 let onTrigger = (t, hap, duration, cps) => {
                                      method.call(instance, hap);
                                 }
@@ -270,7 +272,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
+                                if (csac_debugging) diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 let onTrigger = (t, hap, duration, cps) => {
                                     triggerSequence = triggerSequence + 1;
                                     method.call(instance, p2, hap);
@@ -286,7 +288,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, p3, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
+                                if (csac_debugging) diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 let onTrigger = (t, hap, duration, cps) => {
                                     method.call(instance, p2, p3, hap);
                                 }
@@ -334,14 +336,14 @@ export class StatefulPatterns {
  * pure(1).logisticPattern(logistic)
  */
 export const registerStateful = function(name, stateful, evaluator) {
-    diagnostic('[registerStateful][withHap]:' + JSON.stringify({name, stateful, evaluator}, null, 4) + '\n');
+    if (csac_debugging) diagnostic('[registerStateful][withHap]:' + JSON.stringify({name, stateful, evaluator}, null, 4) + '\n');
     let result = register(name, (stateful, pat) => {
         return pat.withHap((hap) => {
             stateful.current_time = audioContext.currentTime;
-            diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful, evaluator}, null, 4) + '\n');
+            if (csac_debugging) diagnostic('[registerStateful][withHap]:' + JSON.stringify({hap, stateful, evaluator}, null, 4) + '\n');
             let onTrigger = (t, hap, duration, cps) => {
                 evaluator.call(stateful, hap);
-                diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
+                if (csac_debugging) diagnostic('[registerStateful][onTrigger]:' + JSON.stringify({t, hap, duration, cps, stateful}, null, 4) + '\n');
             }
             let note = stateful.value;
             ///return hap.withValue(() => (isObject ? { ...hap.value, note } : note)).setContext({
