@@ -49,10 +49,10 @@ a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.o
 
 ### Experiments
 
-These are not finished pieces. I am still figuring out how to compose them. 
-However, because they use new facilities, here they are if you want to play 
-with them and examine their code. Comments are welcome (as issues in the 
-cloud-music repository).
+I am working out how to use CsoundAC in the Strudel REPL. The most important 
+thing is to import the `csoundac.mjs` module in your Strudel patch. To see how 
+this is done, look at the following piece. Comments and suggestions are 
+wecome.
 
 - [CsoundAC Example 1](ac_example_1.html).
 
