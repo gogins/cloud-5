@@ -36,25 +36,25 @@ let audioContext = new AudioContext();
 
 const isObject = val => val && typeof val === 'object' && !Array.isArray(val);
 
-/**
- * CsoundAC operations are applied to whole Haps only, so that Haps within 
- * that whole will use the Score or Chord of the whole, and will not create 
- * spurious operations.
- */
-export const isHapWhole = function(hap) {
-    let isWhole = (hap.whole.begin.equals(hap.part.begin) && hap.whole.end.equals(hap.part.end));
-    return isWhole;
-}
+//~ /**
+ //~ * CsoundAC operations are applied to whole Haps only, so that Haps within 
+ //~ * that whole will use the Score or Chord of the whole, and will not create 
+ //~ * spurious operations.
+ //~ */
+//~ export const isHapWhole = function(hap) {
+    //~ let isWhole = (hap.whole.begin.equals(hap.part.begin) && hap.whole.end.equals(hap.part.end));
+    //~ return isWhole;
+//~ }
 
-export const isTriggerHap = (pat, hap) => {
-    if (hap.hasOnset() === false) {
-        return false;
-    }
-    if (hap.whole.equals(hap.part) === false) {
-        return false;
-    }
-    return true;
-};
+//~ export const isTriggerHap = (pat, hap) => {
+    //~ if (hap.hasOnset() === false) {
+        //~ return false;
+    //~ }
+    //~ if (hap.whole.equals(hap.part) === false) {
+        //~ return false;
+    //~ }
+    //~ return true;
+//~ };
 
 /**
  * Enables or disables print statement debugging in this module.
@@ -182,7 +182,6 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       //~ .join('/');
     const i_statement = ['i', p1, p2, p3, p4, p5, '\n'].join(' ');
     hap.value.note = Math.round(p4);
-    hap.value.from = "csoundn";
     diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({triggerSequence, tidal_time, i_statement, hap}, null, 4) + '\n');
     csound.inputMessage(i_statement);
   }, false).gain(0);
@@ -190,14 +189,14 @@ export const csoundn = register('csoundn', (instrument, pat) => {
 
 /**
  * This is a base class that can be used to define Patterns that hold state 
- * between queries. Derived classes automatically register (most of) of their 
- * methods as Strudel Patterns, each of which takes an instance of the class 
- * that has been defined in module scope as a first parameter. By default, 
- * class methods are called by Strudel on every cycle onset, thus aligning 
- * changes of state with cycle boundaries, and the value of state is assigned  
- * to the Hap value. However, those class methods with names ending in 'V' are 
- * called by Strudel on every query of their Pattern, thus enabling the 
- * instance state to be used for setting or modifying Hap values. 
+ * between queries. Derived classes, which must be defined at module scope,
+ * automatically register (most of) of their methods as Strudel Patterns, each 
+ * of which takes an instance of the class as a first parameter. By default, 
+ * class methods are called by Strudel only on every cycle onset, thus 
+ * aligning changes of state with cycle boundaries, and the value of state is 
+ * assigned to the Hap value. However, those class methods with names ending 
+ * in 'V' are called by Strudel on every query of their Pattern, thus enabling 
+ * the instance state to be used for setting or modifying Hap values. 
  */
 export class StatefulPatterns {
     constructor() {
@@ -227,7 +226,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 method.call(instance, hap);
                                 return hap.withValue(() => hap.value);
                              });
@@ -236,7 +235,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 method.call(instance, hap);
                                 return hap.withValue(() => hap.value);
                              });
@@ -245,7 +244,7 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, p3, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 method.call(instance, hap);
                                 return hap.withValue(() => hap.value);
                             });
@@ -256,10 +255,9 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 let onTrigger = (t, hap, duration, cps) => {
-                                    diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
-                                    method.call(instance, hap);
+                                     method.call(instance, hap);
                                 }
                                 return hap.withValue(() => hap.value).setContext({
                                     ...hap.context,
@@ -272,10 +270,9 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 let onTrigger = (t, hap, duration, cps) => {
                                     triggerSequence = triggerSequence + 1;
-                                    diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({triggerSequence, t, hap, duration, cps, instance}, null, 4) + '\n');
                                     method.call(instance, p2, hap);
                                 }
                                 return hap.withValue(() => instance.value).setContext({
@@ -289,9 +286,8 @@ export class StatefulPatterns {
                         let result = register(method.name, (instance, p2, p3, pat) => {
                             return pat.withHap((hap) => {
                                 instance.current_time = audioContext.currentTime;
-                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                diagnostic('[StatefulPatterns.registerMethods][' + method.name + ']' + JSON.stringify({hap, instance}, null, 4) + '\n');
                                 let onTrigger = (t, hap, duration, cps) => {
-                                    diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
                                     method.call(instance, p2, p3, hap);
                                 }
                                 return hap.withValue(() => instance.value).setContext({
@@ -486,7 +482,7 @@ export class ChordPatterns extends StatefulPatterns {
     }
     /**
      * Applies the Chord of this to the note of the Hap, i.e., 
-     * moves the note of the hap to the nearest pitch-class of the Chord.
+     * moves the note of the Hap to the nearest pitch-class of the Chord.
      */
     acCV(hap) {
         let frequency;
