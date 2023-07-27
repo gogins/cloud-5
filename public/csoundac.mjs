@@ -46,6 +46,16 @@ export const isHapWhole = function(hap) {
     return isWhole;
 }
 
+export const isTriggerHap = (pat, hap) => {
+    if (hap.hasOnset() === false) {
+        return false;
+    }
+    if (hap.whole.equals(hap.part) === false) {
+        return false;
+    }
+    return true;
+};
+
 /**
  * Enables or disables print statement debugging in this module.
  */
@@ -172,45 +182,22 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       //~ .join('/');
     const i_statement = ['i', p1, p2, p3, p4, p5, '\n'].join(' ');
     hap.value.note = Math.round(p4);
+    hap.value.from = "csoundn";
     diagnostic('[csoundn][onTrigger]: ' + JSON.stringify({triggerSequence, tidal_time, i_statement, hap}, null, 4) + '\n');
     csound.inputMessage(i_statement);
-  }, false).sound('sine').gain(0)
+  }, false).gain(0);
 });
 
-/*
- onTrigger(onTrigger, dominant = true) {
-    return this.withHap((hap) =>
-      hap.setContext({
-        ...hap.context,
-        onTrigger: (...args) => {
-          if (!dominant && hap.context.onTrigger) {
-            hap.context.onTrigger(...args);
-          }
-          onTrigger(...args);
-        },
-        // we need this to know later if the default trigger should still fire
-        dominantTrigger: dominant,
-      }),
-    );
-  }
-*/
-
 /**
- * This class automatically registers (most of) its member functions as 
- * Strudel Patterns. Member functions have signature 'Pat(...args)', where 
- * the names of the member functions are the same as the names of the 
- * corresponding Patterns, the first element of 'args' is the first 
- * argument to the class method, and the last element of 'args' is the Hap for 
- * the Pattern. The corresponding Pattern functions have signature 
- * 'Pat(..args)', where the name of the Pattern is the same as the name of 
- * the corresponding class member function, but the first element of 
- * 'args' is an instance of the class, and the last element of 'args' is 
- * the Hap for the Pattern. The member functions will be called by Strudel 
- * both on triggers, and on every query to modify or set the values of the 
- * Haps for the Patterns, in the usual way for Patterns. Thus, all state 
- * for these Patterns is held in class instances, and the automatically 
- * registered Patterns invoke the corresponding member functions of such 
- * instances. 
+ * This is a base class that can be used to define Patterns that hold state 
+ * between queries. Derived classes automatically register (most of) of their 
+ * methods as Strudel Patterns, each of which takes an instance of the class 
+ * that has been defined in module scope as a first parameter. By default, 
+ * class methods are called by Strudel on every cycle onset, thus aligning 
+ * changes of state with cycle boundaries, and the value of state is assigned  
+ * to the Hap value. However, those class methods with names ending in 'V' are 
+ * called by Strudel on every query of their Pattern, thus enabling the 
+ * instance state to be used for setting or modifying Hap values. 
  */
 export class StatefulPatterns {
     constructor() {
@@ -235,55 +222,86 @@ export class StatefulPatterns {
                 // is always at least 2 because of the need to pass the class 
                 // instance in addition to the Hap.
                 arity = arity + 1;
-                if (arity === 2) {
-                    let result = register(method.name, (instance, pat) => {
-                        return pat.withHap((hap) => {
-                            instance.current_time = audioContext.currentTime;
-                            diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
-                            let onTrigger = (t, hap, duration, cps) => {
-                                diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
+                if (method.name.endsWith('V')) {
+                    if (arity === 2) {
+                        let result = register(method.name, (instance, pat) => {
+                            return pat.withHap((hap) => {
+                                instance.current_time = audioContext.currentTime;
+                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
                                 method.call(instance, hap);
-                            }
-                            return hap.withValue(() => instance.value).setContext({
-                                ...hap.context,
-                                onTrigger: onTrigger,
-                                dominantTrigger: false,
+                                return hap.withValue(() => hap.value);
+                             });
+                        });
+                    } else if (arity === 3) {
+                        let result = register(method.name, (instance, p2, pat) => {
+                            return pat.withHap((hap) => {
+                                instance.current_time = audioContext.currentTime;
+                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                method.call(instance, hap);
+                                return hap.withValue(() => hap.value);
+                             });
+                        });
+                    } else if (arity === 4) {
+                        let result = register(method.name, (instance, p2, p3, pat) => {
+                            return pat.withHap((hap) => {
+                                instance.current_time = audioContext.currentTime;
+                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                method.call(instance, hap);
+                                return hap.withValue(() => hap.value);
                             });
-                         });
-                    });
-                } else if (arity === 3) {
-                    let result = register(method.name, (instance, p2, pat) => {
-                        return pat.withHap((hap) => {
-                            instance.current_time = audioContext.currentTime;
-                            diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
-                            let onTrigger = (t, hap, duration, cps) => {
-                                triggerSequence = triggerSequence + 1;
-                                diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({triggerSequence, t, hap, duration, cps, instance}, null, 4) + '\n');
-                                method.call(instance, p2, hap);
-                            }
-                            return hap.withValue(() => instance.value).setContext({
-                                ...hap.context,
-                                onTrigger: onTrigger,
-                                dominantTrigger: false,
+                        });
+                    }
+                } else {
+                    if (arity === 2) {
+                        let result = register(method.name, (instance, pat) => {
+                            return pat.withHap((hap) => {
+                                instance.current_time = audioContext.currentTime;
+                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                let onTrigger = (t, hap, duration, cps) => {
+                                    diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
+                                    method.call(instance, hap);
+                                }
+                                return hap.withValue(() => hap.value).setContext({
+                                    ...hap.context,
+                                    onTrigger: onTrigger,
+                                    dominantTrigger: false,
+                                });
+                             });
+                        });
+                    } else if (arity === 3) {
+                        let result = register(method.name, (instance, p2, pat) => {
+                            return pat.withHap((hap) => {
+                                instance.current_time = audioContext.currentTime;
+                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                let onTrigger = (t, hap, duration, cps) => {
+                                    triggerSequence = triggerSequence + 1;
+                                    diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({triggerSequence, t, hap, duration, cps, instance}, null, 4) + '\n');
+                                    method.call(instance, p2, hap);
+                                }
+                                return hap.withValue(() => instance.value).setContext({
+                                    ...hap.context,
+                                    onTrigger: onTrigger,
+                                    dominantTrigger: false,
+                                });
+                             });
+                        });
+                    } else if (arity === 4) {
+                        let result = register(method.name, (instance, p2, p3, pat) => {
+                            return pat.withHap((hap) => {
+                                instance.current_time = audioContext.currentTime;
+                                diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
+                                let onTrigger = (t, hap, duration, cps) => {
+                                    diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
+                                    method.call(instance, p2, p3, hap);
+                                }
+                                return hap.withValue(() => instance.value).setContext({
+                                    ...hap.context,
+                                    onTrigger: onTrigger,
+                                    dominantTrigger: false,
+                                });
                             });
-                         });
-                    });
-                } else if (arity === 4) {
-                    let result = register(method.name, (instance, p2, p3, pat) => {
-                        return pat.withHap((hap) => {
-                            instance.current_time = audioContext.currentTime;
-                            diagnostic('[StatefulPatterns.registerMethods][withHap]:' + JSON.stringify({hap, instance, method}, null, 4) + '\n');
-                            let onTrigger = (t, hap, duration, cps) => {
-                                diagnostic('[StatefulPatterns.registerMethods][onTrigger]:' + JSON.stringify({t, hap, duration, cps, instance}, null, 4) + '\n');
-                                method.call(instance, p2, p3, hap);
-                            }
-                            return hap.withValue(() => instance.value).setContext({
-                                ...hap.context,
-                                onTrigger: onTrigger,
-                                dominantTrigger: false,
-                            });
-                         });
-                    });
+                        });
+                    }
                 }
             }
         }
@@ -470,21 +488,20 @@ export class ChordPatterns extends StatefulPatterns {
      * Applies the Chord of this to the note of the Hap, i.e., 
      * moves the note of the hap to the nearest pitch-class of the Chord.
      */
-    acCN(hap) {
+    acCV(hap) {
         let frequency;
         try {
             frequency = getFrequency(hap);
         } catch (error) {
-            diagnostic('[acCN] not a note!\n');
+            diagnostic('[acCV] not a note!\n');
             return;
         }
         let current_midi_key = frequencyToMidiInteger(frequency);
-        let epcs = ac_chord.epcs();
-        if (csac_debugging) diagnostic(['[ChordPatterns.acCN] current note:    ', current_midi_key, '\n'].join(' '));
+        let epcs = this.ac_chord.epcs();
+        if (csac_debugging) diagnostic(['[ChordPatterns.acCV] current note:    ', current_midi_key, '\n'].join(' '));
         let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-        if (csac_debugging) diagnostic(['[ChordPatterns.acCN] transformed note:', note, '\n\n'].join(' '));
+        if (csac_debugging) diagnostic(['[ChordPatterns.acCV] transformed note:', note, '\n\n'].join(' '));
         hap.value = note;
-        this.value = note;
     }
 }
 
