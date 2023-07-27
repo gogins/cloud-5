@@ -142,7 +142,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       throw new Error('[csoundn] supports only objects as hap values.');
     }
     // Time in seconds counting from now.
-    const p2 = 0; /// TODO: tidal_time - audioContext.currentTime;
+    const p2 = tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
     const frequency = getFrequency(hap);
     // Translate frequency to MIDI key number _without_ rounding.
