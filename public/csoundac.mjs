@@ -23,16 +23,49 @@
  * The resulting Patterns must still go through the Strudel note Pattern 
  * in order to trigger audio output.
  *
- */
+ * The following Patterns are defined in this module:
+ *
+ * acC:        Insert a CsoundAC Chord into the Pattern's state.
+ * acCT:       Transpose the Chord in the Pattern's state.
+ * acCI:       Invert the Chord in the Pattern's state.
+ * acCK:       Apply the interchange by inversion operation to the Chord in 
+ *             the Pattern's state.
+ * acCQ:       Apply the contextual transposition operation to the Chord in 
+ *             the Pattern's state.
+ * acCV:       Move notes in the Pattern to fit the pitch-class set of the 
+ *             Chord in the Pattern's state.
+ * acS:        Insert a CsoundAC Scale into the Pattern's state.
+ * acSS:       Insert the Chord at the specified scale step of the Scale in 
+ *             the Pattern's state, into the state.
+ * acST:       Transpose the Chord in the Pattern's state by the specified 
+ *             number of scale steps in the Scale in the state.
+ * acSM:       Modulate from the Scale in the Pattern's state, using the 
+ *             Chord in the state as a pivot, choosing one of the possible 
+ *             modulations by index.
+ * acSV:       Move notes in the Pattern to fit the Scale in the Pattern's 
+ *             state.
+ * acP:        Insert a CsoundAC PITV group into the Pattern's state.
+ * acPP:       Set the prime form index of the PITV element in the Pattern's 
+ *             state.
+ * acPI:       Set the inversion index of the PITV element in the Pattern's 
+ *             state.
+ * acPT:       Set the transposition index of the PITV element in the 
+ *             Pattern's state.
+ * acPO:       Set the voicing index of the PITV element in the Pattern's 
+ *             state.
+ * acPC:       Insert the Chord corresponding to the PITV element into the 
+ *             Pattern's state.
+ * acPV:       Move notes in the Pattern to fit the pitch-class set of the 
+ *             element of the PITV 
+ *             group in the Pattern's state.
+ * acPVV:      Move notes in the Pattern to fit the element of the PITV 
+ *             group in the Pattern's state.
+ *
+*/
 let csac_debugging = true;
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
-let audioContext = new AudioContext();
-
-/** 
- * The following Patterns are defined in this module:
- *
- */
+let audiostate = new Audiostate();
 
 /**
  * Enables or disables print statement debugging in this module.
@@ -170,10 +203,10 @@ export const csoundn = register('csoundn', (instrument, pat) => {
  * automatically register (most of) of their methods as Strudel Patterns, each 
  * of which takes an instance of the class as a first parameter. By default, 
  * class methods are called by Strudel only on every cycle onset, thus 
- * aligning changes of state with cycle boundaries, and the value of state is 
- * assigned to the Hap value. However, those class methods with names ending 
- * in 'V' are called by Strudel on every query of their Pattern, thus enabling 
- * the instance state to be used for setting or modifying Hap values. 
+ * aligning changes of state with cycle boundaries, and the value of the state 
+ * is assigned to the Hap value. However, those class methods with names 
+ * ending in 'V' are called by Strudel on every query of their Pattern, thus 
+ * enabling the instance state to be used for setting or modifying Hap values. 
  */
 export class StatefulPatterns {
     constructor() {
@@ -397,7 +430,7 @@ export class ChordPatterns extends StatefulPatterns {
         if (typeof modality == 'undefined') {
             this.ac_modality = this.ac_chord;
         } else {
-            this.ac_modality = this.ac_chord;
+            this.ac_modality = modality;
         }
     }
     /**
@@ -475,6 +508,170 @@ export class ChordPatterns extends StatefulPatterns {
         hap.value = note;
     }
 }
+
+export class ScalePatterns extends StatefulPatterns {
+    constructor(scale, voices) {
+        super();
+        this.ac_scale = scale;
+        this.voices = voices;
+        this.ac_chord = this.ac_scale.chord(0, this.voices, 3);
+    }
+    /**
+     * acS:        Insert a CsoundAC Scale into the Pattern's state.
+     */
+    aCS(scale, hap) {
+        this.ac_scale = scale;
+        this.ac_chord = this.ac_scale.chord(0, this.voices, 3);
+    }
+    /** 
+     *acSS:        Insert the Chord at the specified scale step of the Scale in 
+     *             the Pattern's state, into the state.
+     */
+    acSS(scale_step, hap) {
+        this.ac_chord = this.ac_scale.chord(scale_step, this.voices, 3);
+    }
+    /**
+     * acST:       Transpose the Chord in the Pattern's state by the specified 
+     *             number of scale steps in the Scale in the state.
+     */
+    acST(scale_steps, hap) {
+        this.ac_chord = this.ac_scale.transpose_degrees(this.ac_chord, scale_steps, 3);    
+    }
+    /**
+     * acSM:       Modulate from the Scale in the Pattern's state, using the 
+     *             Chord in the state as a pivot, choosing one of the possible 
+     *             modulations by index.
+     */
+    acSM(index, hap) {
+        let pivot_chord_eop = this.ac_chord.eOP();
+        let possible_modulations = this.ac_scale.modulations(pivot_chord_eop);
+        let new_scale = this.ac_scale;
+        let modulation_count = possible_modulations.size();
+        let wrapped_index = -1;
+        if (modulation_count > 0) {
+            wrapped_index = index % modulation_count;
+            new_scale = possible_modulations.get(wrapped_index);
+            if (csac_debugging) {
+                let message_ = [
+'[acSM]: modulating in:', ac_scale.toString(), this.ac_scale.name(), '\n',
+'[acSM]: from pivot:   ', pivot_chord_eop.toString(), pivot_chord_eop.name(), '\n',
+'[acSM]: modulations:  ', modulation_count, '=>', wrapped_index, '\n',
+'[acSM]: modulated to: ', new_scale.toString(), new_scale.name()
+].join(' ');
+                diagnostic(message_);
+                diagnostic('[acSM]: hap: ' + hap.show() + '\n');
+            }
+            this.ac_scale = new_scale;
+        }
+    }
+    /**
+     * acSV:       Move notes in the Pattern to fit the Scale in the Pattern's 
+     *             state.
+     */
+    acSV(hap) {
+        let frequency;
+        try {
+            frequency = getFrequency(hap);
+        } catch (error) {
+            diagnostic('[acSV] not a note!\n');
+            return;
+        }
+        let current_midi_key = frequencyToMidiInteger(frequency);
+        let epcs = this.ac_scale.epcs();
+        let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+        hap.value = new_midi_key;
+        if (csac_debugging) diagnostic(['[acSV]:', this.ac_scale.toString(), this.ac_scale.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value, '\n'].join(' '));
+        return result;
+    }
+    
+}
+
+export class PitvPatterns extends StatefulPatterns {
+    constructor(pitv) {
+        super();
+        this.ac_pitv = pitv;
+    }
+    /**
+     * acP:        Insert a CsoundAC PITV group into the Pattern's state.
+     */
+    acP(pitv, hap) {
+        this.ac_pitv = pitv;
+    }
+    /**
+     * acPP:       Set the prime form index of the PITV element in the Pattern's 
+     *             state.
+     */
+    acPP(P, hap) {
+        this.ac_pitv.P = P;
+    }
+    /**
+     * acPI:       Set the inversion index of the PITV element in the Pattern's 
+     *             state.
+     */
+    acPI(I, hap) {
+        this.ac_pitv.I = I;
+    }
+    /**
+     * acPT:       Set the transposition index of the PITV element in the 
+     *             Pattern's state.
+     */
+    acPT(T, hap) {
+        this.ac_pitv.T = T;
+    }
+    /**
+     * acPO:       Set the octavewise voicing index of the PITV element in the 
+     *             Pattern's state.
+     */
+    acPO(V, hap) {
+        this.ac_pitv.V = V;
+    }
+    /**
+     * acPC:       Insert the Chord corresponding to the PITV element into the 
+     *             Pattern's state.
+     */
+    acPC(hap) {
+        this.ac_chord = this.ac_pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+        if (csac_debugging) diagnostic(['[acPC]:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+    }
+    /**
+     * acPV:       Move notes in the Pattern to fit the pitch-class set of the 
+     *             element of the PITV group in the Pattern's state.
+     */
+    acPV(hap) {
+        let frequency;
+        try {
+            frequency = getFrequency(hap);
+        } catch (error) {
+            diagnostic('[acPV] not a note!\n', 'warning');
+            return;
+        }
+        let current_midi_key = frequencyToMidiInteger(frequency);
+        let eop = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(1);
+        let epcs = eop.epcs();
+        let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+        if (csac_debugging) diagnostic(['[acPV]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', result.value, '\n'].join(' '));
+        hap.value = new_midi_key;
+    }
+    /**
+     * acPVV:      Move notes in the Pattern to fit the element of the PITV 
+     *             group in the Pattern's state.
+     */
+    acPVV(hap) {
+        let frequency;
+        try {
+            frequency = getFrequency(hap);
+        } catch (error) {
+            diagnostic('[acPC] not a note!\n');
+            return;
+        }
+        let current_midi_key = frequencyToMidiInteger(frequency);
+        let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+        let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
+        if (csac_debugging) diagnostic(['[acPVV]:', voiced_chord.toString(), voiced_chord.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value, '\n'].join(' '));
+        hap.value = new_midi_key;
+     }
+}
+
 
 
 
