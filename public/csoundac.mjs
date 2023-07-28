@@ -60,12 +60,11 @@
  *             group in the Pattern's state.
  * acPVV:      Move notes in the Pattern to fit the element of the PITV 
  *             group in the Pattern's state.
- *
-*/
+ */
 let csac_debugging = true;
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
-let audiostate = new Audiostate();
+let audioContext = new AudioContext();
 
 /**
  * Enables or disables print statement debugging in this module.
