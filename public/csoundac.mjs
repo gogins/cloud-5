@@ -1,10 +1,3 @@
-TODO:
-
-signature for modifying state (triggers):
-method(...args)
-signature for modifying values (mostly notes):
-method(...args, hap)
-
 /**
  * C S O U N D A C   M O D U L E   F O R   S T R U D E L
  *
@@ -234,19 +227,20 @@ export class StatefulPatterns {
                 // For now, we will set up separate registrations for the 
                 // first few arities. The actual arity of the Pattern function 
                 // is always at least 2 because of the need to pass the class 
-                // instance in addition to the Hap.
+                // instance along with other arguments.
                 arity = arity + 1;
-                if (!method.name.endsWith('V')) {
+                if (!method.name.endsWith('V,')) {
                     if (arity === 2) {
                         let result = register(name, (stateful, pat) => {
                             return pat.withValue((x) => {
                                 stateful.current_time = getAudioContext().currentTime;
-                                console.log('[registerStateful][withValue]:', JSON.stringify({x, stateful}, null, 4));
+                                 console.log('[registerStateful][' + method.name + '] value:', JSON.stringify({x, stateful}, null, 4));
                                 return stateful.value;
-                                }).onTrigger((t, pat) => {
-                                    method.call(stateful);
-                                    console.log('onTrigger', t, pat);
-                                    });
+                                })
+                                .onTrigger((t, pat) => {
+                                    method.call(stateful, pat);
+                                    console.log('[registerStateful][' + method.name + '] trigger:', JSON.stringify({x, stateful}, null, 4));
+                                    }, false);
 
                         });
                         return result;
@@ -254,12 +248,12 @@ export class StatefulPatterns {
                         let result = register(name, (stateful, p2, pat) => {
                             return pat.withValue((x) => {
                                 stateful.current_time = getAudioContext().currentTime;
-                                console.log('[registerStateful][withValue]:', JSON.stringify({x, stateful}, null, 4));
+                                console.log('[registerStateful][' + method.name + '] value:', JSON.stringify({x, stateful}, null, 4));
                                 return stateful.value;
                                 }).onTrigger((t, pat) => {
                                     method.call(stateful, p2);
-                                    console.log('onTrigger', t, pat);
-                                    });
+                                    console.log('[registerStateful][' + method.name + '] trigger:', JSON.stringify({x, stateful}, null, 4));
+                                    }, false);
 
                         });
                         return result;
@@ -267,12 +261,12 @@ export class StatefulPatterns {
                          let result = register(name, (stateful, p2, p3, pat) => {
                             return pat.withValue((x) => {
                                 stateful.current_time = getAudioContext().currentTime;
-                                console.log('[registerStateful][withValue]:', JSON.stringify({x, stateful}, null, 4));
+                                console.log('[registerStateful][' + method.name + '] value:', JSON.stringify({x, stateful}, null, 4));
                                 return stateful.value;
                                 }).onTrigger((t, pat) => {
                                     method.call(stateful, p2, p3);
-                                    console.log('onTrigger', t, pat);
-                                    });
+                                    console.log('[registerStateful][' + method.name + '] trigger:', JSON.stringify({x, stateful}, null, 4));
+                                    }, false);
 
                         });
                         return result;
