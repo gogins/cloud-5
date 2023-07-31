@@ -108,13 +108,19 @@ class LogisticPattern extends csac.StatefulPatterns {
      * Patternify the 'c' coefficient of the logistic equation.
      */
     Logistic(c, hap) {
-        this.c = c;
-        let y1 = 4 * this.c * this.y * (1 - this.y);
-        this.value = Math.round(y1 * 36 + 36);
-        console.log('[LogisticPattern.Logistic]:', JSON.stringify(this, null, 4));
-        this.y = y1;
-        this.delta_time = this.current_time - this.prior_time;
-        this.prior_time = this.current_time;
+        // Invoked on each cycle onset.
+        if (hap === null) {
+            this.c = c;
+            let y1 = 4 * this.c * this.y * (1 - this.y);
+            this.value = Math.round(y1 * 36 + 36);
+            console.log('[LogisticPattern.Logistic]:', JSON.stringify(this, null, 4));
+            this.y = y1;
+            this.delta_time = this.current_time - this.prior_time;
+            this.prior_time = this.current_time;
+        // Invoked on each query.
+        } else {
+            return this.value;
+        }
     }
 }
 
