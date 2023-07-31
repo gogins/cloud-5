@@ -325,7 +325,7 @@ export class StatefulPatterns {
             this.c = c;
             let y1 = 4 * this.c * this.y * (1 - this.y);
             this.value = Math.round(y1 * 36 + 36);
-            diagnostic('[Logistic] value:' + this.value);
+            diagnostic('[Logistic] value: ' + this.value);
             this.y = y1;
             this.delta_time = this.current_time - this.prior_time;
             this.prior_time = this.current_time;
@@ -347,7 +347,7 @@ export class StatefulPatterns {
  * neo-Riemannian music theory.
  */
 export function Chord(name) {
-    if (csac_debugging) diagnostic('[csacChord] Creating Chord...');
+    if (csac_debugging) diagnostic('[csacChord] Creating Chord...\n');
     let chord_ = csoundac.chordForName(name);
     if (csac_debugging) diagnostic('[csacChord]:' + chord_.toString() + '\n');
     return chord_;
@@ -364,7 +364,7 @@ export function Chord(name) {
  * dominants and tonicizations based on scale degree.
  */
 export function Scale(name) {
-    if (csac_debugging) diagnostic('[Scale] Creating Scale...');
+    if (csac_debugging) diagnostic('[Scale] Creating Scale...\n');
     let scale_ = csoundac.scaleForName(name);
     if (csac_debugging) diagnostic('[Scale] ' + scale_.name() + '\n');
     return scale_;
@@ -383,7 +383,7 @@ export function Scale(name) {
  * generating harmonies and voicings by independently varying P, I, T, and V.
  */
 export function Pitv(voices, range) {
-    if (csac_debugging) diagnostic('[Pitv] Creating PITV group...');
+    if (csac_debugging) diagnostic('[Pitv] Creating PITV group...\n');
     let pitv = new csoundac.PITV();
     pitv.initialize(voices, range, 1., false);
     pitv.P = 0;
@@ -404,7 +404,7 @@ export class ChordPatterns extends StatefulPatterns {
         super();
         this.registerMethods();
         this.ac_chord = chord;
-        if (csac_debugging) diagnostic('[ChordPatterns]: using existing chord.');
+        if (csac_debugging) diagnostic('[ChordPatterns]: using existing chord.\n');
         if (typeof modality == 'undefined') {
             this.ac_modality = this.ac_chord;
         } else {
@@ -419,10 +419,10 @@ export class ChordPatterns extends StatefulPatterns {
         if (is_onset === true) {
             if (typeof chord_id === 'string') {
                 this.ac_chord = csoundac.chordForName(chord_id);
-                if (csac_debugging) diagnostic('[ChordPatterns.acC]: created new chord.');
+                if (csac_debugging) diagnostic('[ChordPatterns.acC]: created new chord.\n');
             } else {
                 this.ac_chord = chord_id;
-                if (csac_debugging) diagnostic('[ChordPatterns.acC]: using existing chord.');
+                if (csac_debugging) diagnostic('[ChordPatterns.acC]: using existing chord.\n');
             }
             if (csac_debugging) {
                 let message = ['[ChordPatterns.acC] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' ');
@@ -641,8 +641,8 @@ export class ScalePatterns extends StatefulPatterns {
             let current_midi_key = frequencyToMidiInteger(frequency);
             let epcs = this.ac_scale.epcs();
             let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-            if (csac_debugging) diagnostic(['[acSV]:', this.ac_scale.toString(), this.ac_scale.eOP().name(), 'old note:', current_midi_key, 'new note:', result.value].join(' '));
             hap = setPitch(hap, new_midi_key);
+            if (csac_debugging) diagnostic(['[acSV]:', this.ac_scale.toString(), this.ac_scale.eOP().name(), 'old note:', current_midi_key, 'new note:', hap.show()].join(' '));
         }
         return hap;
     }
