@@ -124,11 +124,11 @@ let GM = csac.Chord('GM');
 let chordPattern = new csac.ChordPatterns(GM);
 pure(0)
     .Logistic(logisticInstance, .995)
-    .fast(8)
-    .acC(chordPattern, "GM9 Am9 GM9 Am9 D7b9".slow(30))
-    .acCT(chordPattern, "-1 1 -2 2 -3 3 -4 5 -5 5".slow(5))
-    .acCV(chordPattern)
     .note()
+    .fast(8)
+    .acC(chordPattern, "GM G#M".slow(30))
+    .acCT(chordPattern, "-1 1".slow(5))
+    .acCV(chordPattern)
     .csoundn("6")
     // The piano roll does not work!
     .pianoroll({cycles:32,maxMidi:127,minMidi:0})
