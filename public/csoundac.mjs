@@ -110,6 +110,28 @@ const getFrequency = (hap) => {
 };
 
 /**
+ * A utility that assigns a pitch represented as a MIDI key number to the Hap, 
+ * using the existing pitch property if it exists.
+ */
+export function setPitch(hap, midi_key) {
+    if (typeof hap.value === 'undefined') {
+        hap.value = midi_key;
+    } else if (typeof hap.value === 'object') {
+        if (hap.value.freq) {
+            hap.value.freq = midiToFreq(midi_key);
+        } else if (hap.value.note) {
+            hap.value.note = midi_key;
+        } else if (hap.value.n) {
+            hap.value.n = midi_key;
+        }
+    } else {
+        // Number or string all get the MIDI key.
+        hap.value = midi_key;
+    } 
+    return hap;
+}
+
+/**
  * A utility that returns the MIDI key number for a frequency in Hz, 
  * as a real number allowing fractions for microtones.
  */
@@ -170,9 +192,9 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       diagnostic('[csoundn]: Csound is not yet loaded.\n');
       return;
     }
-    if (typeof hap.value !== 'object') {
-      throw new Error('[csoundn] supports only objects as hap values.');
-    }
+    //~ if (typeof hap.value !== 'object') {
+      //~ throw new Error('[csoundn] supports only objects as hap values.');
+    //~ }
     // Time in seconds counting from now.
     const p2 = tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
@@ -188,8 +210,8 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       .flat()
       .join('/') + '\"';
     const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
-    hap.value.note = Math.round(p4);
-    if (csac_debugging) diagnostic('[csoundn]: ' + tidal_time + ' ' + i_statement);
+    hap = setPitch(hap, Math.round(p4));
+    if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + ' ' + i_statement);
     csound.inputMessage(i_statement);
     // Blanks out default output.
   }, false).gain(0);
@@ -221,44 +243,44 @@ export class StatefulPatterns {
                 // For now, we will set up separate registrations for the 
                 // first few arities. The actual arity of the Pattern function 
                 // is always at least 2 because of the need to pass the class 
-                // instance along with other arguments.
+                // instance and the is_onset flag along with other arguments.
                 arity = arity + 1;
-                if (arity === 2) {
+                if (arity === 3) {
                     let result = register(name, (stateful, pat) => {
                         return pat.withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
                             //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
-                            let value = method.call(stateful, hap.value);
-                            return hap.withValue(() => value);
+                            hap = method.call(stateful, false, hap);
+                            return hap;
                         })
                         .onTrigger((t, hap) => {
-                            method.call(stateful, null);
-                            //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, false);
-
-                    });
-                } else if (arity === 3) {
-                    let result = register(name, (stateful, p2, pat) => {
-                        return pat.withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
-                            let value = method.call(stateful, p2, hap.value);
-                            return hap.withValue(() => value);
-                        }).onTrigger((t, hap) => {
-                            method.call(stateful, p2, null);
+                            method.call(stateful, true, hap);
                             //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
                         }, false);
 
                     });
                 } else if (arity === 4) {
+                    let result = register(name, (stateful, p2, pat) => {
+                        return pat.withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, hap);
+                            return hap;
+                        }).onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, hap);
+                            //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false);
+
+                    });
+                } else if (arity === 5) {
                      let result = register(name, (stateful, p2, p3, pat) => {
                         return pat.withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
                             //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
-                            let value = method.call(stateful, p2, p3, hap.value);
-                            return hap.withValue(() => value);
+                            hap = method.call(stateful, false, p2, p3, hap);
+                            return hap;
                         }).onTrigger((t, hap) => {
-                            method.call(stateful, p2, p3, null);
+                            method.call(stateful, true, p2, p3, hap);
                             //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
                         }, false);
                     });
@@ -287,21 +309,20 @@ export class StatefulPatterns {
     /**
      * Patternify the 'c' coefficient of the logistic equation.
      */
-    Logistic(c, value) {
-        if (value === null) {
+    Logistic(is_onset, c, hap) {
+        if (is_onset) {
             // This has been invoked from a trigger and should update state.
             this.c = c;
             let y1 = 4 * this.c * this.y * (1 - this.y);
             this.value = Math.round(y1 * 36 + 36);
-            diagnostic('[LogisticPattern.Logistic]:', JSON.stringify(this, null, 4));
+            diagnostic('[Logistic]: ' + this.value + '\n');
             this.y = y1;
             this.delta_time = this.current_time - this.prior_time;
             this.prior_time = this.current_time;
-         } else {
-            // This has been invoked by a query and should return a value.
-            let value = this.value;
-            return value;
         }
+        hap = setPitch(hap, this.value);
+        diagnostic('[Logistic]: ' + hap.show() + '\n');
+        return hap;
      }
 }
 
@@ -384,8 +405,8 @@ export class ChordPatterns extends StatefulPatterns {
     /**
      * Applies a Chord or chord name to this.
      */
-    acC(chord_id, value) {
-        if (value === null) {
+    acC(is_onset, chord_id, hap) {
+        if (is_onset === true) {
             if (typeof chord_id === 'string') {
                 this.ac_chord = csoundac.chordForName(chord_id);
                 if (csac_debugging) diagnostic('[ChordPatterns.acC]: created new chord.\n');
@@ -394,81 +415,75 @@ export class ChordPatterns extends StatefulPatterns {
                 if (csac_debugging) diagnostic('[ChordPatterns.acC]: using existing chord.\n');
             }
             if (csac_debugging) {
-                let message = ['[ChordPatterns.acC] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' ');
+                let message = ['[ChordPatterns.acC] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' ');
                 diagnostic(message);
             }
-        } else {
-            return value;
         }
+        return hap;
     }
     /**
      * Applies a transposition to the Chord of this.
      */
-    acCT(semitones, value) {
-        if (value === null) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCT] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+    acCT(is_onset, semitones, hap) {
+        if (is_onset === true) {
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCT] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.T(semitones);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCT] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
-        } else {
-            return value;
-        } 
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCT] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n\n'].join(' '));
+        }
+        return hap;
     }
     /**
      * Applies an inversion to the Chord of this. The 
      * default center of reflection is 0.
      */
-    acCI(center, value) {
-        if (value === null) {
+    acCI(is_onset, center, hap) {
+        if (is_onset === true) {
             if (typeof center === 'undefined') {
                 center = 0;
             }
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCI] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCI] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.I(center);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCI] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
-        } else {
-            return value;
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCI] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n\n'].join(' '));
         }
+        return hap;
     }
     /**
      * Applies the interchange by inversion operation of the Generalized 
      * Contextual Group of Fiore and Satyendra to the Chord of this.
      */
-    acCK(value) {
-        if (value === null) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCK] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+    acCK(is_onset, hap) {
+        if (is_onset === true) {
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCK] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.K();
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCK] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
-        } else {
-            return value;
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCK] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n\n'].join(' '));
         }
+        return hap;
     }
     /**
      * Applies the contexual transposition operation of the Generalized 
      * Contextual Group of Fiore and Satyendra to the Chord of this. The 
      * modality is set in the constructor of this class.
      */
-    acCQ(semitones, value) {
-        if (value === null) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCQ] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+    acCQ(is_onset, semitones, hap) {
+        if (is_onset === true) {
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCQ] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.Q(semitones, this.modality);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCQ] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
-        } else {
-            return value;
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCQ] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n\n'].join(' '));
         }
+        return hap;
     }
     /**
      * Applies the nth octavewise revoicing of the Chord of this that is 
      * generated by iterating octavewise revoicings within the indicated 
      * 0-based range.
      */
-    acCO(revoicingNumber_, range, value) {
-        if (value === null) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCO] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+    acCO(is_onset, revoicingNumber_, range, hap) {
+        if (is_onset === true) {
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCO] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = csoundac.octavewiseRevoicing(this.ac_chord, revoicingNumber_, range);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCO] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
-        } else {
-            return value;
-        }
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCO] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n\n'].join(' '));
+        } 
+        return hap;
     }
     /**
      * Transforms the Chord of this to its 'OP' form; 'chord' is an extremely 
@@ -479,37 +494,37 @@ export class ChordPatterns extends StatefulPatterns {
      * transformed such that their voices are out of range back to a more 
      * normal form.
      */
-    acCOP(value) {
-        if (value === null) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCOP] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+    acCOP(is_onset, hap) {
+        if (is_onset === true) {
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCOP] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.eOP();
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCOP] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n\n'].join(' '));
-        } else {
-            return value;
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCOP] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n\n'].join(' '));
         }
+        return hap;
     }
     /**
      * Applies the Chord of this to the _pitch-class_ of the Hap, i.e., 
      * moves the note of the Hap to the nearest _pitch-class_ of the Chord.
      */
-    acCV(value) {
-        if (value === null) {
+    acCV(is_onset, hap) {
+        if (is_onset === true) {
         } else {
-            //~ let frequency;
-            //~ try {
-                //~ frequency = getFrequency(value);
-            //~ } catch (error) {
-                //~ diagnostic('[acCV] not a note!\n');
-                //~ return;
-            //~ }
-            let current_midi_key = value; //frequencyToMidiInteger(frequency);
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acCV] not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
             let epcs = this.ac_chord.epcs();
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] current chord:   ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] current note:    ', current_midi_key, '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] current hap:    ', hap.show(), '\n'].join(' '));
             let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] transformed note:', note, '\n\n'].join(' '));
-            return value;
+            hap = setPitch(hap, note);
+            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] transformed hap:', hap.show(), '\n\n'].join(' '));
         }
+        return hap;
     }
 }
 
