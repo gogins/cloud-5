@@ -74,7 +74,6 @@
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     
     <!--
-
 /**
  * Import the `csoundac` module, which also exports the `csoundn` output 
  * Pattern.
@@ -127,23 +126,29 @@ class LogisticPattern extends csac.StatefulPatterns {
 let logisticInstance1 = new LogisticPattern();
 let logisticInstance2 = new LogisticPattern();
 let GM = csac.Chord('GM');
+let scale = csac.Scale('C major');
 let chordPattern = new csac.ChordPatterns(GM);
 let scalePattern = new csac.ScalePatterns(scale, 4);
-cat(pure(0).slow(2)
-    .Logistic(logisticInstance1, ".88".slow(13)).legato(3)
-    .fast(8)
+cat(pure(0)
+    .Logistic(logisticInstance1, ".88").legato(2)
+    .fast(32)
+    .acCV(chordPattern)
     .csoundn("6"),
-    pure(0).slow(1)
-    .Logistic(logisticInstance2, ".88".slow(13)).legato(3)
-    .fast(8)
+    pure(0)
+    .Logistic(logisticInstance2, ".78 .85 .79").legato(2)
+    .fast(24)
+    .acC(chordPattern, "F#7")
+    .acCV(chordPattern)
     .csoundn("1"),
-    pure(0).slow(2)
-    .Logistic(logistincInstance2, ".9843")
-    .acS(scalePattern, "C Major")
-    .acSV(scalePattern),
-    csoundn("6"))
-     
-    -->
+    pure(0)
+    .Logistic(logisticInstance2, ".9843").legato(2)
+    .fast(64)
+    // Can use underscores for spaces in Strudel strings that are in patterns.
+    .acS(scalePattern, "C_major F#_major")
+    .acSV(scalePattern)
+    .csoundn("9")).slow(8)
+
+-->
     
     </strudel-repl-component>
 

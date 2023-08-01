@@ -162,7 +162,7 @@ export function Clone(a, b) {
         let a_pitch = a.getPitch(voice);
         let b_pitch = b.getPitch(voice);
         b.setPitch(voice, a_pitch);
-        if (csac_debugging) registerPatterns(['[voice ', voice, 'a:', a_pitch, 'old b:', b_pitch, 'new b:', b.getPitch(voice)].join(' '));
+        if (csac_debugging) registerPatterns(['[voice ', voice, 'a:', a_pitch, 'old b:', b_pitch, 'new b:', b.getPitch(voice), '\n'].join(' '));
     }
 }
 
@@ -283,7 +283,7 @@ export class StatefulPatterns {
                         });
                     });
                 } else if (arity === 5) {
-                     let result = register(name, (stateful, p2, p3, pat) => {
+                    let result = register(name, (stateful, p2, p3, pat) => {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, p3, hap);
                             //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
@@ -294,6 +294,18 @@ export class StatefulPatterns {
                             return hap;
                         });
                     });
+                } else if (arity === 6) {
+                    let result = register(name, (stateful, p2, p3, p4, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, p3, p4, hap);
+                            //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, p3, p4, hap);
+                            return hap;
+                        });
+                    });
                 }
             }
         }
@@ -301,8 +313,7 @@ export class StatefulPatterns {
 }
 
 /**
- * A Pattern that calls a stateful object that may be defined in a user level 
- * Strudel patch. To be used something like this:
+ * Example of a stateful Pattern.
  */
  export class LogisticPattern extends StatefulPatterns {
     constructor(c = .998, y = .5) {
@@ -325,13 +336,13 @@ export class StatefulPatterns {
             this.c = c;
             let y1 = 4 * this.c * this.y * (1 - this.y);
             this.value = Math.round(y1 * 36 + 36);
-            diagnostic('[Logistic] value: ' + this.value);
+            diagnostic('[Logistic] onset: ' + this.value);
             this.y = y1;
             this.delta_time = this.current_time - this.prior_time;
             this.prior_time = this.current_time;
         }
         hap = setPitch(hap, this.value);
-        diagnostic('[Logistic]: ' + hap.show());
+        diagnostic('[Logistic] query: ' + hap.show());
         return hap;
      }
 }
@@ -419,13 +430,13 @@ export class ChordPatterns extends StatefulPatterns {
         if (is_onset === true) {
             if (typeof chord_id === 'string') {
                 this.ac_chord = csoundac.chordForName(chord_id);
-                if (csac_debugging) diagnostic('[ChordPatterns.acC]: created new chord.\n');
+                if (csac_debugging) diagnostic('[acC]: created new chord.\n');
             } else {
                 this.ac_chord = chord_id;
-                if (csac_debugging) diagnostic('[ChordPatterns.acC]: using existing chord.\n');
+                if (csac_debugging) diagnostic('[acC]: using existing chord.\n');
             }
             if (csac_debugging) {
-                let message = ['[ChordPatterns.acC] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' ');
+                let message = ['[acC] chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' ');
                 diagnostic(message);
             }
         }
@@ -436,9 +447,9 @@ export class ChordPatterns extends StatefulPatterns {
      */
     acCT(is_onset, semitones, hap) {
         if (is_onset === true) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCT] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acCT] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.T(semitones);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCT] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCT] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
         }
         return hap;
     }
@@ -451,9 +462,9 @@ export class ChordPatterns extends StatefulPatterns {
             if (typeof center === 'undefined') {
                 center = 0;
             }
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCI] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acCI] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.I(center);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCI] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCI] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
         }
         return hap;
     }
@@ -463,9 +474,9 @@ export class ChordPatterns extends StatefulPatterns {
      */
     acCK(is_onset, hap) {
         if (is_onset === true) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCK] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acCK] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.K();
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCK] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCK] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
         }
         return hap;
     }
@@ -476,9 +487,9 @@ export class ChordPatterns extends StatefulPatterns {
      */
     acCQ(is_onset, semitones, hap) {
         if (is_onset === true) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCQ] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acCQ] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.Q(semitones, this.modality);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCQ] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCQ] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
         }
         return hap;
     }
@@ -489,9 +500,9 @@ export class ChordPatterns extends StatefulPatterns {
      */
     acCO(is_onset, revoicingNumber_, range, hap) {
         if (is_onset === true) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCO] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acCO] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = csoundac.octavewiseRevoicing(this.ac_chord, revoicingNumber_, range);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCO] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCO] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
         } 
         return hap;
     }
@@ -506,9 +517,9 @@ export class ChordPatterns extends StatefulPatterns {
      */
     acCOP(is_onset, hap) {
         if (is_onset === true) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCOP] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acCOP] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.eOP();
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCOP] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCOP] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
         }
         return hap;
     }
@@ -528,11 +539,11 @@ export class ChordPatterns extends StatefulPatterns {
             }
             let current_midi_key = frequencyToMidiInteger(frequency);
             let epcs = this.ac_chord.epcs();
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name()].join(' '));
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] current hap:    ', hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acCV] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCV] current hap:    ', hap.show(), '\n'].join(' '));
             let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
             hap = setPitch(hap, note);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acCV] transformed hap:', hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acCV] new hap:        ', hap.show(), '\n'].join(' '));
         }
         return hap;
     }
@@ -560,12 +571,20 @@ export class ScalePatterns extends StatefulPatterns {
      */
     acS(is_onset, scale, hap) {
         if (is_onset === true) {
-            let scale_degree = this.ac_scale.degree(this.ac_chord, 3);
-            this.ac_scale = scale;
-            this.ac_chord = this.ac_scale.chord(scale_degree, this.voices, 3);
+            ///let scale_degree = this.ac_scale.degree(this.ac_chord, 3);
+            if (typeof scale === 'string') {
+                // Have to use underscores instead of spaces in the Strudel REPL.
+                scale = scale.replace('_', ' ');
+                this.ac_scale = csoundac.scaleForName(scale);
+                if (csac_debugging) diagnostic('[acS]: created new scale.\n');
+            } else {
+                this.ac_scale = scale;
+                if (csac_debugging) diagnostic('[acS]: using existing scale.\n');
+            }
+            this.ac_chord = this.ac_scale.chord(0, this.voices, 3);
             if (csac_debugging) {
-                diagnostic(['[ScalePatterns.acS] new scale:', this.ac_scale.toString(), this.ac_scale.name()].join(' '));
-                diagnostic(['[ScalePatterns.acS] new chord:', this.ac_chord.toString(), this.ac_chord.name(), '\n'].join(' '));
+                diagnostic(['[acS] new scale:', this.ac_scale.toString(), this.ac_scale.name(), '\n'].join(' '));
+                diagnostic(['[acS] new chord:', this.ac_chord.toString(), this.ac_chord.name(), '\n'].join(' '));
             }
         }
         return hap;
@@ -576,9 +595,9 @@ export class ScalePatterns extends StatefulPatterns {
      */
     acSS(is_onset, scale_step, hap) {
         if (is_onset === true) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acSS] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name()].join(' '));
+            if (csac_debugging) diagnostic(['[acSS] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
             this.ac_chord = this.ac_scale.chord(scale_step, this.voices, 3);
-            if (csac_debugging) diagnostic(['[ChordPatterns.acSS] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acSS] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
         }  
         return hap;
     }
@@ -588,9 +607,9 @@ export class ScalePatterns extends StatefulPatterns {
      */
     acST(is_onset, scale_steps, hap) {
         if (is_onset === true) {
-            if (csac_debugging) diagnostic(['[ChordPatterns.acST] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name()].join(' '));
+            if (csac_debugging) diagnostic(['[acST] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
             this.ac_chord = this.ac_scale.transpose_degrees(this.ac_chord, scale_steps, 3);    
-            if (csac_debugging) diagnostic(['[ChordPatterns.acST] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acST] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
         }
         return hap;
     }
@@ -629,7 +648,7 @@ export class ScalePatterns extends StatefulPatterns {
      *             state.
      */
     acSV(is_onset, hap) {
-        if (is_onset == true) {
+        if (is_onset === true) {
         } else {
             let frequency;
             try {
@@ -640,9 +659,11 @@ export class ScalePatterns extends StatefulPatterns {
             }
             let current_midi_key = frequencyToMidiInteger(frequency);
             let epcs = this.ac_scale.epcs();
-            let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-            hap = setPitch(hap, new_midi_key);
-            if (csac_debugging) diagnostic(['[acSV]:', this.ac_scale.toString(), this.ac_scale.eOP().name(), 'old note:', current_midi_key, 'new note:', hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acSV] current scale:  ', this.ac_scale.toString(), this.ac_scale.eOP().name(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acSV] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            if (csac_debugging) diagnostic(['[acSV] new hap:        ', hap.show(), '\n'].join(' '));
         }
         return hap;
     }
@@ -714,7 +735,7 @@ export class PitvPatterns extends StatefulPatterns {
     acPC(is_onset, hap) {
         if (is_onset === true) {
             this.ac_chord = this.ac_pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
-            if (csac_debugging) diagnostic(['[acPC]:', this.ac_chord.toString(), this.ac_chord.eOP().name()].join(' '));
+            if (csac_debugging) diagnostic(['[acPC]:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
         }
         return hap;
     }
@@ -737,7 +758,7 @@ export class PitvPatterns extends StatefulPatterns {
             let epcs = eop.epcs();
             let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
             hap = setPitch(hap, new_midi_key);
-            if (csac_debugging) diagnostic(['[acPV]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acPV]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
          }
         return hap;
     }
@@ -759,7 +780,7 @@ export class PitvPatterns extends StatefulPatterns {
             let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
             let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
             hap = setPitch(hap, new_midi_key);
-            if (csac_debugging) diagnostic(['[acPVV]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show()].join(' '));
+            if (csac_debugging) diagnostic(['[acPVV]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         }
         return hap;
     }
