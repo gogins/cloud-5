@@ -162,7 +162,7 @@ export function Clone(a, b) {
         let a_pitch = a.getPitch(voice);
         let b_pitch = b.getPitch(voice);
         b.setPitch(voice, a_pitch);
-        if (csac_debugging) diagnostic(['[voice ', voice, 'a:', a_pitch, 'old b:', b_pitch, 'new b:', b.getPitch(voice)].join(' '));
+        if (csac_debugging) registerPatterns(['[voice ', voice, 'a:', a_pitch, 'old b:', b_pitch, 'new b:', b.getPitch(voice)].join(' '));
     }
 }
 
@@ -239,7 +239,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
 export class StatefulPatterns {
     constructor() {
     }
-    registerMethods() {
+    registerPatterns() {
         for (let name of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
             let method = this[name];
             if ((method instanceof Function) &&
@@ -307,7 +307,7 @@ export class StatefulPatterns {
  export class LogisticPattern extends StatefulPatterns {
     constructor(c = .998, y = .5) {
         super();
-        this.registerMethods();
+        this.registerPatterns();
         // Initial values.
         this.c = c;
         this.y = y;
@@ -402,7 +402,7 @@ export function Pitv(voices, range) {
 export class ChordPatterns extends StatefulPatterns {
     constructor(chord, modality) {
         super();
-        this.registerMethods();
+        this.registerPatterns();
         this.ac_chord = chord;
         if (csac_debugging) diagnostic('[ChordPatterns]: using existing chord.\n');
         if (typeof modality == 'undefined') {
@@ -558,9 +558,9 @@ export class ScalePatterns extends StatefulPatterns {
      *             of this is moved to the same scale degree in the new Scale
      *             that it had in the old Scale.
      */
-    aCS(is_onset, scale, hap) {
+    acS(is_onset, scale, hap) {
         if (is_onset === true) {
-            let scale_degree = this.ac_scale.scale_degree(this.ac_chord);
+            let scale_degree = this.ac_scale.degree(this.ac_chord, 3);
             this.ac_scale = scale;
             this.ac_chord = this.ac_scale.chord(scale_degree, this.voices, 3);
             if (csac_debugging) {

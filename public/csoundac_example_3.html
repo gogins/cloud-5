@@ -95,7 +95,7 @@ csac.diagnostic('Hello, world!');
 class LogisticPattern extends csac.StatefulPatterns {
     constructor(c = .998, y = .5) {
         super();
-        this.registerMethods();
+        this.registerPatterns();
         // Initial values.
         this.c = c;
         this.y = y;
@@ -128,15 +128,21 @@ let logisticInstance1 = new LogisticPattern();
 let logisticInstance2 = new LogisticPattern();
 let GM = csac.Chord('GM');
 let chordPattern = new csac.ChordPatterns(GM);
-cat(pure(0)
-    .Logistic(logisticInstance1, .995)
+let scalePattern = new csac.ScalePatterns(scale, 4);
+cat(pure(0).slow(2)
+    .Logistic(logisticInstance1, ".88".slow(13)).legato(3)
     .fast(8)
     .csoundn("6"),
-    pure(0)
-    .Logistic(logisticInstance2, .888)
-    .fast(3)
-    .csoundn("7"))
- 
+    pure(0).slow(1)
+    .Logistic(logisticInstance2, ".88".slow(13)).legato(3)
+    .fast(8)
+    .csoundn("1"),
+    pure(0).slow(2)
+    .Logistic(logistincInstance2, ".9843")
+    .acS(scalePattern, "C Major")
+    .acSV(scalePattern),
+    csoundn("6"))
+     
     -->
     
     </strudel-repl-component>
