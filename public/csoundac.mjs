@@ -603,7 +603,7 @@ export class ScalePatterns extends StatefulPatterns {
                 new_scale = possible_modulations.get(wrapped_index);
                 if (csac_debugging) {
                     let message_ = [
-    '[acSM onset] modulating in:', ac_scale.toString(), this.ac_scale.name(), '\n',
+    '[acSM onset] modulating in:', this.ac_scale.toString(), this.ac_scale.name(), '\n',
     '[acSM onset] from pivot:   ', pivot_chord_eop.toString(), pivot_chord_eop.name(), '\n',
     '[acSM onset] modulations:  ', modulation_count, '=>', wrapped_index, '\n',
     '[acSM onset] modulated to: ', new_scale.toString(), new_scale.name()
