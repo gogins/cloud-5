@@ -170,7 +170,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       .join('/') + '\"';
     const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
     hap = setPitch(hap, Math.round(p4));
-    if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + ' ' + i_statement);
+    if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
     csound.inputMessage(i_statement);
     // Blanks out default output.
   }, false).gain(0);
