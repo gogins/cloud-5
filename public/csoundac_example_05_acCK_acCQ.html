@@ -1,0 +1,60 @@
+/**
+ * Import the `csoundac` module, which also exports the `csoundn` output 
+ * Pattern.
+ */
+const csac = await import('../csoundac.mjs');
+csac.diagnostic('Hello, world!');
+/**
+ * Classes can be used to define stateful Patterns; such classes can have an 
+ * 'evaluate' method that sets a 'value' property, which could be of any type. 
+ * Using classes makes it easy to encapsulate different collections of state.
+ *
+ * This particular `stateful` class is instrumented with debug information to 
+ * prove whether or not evaluations are triggered when they should be, e.g. 
+ * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
+ * per second, and so on; also, there should be exactly 1 call to `evaluate`
+ * for every note triggered by the Pattern.
+ */
+class LogisticPattern extends csac.StatefulPatterns {
+    constructor(c = .998, y = .5) {
+        super();
+        this.registerPatterns();
+        // Initial values.
+        this.c = c;
+        this.y = y;
+        this.value = 36;
+        this.prior_time = 0;
+        this.current_time = 0;
+        this.delta_time = 0;
+    }
+    /**
+     * Patternify the 'c' coefficient of the logistic equation.
+     */
+    Logistic(is_onset, c, hap) {
+        if (is_onset) {
+            // This has been invoked from a trigger and should update state.
+            this.c = c;
+            let y1 = 4 * this.c * this.y * (1 - this.y);
+            this.value = Math.round(y1 * 36 + 36);
+            csac.diagnostic('[Logistic onset] value: ' + this.value + '\n');
+            this.y = y1;
+            this.delta_time = this.current_time - this.prior_time;
+            this.prior_time = this.current_time;
+        }
+        hap = csac.setPitch(hap, this.value);
+        csac.diagnostic('[Logistic query] ' + hap.show() + '\n');
+        return hap;
+     }
+}
+
+let logisticInstance = new LogisticPattern();
+let GM7 = csac.Chord('G7');
+let chordPattern = new csac.ChordPatterns(GM);
+pure(0)
+  .Logistic(logisticInstance, ".88 .9678".fast(12))
+  .acC(chordPattern, GM7)
+  .acCK(chordPattern.slow(32)).seq(
+  .acCV(chordPattern)
+  .csoundn("4")
+  .fast(4)
+  .legato(3)
