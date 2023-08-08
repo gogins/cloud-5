@@ -37,7 +37,7 @@ export function debug(enabled) {
  * log.
  */
 export const diagnostic = function(message) {
-    const text = '[csac]' + message;
+    const text = '' + getTime() + ' [csac]' + message;
     logger(text, 'debug');
     if (csound) csound.message(text);
 };
@@ -177,17 +177,17 @@ export const csoundn = register('csoundn', (instrument, pat) => {
 });
 
 /**
- * This is a base class that can be used to define Patterns that hold state 
- * between queries. Derived classes, which must be defined at module scope,
- * must in their constructor call `this.registerPatterns`, which will 
- * automatically register (most of) of their methods as Strudel Patterns, each 
- * of which takes an instance of the class as a first parameter. Class methods
- * must have the following syntax and semantics:
+ * This is a base class that can be used to _automatically_ define Patterns 
+ * that hold state between queries. Derived classes, which must be defined at 
+ * module scope, must in their constructor call `this.registerPatterns`, which 
+ * will automatically register (most of) of their methods as Strudel Patterns, 
+ * each of which takes an instance of the class as a first parameter. Class 
+ * methods must have the following syntax and semantics:
  * ```
  * Class.Pat(is_onset, [0 or more arguments to be patternified], hap) {...}
  * ```
  * Strudel will pass `true` for `is_onset` on the onset of the Pattern's cycle, 
- * and `false` for `is_onset` for every query in the cycle. Therefore, the 
+ * and `false` for `is_onset` for every query in that cycle. Therefore, the 
  * class method must update its state if `is_onset` is true, and return the 
  * hap, without changing its value; and if 'is_onset' is false, the method must 
  * update and return the hap, and its usually new value.
@@ -229,6 +229,9 @@ export class StatefulPatterns {
                             return hap;
                         });
                     });
+                    // There are no dynamic exports in JavaScript, so we just stuff 
+                    // these into the window scope as global functions.
+                    window[name] = result;
                 } else if (arity === 4) {
                     let result = register(name, (stateful, p2, pat) => {
                         return pat.onTrigger((t, hap) => {
@@ -241,6 +244,7 @@ export class StatefulPatterns {
                             return hap;
                         });
                     });
+                    window[name] = result;
                 } else if (arity === 5) {
                     let result = register(name, (stateful, p2, p3, pat) => {
                         return pat.onTrigger((t, hap) => {
@@ -253,7 +257,8 @@ export class StatefulPatterns {
                             return hap;
                         });
                     });
-                } else if (arity === 6) {
+                    window[name] = result;
+               } else if (arity === 6) {
                     let result = register(name, (stateful, p2, p3, p4, pat) => {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, p3, p4, hap);
@@ -265,6 +270,7 @@ export class StatefulPatterns {
                             return hap;
                         });
                     });
+                    window[name] = result;
                 }
             }
         }
