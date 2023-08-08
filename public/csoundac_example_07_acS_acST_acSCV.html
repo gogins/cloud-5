@@ -121,14 +121,13 @@ class LogisticPattern extends csac.StatefulPatterns {
 let logisticInstance = new LogisticPattern();
 let scale = csac.Scale('C_major');
 let scalePattern = new csac.ScalePatterns(scale, 3);
-pure(0).slow(12)
-    .Logistic(logisticInstance, ".8887").legato(2)
+pure(0).slow(2)
+    .Logistic(logisticInstance, ".8887")
     .fast(8)
     .acS(scalePattern,"C_major".slow(64))
     .acST(scalePattern, "5 -3 5 -3 5 -3".slow(64))
     .acSCV(scalePattern)
-    .csoundn("6").slow(12)).fast(12)
-    
+    .csoundn("6").legato(3)
     
 -->
     
@@ -308,9 +307,9 @@ pure(0).slow(12)
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>CsoundAC Example No. 6 ScalePatterns</h1>
+<h1>CsoundAC Example No. 7 ScalePatterns</h1>
 <h3>Michael Gogins<br>
-January 2023</h3>
+August 2023</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
