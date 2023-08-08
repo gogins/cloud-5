@@ -121,11 +121,12 @@ class LogisticPattern extends csac.StatefulPatterns {
 let logisticInstance = new LogisticPattern();
 let GM = csac.Chord('GM9');
 let chordPattern = new csac.ChordPatterns(GM);
-run(7).fast(2).scale('C4 major')
-  .acCK(chordPattern)
-  .apply(acCQ(chordPattern, "<0 1 2 3 4 5>".slow(4)))
-  .acCV(chordPattern)
-  .csoundn("6").slow(8)
+run(8)
+  .scale('C4 major')  
+  .acCV(chordPattern)  
+  .acCQ(chordPattern, "0 1 2 3 4 5".slow(8))
+  .every(64, x=>x.acCK(chordPattern))
+  .csoundn("6")
   .legato(3)
   
 -->
