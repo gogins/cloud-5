@@ -79,51 +79,16 @@ csac.diagnostic('Hello, world!');
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
  * Using classes makes it easy to encapsulate different collections of state.
- *
- * This particular `stateful` class is instrumented with debug information to 
- * prove whether or not evaluations are triggered when they should be, e.g. 
- * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
- * per second, and so on; also, there should be exactly 1 call to `evaluate`
- * for every note triggered by the Pattern.
  */
-class LogisticPattern extends csac.StatefulPatterns {
-    constructor(c = .998, y = .5) {
-        super();
-        this.registerPatterns();
-        // Initial values.
-        this.c = c;
-        this.y = y;
-        this.value = 36;
-        this.prior_time = 0;
-        this.current_time = 0;
-        this.delta_time = 0;
-    }
-    /**
-     * Patternify the 'c' coefficient of the logistic equation.
-     */
-    Logistic(is_onset, c, hap) {
-        if (is_onset) {
-            // This has been invoked from a trigger and should update state.
-            this.c = c;
-            let y1 = 4 * this.c * this.y * (1 - this.y);
-            this.value = Math.round(y1 * 36 + 36);
-            csac.diagnostic('[Logistic onset] value: ' + this.value + '\n');
-            this.y = y1;
-            this.delta_time = this.current_time - this.prior_time;
-            this.prior_time = this.current_time;
-        }
-        hap = csac.setPitch(hap, this.value);
-        csac.diagnostic('[Logistic query] ' + hap.show() + '\n');
-        return hap;
-     }
-}
 
-let pitv = new csac.PITV(5, 60);
-let pitvPatterns = new PitvPatterns(pitv);
+let pitv = csac.Pitv(4, 36, 60);
+let pitvPatterns = new csac.PitvPatterns(pitv);
 pure(0)
-    .acPO(pitvPatterns, steps(20))
-    .acPV(pitvPatterns)
-    .csoundn("5").legato(2)
+    .acPP(pitvPatterns, "<12 4 11>".slow(24))
+    .apply(acPT(pitvPatterns, "<1 2 3 4 5>"))
+    .apply(acPO(pitvPatterns, "<1 2 3 4 5 20 18>".fast(4)))
+    .acPVV(pitvPatterns).add(48)
+    .csoundn("5 6").fast(3).legato(3)
     
 -->
     

@@ -674,22 +674,23 @@ export class ScalePatterns extends StatefulPatterns {
 }
 
 /**
- * Creates a class to hold state and defines Patterns for creating and using 
+ * Creates a class to hpitvold state and defines Patterns for creating and using 
  * that state to work with CsoundAC PITV groups. An instance of this class 
  * must be created at module scope and passed to the relevant Patterns.
  */
 export class PitvPatterns extends StatefulPatterns {
     constructor(pitv) {
         super();
-        this.ac_pitv = pitv;
+        this.registerPatterns();
+        this.pitv = pitv;
     }
     /**
      * acP:        Insert a CsoundAC PITV group into the Pattern's state.
      */
     acP(is_onset, pitv, hap) {
         if (is_onset == true) {
-            if (csac_debugging) diagnostic(['[acP onset] current PITV:  ', this.this.ac_pitv.list(true, true, false), '\n'].join(' '));
-            this.ac_pitv = pitv;
+            if (csac_debugging) diagnostic(['[acP onset] current PITV:  ', this.this.pitv.list(true, true, false), '\n'].join(' '));
+            this.pitv = pitv;
         } 
         return hap;
     }
@@ -699,7 +700,7 @@ export class PitvPatterns extends StatefulPatterns {
      */
     acPP(is_onset, P, hap) {
         if (is_onset === true) {
-            this.ac_pitv.P = P;
+            this.pitv.P = P;
         }
         return hap;
     }
@@ -709,7 +710,7 @@ export class PitvPatterns extends StatefulPatterns {
      */
     acPI(is_onset, I, hap) {
         if (is_onset === true) {
-            this.ac_pitv.I = I;
+            this.pitv.I = I;
         }
         return hap;
     }
@@ -719,7 +720,7 @@ export class PitvPatterns extends StatefulPatterns {
      */
     acPT(is_onset, T, hap) {
         if (is_onset === true) {
-            this.ac_pitv.T = T;
+            this.pitv.T = T;
         }
         return hap;
     }
@@ -729,7 +730,7 @@ export class PitvPatterns extends StatefulPatterns {
      */
     acPO(is_onset, V, hap) {
         if (is_onset == true) {
-            this.ac_pitv.V = V;
+            this.pitv.V = V;
         }
         return hap;
     }
@@ -739,7 +740,7 @@ export class PitvPatterns extends StatefulPatterns {
      */
     acPC(is_onset, hap) {
         if (is_onset === true) {
-            this.ac_chord = this.ac_pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+            this.ac_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
             if (csac_debugging) diagnostic(['[acPC onset]:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
         }
         return hap;
@@ -785,7 +786,7 @@ export class PitvPatterns extends StatefulPatterns {
             let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
             let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
             hap = setPitch(hap, new_midi_key);
-            if (csac_debugging) diagnostic(['[acPVV query]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+            if (csac_debugging) diagnostic(['[acPVV query]:', 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         }
         return hap;
     }
