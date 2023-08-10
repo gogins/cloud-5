@@ -55,4 +55,21 @@ with open(astro_config_mjs_filepath, "r+") as file:
   file.truncate()
   file.write(patched_text)
   
+'''
+Fixes Strudel so that _all_ triggers go to the default output. This helps
+with creating stateful patterns.
+'''
+pattern_mjs_filepath = "strudel/packages/core/pattern.mjs";
+print(f"Patching '{pattern_mjs_filepath}'")
+with open(astro_config_mjs_filepath, "r+") as file:
+  find_this = '''`if (!dominant && hap.context.onTrigger) {`;'''
+  replace_with = '''`if (hap.context.onTrigger) {;'''
+  text = file.read()
+  patched_text = text.replace(find_this, replace_with)
+  print(patched_text)
+  file.seek(0)
+  file.truncate()
+  file.write(patched_text)
+
+  
 
