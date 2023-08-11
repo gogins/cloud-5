@@ -111,13 +111,14 @@ class LogisticPattern extends csac.StatefulPatterns {
 let logisticInstance = new LogisticPattern();
 
 pure(0)
-    .Logistic(logisticInstance, ".995 .78 .995 .88"
-    .slow(60))
-    .legato(3)
-    .fast(3)
-    .csoundn("6")
-    // The piano roll does not work!
-    .pianoroll({cycles:32,maxMidi:127,minMidi:0})
+.Logistic(logisticInstance, ".995 .78 .995 .88"
+.slow(60))
+.legato(3)
+.fast(3)
+.note()
+.pianoroll({cycles:32,maxMidi:127,minMidi:0})
+//.piano()
+.csoundm("6")
     
 -->
     
