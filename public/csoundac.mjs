@@ -251,7 +251,7 @@ export class StatefulPatterns {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, p3, hap);
                             //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, trye).withHap((hap) => {
+                        }, true).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
                             //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, p2, p3, hap);

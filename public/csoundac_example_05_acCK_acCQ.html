@@ -69,12 +69,7 @@
     
     <!--
     
-/**
- * Import the `csoundac` module, which also exports the `csoundn` output 
- * Pattern.
- */
 const csac = await import('../csoundac.mjs');
-csac.diagnostic('Hello, world!');
 /**
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
@@ -122,13 +117,15 @@ let logisticInstance = new LogisticPattern();
 let GM = csac.Chord('GM9');
 let chordPattern = new csac.ChordPatterns(GM);
 run(8)
-  .scale('C4 major')  
-  .acCV(chordPattern)  
-  .acCQ(chordPattern, "0 1 2 3 4 5".slow(8))
-  .every(64, x=>x.acCK(chordPattern))
-  .csoundn("6")
-  .legato(3)
-  
+.scale('C4 major')  
+.acCV(chordPattern)  
+.acCQ(chordPattern, "0 1 2 3 4 5".slow(8))
+.every(64, x=>x.acCK(chordPattern))
+.note()
+.pianoroll({cycles:32,maxMidi:127,minMidi:0})
+//.piano()
+.csoundm("6")    
+.legato(3)  
 -->
     
     </strudel-repl-component>

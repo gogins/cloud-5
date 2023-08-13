@@ -69,12 +69,7 @@
     
     <!--
     
-/**
- * Import the `csoundac` module, which also exports the `csoundn` output 
- * Pattern.
- */
 const csac = await import('../csoundac.mjs');
-csac.diagnostic('Hello, world!');
 /**
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
@@ -127,8 +122,11 @@ pure(0).slow(4)
     .acS(scalePattern,"C_major F#_major".slow(64))
     .acSS(scalePattern, "1 5 2 7 1".slow(32))
     .acSCV(scalePattern)
-    .csoundn("1").legato(2)
-    
+.note()
+.pianoroll({cycles:32,maxMidi:127,minMidi:0})
+//.piano()
+.csoundm("1")    
+.legato(2)    
 -->
     
     </strudel-repl-component>
