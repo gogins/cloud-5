@@ -150,16 +150,13 @@ export function Clone(a, b) {
 export const csoundn = register('csoundn', (instrument, pat) => {
   let p1 = instrument;
   if (typeof instrument === 'string') {
-    p1 = ['{', instrument, '}'].join();
+    p1 = ['${', instrument, '}'].join();
   }
   return pat.onTrigger((tidal_time, hap) => {
     if (!csound) {
       diagnostic('[csoundn]: Csound is not yet loaded.\n');
       return;
     }
-    //~ if (typeof hap.value !== 'object') {
-      //~ throw new Error('[csoundn] supports only objects as hap values.');
-    //~ }
     // Time in seconds counting from now.
     const p2 = tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
@@ -179,7 +176,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
     csound.inputMessage(i_statement);
     // Blanks out default output.
-  }, false);//.gain(0);
+  }, true);//.gain(0);
 });
 
 /**
