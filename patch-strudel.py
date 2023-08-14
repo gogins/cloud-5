@@ -18,6 +18,9 @@ with open(csound_mjs_filepath, "r+") as file:
   replace_with = '''i ${p1} ${p2} ${p3} ${p4} ${p5}'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
+  find_this = '''    p1 = `"{instrument}"`;'''
+  replace_with = '''    p1 = `"${instrument}"`;'''
+  patched_text = patched_text.replace(find_this, replace_with)
   print(patched_text)
   file.seek(0)
   file.truncate()

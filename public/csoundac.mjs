@@ -72,7 +72,7 @@ const getFrequency = (hap) => {
  * A utility that assigns a pitch represented as a MIDI key number to the Hap, 
  * using the existing pitch property if it exists.
  */
-export function setPitch(hap, midi_key) {
+export function setPitchx(hap, midi_key) {
     if (typeof hap.value === 'undefined') {
         hap.value = midi_key;
     } else if (typeof hap.value === 'object') {
@@ -87,6 +87,12 @@ export function setPitch(hap, midi_key) {
         // Number or string all get the MIDI key.
         hap.value = midi_key;
     } 
+    return hap;
+}
+
+// test
+export function setPitch(hap, midi_key) {
+    hap.value = midi_key;
     return hap;
 }
 
@@ -173,7 +179,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
     csound.inputMessage(i_statement);
     // Blanks out default output.
-  }, false).gain(0);
+  }, false);//.gain(0);
 });
 
 /**
@@ -223,7 +229,7 @@ export class StatefulPatterns {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, hap);
                             //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, true).withHap((hap) => {
+                        }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
                             //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, hap);
@@ -251,7 +257,7 @@ export class StatefulPatterns {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, p3, hap);
                             //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, true).withHap((hap) => {
+                        }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
                             //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, p2, p3, hap);
@@ -264,7 +270,7 @@ export class StatefulPatterns {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, p3, p4, hap);
                             //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, true).withHap((hap) => {
+                        }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
                             //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, p2, p3, p4, hap);
