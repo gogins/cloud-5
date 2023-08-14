@@ -1,0 +1,53 @@
+// Based on "CSound demo"
+// @license with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/
+// @by Felix Roos
+const dump = function(objekt) {
+    return JSON.stringify({objekt}, null, 2);
+}
+
+await loadCsound`
+instr CoolSynth
+    iduration = p3
+    ifreq = p4
+    igain = p5
+    ioct = octcps(ifreq)
+    kpwm = oscili(.05, 8)
+    asig = vco2(igain, ifreq, 4, .5 + kpwm)
+    asig += vco2(igain, ifreq * 2)
+    idepth = 2
+    acut = transegr:a(0, .005, 0, idepth, .06, -4.2, 0.001, .01, -4.2, 0) ; filter envelope
+    asig = zdf_2pole(asig, cpsoct(ioct + acut + 2), 0.5)
+    iattack = .01
+    isustain = .15
+    idecay = .5
+    irelease = .1
+    asig *= linsegr:a(0, iattack, 1, idecay, isustain, iduration, isustain, irelease, 0)
+    out(asig, asig)
+endin`
+
+var state = 7;
+
+"<0 2 [4 6](3,4,2) 3*8>"
+.off(1/4, add(2))
+.off(1/2, add(6))
+.onTrigger((t, hap) => {
+    state = state + 1;
+    state = state % 17;
+    logger('==> trigger:    ' + hap.show());
+  }, false)
+.withHap((hap) => {
+    logger('    query pre:  ' + hap.show());
+    hap.value = hap.value + state;
+    logger('    query post: ' + hap.show() + '\n');
+    return hap;
+})
+.scale('D2:mixolydian')
+.note()
+.pianoroll({'cycles':16, 'minMidi':0, 'maxMidi':127})
+// Uncomment the next line to enable Csound output. In that case, the piano 
+// roll is displayed; but the state computed in the onTrigger pattern is not 
+// applied. If Csound is not enabled but the default output is used, the 
+// state computed in the onTrigger pattern is applied, and the piano roll is 
+// displayed; but the entire piano roll jumps up and down, apparently in sync 
+// with the value of the computed state.
+//.csound("CoolSynth")

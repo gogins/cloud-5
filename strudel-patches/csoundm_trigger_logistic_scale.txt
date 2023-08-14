@@ -1,0 +1,63 @@
+// Based on "CSound demo"
+// @license with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/
+// @by Felix Roos
+const csac = await import('../csoundac.mjs');
+let csoundac = globalThis.__csoundac__;
+
+class Logistic {
+    constructor(c = .886987, y = .5) {
+        this.c = c;
+        this.y = y;
+        this.midi_key = 36;
+    }
+    trigger() {
+        let y1 = 4 * this.c * this.y * (1 - this.y);
+        this.midi_key = Math.round(y1 * 36 + 36);
+        this.y = y1;
+    }
+    query() {
+        return this.midi_key;
+    }
+}
+
+let logistic = new Logistic()
+let scale = csac.Scale('C_major');
+
+pure(1)
+.fast(9)
+.onTrigger((t, hap) => {
+    logger('==> trigger:   ' + hap.show());
+    logistic.trigger();
+  }, false)
+.withHap((hap) => {
+    logger('   query pre:  ' + hap.show())
+    hap.value = logistic.query();
+    logger('   query post: ' + hap.show());
+    return hap;
+})
+.onTrigger((t, hap) => {
+    logger('trigger ==> ' + scale.name());
+})
+.withHap((hap) => {
+    logger('scale query: ' + hap.show());
+    let frequency;
+    try {
+        frequency = getFrequency(hap);
+    } catch (error) {
+        logger('not a note!\n');
+        return;
+    }
+    let current_midi_key = csac.frequencyToMidiInteger(frequency);
+    let epcs = scale.epcs();
+    //logger(['epcs:', epcs.information(), '\n'].join(' '));
+    logger(['current scale:  ', scale.toString(), scale.eOP().name(), '\n'].join(' '));
+    logger(['current epcs:   ', epcs.toString(), epcs.eOP().name(), '\n'].join(' '));
+    logger(['current hap:    ', hap.show(), '\n'].join(' '));
+    let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+    hap.value = note;
+    logger(['new hap:        ', hap.show(), '\n'].join(' '));
+    return hap;
+})
+.note().log()
+.pianoroll()
+.csoundn("6")

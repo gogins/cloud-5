@@ -1,0 +1,194 @@
+// "CSound demo"
+// @license with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/
+// @by Felix Roos
+/**
+ * A utility that assigns a pitch represented as a MIDI key number to the Hap, 
+ * using the existing pitch property if it exists.
+ */
+/* export */ function setPitch(hap, midi_key) {
+    if (typeof hap.value === 'undefined') {
+        hap.value = midi_key;
+    } else if (typeof hap.value === 'object') {
+        if (hap.value.freq) {
+            hap.value.freq = midiToFreq(midi_key);
+        } else if (hap.value.note) {
+            hap.value.note = midi_key;
+        } else if (hap.value.n) {
+            hap.value.n = midi_key;
+        }
+    } else {
+        // Number or string all get the MIDI key.
+        hap.value = midi_key;
+    } 
+    return hap;
+}
+
+await loadCsound`
+instr CoolSynth
+    iduration = p3
+    ifreq = p4
+    igain = p5
+    ioct = octcps(ifreq)
+
+    kpwm = oscili(.05, 8)
+    asig = vco2(igain, ifreq, 4, .5 + kpwm)
+    asig += vco2(igain, ifreq * 2)
+
+    idepth = 2
+    acut = transegr:a(0, .005, 0, idepth, .06, -4.2, 0.001, .01, -4.2, 0) ; filter envelope
+    asig = zdf_2pole(asig, cpsoct(ioct + acut + 2), 0.5)
+
+    iattack = .01
+    isustain = .15
+    idecay = .5
+    irelease = .1
+    asig *= linsegr:a(0, iattack, 1, idecay, isustain, iduration, isustain, irelease, 0)
+    
+    out(asig, asig)
+endin`
+
+/**
+ * This is a base class that can be used to _automatically_ define Patterns 
+ * that hold state between queries. Derived classes, which must be defined at 
+ * module scope, must in their constructor call `this.registerPatterns`, which 
+ * will automatically register (most of) of their methods as Strudel Patterns, 
+ * each of which takes an instance of the class as a first parameter. Class 
+ * methods must have the following syntax and semantics:
+ * ```
+ * Class.Pat(is_onset, [0 or more arguments to be patternified], hap) {...}
+ * ```
+ * Strudel will pass `true` for `is_onset` on the onset of the Pattern's cycle, 
+ * and `false` for `is_onset` for every query in that cycle. Therefore, the 
+ * class method must update its state if `is_onset` is true, and return the 
+ * hap, without changing its value; and if 'is_onset' is false, the method must 
+ * update and return the hap, and its usually new value.
+ *
+ * In this way, derived classes act like stateful values that have Pattern 
+ * methods as class methods.
+ */
+/* export */ class StatefulPatterns {
+    constructor() {
+    }
+    registerPatterns() {
+        for (let name of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+            let method = this[name];
+            if ((method instanceof Function) &&
+                (method.name !== this.constructor.name) && 
+                (method.name !== 'registerMethods')) {
+                let instance = this;
+                // Problem: the Pattern function must explicitly declare its 
+                // parameters. We can't push that information from the class 
+                // method Function object into the Pattern function 
+                // declaration, but we do know the arity of the class method, 
+                // which is always at least 1 because of the need to pass the 
+                // Hap.
+                let arity = method.length;
+                // For now, we will set up separate registrations for the 
+                // first few arities. The actual arity of the Pattern function 
+                // is always at least 2 because of the need to pass the class 
+                // instance and the is_onset flag along with other arguments.
+                arity = arity + 1;
+                if (arity === 3) {
+                    let result = register(name, (stateful, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, hap);
+                            //console.log('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            //console.log('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, hap);
+                            return hap;
+                        });
+                    });
+                    // There are no dynamic exports in JavaScript, so we just stuff 
+                    // these into the window scope as global functions.
+                    window[name] = result;
+                } else if (arity === 4) {
+                    let result = register(name, (stateful, p2, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, hap);
+                            //console.log('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            //console.log('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, hap);
+                            return hap;
+                        });
+                    });
+                    window[name] = result;
+                } else if (arity === 5) {
+                    let result = register(name, (stateful, p2, p3, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, p3, hap);
+                            //console.log('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            //console.log('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, p3, hap);
+                            return hap;
+                        });
+                    });
+                    window[name] = result;
+               } else if (arity === 6) {
+                    let result = register(name, (stateful, p2, p3, p4, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, p3, p4, hap);
+                            //console.log('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            //console.log('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, p3, p4, hap);
+                            return hap;
+                        });
+                    });
+                    window[name] = result;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Example of a stateful Pattern.
+ */
+/* export */ class LogisticPattern extends StatefulPatterns {
+    constructor(c = .998, y = .5) {
+        super();
+        this.registerPatterns();
+        // Initial values.
+        this.c = c;
+        this.y = y;
+        this.value = 36;
+        this.prior_time = 0;
+        this.current_time = 0;
+        this.delta_time = 0;
+    }
+    // Patternify the 'c' coefficient of the logistic equation.
+    Logistic(is_onset, c, hap) {
+        if (is_onset) {
+            // This has been invoked from a trigger and should update state.
+            this.c = c;
+            let y1 = 4 * this.c * this.y * (1 - this.y);
+            this.value = Math.round(y1 * 36 + 36);
+            console.log('[Logistic] onset: ' + this.value);
+            this.y = y1;
+            this.delta_time = this.current_time - this.prior_time;
+            this.prior_time = this.current_time;
+        }
+        hap.value.freq = midiToFreq(midi_key)
+        console.log('[Logistic query] ' + hap.show());
+        return hap;
+    }
+}
+
+logisticState = new LogisticPattern();
+pure()
+.fast(8)
+.Logistic(logisticState, ".88 .995")
+.scale('D1 mixolydian')
+.note()
+.piano()
+.pianoroll()
+// If the line below is uncommented, Csound will play,
+// but the onTrigger pattern above will NOT be triggered.
+//.csound('CoolSynth')

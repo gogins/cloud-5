@@ -1,0 +1,56 @@
+// Based on "CSound demo"
+// @license with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/
+// @by Felix Roos
+
+await loadCsound`instr CoolSynth
+    iduration = p3
+    ifreq = cpsmidinn(p4)
+    igain = p5 / 10000
+    ioct = octcps(ifreq)
+    kpwm = oscili(.05, 8)
+    asig = vco2(igain, ifreq, 4, .5 + kpwm)
+    asig += vco2(igain, ifreq * 2)
+    idepth = 2
+    acut = transegr:a(0, .005, 0, idepth, .06, -4.2, 0.001, .01, -4.2, 0) ; filter envelope
+    asig = zdf_2pole(asig, cpsoct(ioct + acut + 2), 0.5)
+    iattack = .01
+    isustain = .15
+    idecay = .5
+    irelease = .1
+    asig *= linsegr:a(0, iattack, 1, idecay, isustain, iduration, isustain, irelease, 0)
+    out(asig, asig)
+endin`
+
+class Logistic {
+    constructor(c = .886987, y = .5) {
+        this.c = c;
+        this.y = y;
+        this.midi_key = 36;
+    }
+    onset() {
+        let y1 = 4 * this.c * this.y * (1 - this.y);
+        this.midi_key = Math.round(y1 * 36 + 36);
+        this.y = y1;
+    }
+    query() {
+        return this.midi_key;
+    }
+}
+
+let logistic = new Logistic()
+
+pure(1)
+.fast(42)
+.onTrigger((t, hap) => {
+    logger('==> trigger: ' + hap.show());
+    logistic.onset();
+  }, false)
+.withHap((hap) => {
+    hap.value = logistic.query();
+    logger('     query:  ' + hap.show());
+    return hap;
+})
+.chord("<<Am7 C^7> C7 F^7 [Fm7 E7b9]>").slow(4)
+.note().log()
+.pianoroll()
+.csoundm("CoolSynth")

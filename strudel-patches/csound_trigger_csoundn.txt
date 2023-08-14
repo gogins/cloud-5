@@ -1,0 +1,101 @@
+// "CSound demo"
+// @license with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/
+// @by Felix Roos
+var csac_debugging = true;
+/**
+ * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
+ * translated to these Csound pfields:
+ *
+ *  p1 -- Csound instrument either as a number (1-based, can be a fraction),
+ *        or as a string name.
+ *  p2 -- time in beats (usually seconds) from start of performance.
+ *  p3 -- duration in beats (usually seconds).
+ *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
+ *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
+ *  p6 -- Strudel controls, as a string.
+ * 
+ * This variant of 'strudel.csoundm' is a workaround that uses a non-dominant 
+ * trigger with a silent 'sound' to get the desired trigger semantics.
+ */
+const csoundn = register('csoundn', (instrument, pat) => {
+  let p1 = instrument;
+  if (typeof instrument === 'string') {
+    p1 = ['{', instrument, '}'].join();
+  }
+  return pat.onTrigger((tidal_time, hap) => {
+    if (!csound) {
+      console.log('[csoundn]: Csound is not yet loaded.\n');
+      return;
+    }
+    //~ if (typeof hap.value !== 'object') {
+      //~ throw new Error('[csoundn] supports only objects as hap values.');
+    //~ }
+    // Time in seconds counting from now.
+    const p2 = 0;//tidal_time - audioContext.currentTime;
+    const p3 = hap.duration.valueOf() + 0;
+    const frequency = getFrequency(hap);
+    // Translate frequency to MIDI key number _without_ rounding.
+    const C4 = 261.62558;
+    let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
+    const p4 = octave * 12.0 - 36.0;
+    // We prefer floating point precision, but over the MIDI range [0, 127].
+    const p5 = 127 * (hap.context?.velocity ?? 0.9);
+    // The Strudel controls as a string.
+    const p6 = '\"' + Object.entries({ ...hap.value, frequency })
+      .flat()
+      .join('/') + '\"';
+    const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
+    hap = setPitch(hap, Math.round(p4));
+    if (csac_debugging) logger('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
+    csound.inputMessage(i_statement);
+    // Blanks out default output.
+  }, false).gain(0);
+});
+
+await loadCsound`
+instr CoolSynth
+    iduration = p3
+    ifreq = p4
+    igain = p5
+    ioct = octcps(ifreq)
+
+    kpwm = oscili(.05, 8)
+    asig = vco2(igain, ifreq, 4, .5 + kpwm)
+    asig += vco2(igain, ifreq * 2)
+
+    idepth = 2
+    acut = transegr:a(0, .005, 0, idepth, .06, -4.2, 0.001, .01, -4.2, 0) ; filter envelope
+    asig = zdf_2pole(asig, cpsoct(ioct + acut + 2), 0.5)
+
+    iattack = .01
+    isustain = .15
+    idecay = .5
+    irelease = .1
+    asig *= linsegr:a(0, iattack, 1, idecay, isustain, iduration, isustain, irelease, 0)
+    
+    out(asig, asig)
+endin`
+
+window.state = 7;
+
+"<0 2 [4 6](3,4,2) 3*2>"
+.off(1/4, add(2))
+.off(1/2, add(6))
+.onTrigger((t, hap) => {
+    window.state = window.state + 1;
+    window.state = window.state % 37;
+    logger('==> trigger: ' + window.state + '\n');
+  }, false)
+.withHap((hap) => {
+    logger('    query: ' + hap.show() + '\n');
+    hap.value = hap.value + window.state;
+    logger('    query: ' + hap.show() + '\n\n');
+    return hap;
+})
+.scale('D1 mixolydian')
+.note()
+.piano()
+.pianoroll()
+// If the line below is uncommented, Csound will play,
+// but the onTrigger pattern above will NOT be triggered.
+//.csound('CoolSynth')
