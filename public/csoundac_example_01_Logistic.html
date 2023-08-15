@@ -80,9 +80,6 @@ class LogisticPattern extends csac.StatefulPatterns {
         this.c = c;
         this.y = y;
         this.midi_key = 36;
-        this.prior_time = 0;
-        this.current_time = 0;
-        this.delta_time = 0;
     }
     /**
      * Patternify the 'c' coefficient of the logistic equation.
@@ -93,13 +90,8 @@ class LogisticPattern extends csac.StatefulPatterns {
             let y1 = 4 * this.c * this.y * (1 - this.y);
             this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
-            this.delta_time = this.current_time - this.prior_time;
-            this.prior_time = this.current_time;
-            let instance = this;
-            csac.diagnostic('[Logistic onset]: ' + JSON.stringify({instance}, null, 4) + '\n');
         }
         hap = csac.setPitch(hap, this.midi_key);
-        csac.diagnostic('[Logistic query]: ' + hap.show() + '\n');
         return hap;
     }
 }

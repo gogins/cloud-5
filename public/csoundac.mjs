@@ -72,7 +72,7 @@ const getFrequency = (hap) => {
  * A utility that assigns a pitch represented as a MIDI key number to the Hap, 
  * using the existing pitch property if it exists.
  */
-export function setPitchx(hap, midi_key) {
+export function setPitch(hap, midi_key) {
     if (typeof hap.value === 'undefined') {
         hap.value = midi_key;
     } else if (typeof hap.value === 'object') {
@@ -91,7 +91,7 @@ export function setPitchx(hap, midi_key) {
 }
 
 // test
-export function setPitch(hap, midi_key) {
+export function setPitchx(hap, midi_key) {
     hap.value = midi_key;
     return hap;
 }
@@ -146,7 +146,6 @@ export function Clone(a, b) {
  * This variant of 'strudel.csoundm' is a workaround that uses a non-dominant 
  * trigger with a silent 'sound' to get the desired trigger semantics.
  */
-
 export const csoundn = register('csoundn', (instrument, pat) => {
   let p1 = instrument;
   if (typeof instrument === 'string') {
@@ -178,6 +177,52 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     // Blanks out default output.
   }, true);//.gain(0);
 });
+
+const csoundsTrigger = (tidal_time, hap) => {
+    if (!csound) {
+      diagnostic('[csounds]: Csound is not yet loaded.\n');
+      return;
+    }
+    let { freq } = 1; // destructure control params
+    const ctx = getAudioContext();
+    // create oscillator
+    const o = new OscillatorNode(ctx, { type: 'sawtooth', frequency: Number(freq) });
+    o.start(time);
+    // add gain node to level down osc
+    const g = new GainNode(ctx, { gain: 0 });
+    // connect osc to gain
+    const node = o.connect(g);
+    // this function can be called from outside to stop the sound
+    const stop = (time) => o.stop(time);
+    // ended will be fired when stop has been fired
+    o.addEventListener('ended', () => {
+      o.disconnect();
+      g.disconnect();
+      onended();
+    });
+    const p1 = 6;
+    const p2 = tidal_time - ctx.currentTime;
+    const p3 = hap.duration.valueOf() + 0;
+    const frequency = getFrequency(hap);
+    // Translate frequency to MIDI key number _without_ rounding.
+    const C4 = 261.62558;
+    let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
+    const p4 = octave * 12.0 - 36.0;
+    // We prefer floating point precision, but over the MIDI range [0, 127].
+    const p5 = 127 * (hap.context?.velocity ?? 0.9);
+    // The Strudel controls as a string.
+    const p6 = '\"' + Object.entries({ ...hap.value, frequency })
+      .flat()
+      .join('/') + '\"';
+    const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
+    hap = setPitch(hap, Math.round(p4));
+    if (csac_debugging) diagnostic('[csounds]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
+    return { node, stop };
+};
+const csoundsData = {
+    type: 'synth'
+};
+registerSound("csounds", csoundsTrigger, csoundsData);
 
 /**
  * This is a base class that can be used to _automatically_ define Patterns 
@@ -214,22 +259,25 @@ export class StatefulPatterns {
                 // declaration, but we do know the arity of the class method, 
                 // which is always at least 1 because of the need to pass the 
                 // Hap.
-                let arity = method.length;
+                let arity = method.length + 1;
                 // For now, we will set up separate registrations for the 
                 // first few arities. The actual arity of the Pattern function 
                 // is always at least 3 because of the need to pass the class 
                 // instance, the is_onset flag, and the Hap along with any 
                 // patternifiable rguments.
-                arity = arity + 1;
                 if (arity === 3) {
                     let result = register(name, (stateful, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, hap);
-                            //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
-                            hap = method.call(stateful, false, hap);
+                        return pat.withHap((hap) => {
+                            let is_onset = hap.hasOnset();
+                            // This _should_ tell us if onsets are correctly being identified.
+                            if (is_onset === true) {   
+                                stateful.prior_time = stateful.current_time;
+                                stateful.current_time = getTime();
+                                stateful.delta_time = stateful.current_time - stateful.prior_time;
+                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
+                            }
+                            hap = method.call(stateful, is_onset, hap);
+                            diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, hap}, null, 4) + '\n');
                             return hap;
                         });
                     });
@@ -237,40 +285,50 @@ export class StatefulPatterns {
                     // these into the window scope as global functions.
                     window[name] = result;
                 } else if (arity === 4) {
+                    let delta_time = 0;
                     let result = register(name, (stateful, p2, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, p2, hap);
-                            //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
-                            hap = method.call(stateful, false, p2, hap);
+                        return pat.withHap((hap) => {
+                            let is_onset = hap.hasOnset();
+                            if (is_onset === true) {   
+                                stateful.prior_time = stateful.current_time;
+                                stateful.current_time = getTime();
+                                stateful.delta_time = stateful.current_time - stateful.prior_time;
+                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
+                            }
+                            hap = method.call(stateful, is_onset, p2, hap);
+                            diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, p2, hap}, null, 4) + '\n');
                             return hap;
                         });
                     });
                     window[name] = result;
                 } else if (arity === 5) {
                     let result = register(name, (stateful, p2, p3, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, p2, p3, hap);
-                            //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
-                            hap = method.call(stateful, false, p2, p3, hap);
+                         return pat.withHap((hap) => {
+                            let is_onset = hap.hasOnset();
+                            if (is_onset === true) {   
+                                stateful.prior_time = stateful.current_time;
+                                stateful.current_time = getTime();
+                                stateful.delta_time = stateful.current_time - stateful.prior_time;
+                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
+                            }
+                            hap = method.call(stateful, is_onset, p2, p3, hap);
+                            diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, p2, p3, hap}, null, 4) + '\n');
                             return hap;
                         });
                     });
                     window[name] = result;
-               } else if (arity === 6) {
-                    let result = register(name, (stateful, p2, p3, p4, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, p2, p3, p4, hap);
-                            //diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            //diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
-                            hap = method.call(stateful, false, p2, p3, p4, hap);
+                } else if (arity === 6) {
+                     let result = register(name, (stateful, p2, p3, p4, pat) => {
+                        return pat.withHap((hap) => {
+                            let is_onset = hap.hasOnset();
+                            if (is_onset === true) {   
+                                stateful.prior_time = stateful.current_time;
+                                stateful.current_time = getTime();
+                                stateful.delta_time = stateful.current_time - stateful.prior_time;
+                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
+                            }
+                            hap = method.call(stateful, is_onset, p2, p3, p4, hap);
+                            diagnostic('[' + name + '] value:' + JSON.stringify({stateful, is_onset, p2, p3, p4, hap}, null, 4) + '\n');
                             return hap;
                         });
                     });
