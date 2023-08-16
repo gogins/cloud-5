@@ -37,7 +37,7 @@ export function debug(enabled) {
  * log.
  */
 export const diagnostic = function(message) {
-    const text = '' + getTime() + ' [csac]' + message;
+    const text = '' + getAudioContext().currentTime + ' [csac]' + message;
     logger(text, 'debug');
     if (csound) csound.message(text);
 };
@@ -87,12 +87,6 @@ export function setPitch(hap, midi_key) {
         // Number or string all get the MIDI key.
         hap.value = midi_key;
     } 
-    return hap;
-}
-
-// test
-export function setPitchx(hap, midi_key) {
-    hap.value = midi_key;
     return hap;
 }
 
@@ -178,6 +172,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
   }, true);//.gain(0);
 });
 
+/*
 const csoundsTrigger = (tidal_time, hap) => {
     if (!csound) {
       diagnostic('[csounds]: Csound is not yet loaded.\n');
@@ -223,6 +218,7 @@ const csoundsData = {
     type: 'synth'
 };
 registerSound("csounds", csoundsTrigger, csoundsData);
+*/
 
 /**
  * This is a base class that can be used to _automatically_ define Patterns 
@@ -242,6 +238,11 @@ registerSound("csounds", csoundsTrigger, csoundsData);
  *
  * In this way, derived classes act like stateful values that have Pattern 
  * methods as class methods.
+ *
+ * NOTE WELL: This notion conflicts with the stateless nature of Strudel 
+ * queries and can lead to unpredictable results, as when the `pianoroll`
+ * starts jumping around, or the order of application of stateful objects is 
+ * not as expected.
  */
 export class StatefulPatterns {
     constructor() {
@@ -272,11 +273,12 @@ export class StatefulPatterns {
                             // This _should_ tell us if onsets are correctly being identified.
                             if (is_onset === true) {   
                                 stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getTime();
+                                stateful.current_time = getAudioContext().currentTime
                                 stateful.delta_time = stateful.current_time - stateful.prior_time;
                                 diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
-                            }
+                             }
                             hap = method.call(stateful, is_onset, hap);
+                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
                             diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, hap}, null, 4) + '\n');
                             return hap;
                         });
@@ -291,11 +293,11 @@ export class StatefulPatterns {
                             let is_onset = hap.hasOnset();
                             if (is_onset === true) {   
                                 stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getTime();
+                                stateful.current_time = getAudioContext().currentTime
                                 stateful.delta_time = stateful.current_time - stateful.prior_time;
-                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
                             }
                             hap = method.call(stateful, is_onset, p2, hap);
+                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
                             diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, p2, hap}, null, 4) + '\n');
                             return hap;
                         });
@@ -307,11 +309,12 @@ export class StatefulPatterns {
                             let is_onset = hap.hasOnset();
                             if (is_onset === true) {   
                                 stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getTime();
+                                stateful.current_time = getAudioContext().currentTime
                                 stateful.delta_time = stateful.current_time - stateful.prior_time;
                                 diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
-                            }
+                             }
                             hap = method.call(stateful, is_onset, p2, p3, hap);
+                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
                             diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, p2, p3, hap}, null, 4) + '\n');
                             return hap;
                         });
@@ -323,11 +326,12 @@ export class StatefulPatterns {
                             let is_onset = hap.hasOnset();
                             if (is_onset === true) {   
                                 stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getTime();
+                                stateful.current_time = getAudioContext().currentTime
                                 stateful.delta_time = stateful.current_time - stateful.prior_time;
                                 diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
                             }
                             hap = method.call(stateful, is_onset, p2, p3, p4, hap);
+                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
                             diagnostic('[' + name + '] value:' + JSON.stringify({stateful, is_onset, p2, p3, p4, hap}, null, 4) + '\n');
                             return hap;
                         });
