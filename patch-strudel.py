@@ -30,7 +30,7 @@ with open(csound_mjs_filepath, "r+") as file:
 Fixes Strudel so that undici does not fail on a URL containing '//' in a 
 pathspec.
 '''
-webaudio_sampler_mjs_filepath = "strudel/packages/webaudio/sampler.mjs";
+webaudio_sampler_mjs_filepath = "strudel/packages/superdough/sampler.mjs";
 print(f"Patching '{webaudio_sampler_mjs_filepath}'")
 with open(webaudio_sampler_mjs_filepath, "r+") as file:
   find_this = '''`https://raw.githubusercontent.com/${path}/strudel.json`;'''
