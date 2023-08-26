@@ -435,6 +435,9 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
         uniform float iSampleRate;
         // sound sample rate (i.e., 44100)
         
+        uniform float spectralTilt;
+        uniform float totalLoudness;
+        
         /**
          * Theoretically, any fragment shader copied from the ShaderToy 
          * editor can replace the body of the mainImage function below, 
@@ -556,7 +559,9 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
         var current_events = new Map();
         var prior_events = current_events;
         var rendering_frame = 0;
-        
+        let spectral_tilt = 0;
+        let totalLoudness = 0;
+        const midpoint = audio_texture_width / 2;
         function write_audio_texture(analyser, texture_unit, texture, sampler) {
            if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
@@ -566,6 +571,7 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     let sample = frequency_domain_data[i];
                     sample = sample / 255.;
                     audio_data[i] = sample;
+                    totalLoudness += sample;
                  }
                 let audio_data_width = audio_texture_width * 2;
                 for (let j = 0; j < audio_texture_width; ++j) {
@@ -573,8 +579,16 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     let sample = time_domain_data[j];
                     sample = sample / 255.;
                     audio_data[audio_texture_width + j] = sample;
+                    if (j < midpoint) {
+                        spectral_tilt -= Math.abs(sample);
+                    } else {
+                        spectral_tilt += Math.abs(sample);
+                    }
                 }
             }
+            gl.uniform1f(shader_program.spectralTilt, spectralTilt);
+            gl.uniform1f(shader_program.totalLoudness, totalLoudness);
+
             gl.activeTexture(gl.TEXTURE0 + texture_unit);
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.bindSampler(texture_unit, sampler);
