@@ -1,28 +1,28 @@
 {
   "scripts": {
     "clean-modules": "find . -name \"node_modules\" -type d -exec rm -r {} +;",
-    "setup": "pnpm install && git submodule update --init --recursive --remote && cd strudel && git checkout main && git stash && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
+    "setup": "git submodule update --init --recursive --remote && cd strudel && git checkout main && git stash && git pull && cd .. && pnpm install -r && pnpm update -r && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
     "build": "pnpm run build-strudel && vite build && cp -rf strudel/website/dist/* dist/ && rm dist/index.html && rm dist/CNAME && python3 patch-dist.py && ls -ll dist",
     "debug": "cd dist && python3 -m http.server"
   },
   "dependencies": {
-    "@strudel.cycles/core": "^0.8.2",
-    "ace-builds": "^1.14.0",
-    "acorn": "^8.8.1",
+    "@strudel.cycles/core": "workspace:^",
+    "ace-builds": "^1.24.1",
+    "acorn": "^8.10.0",
     "dat.gui": "^0.7.9",
     "dependency-tree": "^9.0.0",
-    "jquery": "^3.6.2",
+    "jquery": "^3.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sprintf-js": "^1.1.2",
     "three": "^0.147.0",
     "three-trackballcontrols": "^0.9.0",
     "tinycolor": "^0.0.1",
-    "vite": "^4.0.1"
+    "vite": "^4.4.9"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^3.0.0",
-    "rollup-plugin-visualizer": "^5.8.3"
+    "@vitejs/plugin-react": "^3.1.0",
+    "rollup-plugin-visualizer": "^5.9.2"
   }
 }
