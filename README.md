@@ -49,7 +49,8 @@ I have done my best to keep these patches as few and simple as possible.
 ## Building
 
 Install [pnpm](https://www.npmjs.com/package/pnpm), which cloud-music and 
-Strudel use rather than npm.
+Strudel use rather than npm. On macOS (I don't know about other platforms), 
+you may need to specifically install node@18.
 
 To initialize the local repository, obtain dependencies, build a static Web 
 site, and run it locally, execute the following commands:

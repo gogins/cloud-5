@@ -1988,6 +1988,8 @@ f 0 1000000000
         // (year, month, day, time in seconds)
         uniform float iSampleRate;
         // sound sample rate (i.e., 44100)
+        uniform float spectralTilt;
+        uniform float totalLoudness;
         
         /**
          * Theoretically, any fragment shader copied from the ShaderToy 
@@ -2069,7 +2071,6 @@ f 0 1000000000
     </script>
     
     <script> 
-        
         var shader_program = null;
         var analyser = null;
         // Set up for high-resolution displays.
@@ -2145,8 +2146,8 @@ f 0 1000000000
                     }
                 }
             }
-            gl.uniform1f(shader_program.spectralTilt, spectralTilt);
-            gl.uniform1f(shader_program.totalLoudness, totalLoudness);
+            ///gl.uniform1f(shader_program.spectralTilt, spectralTilt);
+            ///gl.uniform1f(shader_program.totalLoudness, totalLoudness);
             gl.activeTexture(gl.TEXTURE0 + texture_unit);
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.bindSampler(texture_unit, sampler);
@@ -2549,7 +2550,7 @@ f 0 1000000000
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
-                //console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
+                console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 rendering_frame++;
                 requestAnimationFrame(render_scene);
             }  
@@ -2698,7 +2699,7 @@ f 0 1000000000
             //~ csound_message_callback(CM.information());
             //~ csound_message_callback(CM.information_debug(-1));
         }());
-            
+                    
         window.onload = function() {
             $("#controls_view").css("display", "none");         
             $("#tidal_view").css("display", "none");         
@@ -2733,16 +2734,10 @@ f 0 1000000000
                     let csd = await document.getElementById('csd').value;
                     console_editor.setValue("");
                     let result = await csound.CompileCsdText(csd);
-                    csound_message_callback("CompileCsdText returned: " + result);
+                    csound_message_callback("CompileCsdText returned: " + result + "\n");
                     await csound.Start();
-                    if (localStorage.length > 0) {
-                        $('#restore').trigger('click');
-                    } else {
-                        // Tricky! Otherwise we get _patch_ defaults, probably 
-                        // not correct; we need _html_ defaults.
-                        $('#default').trigger('click');
-                    }
-                    
+                    csound_message_callback("Csound has started...\n");
+                      
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
                     //~ pitv = new CsoundAC.PITV();
@@ -2752,6 +2747,14 @@ f 0 1000000000
                     
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
+                    // Use control state saved in local storage?
+                    if (localStorage.length > 0) {
+                        $('#restore').trigger('click');
+                    } else {
+                        // Tricky! Otherwise we get _patch_ defaults, probably 
+                        // not correct; we need _html_ defaults.
+                        $('#default').trigger('click');
+                    }
                     
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -2877,7 +2880,8 @@ f 0 1000000000
                 $('.persistent-element').each(function() {
                     localStorage.setItem(this.id, this.value);
                 });
-             });
+                csound_message_callback("Saved controls state to local storage.\n");
+            });
             $('#restore').on('click', async function() {
                 $('.persistent-element').each(function() {
                     this.value = localStorage.getItem(this.id);
@@ -2887,6 +2891,7 @@ f 0 1000000000
                     var output_selector = '#' + this.id + '_output';
                     $(output_selector).val(this.value);
                 });
+               csound_message_callback("Restored controls state from local storage.\n");
             });
             $('#copy').on('click', function() {
                 let controls_json = JSON.stringify(localStorage);
@@ -2910,10 +2915,16 @@ f 0 1000000000
                     csound_message_callback("Pasted controls state from system clipboard.\n");
                 });
             });
-           $('#default').on('click', function() {
+            $('#default').on('click', function() {
                 let defaults = {"gk_Phaser_ratio2":"1","gk_ReverbSC_feedback":"0.994","gk_MasterOutput_level":"-17.329","gk_Blower_grainDensity":"90","gk_Blower_grainFrequencyRange":"10","strudel-settingsfontSize":"18","gk_Blower_grainAmplitudeRange":"100","strudel-settingsisLineWrappingEnabled":"false","gk_ReverbSC_frequency_cutoff":"7260.785","gk_Droner_partial5":"0.1","gk_Droner_partial2":"0.05","gk_Droner_partial3":"0.1","gi_ReverbSC_delay_modulation":"0.111","strudel-settingsisLineNumbersDisplayed":"true","gk_Droner_partial4":"0.2","gk_Phaser_level":"-22.716","strudel-settingssoundsFilter":"all","strudel-settingslatestCode":"stack(\"0,3,[11 6]\"\n  .add(\"<0 1 2 [3 4] 5 7 8>\")\n  .transpose(\"<0 1 2 1>/8\")\n  .slow(7).degradeBy(.125)\n  .transpose(60)\n  .legato(.95)\n  .iter(2)\n  .note()\n  .csoundm(\"1 2\"),\n\"0,4,[7 6]\"\n  .sub(\"<0 1 2 3 4 5 [7 8] 9>\")\n  .transpose(\"<0 1 -1 1>/3\")\n  .iter(4)\n  .slow(7)\n  .transpose(\"<48 36>/7\")\n  .legato(.95)\n  .note()\n  .csoundm(\"2 3\"))\n  .slow(12)\n  //.scale(slowcat('D dorian', 'G mixolydian', 'C dorian', 'F mixolydian')/18)\n  .pianoroll({cycles:120})","gk_Droner_level":"-32.362","gk_Phaser_attack":"0.125","gk_Phaser_release":"0.125","strudel-settingskeybindings":"codemirror","strudel-settingsfontFamily":"monospace","gi_Droner_waveform":"0","gk_Blower_grainDuration":"0.2005","strudel-settingsisAutoCompletionEnabled":"false","strudel-settingsactiveFooter":"intro","gk_Phaser_index2":"2.481","gk_Phaser_ratio1":"1.287","strudel-settingspanelPosition":"bottom","gk_Droner_partial1":"0.5","gk_Phaser_index1":"1.502","strudel-settingstheme":"strudelTheme","strudel-settingsisZen":"false","gk_Blower_level":"-13.905"};
                 for (let [key, value] of Object.entries(defaults)) {
                     console.log(key, value);
+                    // For Web sites, this should probably be true.
+                    if (true) {
+                        $('.persistent-element').each(function() {
+                            localStorage.setItem(key, value);
+                        });
+                    }
                     if (csound) {
                         csound.SetControlChannel(key, parseFloat(value));
                     }
@@ -2922,7 +2933,8 @@ f 0 1000000000
                     let output_selector = '#' + key + '_output';
                     $(output_selector).val(value);
                 }                
-            });
+                csound_message_callback("Set controls state from defaults.\n");
+           });
         };
     </script>
  </html>
