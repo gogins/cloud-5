@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@strudel.cycles/core": "^0.8.2",
-    "ace-builds": "^1.24.1",
+    "ace-builds": "^1.24.2",
     "acorn": "^8.10.0",
     "dat.gui": "^0.7.9",
     "dependency-tree": "^9.0.0",
