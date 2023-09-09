@@ -2555,8 +2555,8 @@ f 0 1000000000
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 let visualization_data = write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
-                gl.uniform1f(shaderProgram.totalLoudness, visualization_data[0]);
-                gl.uniform1f(shaderProgram.spectralTilt, visualization_data[1]);
+                //gl.uniform1f(shaderProgram.totalLoudness, visualization_data[0]);
+                //gl.uniform1f(shaderProgram.spectralTilt, visualization_data[1]);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 rendering_frame++;
