@@ -2045,7 +2045,7 @@ f 0 1000000000
             vec2 p = mod(uv*TAU, TAU) - 213.0;
             vec2 i = vec2(p);
             float c = 1.0;
-            float inten = .005 + totalLoudness;
+            float inten = .005;
             for (int n = 0; n < MAX_ITER; n++) {
                 float t = time * (1.0 - (3.5 / float(n + 1)));
                 i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
@@ -2056,7 +2056,7 @@ f 0 1000000000
             vec3 colour = vec3(pow(abs(c), 10.0));
             colour.r = colour.r - spectralTilt;
             colour.b = colour.b + spectralTilt;
-            colour *= 1.1;
+            colour *= (1.1 + totalLoudness);
             colour = clamp(colour + vec3(0.095), 0.0, 1.0);
             float palettePhase = abs(sin(uv.x * uv.y + iTime * 0.05)) + iTime * 0.1;
             vec3 col = palette(palettePhase, vec3(0.5, 0.5, 0.5), vec3(0.5, 0.5, 0.5), vec3(2.0, 1.0, 0.0), vec3(0.50, 0.20, 0.25));
@@ -2148,6 +2148,7 @@ f 0 1000000000
                         spectral_tilt += Math.abs(sample);
                     }
                 }
+                totalLoudness = totalLoudness / audio_texture_width;
             }
             gl.activeTexture(gl.TEXTURE0 + texture_unit);
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -2554,9 +2555,11 @@ f 0 1000000000
                 gl.uniform1f(shader_program.iTime, tyme);
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
-                let visualization_data = write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
-                //gl.uniform1f(shaderProgram.totalLoudness, visualization_data[0]);
-                //gl.uniform1f(shaderProgram.spectralTilt, visualization_data[1]);
+                if (analyser) {
+                    let visualization_data = write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
+                    gl.uniform1f(shader_program.totalLoudness, visualization_data[0] * .01);
+                    gl.uniform1f(shader_program.spectralTilt, visualization_data[1] * .01);
+                }
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 rendering_frame++;
