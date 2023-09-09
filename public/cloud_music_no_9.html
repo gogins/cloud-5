@@ -2148,6 +2148,7 @@ f 0 1000000000
                         spectral_tilt += Math.abs(sample);
                     }
                 }
+                spectral_tilt = spectral_tilt / audio_texture_width;
                 totalLoudness = totalLoudness / audio_texture_width;
             }
             gl.activeTexture(gl.TEXTURE0 + texture_unit);
@@ -2557,11 +2558,13 @@ f 0 1000000000
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 if (analyser) {
                     let visualization_data = write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
-                    gl.uniform1f(shader_program.totalLoudness, visualization_data[0] * .01);
-                    gl.uniform1f(shader_program.spectralTilt, visualization_data[1] * .01);
+                    gl.uniform1f(shader_program.spectralTilt, visualization_data[0] * .1);
+                    gl.uniform1f(shader_program.totalLoudness, visualization_data[1] * .1);
+                    console.info(sprintf("render_scene:                      time: %9.4f frame: %5d tilt: %9.4f loudness: %9.4f", tyme, rendering_frame, visualization_data[0], visualization_data[1]));
+                } else {
+                    console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 }
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
-                console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 rendering_frame++;
                 requestAnimationFrame(render_scene);
             }  
