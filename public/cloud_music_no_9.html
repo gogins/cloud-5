@@ -80,8 +80,8 @@
 stack("0,3,[11 6]"
   .add("<0 1 2 [3 4] 5 7 8>")
   .transpose("<0 1 2 1>/8")
-  .slow(7).degradeBy(.125)
-  .transpose(60)
+  .slow(2).degradeBy(.125)
+  .transpose("48 36")
   .legato(.95)
   .iter(2)
   .tune("ji_12c")
@@ -99,8 +99,9 @@ stack("0,3,[11 6]"
   .add(24)
   .note()
   .csoundm("2 3"))
-  .slow(12)
-  .pianoroll({cycles:120})  
+  .slow(4)
+  .pianoroll({minMidi:0,maxMidi:127,cycles:32})
+  
     -->
     </strudel-repl-component>
 
