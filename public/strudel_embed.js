@@ -30,7 +30,7 @@ class StrudelReplComponent extends HTMLElement {
       console.log("src:", src);
       iframe.setAttribute('src', src);
       iframe.setAttribute('allow-same-origin', '');
-      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('allowfullscreen', 'true');
       this.appendChild(iframe);
       iframe.setAttribute('width', '800px');
       iframe.setAttribute('height', '600px');
