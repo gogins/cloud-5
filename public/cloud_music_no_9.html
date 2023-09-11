@@ -2163,7 +2163,7 @@ f 0 1000000000
             gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
             gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_MODE, gl.NONE);
             gl.samplerParameteri(sampler, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
-            if (true && analyser) { // For debugging.
+            if (false && analyser) { // For debugging.
                 let is_texture = gl.isTexture(texture);
                 let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
                 let uniform_index;
@@ -2545,7 +2545,7 @@ f 0 1000000000
                     CsoundAC.apply(score, chord, 0, 1000000, true);
                     let score_text = score.getCsoundScore(12., true);
                     csound.ReadScore(score_text);
-                    // console.info(score_text);
+                    ///console.info(score_text);
                 }
                 sample_count++;
             }
@@ -2561,9 +2561,9 @@ f 0 1000000000
                     let visualization_data = write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                     gl.uniform1f(shader_program.spectralTilt, visualization_data[0] * .1);
                     gl.uniform1f(shader_program.totalLoudness, visualization_data[1] * .1);
-                    console.info(sprintf("render_scene:                      time: %9.4f frame: %5d tilt: %9.4f loudness: %9.4f", tyme, rendering_frame, visualization_data[0], visualization_data[1]));
+                    ///console.info(sprintf("render_scene:                      time: %9.4f frame: %5d tilt: %9.4f loudness: %9.4f", tyme, rendering_frame, visualization_data[0], visualization_data[1]));
                 } else {
-                    console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
+                    ///console.info(sprintf("render_scene:                      time: %9.4f frame: %5d", tyme, rendering_frame));
                 }
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
                 rendering_frame++;

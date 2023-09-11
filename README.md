@@ -59,6 +59,10 @@ site, and run it locally, execute the following commands:
 pnpm install
 pnpm run setup
 pnpm run build
+```
+This may fail, if so `cd strudel/node_modules/canvas` and `node-gyp rebuild` 
+and `cd ../..`.
+```
 pnpm run debug
 ```
 These commands will patch Strudel with my addons; build everything; make a 

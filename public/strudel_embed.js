@@ -35,6 +35,7 @@ class StrudelReplComponent extends HTMLElement {
       iframe.setAttribute('width', '800px');
       iframe.setAttribute('height', '600px');
       iframe.style.display = "visible";
+      iframe.style.background = "transparent";
       this.i_frame = iframe;
       this.content_window = this.i_frame.contentWindow;
       this.content_document = this.i_frame.contentDocument;
