@@ -1768,7 +1768,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         var rendering_frame = 0;
         
         function write_audio_texture(analyser, texture_unit, texture, sampler) {
-           if (analyser != null) {
+            if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
                 analyser.getByteTimeDomainData(time_domain_data);
                 for (let i = 0; i < audio_texture_width; ++i) {
