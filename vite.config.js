@@ -10,6 +10,7 @@ export default defineConfig({
     include: ['strudel'],
   },
   build: {
+    sourcemap: true,
     commonjsOptions: {
       include: [
         /strudel/, 

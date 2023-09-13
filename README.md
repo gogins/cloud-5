@@ -75,6 +75,16 @@ open a working Web site with playable pieces!
 
 It may be necessary to clear the browser cache to see the pieces.
 
+## Debugging Hints
+
+The JavaScript `debugging;` command will break in the debugger at that line.
+
+Be sure to enable JavaScript source maps in the debugger settings. That won't 
+necessarily work for Strudel sources; load their source maps manually e.g. by
+opening a deployed (usually minified) source file in the debugger, then right-
+clicking on the code, and selecting "Add source map..." from the context menu.
+Oops, that should work, but I don't actually _find_ the source maps....
+
 ## Deployment
 
 Build this project, then copy the entire contents of the `dist` directory 
