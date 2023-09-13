@@ -70,10 +70,18 @@ distributable copy of the cloud-music Web site in the `dist` directory, with
 all resources statically available; and run a local Web site, which is source 
 level debuggable, in that directory. Examine `package.json` for details. 
 
+This may fail due to failure to build `canvas.node`. If that happens, cd to 
+`cloud-music/strudel/packages/canvas` and execute `node-gyp rebuild`, and try 
+again from `pnpm run build`.
+
+Before updating strudel from GitHub, make a branch to contain the updates if 
+they break cloud-music.
+
 If you see warnings or errors, don't panic unless browsing localhost does not 
 open a working Web site with playable pieces! 
 
-It may be necessary to clear the browser cache to see the pieces.
+It may be necessary to clear the browser cache and application cache to see the 
+pieces.
 
 ## Debugging Hints
 
