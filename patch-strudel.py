@@ -44,7 +44,7 @@ with open(webaudio_sampler_mjs_filepath, "r+") as file:
   
 '''
 Fixes Strudel so that HTML pages are not cached by Workbox, which was screwing 
-up navigation on the Web site.
+up navigation on the Web site, and to build sourcemaps.
 '''
 astro_config_mjs_filepath = "strudel/website/astro.config.mjs";
 print(f"Patching '{astro_config_mjs_filepath}'")
@@ -53,6 +53,22 @@ with open(astro_config_mjs_filepath, "r+") as file:
   replace_with = '''globPatterns: ['**/*.{js,css,ico,png,svg,json,wav,mp3,ogg}']'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
+  find_this = '''  vite: {
+    ssr: {
+      // Example: Force a broken package to skip SSR processing, if needed
+      external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
+    },
+  },'''
+  replace_with = '''  vite: {
+    ssr: {
+      // Example: Force a broken package to skip SSR processing, if needed
+      external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
+    },
+    build: {
+        sourcemap: true
+    },
+  },'''
+  patched_text = patched_text.replace(find_this, replace_with)
   print(patched_text)
   file.seek(0)
   file.truncate()
@@ -73,6 +89,10 @@ with open(pattern_mjs_filepath, "r+") as file:
   file.seek(0)
   file.truncate()
   file.write(patched_text)
+  
+  vite: {
+    ssr: {
+
 
   
 

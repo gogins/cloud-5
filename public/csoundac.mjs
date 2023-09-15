@@ -20,7 +20,7 @@
  * in this module, as with all other modules directly imported in code 
  * run by the Strudel REPL, must not use template strings.
  */
-let csac_debugging = true;
+let csac_debugging = false;
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
 let audioContext = new AudioContext();
@@ -37,9 +37,11 @@ export function debug(enabled) {
  * log.
  */
 export const diagnostic = function(message) {
-    const text = '' + getAudioContext().currentTime + ' [csac]' + message;
-    logger(text, 'debug');
-    if (csound) csound.message(text);
+    //~ if (csac_debugging === false) {
+        //~ const text = '' + getAudioContext().currentTime + ' [csac]' + message;
+        //~ logger(text, 'debug');
+        //~ if (csound) csound.message(text);
+    //~ }
 };
 
 /**

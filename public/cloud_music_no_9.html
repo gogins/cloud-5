@@ -87,7 +87,7 @@ stack("0,3,[11 6]"
   .tune("ji_12c")
   .add(24)
   .note()
-  .csoundm("1 2"),
+  .csoundm("<1 2 8 10>"),
 "0,4,[7 6]"
   .sub("<0 1 2 3 4 5 [7 8] 9>")
   .transpose("<0 1 -1 1>/3")
@@ -98,7 +98,7 @@ stack("0,3,[11 6]"
   .tune("ji_12c")
   .add(24)
   .note()
-  .csoundm("2 3"))
+  .csoundm("<2 3 6>"))
   .slow(4)
   .pianoroll({minMidi:0,maxMidi:127,cycles:32})
   
@@ -122,9 +122,9 @@ stack("0,3,[11 6]"
     <td>
     <label for=gk_Droner_level>&ensp;1 Droner level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=16 id=gk_Droner_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=32 id=gk_Droner_level step=.001>
     <td>
-    <output for=gk_Droner_level id=gk_Droner_level_output>16</output>
+    <output for=gk_Droner_level id=gk_Droner_level_output>-32</output>
     </tr>
     
     <tr>
@@ -186,9 +186,9 @@ stack("0,3,[11 6]"
     <td>
     <label for=gk_Blower_level>&ensp;2 Blower level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Blower_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-13 id=gk_Blower_level step=.001>
     <td>
-    <output for=gk_Blower_level id=gk_Blower_level_output>-5</output>
+    <output for=gk_Blower_level id=gk_Blower_level_output>-13</output>
     </tr>
     
     <tr>
@@ -232,9 +232,9 @@ stack("0,3,[11 6]"
     <td>
     <label for=gk_Phaser_level>&ensp;3 Phaser level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=16 id=gk_Phaser_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-23 id=gk_Phaser_level step=.001>
     <td>
-    <output for=gk_Phaser_level id=gk_Phaser_level_output>16</output>
+    <output for=gk_Phaser_level id=gk_Phaser_level_output>-23</output>
     </tr>
     
     <tr>
@@ -259,9 +259,9 @@ stack("0,3,[11 6]"
     <td>
     <label for=gk_Phaser_ratio1>&ensp;3 Phaser ratio 1</label>
     <td>
-    <input class=persistent-element type=range min=.25 max=10 value=1 id=gk_Phaser_ratio1 step=.001>
+    <input class=persistent-element type=range min=.25 max=10 value=1.287 id=gk_Phaser_ratio1 step=.001>
     <td>
-    <output for=gk_Phaser_ratio1 id=gk_Phaser_ratio1_output>1</output>
+    <output for=gk_Phaser_ratio1 id=gk_Phaser_ratio1_output>1.287</output>
     </tr>
     
     <tr>
@@ -270,25 +270,25 @@ stack("0,3,[11 6]"
     <td>
     <input class=persistent-element type=range min=1/5 max=10 value=1 id=gk_Phaser_ratio2 step=.001>
     <td>
-    <output for=gk_Phaser_ratio2 id=gk_Phaser_ratio2_output>1/5</output>
+    <output for=gk_Phaser_ratio2 id=gk_Phaser_ratio2_output>1</output>
     </tr>
     
     <tr>
     <td>
     <label for=gk_Phaser_index1>&ensp;3 Phaser index 1</label>
     <td>
-    <input class=persistent-element type=range min=0 max=10 value=1.01 id=gk_Phaser_index1 step=.001>
+    <input class=persistent-element type=range min=0 max=10 value=1.502 id=gk_Phaser_index1 step=.001>
     <td>
-    <output for=gk_Phaser_index1 id=gk_Phaser_index1_output>1.01</output>
+    <output for=gk_Phaser_index1 id=gk_Phaser_index1_output>1.502</output>
     </tr>
 
     <tr>
     <td>
     <label for=gk_Phaser_index2>&ensp;3 Phaser index 2</label>
     <td>
-    <input class=persistent-element type=range min=0 max=10 value=.102 id=gk_Phaser_index2 step=.001>
+    <input class=persistent-element type=range min=0 max=10 value=2.481 id=gk_Phaser_index2 step=.001>
     <td>
-    <output for=gk_Phaser_index2 id=gk_Phaser_index2_output>.103</output>
+    <output for=gk_Phaser_index2 id=gk_Phaser_index2_output>2.481</output>
     </tr>
 
     <tr style="height:1em;"></tr>    
@@ -296,17 +296,17 @@ stack("0,3,[11 6]"
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.987 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.994 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.987</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.994</output>
     </tr>
     <tr>
     <td>
     <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
+    <input class=persistent-element type=range min=0 max=20000 value=7260 id=gk_ReverbSC_frequency_cutoff step=.001>
     <td>
-    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>12000</output>
+    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>7260</output>
     </tr>
     <tr>
     <td>
@@ -322,9 +322,9 @@ stack("0,3,[11 6]"
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=5.928 id=gk_MasterOutput_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_MasterOutput_level step=.001>
     <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>5.928</output>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>0</output>
     </tr>
     </table>
     <p>

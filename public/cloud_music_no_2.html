@@ -435,9 +435,6 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
         uniform float iSampleRate;
         // sound sample rate (i.e., 44100)
         
-        uniform float spectralTilt;
-        uniform float totalLoudness;
-        
         /**
          * Theoretically, any fragment shader copied from the ShaderToy 
          * editor can replace the body of the mainImage function below, 
@@ -586,8 +583,6 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     }
                 }
             }
-            gl.uniform1f(shader_program.spectralTilt, spectralTilt);
-            gl.uniform1f(shader_program.totalLoudness, totalLoudness);
 
             gl.activeTexture(gl.TEXTURE0 + texture_unit);
             gl.bindTexture(gl.TEXTURE_2D, texture);
