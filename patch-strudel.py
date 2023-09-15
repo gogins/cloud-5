@@ -89,10 +89,6 @@ with open(pattern_mjs_filepath, "r+") as file:
   file.seek(0)
   file.truncate()
   file.write(patched_text)
-  
-  vite: {
-    ssr: {
-
 
   
 
