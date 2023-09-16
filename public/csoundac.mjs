@@ -20,10 +20,12 @@
  * in this module, as with all other modules directly imported in code 
  * run by the Strudel REPL, must not use template strings.
  */
-let csac_debugging = false;
+let csac_debugging = true;
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
 let audioContext = new AudioContext();
+let note_counter = 0;
+
 
 /**
  * Enables or disables print statement debugging in this module.
@@ -37,11 +39,9 @@ export function debug(enabled) {
  * log.
  */
 export const diagnostic = function(message) {
-    //~ if (csac_debugging === false) {
-        //~ const text = '' + getAudioContext().currentTime + ' [csac]' + message;
-        //~ logger(text, 'debug');
-        //~ if (csound) csound.message(text);
-    //~ }
+    const text = '' + getTime() + ' [csac]' + message;
+    logger(text, 'debug');
+    if (csound) csound.message(text);
 };
 
 /**
@@ -152,6 +152,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       diagnostic('[csoundn]: Csound is not yet loaded.\n');
       return;
     }
+    note_counter = note_counter + 1;
     // Time in seconds counting from now.
     const p2 = tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
@@ -170,35 +171,30 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     hap = setPitch(hap, Math.round(p4));
     if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
     csound.inputMessage(i_statement);
+    console.log('\n...time:\t' + audio_context.currentTime + '\tnote_counter:\t' + note_counter + '\tnote:\t' + p4);
     // Blanks out default output.
   }, true);//.gain(0);
 });
 
-/*
-const csoundsTrigger = (tidal_time, hap) => {
-    if (!csound) {
-      diagnostic('[csounds]: Csound is not yet loaded.\n');
-      return;
-    }
-    let { freq } = 1; // destructure control params
-    const ctx = getAudioContext();
-    // create oscillator
-    const o = new OscillatorNode(ctx, { type: 'sawtooth', frequency: Number(freq) });
-    o.start(time);
-    // add gain node to level down osc
-    const g = new GainNode(ctx, { gain: 0 });
-    // connect osc to gain
-    const node = o.connect(g);
-    // this function can be called from outside to stop the sound
-    const stop = (time) => o.stop(time);
-    // ended will be fired when stop has been fired
-    o.addEventListener('ended', () => {
-      o.disconnect();
-      g.disconnect();
-      onended();
-    });
-    const p1 = 6;
-    const p2 = tidal_time - ctx.currentTime;
+/**
+ * Defines an output that has controls for working with a generator that has been
+ * created at module scope. The generator can have properties that correspond to 
+ * such controls.
+ */
+export const acG = register('acG', (generator_, instrument, pat) => {
+  let generator = generator_;
+  let p1 = instrument;
+  if (typeof instrument === 'string') {
+    p1 = ['${', instrument, '}'].join();
+  }
+  return pat.onTrigger((tidal_time, hap) => {
+    if (csac_debugging) diagnostic('[csoundc]: chord: ' + chord.toString() + '\n');
+    // Controls would be applied before calling tick.
+    generator.tick();
+    // The value might or might not be used in this output.
+    const value = generator.value;
+    // Time in seconds counting from now.
+    const p2 = tidal_time - audioContext.currentTime;
     const p3 = hap.duration.valueOf() + 0;
     const frequency = getFrequency(hap);
     // Translate frequency to MIDI key number _without_ rounding.
@@ -213,14 +209,27 @@ const csoundsTrigger = (tidal_time, hap) => {
       .join('/') + '\"';
     const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
     hap = setPitch(hap, Math.round(p4));
-    if (csac_debugging) diagnostic('[csounds]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
-    return { node, stop };
-};
-const csoundsData = {
-    type: 'synth'
-};
-registerSound("csounds", csoundsTrigger, csoundsData);
-*/
+    if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
+    if (!csound) {
+      diagnostic('[csoundn]: Csound is not yet loaded.\n');
+      return;
+    }
+    csound.inputMessage(i_statement);
+    // Blanks out default output.
+  }, true);//.gain(0);
+});
+
+/**
+ * Defines a Pattern that returns the value from a generator.
+ */
+export const acGV = register('acGV', (generator_, pat) => {
+    let generator = generator_;
+    return pat.withHap((hap) => {
+        hap = setPitch(hap, generator.value);
+        return hap;
+    });        
+});
+
 
 /**
  * This is a base class that can be used to _automatically_ define Patterns 
@@ -240,11 +249,6 @@ registerSound("csounds", csoundsTrigger, csoundsData);
  *
  * In this way, derived classes act like stateful values that have Pattern 
  * methods as class methods.
- *
- * NOTE WELL: This notion conflicts with the stateless nature of Strudel 
- * queries and can lead to unpredictable results, as when the `pianoroll`
- * starts jumping around, or the order of application of stateful objects is 
- * not as expected.
  */
 export class StatefulPatterns {
     constructor() {
@@ -262,83 +266,67 @@ export class StatefulPatterns {
                 // declaration, but we do know the arity of the class method, 
                 // which is always at least 1 because of the need to pass the 
                 // Hap.
-                let arity = method.length + 1;
+                let arity = method.length;
                 // For now, we will set up separate registrations for the 
                 // first few arities. The actual arity of the Pattern function 
                 // is always at least 3 because of the need to pass the class 
                 // instance, the is_onset flag, and the Hap along with any 
                 // patternifiable rguments.
+                arity = arity + 1;
                 if (arity === 3) {
-                    let result = register(name, (stateful, pat) => {
-                        return pat.withHap((hap) => {
-                            let is_onset = hap.hasOnset();
-                            // This _should_ tell us if onsets are correctly being identified.
-                            if (is_onset === true) {   
-                                stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getAudioContext().currentTime
-                                stateful.delta_time = stateful.current_time - stateful.prior_time;
-                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
-                             }
-                            hap = method.call(stateful, is_onset, hap);
-                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
-                            diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, hap}, null, 4) + '\n');
+                    let registration = register(name, (stateful, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, hap);
+                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, hap);
                             return hap;
                         });
                     });
                     // There are no dynamic exports in JavaScript, so we just stuff 
                     // these into the window scope as global functions.
-                    window[name] = result;
+                    window[name] = registration;
                 } else if (arity === 4) {
-                    let delta_time = 0;
-                    let result = register(name, (stateful, p2, pat) => {
-                        return pat.withHap((hap) => {
-                            let is_onset = hap.hasOnset();
-                            if (is_onset === true) {   
-                                stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getAudioContext().currentTime
-                                stateful.delta_time = stateful.current_time - stateful.prior_time;
-                            }
-                            hap = method.call(stateful, is_onset, p2, hap);
-                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
-                            diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, p2, hap}, null, 4) + '\n');
+                    let registration = register(name, (stateful, p2, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, hap);
+                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, hap);
                             return hap;
                         });
                     });
-                    window[name] = result;
+                    window[name] = registration;
                 } else if (arity === 5) {
-                    let result = register(name, (stateful, p2, p3, pat) => {
-                         return pat.withHap((hap) => {
-                            let is_onset = hap.hasOnset();
-                            if (is_onset === true) {   
-                                stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getAudioContext().currentTime
-                                stateful.delta_time = stateful.current_time - stateful.prior_time;
-                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
-                             }
-                            hap = method.call(stateful, is_onset, p2, p3, hap);
-                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
-                            diagnostic('[' + name + '] value: ' + JSON.stringify({stateful, is_onset, p2, p3, hap}, null, 4) + '\n');
+                    let registration = register(name, (stateful, p2, p3, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, p3, hap);
+                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, p3, hap);
                             return hap;
                         });
                     });
-                    window[name] = result;
-                } else if (arity === 6) {
-                     let result = register(name, (stateful, p2, p3, p4, pat) => {
-                        return pat.withHap((hap) => {
-                            let is_onset = hap.hasOnset();
-                            if (is_onset === true) {   
-                                stateful.prior_time = stateful.current_time;
-                                stateful.current_time = getAudioContext().currentTime
-                                stateful.delta_time = stateful.current_time - stateful.prior_time;
-                                diagnostic('[' + name + '] delta_time: ' + stateful.delta_time + '\n');
-                            }
-                            hap = method.call(stateful, is_onset, p2, p3, p4, hap);
-                            diagnostic('[' + name + '] hap duration: ' + hap.duration + '\n');
-                            diagnostic('[' + name + '] value:' + JSON.stringify({stateful, is_onset, p2, p3, p4, hap}, null, 4) + '\n');
+                    window[name] = registration;
+               } else if (arity === 6) {
+                    let registration = register(name, (stateful, p2, p3, p4, pat) => {
+                        return pat.onTrigger((t, hap) => {
+                            method.call(stateful, true, p2, p3, p4, hap);
+                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                        }, false).withHap((hap) => {
+                            stateful.current_time = getAudioContext().currentTime;
+                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            hap = method.call(stateful, false, p2, p3, p4, hap);
                             return hap;
                         });
                     });
-                    window[name] = result;
+                    window[name] = registration;
                 }
             }
         }
@@ -859,7 +847,6 @@ export class PitvPatterns extends StatefulPatterns {
         return hap;
     }
 }
-
 
 
 
