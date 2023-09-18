@@ -65,6 +65,8 @@
 const csac = await import('../csoundac.mjs');
 csac.diagnostic('Hello, world!\n');
 let audio_context = new AudioContext();
+console.log('audio_context: ' + audio_context);
+let logistic_counter = 0;
 /**
  * Classes based on StatefulPatterns can be used to define stateful Patterns.
  *
@@ -92,30 +94,28 @@ class LogisticPattern extends csac.StatefulPatterns {
             this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
             logistic_counter = logistic_counter + 1;
-            console.log('\n...time:\t' + audio_context.currentTime + '\tlogistic_counter:\t' + logistic_counter + '\tnote:\t' + this.midi_key);
+            console.log('sync onset:\t' + audio_context.currentTime + '\tlogistic_counter:\t' + logistic_counter + '\tnote:\t' + this.midi_key);
+            hap = csac.setPitch(hap, this.midi_key);
+            logger('Logistic: ' + hap.show() + '\n');
         }
-        hap = csac.setPitch(hap, this.midi_key);
-        logger('Logistic:', hap.show());
+        console.log('sync query:\t' + audio_context.currentTime + '\tlogistic_counter:\t' + logistic_counter + '\tnote:\t' + this.midi_key);
         return hap;
     }
 }
-
-let logistic_counter = 0;
 
 
 let logisticInstance = new LogisticPattern();
 
 pure(0)
-.Logistic(logisticInstance, ".995 .78 .995 .88"
-.slow(60))
+.Logistic(logisticInstance, ".995 .78 .995 .88")
 .legato(3)
-.fast(3)
+.fast(6)
 .note()
-.pianoroll({cycles:32,maxMidi:127,minMidi:0})
 //.piano()
-.csoundm("6")
-.log()
-    
+.csoundn("6")
+.pianoroll({cycles:32,maxMidi:127,minMidi:0})
+.log()    
+
 -->
     
     </strudel-repl-component>

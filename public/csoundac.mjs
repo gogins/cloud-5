@@ -20,7 +20,7 @@
  * in this module, as with all other modules directly imported in code 
  * run by the Strudel REPL, must not use template strings.
  */
-let csac_debugging = true;
+let csac_debugging = false;
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
 let audioContext = new AudioContext();
@@ -78,11 +78,11 @@ export function setPitch(hap, midi_key) {
     if (typeof hap.value === 'undefined') {
         hap.value = midi_key;
     } else if (typeof hap.value === 'object') {
-        if (hap.value.freq) {
+        if (typeof hap.value.freq !== 'undefined') {
             hap.value.freq = midiToFreq(midi_key);
-        } else if (hap.value.note) {
+        } else if (typeof hap.value.note !== 'undefined') {
             hap.value.note = midi_key;
-        } else if (hap.value.n) {
+        } else if (typeof hap.value.n !== 'undefined') {
             hap.value.n = midi_key;
         }
     } else {
@@ -155,6 +155,10 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     note_counter = note_counter + 1;
     // Time in seconds counting from now.
     const p2 = tidal_time - audioContext.currentTime;
+    // Either this, or early return.
+    if (p2 < 0) {
+        p2 = 0;
+    }
     const p3 = hap.duration.valueOf() + 0;
     const frequency = getFrequency(hap);
     // Translate frequency to MIDI key number _without_ rounding.
@@ -171,7 +175,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     hap = setPitch(hap, Math.round(p4));
     if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
     csound.inputMessage(i_statement);
-    console.log('\n...time:\t' + audio_context.currentTime + '\tnote_counter:\t' + note_counter + '\tnote:\t' + p4);
+    console.log('sync:\t' + audioContext.currentTime + '\tnote_counter:\t' + note_counter + '\tnote:\t' + p4);
     // Blanks out default output.
   }, true);//.gain(0);
 });
@@ -277,10 +281,10 @@ export class StatefulPatterns {
                     let registration = register(name, (stateful, pat) => {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, hap);
-                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, hap);
                             return hap;
                         });
@@ -292,10 +296,10 @@ export class StatefulPatterns {
                     let registration = register(name, (stateful, p2, pat) => {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, hap);
-                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, p2, hap);
                             return hap;
                         });
@@ -305,10 +309,10 @@ export class StatefulPatterns {
                     let registration = register(name, (stateful, p2, p3, pat) => {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, p3, hap);
-                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, p2, p3, hap);
                             return hap;
                         });
@@ -318,10 +322,10 @@ export class StatefulPatterns {
                     let registration = register(name, (stateful, p2, p3, p4, pat) => {
                         return pat.onTrigger((t, hap) => {
                             method.call(stateful, true, p2, p3, p4, hap);
-                            diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
+                            if (csac_debugging) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));
                             hap = method.call(stateful, false, p2, p3, p4, hap);
                             return hap;
                         });
