@@ -83,26 +83,36 @@ class LogisticPattern extends csac.StatefulPatterns {
         this.c = c;
         this.y = y;
         this.midi_key = 36;
+        this.counter = 0;
     }
     /**
      * Patternify the 'c' coefficient of the logistic equation.
      */
     Logistic(is_onset, c, hap) {
-        if (is_onset === true) {
+         if (is_onset === true) {
+            this.counter = 0;
             this.c = c;
             let y1 = 4 * this.c * this.y * (1 - this.y);
             this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
             logistic_counter = logistic_counter + 1;
             console.log('sync onset:\t' + audio_context.currentTime + '\tlogistic_counter:\t' + logistic_counter + '\tnote:\t' + this.midi_key);
-            hap = csac.setPitch(hap, this.midi_key);
-            logger('Logistic: ' + hap.show() + '\n');
         }
-        console.log('sync query:\t' + audio_context.currentTime + '\tlogistic_counter:\t' + logistic_counter + '\tnote:\t' + this.midi_key);
+        //hap = csac.setPitch(hap, this.midi_key);
+        hap.value = {'note':this.midi_key};
+        // Marked for the piano roll only for the first hap after the trigger.
+        if (typeof hap.value == 'object') {
+            if (this.counter === 0) {
+                hap.value['roll'] = true;
+            } else {
+                hap.value['roll'] = false;
+            }
+        }
+        console.log('Logistic: ' + JSON.stringify(hap));
+        this.counter = this.counter + 1;
         return hap;
     }
 }
-
 
 let logisticInstance = new LogisticPattern();
 
@@ -111,10 +121,9 @@ pure(0)
 .legato(3)
 .fast(6)
 .note()
-//.piano()
 .csoundn("6")
-.pianoroll({cycles:32,maxMidi:127,minMidi:0})
-.log()    
+.pianoroll({vertical:0,playhead:.9,cycles:32,minMidi:0,maxMidi:127})
+.log()
 
 -->
     

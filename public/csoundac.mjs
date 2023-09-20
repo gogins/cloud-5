@@ -26,7 +26,6 @@ let csoundac = globalThis.__csoundac__;
 let audioContext = new AudioContext();
 let note_counter = 0;
 
-
 /**
  * Enables or disables print statement debugging in this module.
  */
@@ -138,9 +137,6 @@ export function Clone(a, b) {
  *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
  *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
  *  p6 -- Strudel controls, as a string.
- * 
- * This variant of 'strudel.csoundm' is a workaround that uses a non-dominant 
- * trigger with a silent 'sound' to get the desired trigger semantics.
  */
 export const csoundn = register('csoundn', (instrument, pat) => {
   let p1 = instrument;
@@ -148,6 +144,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     p1 = ['${', instrument, '}'].join();
   }
   return pat.onTrigger((tidal_time, hap) => {
+    globalThis.piano_roll_haps.push(hap);
     if (!csound) {
       diagnostic('[csoundn]: Csound is not yet loaded.\n');
       return;
@@ -176,64 +173,8 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
     csound.inputMessage(i_statement);
     console.log('sync:\t' + audioContext.currentTime + '\tnote_counter:\t' + note_counter + '\tnote:\t' + p4);
-    // Blanks out default output.
   }, true);//.gain(0);
 });
-
-/**
- * Defines an output that has controls for working with a generator that has been
- * created at module scope. The generator can have properties that correspond to 
- * such controls.
- */
-export const acG = register('acG', (generator_, instrument, pat) => {
-  let generator = generator_;
-  let p1 = instrument;
-  if (typeof instrument === 'string') {
-    p1 = ['${', instrument, '}'].join();
-  }
-  return pat.onTrigger((tidal_time, hap) => {
-    if (csac_debugging) diagnostic('[csoundc]: chord: ' + chord.toString() + '\n');
-    // Controls would be applied before calling tick.
-    generator.tick();
-    // The value might or might not be used in this output.
-    const value = generator.value;
-    // Time in seconds counting from now.
-    const p2 = tidal_time - audioContext.currentTime;
-    const p3 = hap.duration.valueOf() + 0;
-    const frequency = getFrequency(hap);
-    // Translate frequency to MIDI key number _without_ rounding.
-    const C4 = 261.62558;
-    let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
-    const p4 = octave * 12.0 - 36.0;
-    // We prefer floating point precision, but over the MIDI range [0, 127].
-    const p5 = 127 * (hap.context?.velocity ?? 0.9);
-    // The Strudel controls as a string.
-    const p6 = '\"' + Object.entries({ ...hap.value, frequency })
-      .flat()
-      .join('/') + '\"';
-    const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
-    hap = setPitch(hap, Math.round(p4));
-    if (csac_debugging) diagnostic('[csoundn]: ' + hap.show() + ' ' + tidal_time + '\n    ' + i_statement);
-    if (!csound) {
-      diagnostic('[csoundn]: Csound is not yet loaded.\n');
-      return;
-    }
-    csound.inputMessage(i_statement);
-    // Blanks out default output.
-  }, true);//.gain(0);
-});
-
-/**
- * Defines a Pattern that returns the value from a generator.
- */
-export const acGV = register('acGV', (generator_, pat) => {
-    let generator = generator_;
-    return pat.withHap((hap) => {
-        hap = setPitch(hap, generator.value);
-        return hap;
-    });        
-});
-
 
 /**
  * This is a base class that can be used to _automatically_ define Patterns 
