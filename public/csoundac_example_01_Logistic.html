@@ -63,6 +63,7 @@
 <!--
 
 const csac = await import('../csoundac.mjs');
+csac.debug(csac.WARNING);
 csac.diagnostic('Hello, world!\n');
 let audio_context = new AudioContext();
 console.log('audio_context: ' + audio_context);
@@ -96,20 +97,10 @@ class LogisticPattern extends csac.StatefulPatterns {
             this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
             logistic_counter = logistic_counter + 1;
-            console.log('sync onset:\t' + audio_context.currentTime + '\tlogistic_counter:\t' + logistic_counter + '\tnote:\t' + this.midi_key);
+            csac.diagnostic('[Logistic] sync onset: ' + ' logistic_counter: '  + logistic_counter + ' note: ' + this.midi_key + '\n', csac.INFORMATION);
         }
-        //hap = csac.setPitch(hap, this.midi_key);
         hap.value = {'note':this.midi_key};
-        // Marked for the piano roll only for the first hap after the trigger.
-        if (typeof hap.value == 'object') {
-            if (this.counter === 0) {
-                hap.value['roll'] = true;
-            } else {
-                hap.value['roll'] = false;
-            }
-        }
-        console.log('Logistic: ' + JSON.stringify(hap));
-        this.counter = this.counter + 1;
+        csac.diagnostic('[Logistic]: ' + JSON.stringify(hap) + '\n', csac.DEBUG);
         return hap;
     }
 }
@@ -117,8 +108,8 @@ class LogisticPattern extends csac.StatefulPatterns {
 let logisticInstance = new LogisticPattern();
 
 pure(0)
-.Logistic(logisticInstance, ".995 .78 .995 .88")
-.legato(3)
+.Logistic(logisticInstance, "<.995 .78 .995 .88>/8")
+.legato("<3 2 1 2>/4")
 .fast(6)
 .note()
 .csoundn("6")
