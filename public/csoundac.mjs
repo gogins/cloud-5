@@ -144,7 +144,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     p1 = ['${', instrument, '}'].join();
   }
   return pat.onTrigger((tidal_time, hap) => {
-    globalThis.piano_roll_haps.push(hap);
+    globalThis.haps_from_outputs.push(hap);
     if (!csound) {
       diagnostic('[csoundn]: Csound is not yet loaded.\n');
       return;
@@ -164,7 +164,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     const p4 = octave * 12.0 - 36.0;
     // We prefer floating point precision, but over the MIDI range [0, 127].
     const p5 = 127 * (hap.context?.velocity ?? 0.9);
-    // The Strudel controls as a string.
+    // All Strudel controls as a string.
     const p6 = '\"' + Object.entries({ ...hap.value, frequency })
       .flat()
       .join('/') + '\"';

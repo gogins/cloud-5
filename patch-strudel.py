@@ -90,5 +90,61 @@ with open(pattern_mjs_filepath, "r+") as file:
   file.truncate()
   file.write(patched_text)
 
+'''
+Fixes the Strudel piano roll to display haps from stateful Patterns as 
+an alternative to regular patterns (which still work).
+'''
+pattern_mjs_filepath = "strudel/packages/core/pianoroll.mjs";
+print(f"Patching '{pattern_mjs_filepath}'")
+with open(pattern_mjs_filepath, "r+") as file:
+  find_this = '''Pattern.prototype.pianoroll = function (options = {}) {
+  let { cycles = 4, playhead = 0.5, overscan = 1, hideNegative = false } = options;
+
+  let from = -cycles * playhead;
+  let to = cycles * (1 - playhead);
+
+  this.draw(
+    (ctx, haps, t) => {
+      const inFrame = (event) =>
+        (!hideNegative || event.whole.begin >= 0) && event.whole.begin <= t + to && event.endClipped >= t + from;
+      pianoroll({
+        ...options,
+        time: t,
+        ctx,
+        haps: haps.filter(inFrame),
+  '''
+  replace_with = '''globalThis.haps_from_outputs = [];
+
+Pattern.prototype.pianoroll = function (options = {}) {
+  let { cycles = 4, playhead = 0.5, overscan = 1, hideNegative = false } = options;
+
+  let from = -cycles * playhead;
+  let to = cycles * (1 - playhead);
+
+  this.draw(
+    (ctx, haps, t) => {
+      const inFrame = (event) =>
+        (!hideNegative || event.whole.begin >= 0) && event.whole.begin <= t + to && event.endClipped >= t + from;
+        if (globalThis.haps_from_outputs.length > 0) {
+            globalThis.haps_from_outputs.push(...haps);
+            haps = globalThis.haps_from_outputs.filter(inFrame);
+            globalThis.haps_from_outputs = haps;
+        } else {
+            haps = haps.filter(inFrame);
+        }
+        pianoroll({
+        ...options,
+        time: t,
+        ctx,
+        haps: haps,
+'''
+  text = file.read()
+  patched_text = text.replace(find_this, replace_with)
+  print(patched_text)
+  file.seek(0)
+  file.truncate()
+  file.write(patched_text)
+
+  
   
 
