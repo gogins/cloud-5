@@ -63,7 +63,7 @@
 <!--
 
 const csac = await import('../csoundac.mjs');
-csac.debug(csac.WARNING);
+csac.diagnostic_level(csac.WARNING);
 csac.diagnostic('Hello, world!\n');
 let audio_context = new AudioContext();
 console.log('audio_context: ' + audio_context);
@@ -100,7 +100,7 @@ class LogisticPattern extends csac.StatefulPatterns {
             csac.diagnostic('[Logistic] sync onset: ' + ' logistic_counter: '  + logistic_counter + ' note: ' + this.midi_key + '\n', csac.INFORMATION);
         }
         hap.value = {'note':this.midi_key};
-        csac.diagnostic('[Logistic]: ' + JSON.stringify(hap) + '\n', csac.DEBUG);
+        console.log('[Logistic]: post: ' + hap.show());
         return hap;
     }
 }
@@ -110,7 +110,6 @@ let logisticInstance = new LogisticPattern();
 pure(0)
 .Logistic(logisticInstance, "<.995 .78 .995 .88>/8")
 .legato("<3 2 1 2>/4")
-.fast(6)
 .note()
 .csoundn("6")
 .pianoroll({vertical:0,playhead:.9,cycles:32,minMidi:0,maxMidi:127})

@@ -638,7 +638,7 @@ export class PitvPatterns extends StatefulPatterns {
             try {
                 frequency = getFrequency(hap);
             } catch (error) {
-                diagnostic('[acPVV query] not a note!\n');
+                diagnostic('[acPVV query] not a note!\n', WARNING);
                 return;
             }
             let current_midi_key = frequencyToMidiInteger(frequency);
