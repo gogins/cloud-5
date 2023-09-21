@@ -15,6 +15,9 @@ let audioContext = new AudioContext();
  */
 let diagnostic_level_ = 5;
 
+/**
+ * Gets and/or sets the level of diagnostic messages.
+ */
 export function diagnostic_level(new_level) {
     let old_level = diagnostic_level_;
     if (typeof new_level !== 'undefined') {
@@ -32,7 +35,7 @@ export const NEVER = 0;
 
 /**
  * Prints a diagnostic message to both the Strudel logger and the Csound 
- * log.
+ * log. Messages are printed only for the specifed diagnostic level or less.
  */
 export function diagnostic(message, level = INFORMATION) {
     if (level <= diagnostic_level_) {

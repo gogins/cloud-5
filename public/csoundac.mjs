@@ -12,7 +12,12 @@
  *
  * This module brings chords and scales, and operations upon them, 
  * from the CsoundAC library for algorithmic composition into the 
- * Strudel (Tidal Cycles-based) JavaScript pattern language. 
+ * Strudel (Tidal Cycles-based) JavaScript pattern language. This is 
+ * done by deriving from the StatefulPatterns class new classes whose 
+ * member functions become Patterns.
+ *
+ * Another use of StatefulPatterns is to define algorithmic note generators, 
+ * generally driven by a `pure` pattern that acts as a clock.
  *
  * Please note, however, that this module, although it defines a number of 
  * Patterns, is not built into Strudel and is designed to be dynamically 
