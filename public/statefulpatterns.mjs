@@ -105,9 +105,8 @@ export class StatefulPatterns {
                 } else if (arity === 4) {
                     let registration = register(name, (stateful, p2, pat) => {
                         return pat.onTrigger((t, hap) => {
-                            hap = method.call(stateful, true, p2, hap);
+                            method.call(stateful, true, p2, hap);
                             if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4));
-                            return hap;
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
                             if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4));

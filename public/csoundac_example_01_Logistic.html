@@ -99,8 +99,8 @@ class LogisticPattern extends csac.StatefulPatterns {
             logistic_counter = logistic_counter + 1;
             csac.diagnostic('[Logistic] sync onset: ' + ' logistic_counter: '  + logistic_counter + ' note: ' + this.midi_key + '\n', csac.INFORMATION);
         }
-        hap.value = {'note':this.midi_key};
-        console.log('[Logistic]: post: ' + hap.show());
+        hap.value = {note: this.midi_key};
+        console.log('[Logistic]: ' + hap.show());
         return hap;
     }
 }
@@ -110,6 +110,7 @@ let logisticInstance = new LogisticPattern();
 pure(0)
 .Logistic(logisticInstance, "<.995 .78 .995 .88>/8")
 .legato("<3 2 1 2>/4")
+.fast(6)
 .note()
 .csoundn("6")
 .pianoroll({vertical:0,playhead:.9,cycles:32,minMidi:0,maxMidi:127})

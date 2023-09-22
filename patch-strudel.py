@@ -125,9 +125,10 @@ Pattern.prototype.pianoroll = function (options = {}) {
     (ctx, haps, t) => {
       const inFrame = (event) =>
         (!hideNegative || event.whole.begin >= 0) && event.whole.begin <= t + to && event.endClipped >= t + from;
+        // Usually haps is much much larger than haps_from_outputs.
         if (globalThis.haps_from_outputs.length > 0) {
-            globalThis.haps_from_outputs.push(...haps);
-            haps = globalThis.haps_from_outputs.filter(inFrame);
+            haps.push(...globalThis.haps_from_outputs);
+            haps = haps_from_outputs.filter(inFrame);
             globalThis.haps_from_outputs = haps;
         } else {
             haps = haps.filter(inFrame);
