@@ -13,9 +13,9 @@
 <script src="csound_loader.js"></script>
 <!-- Note: osc.js does not work in a browser from regular Web server, osc.min.js 
      must be used. -->
-<script src="./node_modules/osc-js/lib/osc.min.js"></script>
+<script src="osc.min.js"></script>
 <script>
-// The DataGram plugin cn't be used in browsers.
+// The DataGram plugin can't be used in browsers.
 const osc = new OSC()
 osc.open({ port: 51234 });
 osc.on('*', (m) => {

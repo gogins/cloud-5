@@ -14,9 +14,16 @@ HTML5 environment!
 cloud-5 runs on every system that has audio output, that can run any kind of 
 Web server, and that has any standards compliant Web browser. 
 
-That includes _all_ computers running macOS, Linux, or Windows, most Android 
-devices, and many single-board computers such as [Bela](xxx), [Norns](xxx), 
-[Raspberry Pi](xxx), [BeagleBoards](xxx), and others.
+That includes _all_ computers running macOS, Linux, or Windows, as well as 
+most Android devices. It is also possible to run cloud-5 on single-board 
+computers (SBCs) such as [Bela](https://bela.io/), 
+[Norns](https://monome.org/docs/norns/), 
+[BeagleBoards](https://www.beagleboard.org/), 
+[Raspberry Pi](https://www.raspberrypi.com/), and others. However, running 
+cloud-5 on a SBC requires installing at least a Web server and probably also 
+a Web browser on the device. Most users without special need for a SBC (such 
+as an installation or kiosk) will be better off just using a personal 
+computer.
 
 cloud-5 is based on my own Web site of computer music pieces, 
 [cloud-music](https://gogins.github.io/).
@@ -35,12 +42,12 @@ cloud-5 is based on my own Web site of computer music pieces,
    neo-Reimannian operations, and scales and functional harmony, by 
    [Dmitri Tymoczko](http://dmitri.mycpanel.princeton.edu/).
    
- - A library of predefined Csound instrument definitions by me from [CsoundAC]
-   (https://github.com/gogins/csound-ac/tree/master/patches).
+ - A collection of predefined Csound instrument definitions by me from 
+   [CsoundAC](https://github.com/gogins/csound-ac/tree/master/patches).
  
  - [Strudel](https://strudel.tidalcycles.org/), a JavaScript port of the 
    widely used live coding system [Tidal Cycles](http://tidalcycles.org/), by 
-   Alex MacLean, Felix Roos, and others.
+   Alex McLean, Felix Roos, and others.
    
  - Of course, a standards-compliant Web browser, which has an awesome set of 
    capabilities, including the most widely used programming language, 
@@ -63,25 +70,28 @@ cloud-5 is based on my own Web site of computer music pieces,
  - Open Sound Control input and output from Csound and Strudel.
    
  - Several systems for time-frequency analysis/synthesis, from Csound, including 
-   Victor Lazzarini's phase vocoder streaming (PVS) opcodes.
+   Victor Lazzarini's 
+   [phase vocoder streaming](https://csound.com/docs/manual/SpectralRealTime.html) 
+   (PVS) opcodes.
  
- - Several high-fidelity sample players, from Csound (Fluidsynth opcodes) and 
-   Strudel (WebDirt).
+ - Several high-fidelity sample players, from Csound 
+   ([Fluidsynth opcodes](https://csound.com/docs/manual/SiggenSample.html#SiggenSampleSF)) 
+   and Strudel ([superdough](https://github.com/tidalcycles/strudel/tree/main/packages/superdough)).
  
  - High-resolution, three-dimensional, animated computer graphics using 
    WebGL and/or GLSL, from the Web browser.
    
- - All the rest of the staggering panoply of capabilities that are built into 
-   all standards-compliant Web browsers [HTML](https://html5test.com/).
+ - All of the staggering panoply of capabilities that are built into every 
+   standards-compliant Web browser, see [HTML5 Test](https://html5test.com/).
  
 ### Limitations
 
 The major limitation of cloud-5 is that, because it runs only in Web browsers, 
 it is sandboxed and cannot write to the file system. This means that all audio 
-is streaming audio. However, it is often possible to use an audio loopback 
-driver such as [BlckHole](https://github.com/ExistentialAudio/BlackHole) to 
-route audio produced by cloud-5 to a digital audio workstation that _can_ 
-write soundfiles.
+is streaming audio. However, it _is_ possible to use an audio loopback driver 
+such as [BlckHole](https://github.com/ExistentialAudio/BlackHole) to route 
+audio produced by cloud-5 to a digital audio workstation that _can_ write 
+soundfiles.
 
 ## Getting Started
 
@@ -89,8 +99,8 @@ write soundfiles.
 
  - A Web server that will run from a configurable directory in which you can 
    read, edit, and write files. On most systems, the simplest way to get a Web 
-   server is to install [Python](xxx). On Android, install an HTTP server such as 
-   [xxx], and a text editor such as [xxx].
+   server is to install [Python](https://www.python.org/). On Android, install 
+   an HTTP server such as [xxx], and a text editor such as [xxx].
    
  - A standards-compliant Web browser (currently, that includes nearly all Web 
    browsers). Should already exist on your system.
@@ -100,37 +110,40 @@ write soundfiles.
    [SciTE](https://scintilla.org/SciTE.html) myself as it is very 
    lightweight and yet very easy to customize.
    
- - Of course, an audio driver that can play audio from Web browsers! Should 
+ - Of course, an audio driver that will play audio from Web browsers! Should 
    already be part of your operating system.
 
 ### Installation
 
-Simply copy the entire cloud-5 directory and all contents to your computer or 
-device. Make sure you can read, edit, and write files in the cloud-5 
-directory.
+There is no installation!
+
+Well, actually there is one thing. Simply copy the entire cloud-5 directory 
+and all contents to your computer or device. Make sure you can read, edit, and 
+write files in your cloud-5 directory.
 
 ### Configuration
 
 There is no configuration!
 
-Well, actually there is one thing. You may need to configure your Web server 
-to serve files from your cloud-5 directory.
+Well, actually there might be one thing. You might need to configure your Web 
+server to serve files from your cloud-5 directory.
 
 ### Running
 
- 1. Start your Web server to serve the cloud-5 directory.
+ 1. Start your Web server to serve the cloud-5 directory. The easiest way to 
+    do this on most systems is to open a terminal, change to your cloud-5 
+    directory, and execute `python3 -m http.server`. 
 
- 2. Start your Web browser. The easiest way to do this on most systems is to 
-    change to your cloud-5 directory in a terminal, and execute 
-    `python3 -m http.server`. Then open your Web browser and navigate to your 
-    cloud-5 Web site (usually just something like `https://localhost:8000`).
+ 2. Start your Web browser, and navigate to your cloud-5 Web site (usually 
+    just something like `https://localhost:8000`).
 
- 3. You should see a directory listing. Click on `cloud_music_no_1.html` and 
-    verify that you see animated graphics, and can play and hear the piece.
+ 3. You should see this README as a Web page. Click on 
+    [cloud_music_no_1.html](cloud_music_no_1.html) and verify that you see 
+    animated graphics, and can play and hear the piece.
 
 ### Making Music
 
-In cloud-5, musical compositions are written as Web pages, i.e. .html 
+In cloud-5, musical compositions are written as Web pages, i.e. as .html 
 files.
 
 It's a good idea for each composition to be written as just one .html file. 
@@ -145,29 +158,46 @@ more complicated and capable.
 
  - A [minimal example](minimal.html) that just plays an embedded Csound piece.
  
- - A [CSD Player](xxx) that will play, and let you edit, any Csound piece.
+ - A [Csound Player](player.html) that will play, and let you edit, any 
+   Csound piece that you paste into the text area.
+   
+ - [Message from Another Planet](message.html), a Csound piece with a basic 
+   HTML user interface.
  
- - [Message from Another Planet](xxx), a Csound piece with an HTML user interface.
+ - [Strudel REPL](strudel_repl.html), exactly the same as the main Strudel Web 
+   site.
  
- - [Trichord Space](xxx), an interactive piece that displays Tymoczko's chord space 
-   for trichords, with the ability to perform, hear, and visualize various 
-   chord operations.
+ - [Trichord Space](trichord_space.html), an interactive piece that displays 
+   Dmitri Tymoczko's chord space for trichords, with the ability to perform, 
+   hear, and visualize various operations on the chords in the space.
  
- - [Scrims](xxx), a JavaScript piece that samples an animated WebGL fractal to 
-   obtain notes that are then transformed using CsoundAC's chord operations.
- 
- - [Cloud Music No. 9](cloud_music_no_9.html), a Strudel piece that uses Csound 
-   for synthesis, with a music visualization implemented using GLSL. There is an 
-   embedded Strudel REPL that allows the user to live code the piece, and shows an 
-   animated piano roll display of the generated notes.
- 
- - [Cloud Music No. 10](xxx), a Strudel piece that uses both Strudel and 
-   JavaScript to produce notes, and transforms them using chord operaitons 
-   and scales from CsoundAC. There is a music visualization implemented using 
-   GLSL, and an embedded Strudel REPL that allows the user to live code the 
-   piece, while showing an animated piano roll display of the generated notes.
+ - [Scrims](scrims.html), a JavaScript piece that samples an animated WebGL 
+   hopalong fractal to obtain notes that are then transformed using CsoundAC's 
+   chord space operations.
+   
+ - [Cloud Music No. 1](cloud_music_no_1.html), a piece that generates a 
+   abstract flowing visual using a GLSL shader. Data from the moving image 
+   is sampled to obtain musical notes, which are then transformed using 
+   chores, scales, and modulations generated by CsoundAC, and rendered as 
+   audio using Csound.
+   
+ - [Cloud Music No. 9](cloud_music_no_9.html), a Strudel piece in an 
+   alternative tuning system that uses Csound for synthesis, with a music 
+   visualization written in GLSL. There is an embedded Strudel REPL that 
+   allows the user to live code the piece, while showing an animated piano r
+   oll display of the generated notes.
+   
+## Extending cloud-5
 
+You can extend the capabilities of cloud-5 in several ways, including:
 
+ - Write user-defined opcodes (UDOs) in Csound that you can `#include` in any 
+   Csound orchestra.
+   
+ - Write a custom JavaScript module that you can use in any .html file.
+ 
+ - Write code in another high-level language and compile it for WebAssembly, 
+   so that it will run in any standards-compliant Web browser.
 
 
 
