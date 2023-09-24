@@ -2669,7 +2669,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     csound_message_callback("Pasted controls state from system clipboard.\n");
                 });
             });
-           $('#default').on('click', function() {
+            $('#default').on('click', function() {
                 $('.persistent-element').each(function() {
                    this.value = this.defaultValue;
                     if (csound) {
@@ -2679,6 +2679,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     $(output_selector).val(this.value);
                 });
             });
+            // Reset controls to defaults every time the window loads!
+            $("#default")[0].click();
         };
     </script>
  </html>
