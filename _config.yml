@@ -1,5 +1,3 @@
 plugins:
   - jekyll-redirect-from
 theme: jekyll-theme-cayman
-include: 
-  - _astro
