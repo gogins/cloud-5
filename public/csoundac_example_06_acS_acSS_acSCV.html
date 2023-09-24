@@ -125,7 +125,7 @@ pure(0).slow(4)
 .note()
 .pianoroll({cycles:32,maxMidi:127,minMidi:0})
 //.piano()
-.csoundm("1")    
+.csoundn("1")    
 .legato(2)    
 -->
     
@@ -2688,6 +2688,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             });
             // Reset controls to defaults every time the window loads!
             $("#default")[0].click();
+            $("#save")[0].click();
         };
     </script>
  </html>

@@ -121,12 +121,11 @@ pure(0)
 .slow(8)
 .Logistic(logisticInstance, ".99933 .88")
 .fast(24)
-.apply(acC(chordPattern, "CM7 F#M7".slow(24)))
+.acC(chordPattern, "CM7 F#M7".slow(24))
 .acCV(chordPattern)
 .note()
 .pianoroll({cycles:32,maxMidi:127,minMidi:0})
 //.piano()
-.ac_chord(GM, "<8 6>")    
 .legato(3)
 
 -->
@@ -2690,6 +2689,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             });
             // Reset controls to defaults every time the window loads!
             $("#default")[0].click();
+            $("#save")[0].click();
         };
     </script>
  </html>

@@ -84,7 +84,7 @@ pure(0)
 .apply(acPO(pitvPatterns, "<1 2 3 4 5 20 18>".fast(4)))
 .acPVV(pitvPatterns).add(48)
 .note()
-.csoundm("5 6")
+.csoundn("5 6")
 .fast(3)
 .legato(3)
     
@@ -2649,6 +2649,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             });
             // Reset controls to defaults every time the window loads!
             $("#default")[0].click();
+            $("#save")[0].click();
         };
     </script>
  </html>
