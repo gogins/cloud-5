@@ -1,12 +1,32 @@
+<style>
+body {
+    margin: 2em;
+    padding-right: 1em;
+    padding-left: 1em;
+    max-width: 7in; 
+    color: black;
+    font-family: Verdana, sans-serif;
+    font-size: 100%;
+    line-height: 140%;
+    background: whitesmoke; 
+}
+</style>
 # cloud-5
+#### An HTML5-based computer music system with Csound, CsoundAC, and Strudel by [Michael Gogins](https://michaelgogins.tumblr.com). 
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" 
 style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
-</a><br />This work is licensed under a 
+</a><br />Musical examples herein are licensed under a 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
-Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. 
 
-## HTML5-based computer music system with Csound, CsoundAC, and Strudel by [Michael Gogins](https://michaelgogins.tumblr.com). 
+Code written as part of cloud-5 is licensed under the terms of the same 
+license as Csound, the 
+[GNU Lesser Public License, version 2.1](https://github.com/csound/csound/blob/master/COPYING). 
+Components and libraries used by cloud-5 come under a variety of open source 
+licenses; see the links to individual packages for more information.
+
+## Introduction
 
 Welcome to cloud-5, a system for making sophisticated computer music purely in the 
 HTML5 environment!
@@ -20,19 +40,19 @@ computers (SBCs) such as [Bela](https://bela.io/),
 [Norns](https://monome.org/docs/norns/), 
 [BeagleBoards](https://www.beagleboard.org/), 
 [Raspberry Pi](https://www.raspberrypi.com/), and others. However, running 
-cloud-5 on a SBC requires installing at least a Web server and probably also 
-a Web browser on the device. Most users without special need for a SBC (such 
+cloud-5 on a SBC requires installing at least a Web server (and probably also 
+a Web browser) on the device. Most users without special need for a SBC (such 
 as an installation or kiosk) will be better off just using a personal 
 computer.
 
-cloud-5 is based on my own Web site of computer music pieces, 
+cloud-5 is used by my own Web site of "always-on" computer music pieces, 
 [cloud-music](https://gogins.github.io/).
 
 ### Components
 
  - [Csound](https://csound.com/) version 6.18, one of the oldest and most 
    powerful sound programming languages, compiled for WebAssembly to run in 
-   Web browers in [csound-wasm].
+   Web browers in [csound-wasm](https://github.com/gogins/csound-wasm).
    
  - [CsoundAC](https://github.com/gogins/csound-ac), my C++ library for 
    algorithmic composition with Csound, 
@@ -79,7 +99,7 @@ cloud-5 is based on my own Web site of computer music pieces,
    and Strudel ([superdough](https://github.com/tidalcycles/strudel/tree/main/packages/superdough)).
  
  - High-resolution, three-dimensional, animated computer graphics using 
-   WebGL and/or GLSL, from the Web browser.
+   WebGL and/or OpenGL Shader Language (GLSL), from the Web browser.
    
  - All of the staggering panoply of capabilities that are built into every 
    standards-compliant Web browser, see [HTML5 Test](https://html5test.com/).
@@ -87,11 +107,15 @@ cloud-5 is based on my own Web site of computer music pieces,
 ### Limitations
 
 The major limitation of cloud-5 is that, because it runs only in Web browsers, 
-it is sandboxed and cannot write to the file system. This means that all audio 
-is streaming audio. However, it _is_ possible to use an audio loopback driver 
-such as [BlckHole](https://github.com/ExistentialAudio/BlackHole) to route 
+it is sandboxed and cannot write to the file system. In other words, cloud-5 
+cannot write soundfiles, or any other kind of files. That means all audio is 
+streaming audio. 
+
+However, it _is_ possible to use an audio loopback driver such as 
+[BlackHole](https://github.com/ExistentialAudio/BlackHole) to route 
 audio produced by cloud-5 to a digital audio workstation that _can_ write 
-soundfiles.
+soundfiles. The maximum resolution of such soundfiles is floating-point 
+samples at 48 KHz, significantly higher resolution than the CD format.
 
 ## Getting Started
 
@@ -99,16 +123,19 @@ soundfiles.
 
  - A Web server that will run from a configurable directory in which you can 
    read, edit, and write files. On most systems, the simplest way to get a Web 
-   server is to install [Python](https://www.python.org/). On Android, install 
-   an HTTP server such as [xxx], and a text editor such as [xxx].
+   server is to install [Python](https://www.python.org/).
    
  - A standards-compliant Web browser (currently, that includes nearly all Web 
-   browsers). Should already exist on your system.
+   browsers). Should already exist on your system. On Android, install a Web 
+   server app such as 
+   [Phlox](https://play.google.com/store/apps/details?id=com.phlox.simpleserver).
    
  - A text or code editor for writing your compositions. A simple text editor 
    should already exist on your system. I use 
    [SciTE](https://scintilla.org/SciTE.html) myself as it is very 
-   lightweight and yet very easy to customize.
+   lightweight and yet very easy to customize. On Android, install 
+   a text editor such as
+   [QuickEdit Pro](https://play.google.com/store/apps/details?id=com.rhmsoft.edit.pro). 
    
  - Of course, an audio driver that will play audio from Web browsers! Should 
    already be part of your operating system.
@@ -141,13 +168,14 @@ server to serve files from your cloud-5 directory.
     [cloud_music_no_1.html](cloud_music_no_1.html) and verify that you see 
     animated graphics, and can play and hear the piece.
 
-### Making Music
+## Making Music
 
 In cloud-5, musical compositions are written as Web pages, i.e. as .html 
-files.
+files. Csound orchestra code, JavaScript, and GLSL shader programs can simply 
+be embedded in the HTML code.
 
 It's a good idea for each composition to be written as just one .html file. 
-They should be in your cloud-5 directory.
+It should be in your cloud-5 directory.
 
 There are many ways to write compositions, because the capabilities of 
 Csound, Strudel, and HTML5 are so vast.
@@ -178,14 +206,14 @@ more complicated and capable.
  - [Cloud Music No. 1](cloud_music_no_1.html), a piece that generates a 
    abstract flowing visual using a GLSL shader. Data from the moving image 
    is sampled to obtain musical notes, which are then transformed using 
-   chores, scales, and modulations generated by CsoundAC, and rendered as 
+   chords, scales, and modulations generated by CsoundAC, and rendered as 
    audio using Csound.
    
  - [Cloud Music No. 9](cloud_music_no_9.html), a Strudel piece in an 
    alternative tuning system that uses Csound for synthesis, with a music 
    visualization written in GLSL. There is an embedded Strudel REPL that 
-   allows the user to live code the piece, while showing an animated piano r
-   oll display of the generated notes.
+   allows the user to live code the piece, while showing an animated piano 
+   roll display of the generated notes.
    
 ## Extending cloud-5
 
@@ -198,6 +226,11 @@ You can extend the capabilities of cloud-5 in several ways, including:
  
  - Write code in another high-level language and compile it for WebAssembly, 
    so that it will run in any standards-compliant Web browser.
+   
+ - Adapt for your musical purposes any other software that can run in a Web 
+   browser and be controlled by JavaScript. That covers rather a lot of 
+   ground....
+   
 
 
 
