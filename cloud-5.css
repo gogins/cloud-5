@@ -1,0 +1,16 @@
+<style>
+body {
+    margin: 2em;
+    padding-right: 1em;
+    padding-left: 1em;
+    max-width: 7in; 
+    color: black;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 100%;
+    line-height: 140%;
+    background: whitesmoke; 
+}
+p {
+    font-family: Georgia, Garamond, serif;
+}
+</style>

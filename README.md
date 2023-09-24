@@ -1,16 +1,3 @@
-<style>
-body {
-    margin: 2em;
-    padding-right: 1em;
-    padding-left: 1em;
-    max-width: 7in; 
-    color: black;
-    font-family: Verdana, sans-serif;
-    font-size: 100%;
-    line-height: 140%;
-    background: whitesmoke; 
-}
-</style>
 # cloud-5
 #### An HTML5-based computer music system with Csound, CsoundAC, and Strudel by [Michael Gogins](https://michaelgogins.tumblr.com). 
 
