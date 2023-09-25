@@ -70,6 +70,7 @@
     <!--
     
 const csac = await import('../csoundac.mjs');
+csac.diagnostic_level(csac.WARNING);
 /**
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
@@ -118,15 +119,15 @@ let GM = csac.Chord('GM');
 let chordPattern = new csac.ChordPatterns(GM);
 pure(0)
   .fast(32)
-  .Logistic(logisticInstance, ".88")
-  .acC(chordPattern, "CM7").slow(2)
+  .Logistic(logisticInstance, ".888")
+  .acC(chordPattern, "CM").slow(2)
   .acCT(chordPattern, "0 1 2 3 4 -10".slow(12)).slow(2)
   .acCV(chordPattern)
-.note()
+//.note()
 .pianoroll({cycles:32,maxMidi:127,minMidi:0})
 //.piano()
-.csoundn("6")    
-.legato(2)  
+.csoundn("5")    
+.legato(2)
 
 -->
     
