@@ -6,7 +6,7 @@ import os
 import os.path
 
 index_html_filepath = "strudel/website/dist/index.html"
-strudel_repl_html_filepath = "dist/strudel_repl.html"
+strudel_repl_html_filepath = "cloud-5/strudel_repl.html"
 print(f"Patching '{index_html_filepath}'")
 with open(index_html_filepath, "r+") as input_file:
   find_this = '="/'
