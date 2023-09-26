@@ -99,7 +99,7 @@ class LogisticPattern extends csac.StatefulPatterns {
             logistic_counter = logistic_counter + 1;
             csac.diagnostic('[Logistic] sync onset: ' + ' logistic_counter: '  + logistic_counter + ' note: ' + this.midi_key + '\n', csac.INFORMATION);
         }
-        hap.value = {note: this.midi_key};
+        hap.value = this.midi_key;
         console.log('[Logistic]: ' + hap.show());
         return hap;
     }

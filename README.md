@@ -131,16 +131,20 @@ samples at 48 KHz, significantly higher resolution than the CD format.
 
 There is no installation!
 
-Well, actually there is one thing. Simply copy the entire cloud-5 directory 
-and all contents to your computer or device. Make sure you can read, edit, and 
-write files in your cloud-5 directory.
+cloud-5 can be stored on a USB thumb drive and will run with all funcionality 
+from the thumb drive. This makes it possible to carry all your work in 
+progress from computer to device to computer.
+
+Or, simply copy the entire cloud-5 directory with all contents to your computer 
+or device. Make sure you can read, edit, and write files in your cloud-5 
+directory.
 
 ### Configuration
 
 There is no configuration!
 
-Well, actually there might be one thing. You might need to configure your Web 
-server to serve files from your cloud-5 directory.
+Well, actually there might be one thing. You might need to configure your 
+local Web server to serve files from your cloud-5 directory.
 
 ### Running
 
@@ -231,15 +235,17 @@ You can extend the capabilities of cloud-5 in several ways, including:
  - Create a pull request in your fork. Reference the issue you have 
    created.
  
- - I will review the pull request and merge it if I think that best.
+ - I will review the pull request, and I will probably merge it if it does not 
+   break existing functionality, is in keeping with the general objectives of 
+   cloud-5, and builds and runs for me.
  
 Avoid introducing new external dependencies as much as possible. Avoid 
 introducing new programming languages as much as possible. Do not load 
 dependencies from content distribution networks (CDNs); all dependendencies 
 used by cloud-5 must be static resources in the cloud-5 directory 
 (obviously, Strudel is a big exception, but I want to keep that the only one; 
-besides, the build process bundles Strudel into .js files in the cloud-5 
-directory).
+besides, the build process bundles Strudel into .js files that are statically 
+served from the cloud-5 directory).
    
 
 

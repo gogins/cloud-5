@@ -107,7 +107,7 @@ class LogisticPattern extends csac.StatefulPatterns {
             this.delta_time = this.current_time - this.prior_time;
             this.prior_time = this.current_time;
         }
-        hap = csac.setPitch(hap, this.value);
+        hap.value = this.value;
         csac.diagnostic('[Logistic query] ' + hap.show() + '\n');
         return hap;
      }
