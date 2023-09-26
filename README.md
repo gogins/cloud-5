@@ -246,6 +246,39 @@ used by cloud-5 must be static resources in the cloud-5 directory
 (obviously, Strudel is a big exception, but I want to keep that the only one; 
 besides, the build process bundles Strudel into .js files that are statically 
 served from the cloud-5 directory).
+
+## Building
+
+Install [pnpm](https://www.npmjs.com/package/pnpm), which cloud-5 and 
+Strudel use rather than npm. On macOS (I don't know about other platforms), 
+you may need to specifically install node@18.
+
+To initialize the local repository, obtain dependencies, build a static Web 
+site, and run it locally, execute the following commands:
+
+```
+pnpm install
+pnpm run setup
+pnpm run build
+pnpm run debug
+```
+These commands will patch Strudel with my addons; build everything; make a 
+distributable copy of the cloud-5 Web site in the `cloud-5` directory, with 
+all resources statically available; and run a local Web site, which is source 
+level debuggable, in that directory. Examine `package.json` for details. 
+
+This may fail due to failure to build `canvas.node` (not actually used here). 
+If that happens, execute `cd cloud-5/strudel/packages/canvas` and 
+`node-gyp rebuild`, and try again from `pnpm run build`.
+
+Before updating Strudel from GitHub, make a branch to contain the updates if 
+they break cloud-5.
+
+If you see warnings or errors, don't panic unless browsing localhost does not 
+open a working Web site with playable pieces! 
+
+It may be necessary to clear the browser cache and application site data to 
+see updated pieces.
    
 
 
