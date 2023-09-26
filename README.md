@@ -3,8 +3,8 @@
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" 
 style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
-</a><br />Musical examples herein are licensed under a 
-<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+</a><br />Musical examples herein are licensed under a <a rel="license" 
+href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. 
 
 Code written as part of cloud-5 is licensed under the terms of the same 
@@ -19,18 +19,18 @@ Welcome to cloud-5, a system for making sophisticated computer music purely in t
 HTML5 environment!
 
 cloud-5 runs on every system that has audio output, that can run any kind of 
-Web server, and that has any standards compliant Web browser. 
+Web server, and that has any standards compliant Web browser. The system is 
+especially suited for pieces that run indefinitely, for pieces that run online, 
+for live coding, for visual music, and for algorithmic composition.
 
 That includes _all_ computers running macOS, Linux, or Windows, as well as 
 most Android devices. It is also possible to run cloud-5 on single-board 
-computers (SBCs) such as [Bela](https://bela.io/), 
-[Norns](https://monome.org/docs/norns/), 
-[BeagleBoards](https://www.beagleboard.org/), 
-[Raspberry Pi](https://www.raspberrypi.com/), and others. However, running 
-cloud-5 on a SBC requires installing at least a Web server (and probably also 
-a Web browser) on the device. Most users without special need for a SBC (such 
-as an installation or kiosk) will be better off just using a personal 
-computer.
+computers (SBCs) such as [Bela](https://bela.io/), [Norns](https://monome.org/docs/norns/), 
+[BeagleBoards](https://www.beagleboard.org/), [Raspberry Pi](https://www.raspberrypi.com/), 
+and others. However, running cloud-5 on a SBC requires installing at least a 
+Web server (and probably also a Web browser) on the device. Most users without special 
+need for a SBC (such as an installation or kiosk) will be better off just using a 
+personal computer.
 
 cloud-5 is used by my own Web site of "always-on" computer music pieces, 
 [cloud-music](https://gogins.github.io/).
