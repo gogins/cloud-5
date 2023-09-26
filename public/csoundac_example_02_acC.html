@@ -70,16 +70,11 @@
     <!--
     
 const csac = await import('../csoundac.mjs');
+csac.diagnostic_level(csac.WARNING);
 /**
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
  * Using classes makes it easy to encapsulate different collections of state.
- *
- * This particular `stateful` class is instrumented with debug information to 
- * prove whether or not evaluations are triggered when they should be, e.g. 
- * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
- * per second, and so on; also, there should be exactly 1 call to `evaluate`
- * for every note triggered by the Pattern.
  */
 class LogisticPattern extends csac.StatefulPatterns {
     constructor(c = .998, y = .5) {
@@ -88,27 +83,24 @@ class LogisticPattern extends csac.StatefulPatterns {
         // Initial values.
         this.c = c;
         this.y = y;
-        this.value = 36;
-        this.prior_time = 0;
-        this.current_time = 0;
-        this.delta_time = 0;
+        this.midi_key = 36;
     }
     /**
      * Patternify the 'c' coefficient of the logistic equation.
      */
     Logistic(is_onset, c, hap) {
         if (is_onset) {
-            // This has been invoked from a trigger and should update state.
+            // This has been invoked from a trigger and should update the 
+            // state.
             this.c = c;
             let y1 = 4 * this.c * this.y * (1 - this.y);
-            this.value = Math.round(y1 * 36 + 36);
-            csac.diagnostic('[Logistic onset] value: ' + this.value + '\n');
+            this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
-            this.delta_time = this.current_time - this.prior_time;
-            this.prior_time = this.current_time;
+            hap.value = this.midi_key;
+            console.log('[Logistic onset] ' + hap.show() + '\n');
         }
-        hap = csac.setPitch(hap, this.value);
-        csac.diagnostic('[Logistic query] ' + hap.show() + '\n');
+        // This should merely return the value of the state.
+        hap.value = this.midi_key;
         return hap;
      }
 }
@@ -116,17 +108,19 @@ class LogisticPattern extends csac.StatefulPatterns {
 let logisticInstance = new LogisticPattern();
 let GM = csac.Chord('GM');
 let chordPattern = new csac.ChordPatterns(GM);
-
 pure(0)
-.slow(8)
-.Logistic(logisticInstance, ".99933 .88")
-.fast(24)
-.acC(chordPattern, "CM7 F#M7".slow(24))
-.acCV(chordPattern)
+  .fast(32)
+  .Logistic(logisticInstance, ".888")
+  .acC(chordPattern, "CM").slow(2)
+  // This pattern should be very clearly audible.
+  .acCT(chordPattern, "0 1 2 3 4 -10".slow(12)).slow(2)
+  .acCV(chordPattern)
 .note()
-.pianoroll({cycles:32,maxMidi:127,minMidi:0})
+.legato("2")
 //.piano()
-.legato(3)
+//.csoundm("5")
+.csoundn("5")    
+.pianoroll({cycles:32,maxMidi:127,minMidi:0})
 
 -->
     

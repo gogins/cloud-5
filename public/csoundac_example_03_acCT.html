@@ -68,31 +68,22 @@
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     
     <!--
-    
+
 const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.WARNING);
 /**
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
  * Using classes makes it easy to encapsulate different collections of state.
- *
- * This particular `stateful` class is instrumented with debug information to 
- * prove whether or not evaluations are triggered when they should be, e.g. 
- * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
- * per second, and so on; also, there should be exactly 1 call to `evaluate`
- * for every note triggered by the Pattern.
  */
 class LogisticPattern extends csac.StatefulPatterns {
-    constructor(c = .998, y = .5) {
+    constructor(c = .888, y = .5) {
         super();
         this.registerPatterns();
         // Initial values.
         this.c = c;
         this.y = y;
-        this.value = 36;
-        this.prior_time = 0;
-        this.current_time = 0;
-        this.delta_time = 0;
+        this.midi_key = 36;
     }
     /**
      * Patternify the 'c' coefficient of the logistic equation.
@@ -102,14 +93,13 @@ class LogisticPattern extends csac.StatefulPatterns {
             // This has been invoked from a trigger and should update state.
             this.c = c;
             let y1 = 4 * this.c * this.y * (1 - this.y);
-            this.value = Math.round(y1 * 36 + 36);
-            csac.diagnostic('[Logistic onset] value: ' + this.value + '\n');
+            this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
-            this.delta_time = this.current_time - this.prior_time;
-            this.prior_time = this.current_time;
+            hap.value = this.midi_key;
+            console.log('[Logistic onset] ' + hap.show() + '\n');
         }
-        hap = csac.setPitch(hap, this.value);
-        csac.diagnostic('[Logistic query] ' + hap.show() + '\n');
+        hap.value = this.midi_key;
+        // console.log('[Logistic query] ' + hap.show() + '\n');
         return hap;
      }
 }
@@ -120,14 +110,17 @@ let chordPattern = new csac.ChordPatterns(GM);
 pure(0)
   .fast(32)
   .Logistic(logisticInstance, ".888")
-  .acC(chordPattern, "CM").slow(2)
+  .acC(chordPattern, "<CM7 Dm7>/3").slow(2)
+  // This pattern should be very clearly audible.
   .acCT(chordPattern, "0 1 2 3 4 -10".slow(12)).slow(2)
   .acCV(chordPattern)
-//.note()
-.pianoroll({cycles:32,maxMidi:127,minMidi:0})
-//.piano()
-.csoundn("5")    
-.legato(2)
+  .note()
+  .legato("2")
+  .pianoroll({cycles:32,maxMidi:127,minMidi:0})
+  //.piano()
+  //.csoundm("5")
+  .csoundn("5")    
+
 
 -->
     
