@@ -1,6 +1,6 @@
 #!/bin/python3
 '''
-Patching cloud-music dist with relative asset filepaths in the Strudel REPL iframe...
+Patching cloud-5 dist with relative asset filepaths in the Strudel REPL iframe...
 '''
 import os
 import os.path

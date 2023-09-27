@@ -3,7 +3,7 @@
     "clean-modules": "find . -name \"node_modules\" -type d -exec rm -r {} +;",
     "setup": "git submodule update --init --recursive --remote && cd strudel && git checkout main && git stash && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
-    "build": "pnpm run build-strudel && vite build && mkdir -p cloud-5 && cp -rf strudel/website/dist/* cloud-5/ && rm cloud-5/CNAME && pandoc -s cloud-5.css --ascii=true README.md -o cloud-5/index.html && python3 patch-dist.py && ls -ll cloud-5",
+    "build": "pnpm run build-strudel && vite build && mkdir -p cloud-5 && cp -rf strudel/website/dist/* cloud-5/ && rm cloud-5/CNAME && pandoc -s cloud-5.css --ascii=true README.md -o cloud-5/index.html && python3 patch-dist.py && cp -f favicon.ico cloud-5/ && ls -ll cloud-5",
     "package": "zip -r cloud-5.zip cloud-5",
     "debug": "cd cloud-5 && python3 -m http.server"
   },
