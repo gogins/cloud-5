@@ -12,7 +12,10 @@ with open(index_html_filepath, "r+") as input_file:
   find_this = '="/'
   replace_with = '="./'
   text = input_file.read()
-  patched_text = text.replace(find_this, replace_with)
+  patched_text = text;
+  # Not needed if cloud-5 is Web root.
+  #~ patched_text = text.replace(find_this, replace_with)
+  # Needed:
   find_this = '<style>astro-island,'
   replace_with = '''
   <script>
