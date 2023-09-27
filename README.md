@@ -15,22 +15,21 @@ licenses; see the links to individual packages for more information.
 
 ## Introduction
 
-Welcome to cloud-5, a system for making sophisticated computer music purely in the 
-HTML5 environment!
+Welcome to cloud-5, a system for making sophisticated computer music purely in 
+the HTML5 environment! The system is especially suited for pieces that run 
+indefinitely, for pieces that run online, for live coding, for visual music, 
+and for algorithmic composition.
 
-cloud-5 runs on every system that has audio output, that can run any kind of 
-Web server, and that has any standards compliant Web browser. The system is 
-especially suited for pieces that run indefinitely, for pieces that run online, 
-for live coding, for visual music, and for algorithmic composition.
-
-That includes _all_ computers running macOS, Linux, or Windows, as well as 
-most Android devices. It is also possible to run cloud-5 on single-board 
-computers (SBCs) such as [Bela](https://bela.io/), [Norns](https://monome.org/docs/norns/), 
-[BeagleBoards](https://www.beagleboard.org/), [Raspberry Pi](https://www.raspberrypi.com/), 
-and others. However, running cloud-5 on a SBC requires installing at least a 
-Web server (and probably also a Web browser) on the device. Most users without special 
-need for a SBC (such as an installation or kiosk) will be better off just using a 
-personal computer.
+cloud-5 runs on every system that has audio output, that can run a Web server, 
+and that has a standards compliant Web browser. That includes _all_ computers 
+running macOS, Linux, or Windows, as well as most Android devices. It is also 
+possible to run cloud-5 on single-board computers (SBCs) such as [Bela](https://bela.io/), 
+[Norns](https://monome.org/docs/norns/), [BeagleBoards](https://www.beagleboard.org/), 
+[Raspberry Pi](https://www.raspberrypi.com/), and others. However, running 
+cloud-5 on a SBC requires installing at least a Web server (and probably also 
+a Web browser) on the device. Most users without special need for a SBC (such 
+as an installation or kiosk) will be better off just using a personal 
+computer.
 
 cloud-5 is used by my own Web site of "always-on" computer music pieces, 
 [cloud-music](https://gogins.github.io/).
@@ -131,13 +130,13 @@ samples at 48 KHz, significantly higher resolution than the CD format.
 
 There is no installation!
 
-cloud-5 can be stored on a USB thumb drive and will run with all funcionality 
-from the thumb drive. This makes it possible to carry all your work in 
+cloud-5 can be stored on a USB thumb drive and will run with all functionality 
+from the thumb drive. This makes it possible to carry all of your work in 
 progress from computer to device to computer.
 
 Or, simply copy the entire cloud-5 directory with all contents to your computer 
-or device. Make sure you can read, edit, and write files in your cloud-5 
-directory.
+or device. Make sure you can execute, read, edit, and write files in your 
+cloud-5 directory.
 
 ### Configuration
 
@@ -148,12 +147,14 @@ local Web server to serve files from your cloud-5 directory.
 
 ### Running
 
- 1. Start your Web server to serve the cloud-5 directory. The easiest way to 
-    do this on most systems is to open a terminal, change to your cloud-5 
+ 1. Start a local Web server to serve the cloud-5 directory. The easiest way 
+    to do this on most systems is to open a terminal, change to your cloud-5 
     directory, and execute `python3 -m http.server`. 
 
  2. Start your Web browser, and navigate to your cloud-5 Web site (usually 
-    just something like `https://localhost:8000`).
+    just something like `https://localhost:8000`). Some users have problems 
+    with Firefox, e.g. with WebMIDI permissions. If you experience this, try 
+    the Chrome browser.
 
  3. You should see this README as a Web page. Click on 
     [cloud_music_no_1.html](cloud_music_no_1.html) and verify that you see 
@@ -162,11 +163,12 @@ local Web server to serve files from your cloud-5 directory.
 ## Making Music
 
 In cloud-5, musical compositions are written as Web pages, i.e. as .html 
-files. Csound orchestra code, JavaScript, and GLSL shader programs can simply 
-be embedded in the HTML code.
+files. 
 
 It's a good idea for each composition to be written as just one .html file. 
-It should be in your cloud-5 directory.
+It should be in your cloud-5 directory. The Csound orchestra code, JavaScript, 
+and GLSL shader programs can simply be embedded in the HTML file as JavaScript 
+template strings (string literals).
 
 There are many ways to write compositions, because the capabilities of 
 Csound, Strudel, and HTML5 are so vast.
@@ -244,8 +246,8 @@ introducing new programming languages as much as possible. Do not load
 dependencies from content distribution networks (CDNs); all dependendencies 
 used by cloud-5 must be static resources in the cloud-5 directory 
 (obviously, Strudel is a big exception, but I want to keep that the only one; 
-besides, the build process bundles Strudel into .js files that are statically 
-served from the cloud-5 directory).
+besides, the build process bundles Strudel into .js files that _are_ 
+statically served from the cloud-5 directory).
 
 ## Building
 
