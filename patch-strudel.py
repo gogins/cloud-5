@@ -146,6 +146,29 @@ Pattern.prototype.pianoroll = function (options = {}) {
   file.truncate()
   file.write(patched_text)
 
+'''
+Fixes Strudel to store the single Cyclist in globalThis.
+'''
+cyclist_mjs_filepath = "strudel/packages/core/cyclist.mjs";
+print(f"Patching '{cyclist_mjs_filepath}'")
+with open(cyclist_mjs_filepath, "r+") as file:
+  find_this = '''      interval, // duration of each cycle
+    );
+  }
+  now() {'''
+  replace_with = '''      interval, // duration of each cycle
+    );
+    let that = this;
+    globalThis.__cyclist__ = that;
+  }
+  now() {'''
+  text = file.read()
+  patched_text = text.replace(find_this, replace_with)
+  print(patched_text)
+  file.seek(0)
+  file.truncate()
+  file.write(patched_text)
+
   
   
 

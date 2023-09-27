@@ -279,6 +279,8 @@ export const csoundn = register('csoundn', (instrument, pat) => {
         } else {
             p5 = 127 * hap.value.gain;
         }
+        const p6 = 0; // Not used here.
+        let p7 = .5; // Pan, will update from controls if in controls.
         // For stateful Patterns, in order to display notes in `pianoroll`,
         // it is necessary to send haps to `pianoroll` from this (the output).
         if (typeof globalThis.haps_from_outputs !== 'undefined') {
@@ -286,11 +288,11 @@ export const csoundn = register('csoundn', (instrument, pat) => {
             globalThis.haps_from_outputs.push(hap);
         }
         // All Strudel controls as a string.
-        const p6 = '\"' + Object.entries({ ...hap.value, frequency })
+        const controls = '\"' + Object.entries({ ...hap.value, frequency })
           .flat()
           .join('/') + '\"';
         ///const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
-        const i_statement = ['i', p1, p2, p3, p4, p5, '\n'].join(' ');
+        const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, controls, '\n'].join(' ');
         console.log('[csoundn] ' + i_statement);
         csound.readScore(i_statement);
          if (diagnostic_level() >= INFORMATION) diagnostic('[csoundn] sync: ' + ' note_counter: ' + note_counter + ' note: ' + p4 + '\n');
