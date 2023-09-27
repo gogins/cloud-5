@@ -26,7 +26,7 @@ with open(index_html_filepath, "r+") as input_file:
     }
     </script>
     <style>astro-island,'''
-  patched_text = text.replace(find_this, replace_with)
+  patched_text = patched_text.replace(find_this, replace_with)
   print(patched_text)
   with open(strudel_repl_html_filepath, "w") as output_file:
       output_file.write(patched_text)
