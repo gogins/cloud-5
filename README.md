@@ -15,12 +15,12 @@ licenses; see the links to individual packages for more information.
 
 ## Introduction
 
-Welcome to cloud-5, a system for making sophisticated computer music purely in 
-the HTML5 environment! The system is especially suited for pieces that run 
-online, for pieces that play indefinitely, for visual music, for algorithmic 
-composition, and for live coding.
+Welcome to cloud-5, a system and toolkit for making sophisticated computer 
+music purely in the HTML5 environment! The system is especially suited for 
+pieces that run online, for pieces that play indefinitely, for visual music, 
+for algorithmic composition, and for live coding.
 
-cloud-5 runs on every system with an audio output that can run a Web server, 
+cloud-5 runs on every system with an audio output that can run a Web server 
 and a standards compliant Web browser. That includes _all_ computers 
 running macOS, Linux, or Windows, as well as most Android devices. It is also 
 possible to run cloud-5 on single-board computers (SBCs) such as [Bela](https://bela.io/), 
@@ -56,7 +56,8 @@ this document.
  
  - [Strudel](https://strudel.tidalcycles.org/), a JavaScript port of the 
    widely used live coding system [Tidal Cycles](http://tidalcycles.org/), by 
-   Alex McLean, Felix Roos, and others.
+   Alex McLean, Felix Roos, and others. _Note_: cloud-5 makes several 
+   necessary patches to the Strudel source code and distribution.
    
  - Of course, a standards-compliant Web browser, which has an awesome set of 
    capabilities, including the most widely used programming language, 
