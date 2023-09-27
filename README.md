@@ -287,6 +287,12 @@ see updated pieces.
 
 ## Release Notes
 
+### [v0.1beta3](https://github.com/gogins/cloud-5/commits/v0.1beta2)
+
+ - Put in needed patch for `cyclist.mjs`.
+ 
+ - Restored concatenated Strudel controls string in `csoundac.mjs`.
+
 ### [v0.1beta2](https://github.com/gogins/cloud-5/commits/v0.1beta2)
 
  - Improved README.md/index.html.

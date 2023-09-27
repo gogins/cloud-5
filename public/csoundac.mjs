@@ -182,62 +182,6 @@ export const csoundn_ = register('csoundn_', (instrument, pat) => {
  *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
  *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
  *  p6 -- Strudel controls, as a string.
- */
-export const csoundo = register('csoundo', (instrument, pat) => {
-  let p1 = instrument;
-  if (typeof instrument === 'string') {
-    p1 = ['${', instrument, '}'].join();
-  }
-  return pat.onTrigger((tidal_time, hap) => {
-    if (!csound) {
-      diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
-      return;
-    }
-    // For stateful Patterns, in order to display notes in `pianoroll`,
-    // it is necessary to send haps to `pianoroll` from this (the output).
-    if (typeof globalThis.haps_from_outputs !== 'undefined') {
-        globalThis.haps_from_outputs.push(hap);
-    }
-    note_counter = note_counter + 1;
-    // Time in seconds counting from now.
-    const p2 = tidal_time - audioContext.currentTime;
-    // Either this, or early return.
-    if (p2 < 0) {
-        p2 = 0;
-    }
-    const p3 = hap.duration.valueOf() + 0;
-    const frequency = getFrequency(hap);
-    // Translate frequency to MIDI key number _without_ rounding.
-    const C4 = 261.62558;
-    let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
-    const p4 = octave * 12.0 - 36.0;
-    // We prefer floating point precision, but over the MIDI range [0, 127].
-    const p5 = 127 * (hap.context?.velocity ?? 0.9);
-    // All Strudel controls as a string.
-    const p6 = '\"' + Object.entries({ ...hap.value, frequency })
-      .flat()
-      .join('/') + '\"';
-    const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
-    hap = setPitch(hap, Math.round(p4));
-    diagnostic('[csoundn] ' + i_statement, INFORMATION);
-    csound.inputMessage(i_statement);
-    // The trigger hijacks the default output, hence it is non-dominant with gain 0.
-    if (diagnostic_level() >= INFORMATION) diagnostic('[csoundn] sync: ' + ' note_counter: ' + note_counter + ' note: ' + p4 + '\n');
-  }, true);
-});
-
-
-/**
- * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
- * translated to these Csound pfields:
- *
- *  p1 -- Csound instrument either as a number (1-based, can be a fraction),
- *        or as a string name.
- *  p2 -- time in beats (usually seconds) from start of performance.
- *  p3 -- duration in beats (usually seconds).
- *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
- *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
- *  p6 -- Strudel controls, as a string.
  *
  * This implementation does not use a trigger. Each cycle schedules a block 
  * of Csound events.
