@@ -286,7 +286,7 @@ see updated pieces.
 
 ## Release Notes
 
-### v0.1.1beta
+### [v0.1beta2](https://github.com/gogins/cloud-5/commits/v0.1beta2)
 
  - Improved README.md/index.html.
 
