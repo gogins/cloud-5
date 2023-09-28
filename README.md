@@ -1,4 +1,4 @@
-# cloud-5
+# [cloud-5](https://github.com/gogins/cloud-5)
 #### An HTML5-based computer music system with Csound, CsoundAC, and Strudel by [Michael Gogins](https://michaelgogins.tumblr.com). 
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" 
