@@ -45,6 +45,11 @@ export function diagnostic(message, level = INFORMATION) {
     }
 };
 
+export const reference = (accessor) =>
+  pure(1)
+    .withValue(() => reify(accessor()))
+    .innerJoin();
+
 /**
  * This is a base class that can be used to _automatically_ define Patterns 
  * that hold state between queries. Derived classes, which must be defined at 
@@ -146,4 +151,5 @@ export class StatefulPatterns {
         }
     }
 }
+
 
