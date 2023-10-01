@@ -115,12 +115,10 @@ pure(0)
   // This pattern should be very clearly audible.
   .acCT(chordPattern, "0 1 2 3 4 -10".slow(12)).slow(2)
   .acCV(chordPattern)
-.note()
-.legato("2")
-//.piano()
-//.csoundm("5")
-.csoundn("5")    
-.pianoroll({cycles:32,maxMidi:127,minMidi:0})
+  .note()
+  .legato("2")
+  .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
+  .csoundn("5")    
 
 -->
     

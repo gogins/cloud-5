@@ -122,11 +122,11 @@ pure(0).slow(4)
     .acS(scalePattern,"C_major F#_major".slow(64))
     .acSS(scalePattern, "1 5 2 7 1".slow(32))
     .acSCV(scalePattern)
-.note()
-.pianoroll({cycles:32,maxMidi:127,minMidi:0})
-//.piano()
-.csoundn("1")    
-.legato(2)    
+    .note()
+    .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
+    .csoundn("1")    
+    .legato(2)    
+    
 -->
     
     </strudel-repl-component>

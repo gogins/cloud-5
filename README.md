@@ -210,7 +210,14 @@ out simple, and get more and more complicated and capable.
    visualization written in GLSL. There is an embedded Strudel REPL that 
    allows the user to live code the piece, while showing an animated piano 
    roll display of the generated notes.
-   
+
+## Experiments and Tests
+
+These are pieces being used to develop and test new features of cloud-5.
+
+ - [Cloud Music No. 10](cloud_music_no_10.html), a Strudel piece that uses 
+   CsoundAC chord transformations inside the Strudel pattern.
+
 ## Extending cloud-5
 
 You can extend the capabilities of cloud-5 in several ways, including:

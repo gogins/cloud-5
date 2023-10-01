@@ -26,12 +26,12 @@ export function diagnostic_level(new_level) {
     return old_level;
 };
 
-export const ALWAYS = 5;
+export const NEVER = 5;
 export const DEBUG = 4;
 export const INFORMATION = 3;
 export const WARNING = 2;
 export const ERROR = 1;
-export const NEVER = 0;
+export const ALWAYS = 0;
 
 /**
  * Prints a diagnostic message to both the Strudel logger and the Csound 

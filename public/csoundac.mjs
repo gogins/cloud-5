@@ -28,7 +28,6 @@
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
 let audioContext = new AudioContext();
-let note_counter = 0;
 
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
@@ -116,6 +115,10 @@ export function Clone(a, b) {
     }
 }
 
+export function print_counter(pattern, counter, hap) {
+    diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + hap.show() + '\n', ALWAYS);
+}
+
 /**
  * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
  * translated to these Csound pfields:
@@ -126,49 +129,71 @@ export function Clone(a, b) {
  *  p3 -- duration in beats (usually seconds).
  *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
  *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
- *  p6 -- Strudel controls, as a string.
+ *  p8 -- Strudel controls, as a string.
+ *
+ * This implementation does not use a trigger. Each cycle schedules a block 
+ * of Csound events.
  */
-export const csoundn_ = register('csoundn_', (instrument, pat) => {
-  let p1 = instrument;
-  if (typeof instrument === 'string') {
-    p1 = ['${', instrument, '}'].join();
-  }
-  return pat.onTrigger((tidal_time, hap) => {
-    if (!csound) {
-      diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
-      return;
+let csoundn_counter = 0;
+export const csoundn = register('csoundn', (instrument, pat) => {
+    let p1 = instrument;
+    if (typeof instrument === 'string') {
+        p1 = ['${', instrument, '}'].join();
     }
-    // For stateful Patterns, in order to display notes in `pianoroll`,
-    // it is necessary to send haps to `pianoroll` from this (the output).
-    if (typeof globalThis.haps_from_outputs !== 'undefined') {
-        globalThis.haps_from_outputs.push(hap);
-    }
-    note_counter = note_counter + 1;
-    // Time in seconds counting from now.
-    const p2 = tidal_time - audioContext.currentTime;
-    // Either this, or early return.
-    if (p2 < 0) {
-        p2 = 0;
-    }
-    const p3 = hap.duration.valueOf() + 0;
-    const frequency = getFrequency(hap);
-    // Translate frequency to MIDI key number _without_ rounding.
-    const C4 = 261.62558;
-    let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
-    const p4 = octave * 12.0 - 36.0;
-    // We prefer floating point precision, but over the MIDI range [0, 127].
-    const p5 = 127 * (hap.context?.velocity ?? 0.9);
-    // All Strudel controls as a string.
-    const p6 = '\"' + Object.entries({ ...hap.value, frequency })
-      .flat()
-      .join('/') + '\"';
-    const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
-    hap = setPitch(hap, Math.round(p4));
-    diagnostic('[csoundn] ' + i_statement, INFORMATION);
-    csound.inputMessage(i_statement);
-    // The trigger hijacks the default output, hence it is non-dominant with gain 0.
-    if (diagnostic_level() >= INFORMATION) diagnostic('[csoundn] sync: ' + ' note_counter: ' + note_counter + ' note: ' + p4 + '\n');
-  }, false).gain(0);
+    return pat.withHap((hap) => {
+         if (!csound) {
+          diagnostic('[csounds]: Csound is not yet loaded.\n', WARNING);
+          return;
+        }
+        // Time in seconds counting from the start of this cycle.
+        // Either this, or early return.
+        if (hap.part.begin.equals(hap.whole.begin) == false) {
+            /// diagnostic('[csoundn]: early return (hap.part.begin !== hap.whole.begin).\n', WARNING);
+            return hap;
+        }
+        let hap_begin = hap.whole.begin.valueOf();
+        let cyclist_last_begin = globalThis.__cyclist__.lastBegin;
+        let cyclist_latency = globalThis.__cyclist__.latency;
+        let p2 = hap_begin - cyclist_last_begin + cyclist_latency;
+        ///let p2 = hap_begin - cyclist_last_begin;/// - cyclist_latency;
+        if (p2 < 0) {
+            diagnostic('[csoundn]: early return (p2: ' + p2 + ' < 0 hap: ' + hap.show() + ').\n', WARNING);
+            return hap;
+        }
+        const p3 = hap.duration.valueOf() + 0;
+        const frequency = getFrequency(hap);
+        // Translate frequency to MIDI key number _without_ rounding.
+        const C4 = 261.62558;
+        let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
+        const p4 = octave * 12.0 - 36.0;
+        // We prefer floating point precision, but over the MIDI range [0, 127].
+        ///const p5 = 127 * (hap.context?.velocity ?? 0.9);
+        let p5;
+        if (typeof hap.value.gain === 'undefined') {
+            p5 = 80;
+        } else {
+            p5 = 127 * hap.value.gain;
+        }
+        const p6 = 0; // Not used here.
+        let p7 = .5; // Pan, will update from controls if in controls.
+        // All Strudel controls as a string.
+        const p8 = '\"' + Object.entries({ ...hap.value, frequency })
+          .flat()
+          .join('/') + '\"';
+        const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
+        // Mark ending of a path through the tree of Patterns with an extra linefeed.
+        diagnostic('[csoundn] ' + i_statement + '\n', INFORMATION);
+        csound.readScore(i_statement);
+        csoundn_counter = csoundn_counter + 1;
+        if (INFORMATION <= diagnostic_level()) {
+            print_counter('csoundn', csoundn_counter, hap);
+        }
+        if (typeof globalThis.haps_from_outputs != 'undefined') {
+            globalThis.haps_from_outputs.push(hap);
+        }
+        return hap;
+        // Silence the default output. This is the hack!
+    }).gain(0);
 });
 
 /**
@@ -181,31 +206,23 @@ export const csoundn_ = register('csoundn_', (instrument, pat) => {
  *  p3 -- duration in beats (usually seconds).
  *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
  *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
- *  p6 -- Strudel controls, as a string.
+ *  p8 -- Strudel controls, as a string.
  *
- * This implementation does not use a trigger. Each cycle schedules a block 
- * of Csound events.
+ * This implementation uses a trigger.
  */
-export const csoundn = register('csoundn', (instrument, pat) => {
+let csoundt_counter = 0;
+export const csoundt = register('csoundt', (instrument, pat) => {
     let p1 = instrument;
     if (typeof instrument === 'string') {
         p1 = ['${', instrument, '}'].join();
     }
-    return pat.withHap((hap) => {
-         if (!csound) {
+    return pat.onTrigger((tidal_time, hap) => {
+        if (!csound) {
           diagnostic('[csounds]: Csound is not yet loaded.\n', WARNING);
           return;
         }
-        note_counter = note_counter + 1;
-        // Time in seconds counting from the start of this cycle.
-        // Either this, or early return.
-        if (hap.part.begin.equals(hap.whole.begin) == false) {
-            return hap;
-        }
-        let hap_begin = hap.whole.begin.valueOf();
-        let cyclist_last_begin = globalThis.__cyclist__.lastBegin;
-        let cyclist_latency = globalThis.__cyclist__.latency;
-        let p2 = hap_begin - cyclist_last_begin + cyclist_latency;
+        // Time in seconds counting from now.
+        const p2 = tidal_time - getAudioContext().currentTime;
         if (p2 < 0) {
             return hap;
         }
@@ -225,24 +242,22 @@ export const csoundn = register('csoundn', (instrument, pat) => {
         }
         const p6 = 0; // Not used here.
         let p7 = .5; // Pan, will update from controls if in controls.
-        // For stateful Patterns, in order to display notes in `pianoroll`,
-        // it is necessary to send haps to `pianoroll` from this (the output).
-        if (typeof globalThis.haps_from_outputs !== 'undefined') {
-            hap.value.gain = p5 / 127;
-            globalThis.haps_from_outputs.push(hap);
-        }
         // All Strudel controls as a string.
-        const controls = '\"' + Object.entries({ ...hap.value, frequency })
+        const p8 = '\"' + Object.entries({ ...hap.value, frequency })
           .flat()
           .join('/') + '\"';
-        ///const i_statement = ['i', p1, p2, p3, p4, p5, p6, '\n'].join(' ');
-        const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, controls, '\n'].join(' ');
-        console.log('[csoundn] ' + i_statement);
+        const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
+        console.log('[csoundt] ' + i_statement);
         csound.readScore(i_statement);
-         if (diagnostic_level() >= INFORMATION) diagnostic('[csoundn] sync: ' + ' note_counter: ' + note_counter + ' note: ' + p4 + '\n');
+        csoundt_counter = csoundt_counter + 1;
+        if ((diagnostic_level() <= INFORMATION) === true) {
+            print_counter('csoundt', csoundt_counter, hap);
+        }
+        if (typeof globalThis.haps_from_outputs != 'undefined') {
+            globalThis.haps_from_outputs.push(hap);
+        }
         return hap;
-        // Silence the default output. This is the hack!
-    }).gain(0);
+    });
 });
 
 /**
@@ -329,6 +344,7 @@ export class ChordPatterns extends StatefulPatterns {
     /**
      * Applies a Chord or chord name to this.
      */
+    static acC_counter = 0;
     acC(is_onset, chord_id, hap) {
         if (is_onset === true) {
             if (typeof chord_id === 'string') {
@@ -342,17 +358,26 @@ export class ChordPatterns extends StatefulPatterns {
                 let message = ['[acC] onset: chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' ');
                 diagnostic(message);
             }
+            ChordPatterns.acC_counter = ChordPatterns.acC_counter + 1;
+            if (diagnostic_level() <= INFORMATION) {
+                print_counter('acC', ChordPatterns.acC_counter, hap);
+            }
         }
         return hap;
     }
     /**
      * Applies a transposition to the Chord of this.
      */
+    static acCT_counter = 0;
     acCT(is_onset, semitones, hap) {
         if (is_onset === true) {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCT onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.T(semitones);
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCT onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            ChordPatterns.acCT_counter = ChordPatterns.acCT_counter + 1;
+            if (diagnostic_level() <= INFORMATION) {
+                print_counter('acCT', ChordPatterns.acCT_counter, hap);
+            }
         }
         return hap;
     }
@@ -360,6 +385,7 @@ export class ChordPatterns extends StatefulPatterns {
      * Applies an inversion to the Chord of this. The 
      * default center of reflection is 0.
      */
+    static acCI_counter = 0;
     acCI(is_onset, center, hap) {
         if (is_onset === true) {
             if (typeof center === 'undefined') {
@@ -368,6 +394,10 @@ export class ChordPatterns extends StatefulPatterns {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCI] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.I(center);
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCI] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            ChordPatterns.acCI_counter = ChordPatterns.acCI_counter + 1;
+            if (diagnostic_level() <= INFORMATION) {
+                print_counter('acCI', ChordPatterns.acCI_counter, hap);
+            }
         }
         return hap;
     }
@@ -375,11 +405,16 @@ export class ChordPatterns extends StatefulPatterns {
      * Applies the interchange by inversion operation of the Generalized 
      * Contextual Group of Fiore and Satyendra to the Chord of this.
      */
+    static acCK_counter = 0;
     acCK(is_onset, hap) {
         if (is_onset === true) {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCK onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.K();
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCK onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            ChordPatterns.acCK_counter = ChordPatterns.acCK_counter + 1;
+            if (diagnostic_level() <= INFORMATION) {
+                print_counter('acCK', ChordPatterns.acCK_counter, hap);
+            }
         }
         return hap;
     }
@@ -388,27 +423,19 @@ export class ChordPatterns extends StatefulPatterns {
      * Contextual Group of Fiore and Satyendra to the Chord of this. The 
      * modality is set in the constructor of this class.
      */
+    static acCQ_counter = 0;
     acCQ(is_onset, semitones, hap) {
         if (is_onset === true) {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCQ onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.Q(semitones, this.ac_modality, 1);
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCQ onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            ChordPatterns.acCQ_counter = ChordPatterns.acCQ_counter + 1;
+            if (diagnostic_level() <= INFORMATION) {
+                print_counter('acCQ', ChordPatterns.acCQ_counter, hap);
+            }
         }
         return hap;
     }
-    //~ /**
-     //~ * Applies the nth octavewise revoicing of the Chord of this that is 
-     //~ * generated by iterating octavewise revoicings within the indicated 
-     //~ * 0-based range.
-     //~ */
-    //~ acCO(is_onset, revoicingNumber_, range, hap) {
-        //~ if (is_onset === true) {
-            //~ if (diagnostic_level() >= DEBUG) diagnostic(['[acCO onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            //~ this.ac_chord = csoundac.octavewiseRevoicing(this.ac_chord, revoicingNumber_, range);
-            //~ if (diagnostic_level() >= DEBUG) diagnostic(['[acCO onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-        //~ } 
-        //~ return hap;
-    //~ }
     /**
      * Transforms the Chord of this to its 'OP' form; 'chord' is an extremely 
      * flexible and therefore ambiguous term, but the 'OP' form is what most 
@@ -418,11 +445,16 @@ export class ChordPatterns extends StatefulPatterns {
      * transformed such that their voices are out of range back to a more 
      * normal form.
      */
+    static acCOP_counter = 0;
     acCOP(is_onset, hap) {
         if (is_onset === true) {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCOP onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.eOP();
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCOP onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            ChordPatterns.acCOP_counter = ChordPatterns.acCOP_counter + 1;
+            if (diagnostic_level() <= INFORMATION) {
+                print_counter('acCOP', ChordPatterns.acCOP_counter, hap);
+            }
         }
         return hap;
     }
@@ -430,9 +462,26 @@ export class ChordPatterns extends StatefulPatterns {
      * Applies the Chord of this to the _pitch-class_ of the Hap, i.e., moves 
      * the _pitch-class_ of the Hap to the nearest _pitch-class_ of the Chord.
      */
+    static acCV_counter = 0;
     acCV(is_onset, hap) {
         if (is_onset === true) {
-            //if (diagnostic_level() >= DEBUG) diagnostic('[acCV onset].\n');
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acCV query]: not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
+            let epcs = this.ac_chord.epcs();
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCV query] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCV query] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            ChordPatterns.acCV_counter = ChordPatterns.acCV_counter + 1;
+            if (diagnostic_level() <= INFORMATION) {
+                print_counter('acCV', ChordPatterns.acCV_counter, hap);
+            }
         } else {
             let frequency;
             try {
