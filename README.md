@@ -215,13 +215,14 @@ out simple, and get more and more complicated and capable.
 
 These are pieces being used to develop and test new features of cloud-5.
 
- - [Cloud Music No. 10](cloud_music_no_10.html), a Strudel piece that uses 
-   CsoundAC chord transformations inside the Strudel pattern.
-   
- - [Cloud Music No. 11](cloud_music_no_11.html), a test piece based on a 
+ - [Cloud Music No. 10](cloud_music_no_10.html), a test piece based on a 
    simple ascending chromatic scale that makes the effects of stateful 
    generators and patterns easy to hear.
 
+ - [Cloud Music No. 11](cloud_music_no_11.html), similar to No. 10, but 
+   using a stateful Pattern to generate events based on the logistic 
+   equation, which can produce deterministic chaos.
+   
 ## Extending cloud-5
 
 You can extend the capabilities of cloud-5 in several ways, including:
@@ -300,8 +301,9 @@ see updated pieces.
 
 ### [v0.1beta4](https://github.com/gogins/cloud-5/commits/v0.1beta4)
 
- - Attempts have been made to correct the `csoundn` output based on a 
-   trigger, and to get it to output the correct piano roll events.
+ - Attempts have been made to correct the scheduling of the `csoundn` output 
+   based on a trigger, and to get `csoundn` to output correct piano roll 
+   events.
    
  - Put in diagnostic messages marked `sync` for testing.
 
