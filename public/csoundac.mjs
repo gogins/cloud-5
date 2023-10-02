@@ -142,29 +142,29 @@ export function print_counter(pattern, counter, value) {
  * default output would happen, but the default output is silenced so that 
  * the Csound notes will be heard.
  */
-let csoundn_counter = 0;
-export const csoundn = register('csoundn', (instrument, pat) => {
+let csoundnt_counter = 0;
+export const csoundnt = register('csoundn', (instrument, pat) => {
     let p1 = instrument;
     if (typeof instrument === 'string') {
         p1 = ['${', instrument, '}'].join();
     }
     return pat.withHap((hap) => {
          if (!csound) {
-          diagnostic('[csounds]: Csound is not yet loaded.\n', WARNING);
+          diagnostic('[csoundnt]: Csound is not yet loaded.\n', WARNING);
           return;
         }
         if (typeof hap.value !== 'object') {
-            diagnostic('[csoundn]: early return (hap.value is not an object): ' + hap.show() +'.\n', WARNING);
+            diagnostic('[csoundnt]: early return (hap.value is not an object): ' + hap.show() +'.\n', WARNING);
             return hap;
         }
         if (typeof hap.value.note === 'undefined') {
-            diagnostic('[csoundn]: early return (hap is not a note: ' + hap.show() +'.\n', WARNING);
+            diagnostic('[csoundnt]: early return (hap is not a note: ' + hap.show() +'.\n', WARNING);
             return hap;
         }
         // Time in seconds counting from the start of this cycle.
         // Either this, or early return.
         if (hap.part.begin.equals(hap.whole.begin) == false) {
-            //~ diagnostic('[csoundn]: early return (hap.part.begin !== hap.whole.begin): ' + hap.show() +'.\n', WARNING);
+            //~ diagnostic('[csoundnt]: early return (hap.part.begin !== hap.whole.begin): ' + hap.show() +'.\n', WARNING);
             return hap;
         }
         // I don't think this is correct, but I think it might be fixable.
@@ -175,7 +175,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
         ///let p2 = hap_begin - cyclist_last_begin;/// - cyclist_latency;
         if (p2 < 0) {
             p2 = 0;
-            //~ diagnostic('[csoundn]: early return (p2: ' + p2 + ' < 0 hap: ' + hap.show() + ').\n', WARNING);
+            //~ diagnostic('[csoundnt]: early return (p2: ' + p2 + ' < 0 hap: ' + hap.show() + ').\n', WARNING);
             //~ return hap;
         }
         const p3 = hap.duration.valueOf() + 0;
@@ -199,10 +199,10 @@ export const csoundn = register('csoundn', (instrument, pat) => {
           .flat()
           .join('/') + '\"';
         const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
-        csoundn_counter = csoundn_counter + 1;
-        print_counter('csoundn note onset', csoundn_counter, hap);
-        print_counter('csoundn note onset', csoundn_counter, i_statement);
-         csound.readScore(i_statement);
+        csoundnt_counter = csoundnt_counter + 1;
+        print_counter('csoundnt note onset', csoundn_counter, hap);
+        print_counter('csoundnt note onset', csoundn_counter, i_statement);
+        csound.readScore(i_statement);
         if (typeof globalThis.haps_from_outputs != 'undefined') {
             globalThis.haps_from_outputs.push(hap);
         }
@@ -225,15 +225,15 @@ export const csoundn = register('csoundn', (instrument, pat) => {
  *
  * This implementation uses a trigger.
  */
-let csoundt_counter = 0;
-export const csoundt = register('csoundt', (instrument, pat) => {
+let csoundn_counter = 0;
+export const csoundn = register('csoundn', (instrument, pat) => {
     let p1 = instrument;
     if (typeof instrument === 'string') {
         p1 = ['${', instrument, '}'].join();
     }
     return pat.onTrigger((tidal_time, hap) => {
         if (!csound) {
-          diagnostic('[csounds]: Csound is not yet loaded.\n', WARNING);
+          diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
           return;
         }
         // Time in seconds counting from now.
@@ -264,15 +264,14 @@ export const csoundt = register('csoundt', (instrument, pat) => {
         const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
         console.log('[csoundt] ' + i_statement);
         csound.readScore(i_statement);
-        csoundt_counter = csoundt_counter + 1;
+        csoundn_counter = csoundn_counter + 1;
         if ((diagnostic_level() <= INFORMATION) === true) {
-            print_counter('csoundt', csoundt_counter, hap);
+            print_counter('csoundn', csoundn_counter, hap);
         }
         if (typeof globalThis.haps_from_outputs != 'undefined') {
             hap.value = {note: hap.value};
             globalThis.haps_from_outputs.push(hap);
         }
-        ///return hap;
     });
 });
 
