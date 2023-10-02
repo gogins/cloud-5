@@ -217,6 +217,10 @@ These are pieces being used to develop and test new features of cloud-5.
 
  - [Cloud Music No. 10](cloud_music_no_10.html), a Strudel piece that uses 
    CsoundAC chord transformations inside the Strudel pattern.
+   
+ - [Cloud Music No. 11](cloud_music_no_11.html), a test piece based on a 
+   simple ascending chromatic scale that makes the effects of stateful 
+   generators and patterns easy to hear.
 
 ## Extending cloud-5
 

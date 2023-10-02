@@ -269,9 +269,10 @@ export const csoundt = register('csoundt', (instrument, pat) => {
             print_counter('csoundt', csoundt_counter, hap);
         }
         if (typeof globalThis.haps_from_outputs != 'undefined') {
+            hap.value = {note: hap.value};
             globalThis.haps_from_outputs.push(hap);
         }
-        return hap;
+        ///return hap;
     });
 });
 
