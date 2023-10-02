@@ -211,6 +211,35 @@ export const csoundnt = register('csoundn', (instrument, pat) => {
     }).gain(0);
 });
 
+/* accepts parameters
+ * h  Object = {h:x, s:y, v:z}
+ * OR 
+ * h, s, v
+*/
+export function hsvToRgb(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    r = Math.round(r * 255).toString(16);
+    g = Math.round(g * 255).toString(16);
+    b = Math.round(b * 255).toString(16);
+    let text = '#' + r + g + b;
+    return text;
+}
 /**
  * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
  * translated to these Csound pfields:
@@ -232,45 +261,59 @@ export const csoundn = register('csoundn', (instrument, pat) => {
         p1 = ['${', instrument, '}'].join();
     }
     return pat.onTrigger((tidal_time, hap) => {
-        if (!csound) {
-          diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
-          return;
-        }
-        // Time in seconds counting from now.
-        const p2 = tidal_time - getAudioContext().currentTime;
-        if (p2 < 0) {
-            return hap;
-        }
-        const p3 = hap.duration.valueOf() + 0;
-        const frequency = getFrequency(hap);
-        // Translate frequency to MIDI key number _without_ rounding.
-        const C4 = 261.62558;
-        let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
-        const p4 = octave * 12.0 - 36.0;
-        // We prefer floating point precision, but over the MIDI range [0, 127].
-        ///const p5 = 127 * (hap.context?.velocity ?? 0.9);
-        let p5;
-        if (typeof hap.value.gain === 'undefined') {
-            p5 = 80;
-        } else {
-            p5 = 127 * hap.value.gain;
-        }
-        const p6 = 0; // Not used here.
-        let p7 = .5; // Pan, will update from controls if in controls.
-        // All Strudel controls as a string.
-        const p8 = '\"' + Object.entries({ ...hap.value, frequency })
-          .flat()
-          .join('/') + '\"';
-        const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
-        console.log('[csoundt] ' + i_statement);
-        csound.readScore(i_statement);
-        csoundn_counter = csoundn_counter + 1;
-        if ((diagnostic_level() <= INFORMATION) === true) {
-            print_counter('csoundn', csoundn_counter, hap);
-        }
-        if (typeof globalThis.haps_from_outputs != 'undefined') {
-            hap.value = {note: hap.value};
-            globalThis.haps_from_outputs.push(hap);
+        try {
+            if (!csound) {
+              diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
+              return;
+            }
+            // Time in seconds counting from now.
+            let p2 = tidal_time - getAudioContext().currentTime;
+            if (p2 < 0) {
+                p2 = 0;
+            }
+            const p3 = hap.duration.valueOf() + 0;
+            const frequency = getFrequency(hap);
+            // Translate frequency to MIDI key number _without_ rounding.
+            const C4 = 261.62558;
+            let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
+            const p4 = octave * 12.0 - 36.0;
+            // We prefer floating point precision, but over the MIDI range [0, 127].
+            ///const p5 = 127 * (hap.context?.velocity ?? 0.9);
+            let gain;
+            if (typeof hap.value.gain === 'undefined') {
+                gain = .9;
+            } else {
+                gain = hap.value.gain;
+            }
+            let p5 = 127 * gain;
+            const p6 = 0; // Not used here.
+            let p7 = .5; // Pan, will update from controls if in controls.
+            // All Strudel controls as a string.
+            const p8 = '\"' + Object.entries({ ...hap.value, frequency })
+              .flat()
+              .join('/') + '\"';
+            const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
+            console.log('[csoundn] ' + i_statement);
+            csound.readScore(i_statement);
+            csoundn_counter = csoundn_counter + 1;
+            if ((diagnostic_level() <= INFORMATION) === true) {
+                print_counter('csoundn', csoundn_counter, hap);
+            }
+            // Color the event by both insno and gain.
+            // insno is hue, and gain is value, in HSV.
+            
+            if (typeof globalThis.haps_from_outputs != 'undefined') {
+                if (typeof hap.value !== 'object') {
+                    hap.value = {note: p4, gain: gain};
+                } else {
+                    hap.value.note = p4;
+                    hap.value.gain = gain;
+                }
+                hap.value.color = hsvToRgb(p1/32, .9, gain);
+                globalThis.haps_from_outputs.push(hap);
+            }
+        } catch (except) {
+            diagnostic('[csoundn] error: ' + except + '\n', ERROR);
         }
     });
 });
