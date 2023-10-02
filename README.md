@@ -298,7 +298,14 @@ see updated pieces.
 
 ## Release Notes
 
-### [v0.1beta3](https://github.com/gogins/cloud-5/commits/v0.1beta2)
+### [v0.1beta4](https://github.com/gogins/cloud-5/commits/v0.1beta4)
+
+ - Attempts have been made to correct the `csoundn` output based on a 
+   trigger, and to get it to output the correct piano roll events.
+   
+ - Put in diagnostic messages marked `sync` for testing.
+
+### [v0.1beta3](https://github.com/gogins/cloud-5/commits/v0.1beta3)
 
  - Put in needed patch for `cyclist.mjs`.
  
