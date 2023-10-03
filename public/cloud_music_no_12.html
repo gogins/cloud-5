@@ -112,11 +112,12 @@ class AscenderPattern extends csac.StatefulPatterns {
      }
 }
 
-
 let ascenderInstance = new AscenderPattern();
 let GM = csac.Chord('GM');
 let chordInstance = new csac.ChordPatterns(GM);
-stack("D5 C5".note().piano().gain(.333),
+stack(
+  "<D5 E5>".note().csoundn("6"),
+  "<D4 C3 F4>".note().piano().gain(.3),
 pure(0)
   //.fast(32)
   .Ascender(ascenderInstance, "48")
@@ -124,10 +125,11 @@ pure(0)
   // This pattern should be very clearly audible.
   //.acCT(chordInstance, "0 1 2 3 4 -10".slow(12)).slow(2)
   //.acCV(chordInstance)
-  .note()
+  .note()//.piano())
+        .csoundn("6"))
   //.legato("2"))
-  .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
-  .csoundn("5")    
+  .pianoroll({labels:1,fillActive:1,cycles:6,playhead:.9})  
+ 
 
 -->
     
