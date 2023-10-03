@@ -306,6 +306,10 @@ see updated pieces.
    events.
    
  - Put in diagnostic messages marked `sync` for testing.
+ 
+ - Colorize notes in the piano roll that come from `csoundn`.
+ 
+ - In `package.json` always make a releasable zip file in each build.
 
 ### [v0.1beta3](https://github.com/gogins/cloud-5/commits/v0.1beta3)
 
