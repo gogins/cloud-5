@@ -29,6 +29,9 @@ let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
 let audioContext = new AudioContext();
 
+// Produces window.tinycolor.
+
+import {tinycolor, hsvToRgb'} from '../tinycolor.js';
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
 
@@ -136,123 +139,6 @@ export function print_counter(pattern, counter, value) {
  *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
  *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
  *  p8 -- Strudel controls, as a string.
- *
- * This implementation does not use a trigger. Each cycle schedules a block 
- * of Csound events. Csound notes happen at the same time that notes in the 
- * default output would happen, but the default output is silenced so that 
- * the Csound notes will be heard.
- */
-let csoundnt_counter = 0;
-export const csoundnt = register('csoundn', (instrument, pat) => {
-    let p1 = instrument;
-    if (typeof instrument === 'string') {
-        p1 = ['${', instrument, '}'].join();
-    }
-    return pat.withHap((hap) => {
-         if (!csound) {
-          diagnostic('[csoundnt]: Csound is not yet loaded.\n', WARNING);
-          return;
-        }
-        if (typeof hap.value !== 'object') {
-            diagnostic('[csoundnt]: early return (hap.value is not an object): ' + hap.show() +'.\n', WARNING);
-            return hap;
-        }
-        if (typeof hap.value.note === 'undefined') {
-            diagnostic('[csoundnt]: early return (hap is not a note: ' + hap.show() +'.\n', WARNING);
-            return hap;
-        }
-        // Time in seconds counting from the start of this cycle.
-        // Either this, or early return.
-        if (hap.part.begin.equals(hap.whole.begin) == false) {
-            //~ diagnostic('[csoundnt]: early return (hap.part.begin !== hap.whole.begin): ' + hap.show() +'.\n', WARNING);
-            return hap;
-        }
-        // I don't think this is correct, but I think it might be fixable.
-        let hap_begin = hap.whole.begin.valueOf();
-        let cyclist_last_begin = globalThis.__cyclist__.lastBegin;
-        let cyclist_latency = globalThis.__cyclist__.latency;
-        let p2 = hap_begin - cyclist_last_begin + cyclist_latency;
-        ///let p2 = hap_begin - cyclist_last_begin;/// - cyclist_latency;
-        if (p2 < 0) {
-            p2 = 0;
-            //~ diagnostic('[csoundnt]: early return (p2: ' + p2 + ' < 0 hap: ' + hap.show() + ').\n', WARNING);
-            //~ return hap;
-        }
-        const p3 = hap.duration.valueOf() + 0;
-        const frequency = getFrequency(hap);
-        // Translate frequency to MIDI key number _without_ rounding.
-        const C4 = 261.62558;
-        let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
-        const p4 = octave * 12.0 - 36.0;
-        // We prefer floating point precision, but over the MIDI range [0, 127].
-        ///const p5 = 127 * (hap.context?.velocity ?? 0.9);
-        let p5;
-        if (typeof hap.value.gain === 'undefined') {
-            p5 = 80;
-        } else {
-            p5 = 127 * hap.value.gain;
-        }
-        const p6 = 0; // Not used here.
-        let p7 = .5; // Pan, will update from controls if in controls.
-        // All Strudel controls as a string.
-        const p8 = '\"' + Object.entries({ ...hap.value, frequency })
-          .flat()
-          .join('/') + '\"';
-        const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
-        csoundnt_counter = csoundnt_counter + 1;
-        print_counter('csoundnt note onset', csoundn_counter, hap);
-        print_counter('csoundnt note onset', csoundn_counter, i_statement);
-        csound.readScore(i_statement);
-        if (typeof globalThis.haps_from_outputs != 'undefined') {
-            globalThis.haps_from_outputs.push(hap);
-        }
-        return hap;
-        // Silence the default output. This is the hack!
-    }).gain(0);
-});
-
-/* accepts parameters
- * h  Object = {h:x, s:y, v:z}
- * OR 
- * h, s, v
-*/
-export function hsvToRgb(h, s, v) {
-    var r, g, b, i, f, p, q, t;
-    if (arguments.length === 1) {
-        s = h.s, v = h.v, h = h.h;
-    }
-    i = Math.floor(h * 6);
-    f = h * 6 - i;
-    p = v * (1 - s);
-    q = v * (1 - f * s);
-    t = v * (1 - (1 - f) * s);
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
-    }
-    r = Math.round(r * 255).toString(16);
-    g = Math.round(g * 255).toString(16);
-    b = Math.round(b * 255).toString(16);
-    let text = '#' + r + g + b;
-    return text;
-}
-/**
- * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
- * translated to these Csound pfields:
- *
- *  p1 -- Csound instrument either as a number (1-based, can be a fraction),
- *        or as a string name.
- *  p2 -- time in beats (usually seconds) from start of performance.
- *  p3 -- duration in beats (usually seconds).
- *  p4 -- MIDI key number (as a real number, not an integer but in [0, 127].
- *  p5 -- MIDI velocity (as a real number, not an integer but in [0, 127].
- *  p8 -- Strudel controls, as a string.
- *
- * This implementation uses a trigger.
  */
 let csoundn_counter = 0;
 export const csoundn = register('csoundn', (instrument, pat) => {
@@ -309,7 +195,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
                     hap.value.note = p4;
                     hap.value.gain = gain;
                 }
-                hap.value.color = hsvToRgb(p1/32, .9, gain);
+                hap.value.color = tinycolor.toHexString(tinycolor.hsvToRgb(p1/32, .9, gain));
                 globalThis.haps_from_outputs.push(hap);
             }
         } catch (except) {
