@@ -29,9 +29,6 @@ let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
 let audioContext = new AudioContext();
 
-// Produces window.tinycolor.
-
-import {tinycolor, hsvToRgb'} from '../tinycolor.js';
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
 
@@ -128,6 +125,48 @@ export function print_counter(pattern, counter, value) {
     }
 }
 
+let instrument_count = 10;
+
+export function set_instrument_count(new_count) {
+    let old_count = instrument_count;
+    instrument_count = new_count;
+    return old_count;
+}
+
+export function hsvToRgb(h,s,v) {
+  var rgb, i, data = [];
+  if (s === 0) {
+    rgb = [v,v,v];
+  } else {
+    h = h / 60;
+    i = Math.floor(h);
+    data = [v*(1-s), v*(1-s*(h-i)), v*(1-s*(1-(h-i)))];
+    switch(i) {
+      case 0:
+        rgb = [v, data[2], data[0]];
+        break;
+      case 1:
+        rgb = [data[1], v, data[0]];
+        break;
+      case 2:
+        rgb = [data[0], v, data[2]];
+        break;
+      case 3:
+        rgb = [data[0], data[1], v];
+        break;
+      case 4:
+        rgb = [data[2], data[0], v];
+        break;
+      default:
+        rgb = [v, data[0], data[1]];
+        break;
+    }
+  }
+  return '#' + rgb.map(function(x){ 
+    return ('0a' + Math.round(x*255).toString(16)).slice(-2);
+  }).join('');
+};
+
 /**
  * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
  * translated to these Csound pfields:
@@ -195,7 +234,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
                     hap.value.note = p4;
                     hap.value.gain = gain;
                 }
-                hap.value.color = tinycolor.toHexString(tinycolor.hsvToRgb(p1/32, .9, gain));
+                hap.value.color = hsvToRgb((p1 / instrument_count) * 360, 1, gain);
                 globalThis.haps_from_outputs.push(hap);
             }
         } catch (except) {
