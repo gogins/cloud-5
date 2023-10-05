@@ -303,6 +303,12 @@ see updated pieces.
 
 ## Release Notes
 
+### [v0.1beta5](https://github.com/gogins/cloud-5/commits/v0.1beta5)
+
+ - Updated Strudel to get the extremely useful `slider`, which can be either 
+   discrete or continuous. The `slider` is embedded directly into the Strudel 
+   patch.
+
 ### [v0.1beta4](https://github.com/gogins/cloud-5/commits/v0.1beta4)
 
  - Attempts have been made to correct the scheduling of the `csoundn` output 
