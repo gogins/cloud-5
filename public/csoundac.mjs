@@ -220,6 +220,15 @@ export const csoundn = register('csoundn', (instrument, pat) => {
             const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
             console.log('[csoundn] ' + i_statement);
             csound.readScore(i_statement);
+            // Any controls in the Hap that start with 'gi' or 'gk' will be 
+            // treated as Csound control channels, and their values will be 
+            // sent to Csound. Normally, these names have been defined in the 
+            // Csound orchestra code.
+            for (let control in hap.value) {
+                if (control.startsWith('gi') || control.startsWith('gk')) {
+                    csound.SetControlChannel(control, parseFloat(hap.value[control]));
+                }
+            }
             csoundn_counter = csoundn_counter + 1;
             if ((diagnostic_level() <= INFORMATION) === true) {
                 print_counter('csoundn', csoundn_counter, hap);
