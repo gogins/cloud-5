@@ -74,6 +74,10 @@ csac.diagnostic_level(csac.NONE);
 
 // Bind some Csound control channels to Strudel, to be 
 // controlled by sliders in the patch.
+
+let gk_
+
+
 let gk_Sweeper_level = createParam('gk_Sweeper_level');
 stack(run(slider(8,3,8,1)).off(.25, x=>x.add(4)).n().sub(8)
   .offset(slider(2,0,4,1))

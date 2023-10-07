@@ -32,6 +32,10 @@ let audioContext = new AudioContext();
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
 
+export const catWhen = register('catWhen', function (other, when, pat) {
+  return when ? pat.cat(other) : pat;
+});
+
 /**
  * Returns the frequency corresponding to any of various ways that pitch 
  * is represented in Strudel events.
@@ -181,9 +185,11 @@ export function hsvToRgb(h,s,v) {
  */
 let csoundn_counter = 0;
 export const csoundn = register('csoundn', (instrument, pat) => {
-    let p1 = instrument;
+    let p1;
     if (typeof instrument === 'string') {
-        p1 = ['${', instrument, '}'].join();
+        p1 = '\"' + instrument + '\"';
+    } else {
+        p1 = instrument;
     }
     return pat.onTrigger((tidal_time, hap) => {
         try {
