@@ -32,8 +32,12 @@ let audioContext = new AudioContext();
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
 
-export const catWhen = register('catWhen', function (other, when, pat) {
-  return when ? pat.cat(other) : pat;
+export const seqWhen = register('seqWhen', (other, on, pat) => {
+    if (on == true) {
+        return pat.seq(other);
+    } else {
+        return pat;
+    }
 });
 
 /**
