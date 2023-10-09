@@ -109,13 +109,11 @@ stack(
   // Instrument(s) on this track:
   .csoundn(slider(15,1,15,1)))
   // CsoundAC way of doing harmony:
-  .acSS(scalePattern, "7 6 5 4 3 2 1 1".slow(16))
+  //.acSS(scalePattern, "7 6 5 4 3 2 1 1".slow(16))
+  .acST(scalePattern, "5 -3 5 -3 5 -3".slow(64))
   .acSM(scalePattern, "0 1 1 0".slow(64))
   .acSCV(scalePattern)
-  /// Strudel way of doing harmony:
-  ///.chord("<Am9 Em9 Am7 Dm7b5 G7b9 CM7>/2").dict('ireal-ext')
-  ///.voicing()
-  // Levels of instruments:
+  // Levels of instruments, and some other controls:
   .gk_Bower_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Blower_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Droner_level(slider(0.738, 0, 1).sub(.5).mul(100))
