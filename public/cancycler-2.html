@@ -75,12 +75,18 @@ csac.diagnostic_level(csac.NONE);
 // Bind some Csound control channels to Strudel, to be 
 // controlled by sliders in the patch.
 
+let gk_Blower_level = createParam('gk_Blower_level');
 let gk_Droner_level = createParam('gk_Droner_level');
 let gk_FMWaterBell_level = createParam('gk_FMWaterBell_level');
+let gk_Guitar_level = createParam('gk_Guitar_level');
 let gk_SeidelHarmOsc_level = createParam('gk_SeidelHarmOsc_level');
 let gk_Harpsichord_level = createParam('gk_Harpsichord_level');
+let gk_Plucked_level = createParam('gk_Plucked_level');
+let gk_Shiner_level = createParam('gk_Shiner_level');
 let gk_Sweeper_level = createParam('gk_Sweeper_level');
 let gk_Xing_level = createParam('gk_Xing_level');
+let gk_YiString_level = createParam('gk_ZakianFlute_level');
+let gk_ZakianFlute_level = createParam('gk_ZakianFlute_level');
 
 stack(
   run(slider(7,3,8,1)).off(.25, x=>x.add(4)).n().sub(8)
@@ -96,12 +102,17 @@ stack(
   // Instrument(s) on this track:
   .csoundn(slider(3,1,16,1)))
   // Levels of instruments:
+  .gk_Blower_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Droner_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_FMWaterBell_level(slider(0.738, 0, 1).sub(.5).mul(100))
+  .gk_Guitar_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Harpsichord_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_SeidelHarmOsc_level(slider(0.956, 0, 1).sub(.5).mul(100))
+  .gk_Shiner_level(slider(0.956, 0, 1).sub(.5).mul(100))
   .gk_Sweeper_level(slider(0.681, 0, 1).sub(.5).mul(100))
   .gk_Xing_level(slider(0.479, 0, 1).sub(.5).mul(100))
+  .gk_YiString_level(slider(0.479, 0, 1).sub(.5).mul(100))
+  .gk_ZakianFlute_level(slider(0.479, 0, 1).sub(.5).mul(100))
   .chord("<Am9 Em9 Am7 Dm7b5 G7b9 CM7>/2").dict('ireal-ext').voicing()
   // Master tempo:
   .slow(slider(5.4361, .1, 10))
