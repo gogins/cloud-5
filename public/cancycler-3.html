@@ -58,6 +58,7 @@
             <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
+            <li id="menu_item_time" class="w3-btn w3-text-green"></li>
         </ul>
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
@@ -70,15 +71,22 @@
     <!--
     
 const csac = await import('../csoundac.mjs');
-csac.diagnostic_level(csac.INFORMATION);
+csac.diagnostic_level(csac.NEVER);
 
 // Bind some Csound control channels to Strudel, to be 
 // controlled by sliders in the patch.
 let gk_Bower_level = createParam('gk_Bower_level');
+let gk_Bower_pressure = createParam('gk_Bower_pressure');
 let gk_Blower_level = createParam('gk_Blower_level');
+let gk_Blower_grainDensity = createParam('gk_Blower_grainDensity');
+let gk_Blower_grainDuration = createParam('gk_Blower_grainDuration');
+let gk_Blower_grainAmplitudeRange = createParam('gk_Blower_grainAmplitudeRange');
+let gk_Blower_grainFrequencyRange = createParam('gk_Blower_grainFrequencyRange');
 let gk_Droner_level = createParam('gk_Droner_level');
 let gk_FilteredSines_level = createParam('gk_FilteredSines_level');
 let gk_FMWaterBell_level = createParam('gk_FMWaterBell_level');
+let gk_FMWaterBell_index = createParam('gk_FMWaterBell_index');
+let gk_FMWaterBell_crossfade = createParam('gk_FMWaterBell_crossfade');
 let gk_Guitar_level = createParam('gk_Guitar_level');
 let gk_SeidelHarmOsc_level = createParam('gk_SeidelHarmOsc_level');
 let gk_Harpsichord_level = createParam('gk_Harpsichord_level');
@@ -94,14 +102,16 @@ let gk_ZakianFlute_level = createParam('gk_ZakianFlute_level');
 let scale = csac.Scale('D_major');
 let scalePattern = new csac.ScalePatterns(scale, 3);
 
-
-stack(
-  run(slider(7,3,8,1)).off(.25, x=>x.add(4)).note().sub(8)
+let track1 = run(slider(7,3,8,1)).off(.25, x=>x.add(4)).note().sub(8)
   .offset(slider(1,0,4,1)).add(48)
   .jux(rev)
   .slow(slider(13.11725, .05, 20))
   // Instrument(s) on this track:
-  .csoundn(slider(6,1,15,1)),
+  .csoundn(slider(6,1,15,1))
+  
+
+stack(
+  track1,
   run(slider(6,3,8,1)).off(.25, x=>x.add(4)).note().sub(8)
   .offset(slider(5,0,8,1)).add(48)
   .jux(rev)
@@ -115,10 +125,17 @@ stack(
   .acSCV(scalePattern)
   // Levels of instruments, and some other controls:
   .gk_Bower_level(slider(0.738, 0, 1).sub(.5).mul(100))
+  .gk_Bower_pressure(slider(0.738, 0, 3))  
   .gk_Blower_level(slider(0.738, 0, 1).sub(.5).mul(100))
+  .gk_Blower_grainDensity(slider(90, 0, 500))
+  .gk_Blower_grainDuration(slider(0.02, .01, 2))
+  .gk_Blower_grainAmplitudeRange(slider(100, 0, 500))
+  .gk_Blower_grainFrequencyRange(slider(10, 0, 100))
   .gk_Droner_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_FilteredSines_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_FMWaterBell_level(slider(0.738, 0, 1).sub(.5).mul(100))
+  .gk_FMWaterBell_index(slider(0.738, 0, 15))
+  .gk_FMWaterBell_crossfade(slider(0.738, 0, 1))
   .gk_Guitar_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Kung2_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Kung4_level(slider(0.738, 0, 1).sub(.5).mul(100))
@@ -329,6 +346,7 @@ maxalloc 12, 4
 maxalloc 13, 4
 maxalloc 14, 4
 maxalloc 15, 4
+maxalloc 16, 4
 
 connect "Blower", "outleft", "ReverbSC", "inleft"
 connect "Blower", "outright", "ReverbSC", "inright"
@@ -1125,10 +1143,6 @@ a_signal = (asignal1 + asignal2 + asignal3)
 ; resonator, there are two envelopes, one for the physical decay with a 
 ; fixed release ending at zero, and one with a release segment to remove 
 ; clicks from the attack and release.
-;
-; As with most software instruments that are modeled on an impulse exciting a 
-; resonator, there should be two envelopes. The "physical" envelope must have a 
-; fixed decay ending at zero.
 i_declick_minimum = .001
 i_attack = .001 / i_frequency2 + i_declick_minimum
 i_exponent = 7
@@ -1150,7 +1164,7 @@ a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "Plucked                   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+prints "Plucked                  i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 //////////////////////////////////////////////
@@ -1860,9 +1874,11 @@ prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p
 endin
 
 gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
+gk_MasterOutput_duration chnexport "gk_MasterOutput_duration", 3 ; 0
 gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
 gk_MasterOutput_level init 0
 gS_MasterOutput_filename init ""
+gi_MasterOutput_duration init 540
 instr MasterOutput
 aleft inleta "inleft"
 aright inleta "inright"
@@ -1871,7 +1887,8 @@ printks2 "Master gain: %f\n", k_gain
 iamp init 1
 aleft butterlp aleft, 18000
 aright butterlp aright, 18000
-outs aleft * k_gain, aright * k_gain
+a_fadeout linseg 1, gi_MasterOutput_duration, 1, 6, 0
+outs aleft * k_gain * a_fadeout, aright * k_gain * a_fadeout
 ; We want something that will play on my phone.
 i_amplitude_adjustment = ampdbfs(-3) / 32767
 i_filename_length strlen gS_MasterOutput_filename
@@ -1884,7 +1901,7 @@ endin
 
 </CsInstruments>
 <CsScore>
-f 0 1000000000
+f 0 30
 </CsScore>
 </CsoundSynthesizer>
 
@@ -2513,6 +2530,23 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console_editor.scrollToLine(lines);
                 console_editor.insert(message_callback_buffer);      
                 message_callback_buffer = "";
+                if (csound) {
+                    csound.GetScoreTime().then((score_time) => {
+                    let delta = score_time;
+                    // calculate (and subtract) whole days
+                    let days = Math.floor(delta / 86400);
+                    delta -= days * 86400;
+                    // calculate (and subtract) whole hours
+                    let hours = Math.floor(delta / 3600) % 24;
+                    delta -= hours * 3600;
+                    // calculate (and subtract) whole minutes
+                    let minutes = Math.floor(delta / 60) % 60;
+                    delta -= minutes * 60;
+                    // what's left is seconds
+                    let seconds = delta % 60;  // in theory the modulus is not required
+                        $("#menu_item_time").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
+                    });
+                }
             }
         };
 
