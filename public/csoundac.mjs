@@ -222,7 +222,12 @@ export const csoundn = register('csoundn', (instrument, pat) => {
             }
             let p5 = 127 * gain;
             const p6 = 0; // Not used here.
-            let p7 = .5; // Pan, will update from controls if in controls.
+            let p7;
+            if (typeof hap.value.pan === 'undefined') {
+                p7 = Math.random();
+            } else {
+                p7 = hap.value.pan;
+            }
             // All Strudel controls as a string.
             const p8 = '\"' + Object.entries({ ...hap.value, frequency })
               .flat()

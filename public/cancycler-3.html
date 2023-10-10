@@ -100,54 +100,58 @@ let gk_YiString_level = createParam('gk_YiString_level');
 let gk_ZakianFlute_level = createParam('gk_ZakianFlute_level');
 
 let scale = csac.Scale('D_major');
-let scalePattern = new csac.ScalePatterns(scale, 3);
-
-let track1 = run(slider(7,3,8,1)).off(.25, x=>x.add(4)).note().sub(8)
-  .offset(slider(1,0,4,1)).add(48)
-  .jux(rev)
-  .slow(slider(13.11725, .05, 20))
-  // Instrument(s) on this track:
-  .csoundn(slider(6,1,15,1))
-  
+let scalePattern = new csac.ScalePatterns(scale, 4);
 
 stack(
-  track1,
-  run(slider(6,3,8,1)).off(.25, x=>x.add(4)).note().sub(8)
-  .offset(slider(5,0,8,1)).add(48)
+  run(slider(26,3,48,1)).off(.25, x=>x.add(4)).note().sub(8)
+  .offset(slider(1,0,4,1)).add(60)
   .jux(rev)
-  .slow(slider(3.365, .05, 20))
+  .slow(slider(4.1, .1, 10, .1))
   // Instrument(s) on this track:
-  .csoundn(slider(15,1,15,1)))
+  .echoWith(
+    4, // echo 4 times
+    1/4, // 1/4s between echos
+    (x,i)=>x
+      .add(n(i*7)) // add octaves
+      .gain(1/(i+1)) // reduce gain
+      .clip(1/(i+1))
+    )
+  .csoundn(slider(15,1,15,1)),
+  run(slider(3,3,8,1)).off(.25, x=>x.add(4)).note().sub(8)
+  .offset(slider(0,0,8,1)).add(60)
+  .jux(rev)
+  .slow(slider(4.6, .1, 10, .1))
+  // Instrument(s) on this track:
+  .csoundn(slider(2,1,15,1))).pan(undefined)
   // CsoundAC way of doing harmony:
-  //.acSS(scalePattern, "7 6 5 4 3 2 1 1".slow(16))
-  .acST(scalePattern, "5 -3 5 -3 5 -3".slow(64))
-  .acSM(scalePattern, "0 1 1 0".slow(64))
+  .acST(scalePattern, "5 -3 5 -3 5 2".slow(5))
+  .acSM(scalePattern, "0 1 1 0 3".slow(30))
   .acSCV(scalePattern)
   // Levels of instruments, and some other controls:
   .gk_Bower_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Bower_pressure(slider(0.738, 0, 3))  
-  .gk_Blower_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_Blower_grainDensity(slider(90, 0, 500))
+  .gk_Blower_level(slider(0.684, 0, 1).sub(.5).mul(100))
+  .gk_Blower_grainDensity(slider(155, 0, 500))
   .gk_Blower_grainDuration(slider(0.02, .01, 2))
-  .gk_Blower_grainAmplitudeRange(slider(100, 0, 500))
-  .gk_Blower_grainFrequencyRange(slider(10, 0, 100))
+  .gk_Blower_grainAmplitudeRange(slider(318, 0, 500))
+  .gk_Blower_grainFrequencyRange(slider(42.5, 0, 100))
   .gk_Droner_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_FilteredSines_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_FMWaterBell_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_FMWaterBell_index(slider(0.738, 0, 15))
-  .gk_FMWaterBell_crossfade(slider(0.738, 0, 1))
+  .gk_FMWaterBell_level(slider(0.802, 0, 1).sub(.5).mul(100))
+  .gk_FMWaterBell_index(slider(8.025, 0, 15))
+  .gk_FMWaterBell_crossfade(slider(0.495, 0, 1))
   .gk_Guitar_level(slider(0.738, 0, 1).sub(.5).mul(100))
   .gk_Kung2_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_Kung4_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_Harpsichord_level(slider(0.738, 0, 1).sub(.5).mul(100))
+  .gk_Kung4_level(slider(0.718, 0, 1).sub(.5).mul(100))
+  .gk_Harpsichord_level(slider(0.568, 0, 1).sub(.5).mul(100))
   .gk_Plucked_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_SeidelHarmOsc_level(slider(0.956, 0, 1).sub(.5).mul(100))
+  .gk_SeidelHarmOsc_level(slider(0.891, 0, 1).sub(.5).mul(100))
   .gk_Shiner_level(slider(0.956, 0, 1).sub(.5).mul(100))
   .gk_Sweeper_level(slider(0.681, 0, 1).sub(.5).mul(100))
   .gk_Xing_level(slider(0.479, 0, 1).sub(.5).mul(100))
   .gk_YiString_level(slider(0.562, 0, 1).sub(.5).mul(100))
   .gk_ZakianFlute_level(slider(0.812, 0, 1).sub(.5).mul(100))// Master tempo:
-  .slow(slider(5.4361, .1, 10))
+  .slow(slider(3.0106, .1, 10))
   .pianoroll({minMidi:24,maxMidi:96,cycles:16,playhead:.9})
   
 -->
