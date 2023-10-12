@@ -74,27 +74,31 @@ const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.NEVER);
 
 let scale = csac.Scale('D_major');
-let scalePattern = new csac.ScalePatterns(scale, 3);
+let scalePattern = new csac.ScalePatterns(scale, 4);
 
-run(slider(8,3,8,1)).n()
-.offset(slider(4,0,4,1))
+run(slider(5,3,8,1)).n()
+.off(slider(0,0,4,1), (x)=>x.add(7))
+//.offset(slider(4,0,4,1))
 .jux(rev)
-.add(60)
-.clip(slider(1, .1, 10, .1))
-.pan("<.1 .9>/3")
-.csoundn(slider(1, 1, 16,1), slider(3, 1, 16,1), slider(6, 1, 16,1))
+.add(50)
+.clip(slider(1.6, .1, 10, .1))
+.pan(perlin)
 // CsoundAC way of doing harmony:
-.acST(scalePattern, "2 -1 3 -1 2 -1 5".slow(16))
-.acSM(scalePattern, "0 1 1 0".slow(64))
+.acST(scalePattern, "2 -1 3 -1 2 -1 5".slow(8))
+.acSM(scalePattern, "0 1 1 0 3".slow(32))
 .acSCV(scalePattern)
-.slow(slider(4.241, 1, 8))
+.slow(slider(3.674, 1, 8))
 /// Strudel way of doing harmony:
 ///.chord("<Am9 Em9 Am7 Dm7b5 G7b9 CM7>/2").dict('ireal-ext')
 ///.voicing()
 ///.dict('ireal-ext')
 ///.voicing()
-.pianoroll({fillActive:1,minMidi:24,maxMidi:96,cycles:16,playhead:.75})
-    
+.gain(slider(0.596, 0, 1))
+.csoundn(slider(9, 1, 16,1), 
+         slider(7, 1, 16,1), 
+         slider(13,1, 16,1))
+.pianoroll({fillActive:1,minMidi:24,maxMidi:96,cycles:16,playhead:.75})    
+
 -->
     
     </strudel-repl-component>
