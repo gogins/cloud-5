@@ -73,89 +73,28 @@
 const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.NEVER);
 
-// Bind some Csound control channels to Strudel, to be 
-// controlled by sliders in the patch.
-let gk_Bower_level = createParam('gk_Bower_level');
-let gk_Bower_pressure = createParam('gk_Bower_pressure');
-let gk_Blower_level = createParam('gk_Blower_level');
-let gk_Blower_grainDensity = createParam('gk_Blower_grainDensity');
-let gk_Blower_grainDuration = createParam('gk_Blower_grainDuration');
-let gk_Blower_grainAmplitudeRange = createParam('gk_Blower_grainAmplitudeRange');
-let gk_Blower_grainFrequencyRange = createParam('gk_Blower_grainFrequencyRange');
-let gk_Droner_level = createParam('gk_Droner_level');
-let gk_FilteredSines_level = createParam('gk_FilteredSines_level');
-let gk_FMWaterBell_level = createParam('gk_FMWaterBell_level');
-let gk_FMWaterBell_index = createParam('gk_FMWaterBell_index');
-let gk_FMWaterBell_crossfade = createParam('gk_FMWaterBell_crossfade');
-let gk_Guitar_level = createParam('gk_Guitar_level');
-let gk_SeidelHarmOsc_level = createParam('gk_SeidelHarmOsc_level');
-let gk_Harpsichord_level = createParam('gk_Harpsichord_level');
-let gk_Kung2_level = createParam('gk_Kung2_level');
-let gk_Kung4_level = createParam('gk_Kung4_level');
-let gk_Plucked_level = createParam('gk_Plucked_level');
-let gk_Shiner_level = createParam('gk_Shiner_level');
-let gk_Sweeper_level = createParam('gk_Sweeper_level');
-let gk_TubularBell_level = createParam('gk_TubularBell_level');
-let gk_Xing_level = createParam('gk_Xing_level');
-let gk_YiString_level = createParam('gk_YiString_level');
-let gk_ZakianFlute_level = createParam('gk_ZakianFlute_level');
-
 let scale = csac.Scale('D_major');
-let scalePattern = new csac.ScalePatterns(scale, 4);
+let scalePattern = new csac.ScalePatterns(scale, 3);
 
-stack(
-  run(slider(26,3,48,1)).off(.25, x=>x.add(4)).note().sub(8)
-  .offset(slider(1,0,4,1)).add(60)
-  .jux(rev)
-  .slow(slider(4.1, .1, 10, .1))
-  // Instrument(s) on this track:
-  .echoWith(
-    4, // echo 4 times
-    1/4, // 1/4s between echos
-    (x,i)=>x
-      .add(n(i*7)) // add octaves
-      .gain(1/(i+1)) // reduce gain
-      .clip(1/(i+1))
-    )
-  .csoundn(slider(15,1,15,1)),
-  run(slider(3,3,8,1)).off(.25, x=>x.add(4)).note().sub(8)
-  .offset(slider(0,0,8,1)).add(60)
-  .jux(rev)
-  .slow(slider(4.6, .1, 10, .1))
-  // Instrument(s) on this track:
-  .csoundn(slider(2,1,15,1))).pan(undefined)
-  // CsoundAC way of doing harmony:
-  .acST(scalePattern, "5 -3 5 -3 5 2".slow(5))
-  .acSM(scalePattern, "0 1 1 0 3".slow(30))
-  .acSCV(scalePattern)
-  // Levels of instruments, and some other controls:
-  .gk_Bower_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_Bower_pressure(slider(0.738, 0, 3))  
-  .gk_Blower_level(slider(0.684, 0, 1).sub(.5).mul(100))
-  .gk_Blower_grainDensity(slider(155, 0, 500))
-  .gk_Blower_grainDuration(slider(0.02, .01, 2))
-  .gk_Blower_grainAmplitudeRange(slider(318, 0, 500))
-  .gk_Blower_grainFrequencyRange(slider(42.5, 0, 100))
-  .gk_Droner_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_FilteredSines_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_FMWaterBell_level(slider(0.802, 0, 1).sub(.5).mul(100))
-  .gk_FMWaterBell_index(slider(8.025, 0, 15))
-  .gk_FMWaterBell_crossfade(slider(0.495, 0, 1))
-  .gk_Guitar_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_Kung2_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_Kung4_level(slider(0.718, 0, 1).sub(.5).mul(100))
-  .gk_Harpsichord_level(slider(0.568, 0, 1).sub(.5).mul(100))
-  .gk_Plucked_level(slider(0.738, 0, 1).sub(.5).mul(100))
-  .gk_SeidelHarmOsc_level(slider(0.891, 0, 1).sub(.5).mul(100))
-  .gk_Shiner_level(slider(0.956, 0, 1).sub(.5).mul(100))
-  .gk_Sweeper_level(slider(0.681, 0, 1).sub(.5).mul(100))
-  .gk_TubularBell_level(slider(0.681, 0, 1).sub(.5).mul(100))
-  .gk_Xing_level(slider(0.479, 0, 1).sub(.5).mul(100))
-  .gk_YiString_level(slider(0.562, 0, 1).sub(.5).mul(100))
-  .gk_ZakianFlute_level(slider(0.812, 0, 1).sub(.5).mul(100))// Master tempo:
-  .slow(slider(3.0106, .1, 10))
-  .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.75})
-
+run(slider(8,3,8,1)).n()
+.offset(slider(4,0,4,1))
+.jux(rev)
+.add(60)
+.clip(slider(1, .1, 10, .1))
+.pan("<.1 .9>/3")
+.csoundn(slider(1, 1, 16,1), slider(3, 1, 16,1), slider(6, 1, 16,1))
+// CsoundAC way of doing harmony:
+.acST(scalePattern, "2 -1 3 -1 2 -1 5".slow(16))
+.acSM(scalePattern, "0 1 1 0".slow(64))
+.acSCV(scalePattern)
+.slow(slider(4.241, 1, 8))
+/// Strudel way of doing harmony:
+///.chord("<Am9 Em9 Am7 Dm7b5 G7b9 CM7>/2").dict('ireal-ext')
+///.voicing()
+///.dict('ireal-ext')
+///.voicing()
+.pianoroll({fillActive:1,minMidi:24,maxMidi:96,cycles:16,playhead:.75})
+    
 -->
     
     </strudel-repl-component>
@@ -175,27 +114,172 @@ stack(
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
+    <label for=gk_TubularBell_level>01 TubularBell (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-13 id=gk_TubularBell_level step=.001>
+    <td>
+    <output for=gk_TubularBell_level id=gk_TubularBell_level_output>-13</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_Droner_level>02 Droner (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-30 id=gk_Droner_level step=.001>
+    <td>
+    <output for=gk_Droner_level id=gk_Droner_level_output>-30</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_SeidelHarmOsc_level>03 SeidelHarmOsc (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-10 id=gk_SeidelHarmOsc_level step=.001>
+    <td>
+    <output for=gk_SeidelHarmOsc_level id=gk_SeidelHarmOsc_level_output>-10</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Shiner_level>04 Shiner (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_Shiner_level step=.001>
+    <td>
+    <output for=gk_Shiner_level id=gk_Shiner_level_output>-6</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Xing_level>05 Xing (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-36 id=gk_Xing_level step=.001>
+    <td>
+    <output for=gk_Xing_level id=gk_Xing_level_output>-36</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Guitar_level>06 Guitar (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_Guitar_level step=.001>
+    <td>
+    <output for=gk_Guitar_level id=gk_Guitar_level_output>10</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_FilteredSines_level>07 FilteredSines (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_FilteredSines_level step=.001>
+    <td>
+    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>0</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Blower_level>08 Blower (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_Blower_level step=.001>
+    <td>
+    <output for=gk_Blower_level id=gk_Blower_level_output>0</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Sweeper_level>09 Sweeper (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_Sweeper_level step=.001>
+    <td>
+    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>6</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Plucked_level>10 Plucked (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_Plucked_level step=.001>
+    <td>
+    <output for=gk_Plucked_level id=gk_Plucked_level_output>3</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_FMWaterBell_level>11 FMWaterBell (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_FMWaterBell_level step=.001>
+    <td>
+    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>3</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_YiString_level>12 YiString (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_YiString_level step=.001>
+    <td>
+    <output for=gk_YiString_level id=gk_YiString_level_output>-6</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Harpsichord_level>13 Harpsichord (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-2 id=gk_Harpsichord_level step=.001>
+    <td>
+    <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>-2</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_ZakianFlute_level>14 ZakianFlute (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_ZakianFlute_level step=.001>
+    <td>
+    <output for=gk_ZakianFlute_level id=gk_ZakianFlute_level_output>0</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Kung4_level>15 Kung4 (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_Kung4_level step=.001>
+    <td>
+    <output for=gk_Kung4_level id=gk_Kung4_level_output>6</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Kung2_level>15 Kung2 (dB)</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-7 id=gk_Kung2_level step=.001>
+    <td>
+    <output for=gk_Kung2_level id=gk_Kung2_level_output>-7</output>
+    </tr>
+
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.83 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.92 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.83</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.92</output>
     </tr>
     <tr>
     <td>
     <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=20000 value=10000 id=gk_ReverbSC_frequency_cutoff step=.001>
+    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
     <td>
-    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>1000</output>
+    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>12000</output>
     </tr>
     <tr>
     <td>
     <label for=gi_ReverbSC_delay_modulation>Reverb delay modulation</label>
     <td>
-    <input class=persistent-element type=range min=0 max=2 value=.05 id=gi_ReverbSC_delay_modulation step=.001>
+    <input class=persistent-element type=range min=0 max=2 value=.005 id=gi_ReverbSC_delay_modulation step=.001>
     <td>
-    <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
+    <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.005</output>
     </tr>
     
     <tr style="height:1em;"></tr>    
@@ -203,9 +287,9 @@ stack(
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-30 id=gk_MasterOutput_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=12 id=gk_MasterOutput_level step=.001>
     <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-30</output>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>12</output>
     </tr>
     </table>
     <p>
@@ -225,33 +309,29 @@ stack(
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>CsoundAC Example No. 3 ChordPatterns</h1>
+<h1>Cancycle</h1>
 <h3>Michael Gogins<br>
-August 2023</h3>
+October 2023</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This is an online piece of electroacoustic music, rendered in your Web 
-browser using high-resolution audio. It will play indefinitely, never ending, 
-always changing. The piece demonstrates and tests all the Patterns implemented 
-in the ScalePatterns class found in csoundac.mjs.
+<p>This is a piece of interactive visual music implemented using my all-HTML5 
+system for making and performing computer music, 
+<a href="https://github.com/gogins/cloud-5">cloud-5</a>. The title refers to 
+the ability of Strudel to cycle through a composition while varying, by 
+live coding, canonical relationships within the piece.
 
-<p>The notes in this piece are generated by 
-<a href="https://strudel.tidalcycles.org/">Strudel</a>, a JavaScript 
-implementation of Strudel Cycles, which is accessed from a REPL embedded 
-in this piece -- use the Strudel button to view the Strudel REPL. The user can 
-edit the Strudel code that generates the score, and click on the update button 
-to hear it. Thanks to Felix Roos for helpful hints along the way. Strudel 
-sends its notes to Csound for synthesis.
+<p>cloud-5 runs exclusively in standard Web browsers from a local or remote 
+Web server. The system includes <a href="https://github.com/gogins/csound-wasm">WebAssembly 
+builds of Csound and my algorithmic composition library CsoundAC</a>, 
+the live coding system <a href="https://github.com/tidalcycles/strudel">Strude</a>, 
+and whatever other JavaScript or WebAssembly components are needed.
 
-<p>The notes are played by a Csound orchestra that is embedded in this Web 
-page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
-build of Csound</a>. This in turn includes my 
-<a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
-algorithmic composition.
-
-<p>The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
-a sine-wave visualization of the music.
+<p>I composed this piece using an orchestra of fairly complex Csound 
+instruments together with a Strudel patch that uses CsoundAC for generating 
+chord progressions and modulations. I set up the Strudel patch to make it easy 
+to shape the piece by live coding during performance. The piece also includes 
+a music visualizer written in OpenGL Shader Language.
 
 <p>Feel free to use this piece as a template for creating new pieces of this 
 type... as long as it honors the licenses and doesn't sound too much like this 
@@ -337,23 +417,23 @@ nchnls = 2
 gi_ampmidicurve_dynamic_range init .375
 gi_ampmidicurve_exponent init 5
 
-maxalloc 1, 4
-maxalloc 2, 4
-maxalloc 3, 4
-maxalloc 4, 4
-maxalloc 5, 4
-maxalloc 6, 4
-maxalloc 7, 4
-maxalloc 8, 4
-maxalloc 9, 4
-maxalloc 10, 4
-maxalloc 11, 4
-maxalloc 12, 4
-maxalloc 13, 4
-maxalloc 14, 4
-maxalloc 15, 4
-maxalloc 16, 4
-maxalloc 17, 4
+maxalloc 1, 8
+maxalloc 2, 8
+maxalloc 3, 8
+maxalloc 4, 8
+maxalloc 5, 8
+maxalloc 6, 8
+maxalloc 7, 8
+maxalloc 8, 8
+maxalloc 9, 8
+maxalloc 10, 8
+maxalloc 11, 8
+maxalloc 12, 8
+maxalloc 13, 8
+maxalloc 14, 8
+maxalloc 15, 8
+maxalloc 16, 8
+maxalloc 17, 8
 
 connect "Blower", "outleft", "ReverbSC", "inleft"
 connect "Blower", "outright", "ReverbSC", "inright"
@@ -399,21 +479,17 @@ gk_TubularBell_level chnexport "gk_TubularBell_level", 3
 gi_TubularBell_crossfade chnexport "gi_TubularBell_crossfade", 3
 gi_TubularBell_vibrato_depth chnexport "gi_TubularBell_vibrato_depth", 3
 gi_TubularBell_vibrato_rate chnexport "gi_TubularBell_vibrato_rate", 3
-
 gk_TubularBell_level init 0
 gi_TubularBell_crossfade init 2
 gi_TubularBell_vibrato_depth init .1
 gi_TubularBell_vibrato_rate init 5
 gk_TubularBell_midi_dynamic_range chnexport "gk_TubularBell_midi_dynamic_range", 3 ; 127
 gk_TubularBell_midi_dynamic_range init 30
-
 gk_TubularBell_space_left_to_right chnexport "gk_TubularBell_space_left_to_right", 3
 gk_TubularBell_space_left_to_right init .5
-
 gi_TubularBell_isine ftgen 0, 0, 65537, 10, 1
 gi_TubularBell_icosine ftgen 0, 0, 65537, 11, 1
 gi_TubularBell_icook3 ftgen 0, 0, 65537, 10, 1, .4, 0.2, 0.1, 0.1, .05
-
 instr TubularBell
 ; Authors: Perry Cook, John ffitch, Michael Gogins
 i_instrument = p1
@@ -748,7 +824,7 @@ gk_Shiner_level chnexport "gk_Shiner_level", 3 ;  0.5
 gk_Shiner_midi_dynamic_range init 20
 gk_Shiner_attack init .0125
 gk_Shiner_release init .0125
-gk_Shiner_level init 0.5
+gk_Shiner_level init 0
 gk_Shiner_front_to_back chnexport "gk_Shiner_front_to_back", 3 ;  0
 gk_Shiner_left_to_right chnexport "gk_Shiner_left_to_right", 3 ;  0.5
 gk_Shiner_bottom_to_top chnexport "gk_Shiner_bottom_to_top", 3 ;  0
@@ -1196,7 +1272,7 @@ gk_Plucked_midi_dynamic_range init 30
 gk_Plucked_space_left_to_right chnexport "gk_Plucked_space_left_to_right", 3
 gk_Plucked_space_left_to_right init .5
 gk_Plucked_level chnexport "gk_Plucked_level", 3
-gk_Plucked_level init 50
+gk_Plucked_level init 0
 gi_Plucked_sine ftgen 0, 0, 65537, 10, 1
 instr Plucked
 ; Author: Michael Gogins
@@ -1277,12 +1353,12 @@ gk_FMWaterBell_crossfade chnexport "gk_FMWaterBell_crossfade", 3 ; .5
 gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
 gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
 gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
-gk_FMWaterBell_level init -8
+gk_FMWaterBell_level init 0
 gi_FMWaterBell_attack init 0.002
 gi_FMWaterBell_release init 0.01
 gi_FMWaterBell_sustain init 20
 gi_FMWaterBell_sustain_level init .1
-gk_FMWaterBell_index init .5
+gk_FMWaterBell_index init 0
 gk_FMWaterBell_crossfade init .5
 gk_FMWaterBell_vibrato_depth init 0.05
 gk_FMWaterBell_vibrato_rate init 6
@@ -1333,7 +1409,7 @@ gk_YiString_reverb_send chnexport "gk_YiString_reverb_send", 3 ;  .5
 gk_YiString_chorus_send chnexport "gk_YiString_chorus_send", 3 ;  .5
 gi_YiString_overlap chnexport "gi_YiString_overlap", 3 ;  .1
 gk_YiString_midi_dynamic_range init 20
-gk_YiString_level init 30
+gk_YiString_level init 0
 gk_YiString_reverb_send init .5
 gk_YiString_chorus_send init .5
 gi_YiString_overlap init .1
@@ -1470,7 +1546,7 @@ gk_ZakianFlute_pan chnexport "gk_ZakianFlute_pan", 3 ;  .5
 gi_ZakianFLute_seed chnexport "gi_ZakianFLute_seed", 3 ;  .5
 gi_ZakianFLute_space_left_to_front chnexport "gi_ZakianFLute_space_left_to_front", 3 ;  .5
 gk_ZakianFlute_midi_dynamic_range init 20
-gk_ZakianFlute_level init -16
+gk_ZakianFlute_level init 0
 gk_ZakianFlute_pan init .5
 gi_ZakianFLute_seed init .5
 gi_ZakianFLute_space_left_to_front init .5
@@ -1710,7 +1786,7 @@ endin
 gi_Kung4_detune_cents chnexport "gk_Kung4_detune_cents", 3
 gi_Kung4_detune_cents init 8
 gk_Kung4_level chnexport "gk_Kung4_level", 3
-gk_Kung4_level init -20
+gk_Kung4_level init 0
 gk_Kung4_midi_dynamic_range chnexport "gk_Kung4_midi_dynamic_range", 3
 gk_Kung4_midi_dynamic_range init 30
 gk_Kung4_space_left_to_right chnexport "gk_Kung4_space_left_to_right", 3
@@ -1997,7 +2073,7 @@ endin
 
 </CsInstruments>
 <CsScore>
-f 0 30
+f 0 560
 </CsScore>
 </CsoundSynthesizer>
 
@@ -2613,6 +2689,24 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             if (message === null) {
               return;
             }
+            if (csound) {
+                const trimmed = message.trimEnd();
+                csound.GetScoreTime().then((score_time) => {
+                    let delta = score_time;
+                    // calculate (and subtract) whole days
+                    let days = Math.floor(delta / 86400);
+                    delta -= days * 86400;
+                    // calculate (and subtract) whole hours
+                    let hours = Math.floor(delta / 3600) % 24;
+                    delta -= hours * 3600;
+                    // calculate (and subtract) whole minutes
+                    let minutes = Math.floor(delta / 60) % 60;
+                    delta -= minutes * 60;
+                    // what's left is seconds
+                    let seconds = delta % 60;  // in theory the modulus is not required
+                    $("#menu_item_time").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f %s", days, hours, minutes, seconds, trimmed));
+                });
+            }
             message_callback_buffer = message_callback_buffer + message;
             if (message_callback_buffer.endsWith("\n")) {
                 console.log(message_callback_buffer);
@@ -2626,23 +2720,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 console_editor.scrollToLine(lines);
                 console_editor.insert(message_callback_buffer);      
                 message_callback_buffer = "";
-                if (csound) {
-                    csound.GetScoreTime().then((score_time) => {
-                    let delta = score_time;
-                    // calculate (and subtract) whole days
-                    let days = Math.floor(delta / 86400);
-                    delta -= days * 86400;
-                    // calculate (and subtract) whole hours
-                    let hours = Math.floor(delta / 3600) % 24;
-                    delta -= hours * 3600;
-                    // calculate (and subtract) whole minutes
-                    let minutes = Math.floor(delta / 60) % 60;
-                    delta -= minutes * 60;
-                    // what's left is seconds
-                    let seconds = delta % 60;  // in theory the modulus is not required
-                        $("#menu_item_time").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
-                    });
-                }
             }
         };
 
