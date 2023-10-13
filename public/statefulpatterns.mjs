@@ -37,8 +37,8 @@ export const NEVER = 0;
  * Prints a diagnostic message to both the Strudel logger and the Csound 
  * log. Messages are printed only for the specifed diagnostic level or less.
  */
-export function diagnostic(message, level = INFORMATION) {
-    if (level <= diagnostic_level_) {
+export function diagnostic(message, level = WARNING) {
+    if (level >= diagnostic_level_) {
         const text = 'L' + level + ' ' + audioContext.currentTime.toFixed(4) + ' [csac]' + message;
         logger(text, 'debug');
         if (csound) csound.message(text);
