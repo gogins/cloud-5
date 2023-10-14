@@ -76,27 +76,27 @@ csac.diagnostic_level(csac.WARNING);
 let scale = csac.Scale('D_major');
 let scalePattern = new csac.ScalePatterns(scale, 4);
 
-run(slider(5,3,8,1)).n()
-.off(slider(3,0,4,1), (x)=>x.add(slider(6, 0, 9, 1)))
+run(slider(8,3,8,1)).n()
+.off(slider(3,0,4,.25), (x)=>x.add(slider(7, 0, 9, 1)))
 //.offset(slider(4,0,4,1))
 .jux(rev)
-.add(slider(51, 24, 72, 1))
-.clip(slider(1.6, .1, 10, .1))
+.add(slider(53, 24, 72, 1))
+.clip(slider(0.9, .1, 10, .1))
 .pan(perlin)
 // CsoundAC way of doing harmony:
-.acST(scalePattern, "2 -1 3 -1 2 -1 5".slow(8))
-.acSM(scalePattern, "0 1 1 0 3".slow(32))
+.acST(scalePattern, "<2 -1 3 -1 2 -1 5>/3")
+.acSM(scalePattern, "<0 1 1 0 3>/9")
 .acSCV(scalePattern)
 /// Strudel way of doing harmony:
 ///.chord("<Am9 Em9 Am7 Dm7b5 G7b9 CM7>/2").dict('ireal-ext')
 ///.voicing()
 ///.dict('ireal-ext')
 ///.voicing()
-.slow(slider(3.471, 1, 8))
-.gain(slider(0.777, 0, 1))
-.csoundn(slider(7, 1, 16,1), 
-         slider(11, 1, 16,1), 
-         slider(12,1, 16,1))
+.slow(slider(4.073, 1, 8))
+.gain(slider(1, 0, 1))
+.csoundn(slider(3, 1, 16,1), 
+         slider(9, 1, 16,1), 
+         slider(11,17, 16,1))
 .pianoroll({fillActive:1,minMidi:24,maxMidi:96,cycles:16,playhead:.75})
 
 -->

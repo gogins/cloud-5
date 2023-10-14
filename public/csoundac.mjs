@@ -341,6 +341,11 @@ export function Pitv(voices, range) {
  * Creates a class to hold state, and defines Patterns for creating and using 
  * that state to work with CsoundAC Chords. An instance of this class must be 
  * created at module scope and passed to the relevant Patterns.
+ *
+ * Some hacks are used to co-ordinate state with triggers:
+ * -- Assume that chord changes happen only once at any given time.
+ * -- In the trigger, apply the input to the Pattern if and only if the input 
+ *    is different from the old input.
  */
 export class ChordPatterns extends StatefulPatterns {
     constructor(chord, modality) {
@@ -530,7 +535,10 @@ export class ChordPatterns extends StatefulPatterns {
  * created at module scope and passed to the relevant Patterns. The 
  * constructor sets the number of voices in Chords associated with the Scale,
  * by default 4.
- */
+ *
+ * State is co-ordinated with the triggers of the Patterns by only updating 
+ * the state when the input of the Pattern changes.
+*/
 export class ScalePatterns extends StatefulPatterns {
     constructor(scale, voices = 3) {
         super();
@@ -546,23 +554,23 @@ export class ScalePatterns extends StatefulPatterns {
             if (diagnostic_level() >= DEBUG) diagnostic('[acS onset] using existing scale.\n');
         }
         this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
-        // These are all the hap times of the Pattern application.
-        this.acS_time = null;
-        this.acSS_time = null;
-        this.acST_time = null;
-        this.acSM_time = null;
-
+        this.acS_counter = 0;
+        this.acS_scale_string = null;
+        this.acSS_counter = 0;
+        this.acSS_scale_step = null;
+        this.acST_counter = 0;
+        this.acST_scale_steps = null;
+        this.acSM_counter = 0;
+        this.acSM_index = null;
+        this.acSV_counter = 0;
+        this.acSCV_counter = 0;
+ 
     }
     /**
-     * acS:        Insert a CsoundAC Scale into the Pattern's state. The Chord 
-     *             of this is moved to the same scale degree in the new Scale
-     *             that it had in the old Scale.
+     * acS:        Insert a CsoundAC Scale into the Pattern's state.
      */
-    static acS_counter = 0;
     acS(is_onset, scale, hap) {
         if (is_onset === true) {
-            // Doesn't seem to work.
-            // let scale_degree = this.ac_scale.degree(this.ac_chord, 3);
             if (typeof scale === 'string') {
                 // Have to use underscores instead of spaces in the Strudel REPL.
                 scale = scale.replace('_', ' ');
@@ -572,14 +580,17 @@ export class ScalePatterns extends StatefulPatterns {
                 this.ac_scale = scale;
                 if (diagnostic_level() >= DEBUG) diagnostic('[acS onset] using existing scale.\n');
             }
-            this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
-            if (diagnostic_level() >= WARNING) {
-                diagnostic(['[acS onset] new scale:', this.ac_scale.toString(), this.ac_scale.name(), '\n'].join(' '));
-                diagnostic(['[acS onset] new chord:', this.ac_chord.toString(), this.ac_chord.name(), '\n'].join(' '));
-            }
-            ScalePatterns.acS_counter = ScalePatterns.acS_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acS', ScalePatterns.acS_counter, hap);
+            if (this.acS_scale_string != this.ac_scale.toString()) {
+                this.acS_scale_string = this.ac_scale.toString();
+                this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
+                if (diagnostic_level() >= WARNING) {
+                    diagnostic(['[acS onset] new scale:', this.ac_scale.toString(), this.ac_scale.name(), '\n'].join(' '));
+                    diagnostic(['[acS onset] new chord:', this.ac_chord.toString(), this.ac_chord.name(), '\n'].join(' '));
+                }
+                this.acS_counter = this.acS_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acS', this.acS_counter, hap);
+                }
             }
         }
         return hap;
@@ -588,22 +599,17 @@ export class ScalePatterns extends StatefulPatterns {
      *acSS:        Insert the Chord at the specified scale step of the Scale in 
      *             the Pattern's state, into the state.
      */
-    static acSS_counter = 0;
     acSS(is_onset, scale_step, hap) {
         if (is_onset === true) {
-            if (this.acSS_time === null) {
-                this.acSS_time = hap.whole;
-            } else if (this.acSS_time.equals(hap.whole)) {
-                return hap;
-            } else {
-                this.acSS_time = hap.whole;
-            }
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acSS onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
-            this.ac_chord = this.ac_scale.chord(scale_step, this.voices, 3);
-            if (diagnostic_level() >= WARNING) diagnostic(['[acSS onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
-            ScalePatterns.acSS_counter = ScalePatterns.acSS_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acSS', ScalePatterns.acSS_counter, hap);
+            if (this.acSS_scale_step != scale_step) {
+                this.acSS_scale_step = scale_step;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acSS onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.ac_chord = this.ac_scale.chord(scale_step, this.voices, 3);
+                if (diagnostic_level() >= WARNING) diagnostic(['[acSS onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.acSS_counter = this.acSS_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acSS', this.acSS_counter, hap);
+                }
             }
         }  
         return hap;
@@ -612,22 +618,17 @@ export class ScalePatterns extends StatefulPatterns {
      * acST:       Transpose the Chord in the Pattern's state by the specified 
      *             number of scale steps in the Scale in the state.
      */
-    static acST_counter = 0;
     acST(is_onset, scale_steps, hap) {
         if (is_onset === true) {
-            if (this.acST_time === null) {
-                this.acST_time = hap.whole;
-            } else if (this.acST_time.equals(hap.whole)) {
-                return hap;
-            } else {
-                this.acST_time = hap.whole;
-            }
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acST onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
-            this.ac_chord = this.ac_scale.transpose_degrees(this.ac_chord, scale_steps, 3);    
-            if (diagnostic_level() >= WARNING) diagnostic(['[acST onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
-            ScalePatterns.acSS_counter = ScalePatterns.acSS_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acSS', ScalePatterns.acSS_counter, hap);
+            if (this.acST_scale_steps != scale_steps) {
+                this.acST_scale_steps = scale_steps;
+                if (diagnostic_level() >= WARNING) diagnostic(['[acST onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.ac_chord = this.ac_scale.transpose_degrees(this.ac_chord, scale_steps, 3);    
+                if (diagnostic_level() >= WARNING) diagnostic(['[acST onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.acST_counter = this.acST_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acST', this.acST_counter, hap);
+                }
             }
         }
         return hap;
@@ -637,36 +638,31 @@ export class ScalePatterns extends StatefulPatterns {
      *             Chord in the state as a pivot, choosing one of the possible 
      *             modulations by index.
      */
-    static acSM_counter = 0;
     acSM(is_onset, index, hap) {
         if (is_onset === true) {
-            if (this.acSM_time === null) {
-                this.acSM_time = hap.whole;
-            } else if (this.acSM_time.equals(hap.whole)) {
-                return hap;
-            } else {
-                this.acSM_time = hap.whole;
-            }
-            let pivot_chord_eop = this.ac_chord.eOP();
-            let possible_modulations = this.ac_scale.modulations(pivot_chord_eop);
-            let new_scale = this.ac_scale;
-            let modulation_count = possible_modulations.size();
-            let wrapped_index = -1;
-            if (modulation_count > 0) {
-                wrapped_index = index % modulation_count;
-                new_scale = possible_modulations.get(wrapped_index);
-                if (diagnostic_level() >= WARNING) {
-                    diagnostic('[acSM onset] modulating in: ' + this.ac_scale.toString() + ' ' + this.ac_scale.name() + '\n');
-                    diagnostic('[acSM onset] from pivot:    ' + pivot_chord_eop.toString(), + ' ' + pivot_chord_eop.name() + '\n');
-                    diagnostic('[acSM onset] modulations:   ' + modulation_count + ' => ' + wrapped_index + '\n');
-                    diagnostic('[acSM onset] modulated to:  ' + new_scale.toString() + ' ' + new_scale.name() + '\n');
-                    diagnostic('[acSM onset] hap:           ' + hap.show() + '\n');
+             if (this.acSM_index != index) {
+                this.acSM_index = index;
+                let pivot_chord_eop = this.ac_chord.eOP();
+                let possible_modulations = this.ac_scale.modulations(pivot_chord_eop);
+                let new_scale = this.ac_scale;
+                let modulation_count = possible_modulations.size();
+                let wrapped_index = -1;
+                if (modulation_count > 0) {
+                    wrapped_index = index % modulation_count;
+                    new_scale = possible_modulations.get(wrapped_index);
+                    if (diagnostic_level() >= WARNING) {
+                        diagnostic('[acSM onset] modulating in: ' + this.ac_scale.toString() + ' ' + this.ac_scale.name() + '\n');
+                        diagnostic('[acSM onset] from pivot:    ' + pivot_chord_eop.toString(), + ' ' + pivot_chord_eop.name() + '\n');
+                        diagnostic('[acSM onset] modulations:   ' + modulation_count + ' => ' + wrapped_index + '\n');
+                        diagnostic('[acSM onset] modulated to:  ' + new_scale.toString() + ' ' + new_scale.name() + '\n');
+                        diagnostic('[acSM onset] hap:           ' + hap.show() + '\n');
+                    }
+                    this.ac_scale = new_scale;
                 }
-                this.ac_scale = new_scale;
-            }
-            ScalePatterns.acSM_counter = ScalePatterns.acSM_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acSM', ScalePatterns.acSM_counter, hap);
+                this.acSM_counter = this.acSM_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acSM', this.acSM_counter, hap);
+                }
             }
         }
         return hap;
@@ -675,7 +671,6 @@ export class ScalePatterns extends StatefulPatterns {
      * acSV:       Move notes in the Pattern to fit the Scale in the Pattern's 
      *             state.
      */
-    static acSV_counter = 0;
     acSV(is_onset, hap) {
         if (is_onset === true) {
             let frequency;
@@ -692,9 +687,9 @@ export class ScalePatterns extends StatefulPatterns {
             let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
             hap = setPitch(hap, note);
             if (diagnostic_level() >= WARNING) diagnostic(['[acSV value] new hap:        ', hap.show(), '\n'].join(' '));
-            ScalePatterns.acSV_counter = ScalePatterns.acSV_counter + 1;
+            this.acSV_counter = this.acSV_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acSV', ScalePatterns.acSV_counter, hap);
+                print_counter('acSV', this.acSV_counter, hap);
             }
         } else {
             let frequency;
@@ -736,9 +731,9 @@ export class ScalePatterns extends StatefulPatterns {
             let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
             hap = setPitch(hap, note);
             if (diagnostic_level() >= WARNING) diagnostic(['[acSCV onset] new hap:        ', hap.show(), '\n'].join(' '));
-            ScalePatterns.acSCV_counter = ScalePatterns.acSCV_counter + 1;
+            this.acSCV_counter = this.acSCV_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acSCV', ScalePatterns.acSCV_counter, hap);
+                print_counter('acSCV', this.acSCV_counter, hap);
             }
         } else {
             let frequency;
@@ -756,7 +751,7 @@ export class ScalePatterns extends StatefulPatterns {
             let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
             hap = setPitch(hap, note);
             if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV value] new hap:        ', hap.show(), '\n'].join(' '));
-            ScalePatterns.acSCV_counter = ScalePatterns.acSCV_counter + 1;
+            this.acSCV_counter = this.acSCV_counter + 1;
          }
         return hap;
     }
