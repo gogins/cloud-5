@@ -71,7 +71,7 @@
     <!--
     
 const csac = await import('../csoundac.mjs');
-csac.diagnostic_level(csac.NEVER);
+csac.diagnostic_level(csac.WARNING);
 
 let scale = csac.Scale('D_major');
 let scalePattern = new csac.ScalePatterns(scale, 4);
@@ -291,9 +291,9 @@ run(slider(5,3,8,1)).n()
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=12 id=gk_MasterOutput_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-12 id=gk_MasterOutput_level step=.001>
     <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>12</output>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-12</output>
     </tr>
     </table>
     <p>

@@ -94,7 +94,7 @@ export class StatefulPatterns {
                             if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
+                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                             hap = method.call(stateful, false, hap);
                             return hap;
                         });
@@ -109,7 +109,7 @@ export class StatefulPatterns {
                             if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
+                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                             hap = method.call(stateful, false, p2, hap);
                             return hap;
                         });
@@ -122,7 +122,7 @@ export class StatefulPatterns {
                             if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
+                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                             hap = method.call(stateful, false, p2, p3, hap);
                             return hap;
                         });
@@ -135,7 +135,7 @@ export class StatefulPatterns {
                             if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                         }, false).withHap((hap) => {
                             stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] query value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
+                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
                             hap = method.call(stateful, false, p2, p3, p4, hap);
                             return hap;
                         });

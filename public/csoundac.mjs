@@ -546,6 +546,12 @@ export class ScalePatterns extends StatefulPatterns {
             if (diagnostic_level() >= DEBUG) diagnostic('[acS onset] using existing scale.\n');
         }
         this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
+        // These are all the hap times of the Pattern application.
+        this.acS_time = null;
+        this.acSS_time = null;
+        this.acST_time = null;
+        this.acSM_time = null;
+
     }
     /**
      * acS:        Insert a CsoundAC Scale into the Pattern's state. The Chord 
@@ -585,6 +591,13 @@ export class ScalePatterns extends StatefulPatterns {
     static acSS_counter = 0;
     acSS(is_onset, scale_step, hap) {
         if (is_onset === true) {
+            if (this.acSS_time === null) {
+                this.acSS_time = hap.whole;
+            } else if (this.acSS_time.equals(hap.whole)) {
+                return hap;
+            } else {
+                this.acSS_time = hap.whole;
+            }
             if (diagnostic_level() >= DEBUG) diagnostic(['[acSS onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
             this.ac_chord = this.ac_scale.chord(scale_step, this.voices, 3);
             if (diagnostic_level() >= WARNING) diagnostic(['[acSS onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
@@ -602,6 +615,13 @@ export class ScalePatterns extends StatefulPatterns {
     static acST_counter = 0;
     acST(is_onset, scale_steps, hap) {
         if (is_onset === true) {
+            if (this.acST_time === null) {
+                this.acST_time = hap.whole;
+            } else if (this.acST_time.equals(hap.whole)) {
+                return hap;
+            } else {
+                this.acST_time = hap.whole;
+            }
             if (diagnostic_level() >= DEBUG) diagnostic(['[acST onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
             this.ac_chord = this.ac_scale.transpose_degrees(this.ac_chord, scale_steps, 3);    
             if (diagnostic_level() >= WARNING) diagnostic(['[acST onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
@@ -620,6 +640,13 @@ export class ScalePatterns extends StatefulPatterns {
     static acSM_counter = 0;
     acSM(is_onset, index, hap) {
         if (is_onset === true) {
+            if (this.acSM_time === null) {
+                this.acSM_time = hap.whole;
+            } else if (this.acSM_time.equals(hap.whole)) {
+                return hap;
+            } else {
+                this.acSM_time = hap.whole;
+            }
             let pivot_chord_eop = this.ac_chord.eOP();
             let possible_modulations = this.ac_scale.modulations(pivot_chord_eop);
             let new_scale = this.ac_scale;
