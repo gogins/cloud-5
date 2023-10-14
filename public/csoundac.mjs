@@ -249,8 +249,8 @@ export const csoundn = register('csoundn', (instrument, pat) => {
             csound.readScore(i_statement);
             // Any controls in the Hap that start with 'gi' or 'gk' will be 
             // treated as Csound control channels, and their values will be 
-            // sent to Csound. Normally, these names have been defined in the 
-            // Csound orchestra code.
+            // sent to Csound. Normally, these channels have been defined in 
+            // the Csound orchestra code.
             for (let control in hap.value) {
                 if (control.startsWith('gi') || control.startsWith('gk')) {
                     csound.SetControlChannel(control, parseFloat(hap.value[control]));
@@ -363,27 +363,41 @@ export class ChordPatterns extends StatefulPatterns {
             this.ac_modality = modality;
         }
         this.value = 0;
+        this.acC_counter = 0;
+        this.acC_chord_string = null;
+        this.acCT_counter = 0;
+        this.acCT_semitones = null
+        this.acCI_counter = 0;
+        this.acCI_center = null;
+        this.acCK_counter = 0;
+        this.acCK_state = null;
+        this.acCQ_counter = 0;
+        this.acCQ_semitones = null;
+        this.acCOP_counter = 0;
+        this.acCV_counter = 0;
     }
     /**
      * Applies a Chord or chord name to this.
      */
-    static acC_counter = 0;
     acC(is_onset, chord_id, hap) {
         if (is_onset === true) {
             if (typeof chord_id === 'string') {
                 this.ac_chord = csoundac.chordForName(chord_id);
-                if (diagnostic_level() >= WARNING) diagnostic('[acC] onset: created new chord.\n');
+                if (diagnostic_level() >= DEBUG) diagnostic('[acC onset] created new Chord.\n');
             } else {
-                this.ac_chord = chord_id;
-                if (diagnostic_level() >= DEBUG) diagnostic('[acC] onset: using existing chord.\n');
+                this.ac_scale = scale;
+                if (diagnostic_level() >= DEBUG) diagnostic('[acC onset] using existing Chord.\n');
             }
-            if (diagnostic_level() >= DEBUG) {
-                let message = ['[acC] onset: chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' ');
-                diagnostic(message);
-            }
-            ChordPatterns.acC_counter = ChordPatterns.acC_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acC', ChordPatterns.acC_counter, hap);
+            if (this.acS_chord_string != this.ac_chord.toString()) {
+                this.acS_chord_string = this.ac_chord.toString();
+                this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
+                if (diagnostic_level() >= WARNING) {
+                    diagnostic(['[acS onset] new Chord:', this.ac_chord.toString(), this.ac_chord.name(), '\n'].join(' '));
+                 }
+                this.acC_counter = this.acC_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acC', this.acC_counter, hap);
+                }
             }
         }
         return hap;
@@ -391,52 +405,58 @@ export class ChordPatterns extends StatefulPatterns {
     /**
      * Applies a transposition to the Chord of this.
      */
-    static acCT_counter = 0;
     acCT(is_onset, semitones, hap) {
         if (is_onset === true) {
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acCT onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            this.ac_chord = this.ac_chord.T(semitones);
-            if (diagnostic_level() >= WARNING) diagnostic(['[acCT onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            ChordPatterns.acCT_counter = ChordPatterns.acCT_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acCT', ChordPatterns.acCT_counter, hap);
+            if (this.acCT_semitones != semitones) {
+                this.acCT_semitones = semitones;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acCT onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.ac_chord = this.ac_chord.T(semitones);
+                if (diagnostic_level() >= WARNING) diagnostic(['[acCT onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.acCT_counter = this.acCT_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acCT', this.acCT_counter, hap);
+                }
             }
         }
         return hap;
     }
     /**
-     * Applies an inversion to the Chord of this. The 
-     * default center of reflection is 0.
+     * Applies an inversion to the Chord of this. The transformation can be 
+     * patternified with a Pattern of flips (changes in the value of the flip 
+     * input).
      */
-    static acCI_counter = 0;
-    acCI(is_onset, center, hap) {
+    acCI(is_onset, center, flip, hap) {
         if (is_onset === true) {
-            if (typeof center === 'undefined') {
-                center = 0;
-            }
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acCI] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            this.ac_chord = this.ac_chord.I(center);
-            if (diagnostic_level() >= WARNING) diagnostic(['[acCI] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            ChordPatterns.acCI_counter = ChordPatterns.acCI_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acCI', ChordPatterns.acCI_counter, hap);
+            if (this.acCI_flip != flip) {
+                this.acCI_flip = flip;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acCI] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.ac_chord = this.ac_chord.I(center);
+                if (diagnostic_level() >= WARNING) diagnostic(['[acCI] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.acCI_counter = this.acCI_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acCI', this.acCI_counter, hap);
+                }
             }
         }
         return hap;
     }
     /**
      * Applies the interchange by inversion operation of the Generalized 
-     * Contextual Group of Fiore and Satyendra to the Chord of this.
+     * Contextual Group of Fiore and Satyendra to the Chord of this. The 
+     * transformation can be patternified with a Pattern of flips (changes in 
+     * the value of the flip input).
      */
-    static acCK_counter = 0;
-    acCK(is_onset, hap) {
+    acCK(is_onset, flip, hap) {
         if (is_onset === true) {
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acCK onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            this.ac_chord = this.ac_chord.K();
-            if (diagnostic_level() >= WARNING) diagnostic(['[acCK onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            ChordPatterns.acCK_counter = ChordPatterns.acCK_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acCK', ChordPatterns.acCK_counter, hap);
+            if (this.flip != flip) {
+                this.flip = flip;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acCK onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.ac_chord = this.ac_chord.K();
+                if (diagnostic_level() >= WARNING) diagnostic(['[acCK onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.acCK_counter = ChordPatterns.acCK_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acCK', this.acCK_counter, hap);
+                }
             }
         }
         return hap;
@@ -452,9 +472,9 @@ export class ChordPatterns extends StatefulPatterns {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCQ onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.Q(semitones, this.ac_modality, 1);
             if (diagnostic_level() >= WARNING) diagnostic(['[acCQ onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            ChordPatterns.acCQ_counter = ChordPatterns.acCQ_counter + 1;
+            this.acCQ_counter = this.acCQ_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acCQ', ChordPatterns.acCQ_counter, hap);
+                print_counter('acCQ', this.acCQ_counter, hap);
             }
         }
         return hap;
@@ -474,9 +494,9 @@ export class ChordPatterns extends StatefulPatterns {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCOP onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.eOP();
             if (diagnostic_level() >= WARNING) diagnostic(['[acCOP onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-            ChordPatterns.acCOP_counter = ChordPatterns.acCOP_counter + 1;
+            this.acCOP_counter = this.acCOP_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acCOP', ChordPatterns.acCOP_counter, hap);
+                print_counter('acCOP', this.acCOP_counter, hap);
             }
         }
         return hap;
