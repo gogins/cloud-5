@@ -787,18 +787,30 @@ export class PitvPatterns extends StatefulPatterns {
         super();
         this.registerPatterns();
         this.pitv = pitv;
+        this.acPP_counter = 0;
+        this.acPP_P = null;
+        this.acPI_counter = 0;
+        this.acPI_I = null;
+        this.acPT_counter = 0;
+        this.acPT_T = null;
+        this.acPV_counter = 0;
+        this.acPV_V = null;
+        this.acPO_counter = 0;
+        this.acPO_value = null;
+        this.acPC_counter = 0;
+        this.acPVS_counter = 0;
+        this.acPVV_counter = 0;
     }
     /**
      * acP:        Insert a CsoundAC PITV group into the Pattern's state.
      */
-    static acP_counter = 0;
     acP(is_onset, pitv, hap) {
         if (is_onset == true) {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acP onset] current PITV:  ', this.this.pitv.list(true, true, false), '\n'].join(' '));
             this.pitv = pitv;
-            PitvPatterns.acP_counter = PitvPatterns.acP_counter + 1;
+            this.acP_counter = this.acP_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acP', PitvPatterns.acP_counter, hap);
+                print_counter('acP', this.acP_counter, hap);
             }
         } 
         return hap;
@@ -807,13 +819,15 @@ export class PitvPatterns extends StatefulPatterns {
      * acPP:       Set the prime form index of the PITV element in the Pattern's 
      *             state.
      */
-    static acPP_counter = 0;
     acPP(is_onset, P, hap) {
         if (is_onset === true) {
-            this.pitv.P = P;
-            PitvPatterns.acPP_counter = PitvPatterns.acPP_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPP', PitvPatterns.acPP_counter, hap);
+            if (this.acPP_P != P) {
+                this.acPP_P = P;
+                this.pitv.P = P;
+                this.acPP_counter = this.acPP_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPP', this.acPP_counter, hap);
+                }
             }
         }
         return hap;
@@ -825,10 +839,13 @@ export class PitvPatterns extends StatefulPatterns {
     static acPI_counter = 1;
     acPI(is_onset, I, hap) {
         if (is_onset === true) {
-            this.pitv.I = I;
-            PitvPatterns.acPI_counter = PitvPatterns.acPI_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPI', PitvPatterns.acPI_counter, hap);
+            if (this.acPI_I != I) {
+                this.acPI_I = I;
+                this.pitv.I = I;
+                this.acPI_counter = this.acPI_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPI', this.acPI_counter, hap);
+                }
             }
         }
         return hap;
@@ -837,13 +854,15 @@ export class PitvPatterns extends StatefulPatterns {
      * acPT:       Set the transposition index of the PITV element in the 
      *             Pattern's state.
      */
-    static acPT_counter = 1;
     acPT(is_onset, T, hap) {
         if (is_onset === true) {
-            this.pitv.T = T;
-            PitvPatterns.acPT_counter = PitvPatterns.acPT_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPT', PitvPatterns.acPT_counter, hap);
+            if (this.acPT_T != T) {
+                this.acPT_T = T;
+                this.pitv.T = T;
+                this.acPT_counter = this.acPT_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPT', this.acPT_counter, hap);
+                }
             }
         }
         return hap;
@@ -852,13 +871,15 @@ export class PitvPatterns extends StatefulPatterns {
      * acPO:       Set the octavewise voicing index of the PITV element in the 
      *             Pattern's state.
      */
-    static acPO_counter = 0;
     acPO(is_onset, V, hap) {
         if (is_onset == true) {
-            this.pitv.V = V;
-            PitvPatterns.acPO_counter = PitvPatterns.acPO_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPO', PitvPatterns.acPO_counter, hap);
+            if (this.acPO_O != V) {
+                this.acPO_O = V;
+                this.pitv.V = V;
+                this.acPO_counter = this.acPO_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPO', this.acPO_counter, hap);
+                }
             }
         }
         return hap;
@@ -867,14 +888,13 @@ export class PitvPatterns extends StatefulPatterns {
      * acPC:       Insert the Chord corresponding to the PITV element into the 
      *             Pattern's state.
      */
-    static acPC_counter = 0;
     acPC(is_onset, hap) {
         if (is_onset === true) {
             this.ac_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
             if (diagnostic_level() >= WARNING) diagnostic(['[acPC onset]:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
-            PitvPatterns.acPC_counter = PitvPatterns.acPC_counter + 1;
+            this.acPC_counter = this.acPC_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPC', PitvPatterns.acPC_counter, hap);
+                print_counter('acPC', this.acPC_counter, hap);
             }
         }
         return hap;
@@ -883,7 +903,6 @@ export class PitvPatterns extends StatefulPatterns {
      * acPV:       Move notes in the Pattern to fit the pitch-class set of the 
      *             element of the PITV group in the Pattern's state.
      */
-    static acPV_counter = 0;
     acPV(is_onset, hap) {
         if (is_onset === true) {
             let frequency;
@@ -899,9 +918,9 @@ export class PitvPatterns extends StatefulPatterns {
             let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
             hap = setPitch(hap, new_midi_key);
             if (diagnostic_level() >= WARNING) diagnostic(['[acPV value]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
-            PitvPatterns.acPV_counter = PitvPatterns.acPV_counter + 1;
+            this.acPV_counter = this.acPV_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPV', PitvPatterns.acPV_counter, hap);
+                print_counter('acPV', this.acPV_counter, hap);
             }
         } else {
             let frequency;
@@ -924,7 +943,6 @@ export class PitvPatterns extends StatefulPatterns {
      * acPVV:      Move notes in the Pattern to fit the element of the PITV 
      *             group in the Pattern's state.
      */
-    static acPVV_counter = 0;
     acPVV(is_onset, hap) {
         if (is_onset === true) {
             let frequency;
@@ -939,9 +957,9 @@ export class PitvPatterns extends StatefulPatterns {
             let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
             hap = setPitch(hap, new_midi_key);
             if (diagnostic_level() >= WARNING) diagnostic(['[acPVV onset]:', 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
-            PitvPatterns.acPVV_counter = PitvPatterns.acPVV_counter + 1;
+            this.acPVV_counter = this.acPVV_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPVV', PitvPatterns.acPVV_counter, hap);
+                print_counter('acPVV', this.acPVV_counter, hap);
             }
         } else {
             let frequency;
