@@ -58,7 +58,7 @@
             <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
-            <li id="menu_item_time" class="w3-btn w3-text-green"></li>
+            <li id="mini_console" class="w3-btn w3-text-light-green">About</li>
         </ul>
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
@@ -2708,7 +2708,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     delta -= minutes * 60;
                     // what's left is seconds
                     let seconds = delta % 60;  // in theory the modulus is not required
-                    $("#menu_item_time").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f %s", days, hours, minutes, seconds, trimmed));
+                    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f %.80s", days, hours, minutes, seconds, trimmed));
                 });
             }
             message_callback_buffer = message_callback_buffer + message;
