@@ -295,6 +295,16 @@ run(slider(8,3,8,1)).n()
     <td>
     <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-12</output>
     </tr>
+    
+    <tr style="height:1em;"></tr>    
+    <tr>
+    <td>
+    <label for=gk_MasterOutput_duration>Duration (0 is indefinite)</label>
+    <td>
+    <input class=persistent-element type=range min=0 max=1000 value=540 id=gk_MasterOutput_duration step=.001>
+    <td>
+    <output for=gk_MasterOutput_duration id=gk_MasterOutput_duration_output>540</output>
+    </tr>
     </table>
     <p>
     
@@ -2054,7 +2064,7 @@ gk_MasterOutput_duration chnexport "gk_MasterOutput_duration", 3 ; 0
 gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
 gk_MasterOutput_level init 0
 gS_MasterOutput_filename init ""
-gi_MasterOutput_duration init 540
+gk_MasterOutput_duration init 540
 instr MasterOutput
 aleft inleta "inleft"
 aright inleta "inright"
@@ -2063,16 +2073,12 @@ printks2 "Master gain: %f\n", k_gain
 iamp init 1
 aleft butterlp aleft, 18000
 aright butterlp aright, 18000
-a_fadeout linseg 1, gi_MasterOutput_duration, 1, 6, 0
+a_fadeout linsegr 1, 1000000000, 1, 6, 0
+k_times times
+if ((k_times > gk_MasterOutput_duration) && (gk_MasterOutput_duration != 0)) then
+turnoff2 p1, 0, 1
+endif 
 outs aleft * k_gain * a_fadeout, aright * k_gain * a_fadeout
-; We want something that will play on my phone.
-i_amplitude_adjustment = ampdbfs(-3) / 32767
-i_filename_length strlen gS_MasterOutput_filename
-if i_filename_length > 0 then
-prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
-fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
-endif
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 </CsInstruments>
