@@ -80,8 +80,10 @@ let C = "a#4 b#4 c#5";
 // - The times are wrong (each seq'd Pattern 
 //   gets the length of the sum of the Pattern lengths).
 //   This is probably fixable as in `arrange`.
-A.seqWhen([B], slider(1,0,1, 1)).seq(C).slow(3).note();
+//A.seqWhen([B], slider(1,0,1, 1)).seq(C).slow(3).note();
 //A.seq(B).seq(C).slow(3).note();
+//csac.arrangeTrack([1, A], [2, B], [1, C]).note().piano().pianoroll()
+pm(A, B, C).piano().pianoroll()
 
 -->
 

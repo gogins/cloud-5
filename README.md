@@ -230,6 +230,8 @@ These are pieces being used to develop and test new features of cloud-5.
    stacks a mixture of ordinary and generative Patterns to see if they 
    are correctly scheduled.
    
+ - [Cancycle](cancycle.html), work in progress.
+   
 ## Extending cloud-5
 
 You can extend the capabilities of cloud-5 in several ways, including:

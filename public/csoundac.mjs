@@ -32,13 +32,14 @@ let audioContext = new AudioContext();
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
 
-export const seqWhen = register('seqWhen', (other, on, pat) => {
-    if (on == true) {
-        return pat.seq(other);
-    } else {
-        return pat;
-    }
-});
+export function arrangeTrack(...sections) {
+    sections = sections.filter(function(element) {
+        return element[0] >= 1;
+    });
+    const total = sections.reduce((sum, [cycles]) => sum + cycles, 0);
+    sections = sections.map(([cycles, section]) => [cycles, section.fast(cycles)]);
+    return timeCat(...sections).slow(total);
+};
 
 /**
  * Returns the frequency corresponding to any of various ways that pitch 
