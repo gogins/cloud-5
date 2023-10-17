@@ -4,7 +4,7 @@
  * Author: Michael Gogins
  * 
  * This module implements "stateful Patterns" by defining a base class, 
- * `StatefulPatterns`, that knows how to register class methods as Patterns
+ * `StatefulPatterns`, that knows how to register class methods as Patterns.
  */
 let csound = globalThis.__csound__;
 let csoundac = globalThis.__csoundac__;
@@ -50,8 +50,9 @@ export function diagnostic(message, level = WARNING) {
  * that hold state between queries. Derived classes, which must be defined at 
  * module scope, must in their constructor call `this.registerPatterns`, which 
  * will automatically register (most of) of their methods as Strudel Patterns, 
- * each of which takes an instance of the class as a first parameter. Class 
- * methods must have the following syntax and semantics:
+ * each of which takes an instance of the class as a first parameter, and the 
+ * Pattern as the last parameter. Class methods must have the following syntax 
+ * and semantics:
  * ```
  * Class.Pat(is_onset, [0 or more arguments to be patternified], hap) {...}
  * ```
