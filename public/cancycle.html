@@ -124,7 +124,16 @@ let circleMapInstance = new CircleMapPattern();
 // Bind some Csound control channels to Strudel, to be 
 // controlled by sliders in the patch.
 let gk_Bower_level = createParam('gk_Bower_level');
+let gk_Bower_pressure = createParam('gk_Bower_pressure');
 let gk_Blower_level = createParam('gk_Blower_level');
+let gk_Blower_grainDensity = createParam('gk_Blower_grainDensity');
+let gk_Blower_grainDuration = createParam('gk_Blower_grainDuration');
+let gk_Blower_grainAmplitudeRange = createParam('gk_Blower_grainAmplitudeRange');
+let gk_Blower_grainFrequencyRange = createParam('gk_Blower_grainFrequencyRange');
+let gk_Sweeper_britel = createParam('gk_Sweeper_britel');
+let gk_Sweeper_britels = createParam('gk_Sweeper_britels');
+let gk_Sweeper_briteh = createParam('gk_Sweeper_briteh');
+let gk_Sweeper_britehs = createParam('gk_Sweeper_britehs');
 let gk_Droner_level = createParam('gk_Droner_level');
 let gk_FilteredSines_level = createParam('gk_FilteredSines_level');
 let gk_FMWaterBell_level = createParam('gk_FMWaterBell_level');
@@ -148,6 +157,7 @@ let gk_MasterOutput_level = createParam('gk_MasterOutput_level');
 pure(0).note()
 .CircleMap(circleMapInstance, 1, slider(10.184, 1, 29))
 .echoWith(5, slider(1.25, 0.25, 4, .25), (p,n) => p.add(4*n))
+.euclid(8, 19)
 // Master tempo:
 .slow(slider(1, 1, 8))
 .fast(slider(1, 1, 8))
@@ -176,7 +186,15 @@ pure(0).note()
 /*  6 */ .gk_Guitar_level(slider(0.5, 0, 1).sub(.5).mul(100))
 /*  7 */ .gk_FilteredSines_level(slider(0.5, 0, 1).sub(.5).mul(100))
 /*  8 */ .gk_Blower_level(slider(0.5, 0, 1).sub(.5).mul(100)) 
+         .gk_Blower_grainDensity(slider(90, 0, 1000)) 
+         .gk_Blower_grainDuration(slider(0.02, 0.01, 2)) 
+         .gk_Blower_grainAmplitudeRange(slider(100, 0, 1000)) 
+         .gk_Blower_grainFrequencyRange(slider(10, 0, 300)) 
 /*  9 */ .gk_Sweeper_level(slider(0.5, 0, 1).sub(.5).mul(100))
+         .gk_Sweeper_britel(slider(0.5, 0, 4))
+         .gk_Sweeper_britels(slider(0.25, 0, 4)) 
+         .gk_Sweeper_briteh(slider(4, 0, 4)) 
+         .gk_Sweeper_britehs(slider(0.5, 0, 4)) 
 /* 10 */ .gk_Plucked_level(slider(0.5, 0, 1).sub(.5).mul(100))
 /* 11 */ .gk_FMWaterBell_level(slider(0.5, 0, 1).sub(.5).mul(100))
 /* 12 */ .gk_YiString_level(slider(0.5, 0, 1).sub(.5).mul(100))
@@ -185,6 +203,7 @@ pure(0).note()
 /* 15 */ .gk_Kung4_level(slider(0.5, 0, 1).sub(.5).mul(100))
 /* 16 */ .gk_Kung2_level(slider(0.5, 0, 1).sub(.5).mul(100))
 /* 17 */ .gk_Bower_level(slider(0.5, 0, 1).sub(.5).mul(100))  
+         .gk_Bower_pressure(slider(0.325, 0, 4))
 .gk_ReverbSC_feedback(slider(0.84, 0, 1))
 .gk_MasterOutput_level(slider(0.5, 0, 1).sub(.5).mul(100))
 .pianoroll({fillActive:1,minMidi:24,maxMidi:108,cycles:16,playhead:.75})
