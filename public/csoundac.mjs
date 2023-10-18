@@ -32,7 +32,7 @@ let audioContext = new AudioContext();
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
 
-export function arrangeTrack(...sections) {
+export function track(...sections) {
     sections = sections.filter(function(element) {
         return element[0] >= 1;
     });
