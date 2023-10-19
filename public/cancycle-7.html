@@ -71,11 +71,12 @@
     <!--
     
 const csac = await import('../csoundac.mjs');
-csac.diagnostic_level(csac.NEVER);
+csac.diagnostic_level(csac.WARNING);
 
 let scale = csac.Scale('D_major');
 let scalePattern = new csac.ScalePatterns(scale, 5);
 
+///run(slider(8,3,8,1))
 let circle_map_counter = 0;
 /**
  * Classes based on StatefulPatterns can be used to define stateful Patterns.
@@ -96,7 +97,7 @@ class CircleMapPattern extends csac.StatefulPatterns {
         this.kappa = kappa;
         this.midi_key = 36;
         this.bass = 36;
-        this.range = 48;
+        this.range = 36;
     }
     /**
      * Patternify the omega parameter of the circle map.
@@ -110,11 +111,14 @@ class CircleMapPattern extends csac.StatefulPatterns {
             // Theta represents the phase of an instantaneous frequency that 
             // can be negative, but we only care about its position on the 
             // circle.
+            console.log('[CircleMap onset]: ' + JSON.stringify(hap));
             this.midi_key = Math.round((Math.abs(this.theta) * this.range) + this.bass);
             circle_map_counter = circle_map_counter + 1;
-            // csac.diagnostic('[CircleMap] sync onset: ' + ' circle_map_counter: '  + circle_map_counter + ' theta: ' + this.theta + ' note: ' + this.midi_key + '\n', csac.WARNING);
+            csac.diagnostic('[CircleMap] sync onset: ' + ' circle_map_counter: '  + circle_map_counter + ' theta: ' + this.theta + ' note: ' + this.midi_key + '\n', csac.WARNING);
         }
-        hap.value.note = this.midi_key;
+        console.log('[CircleMap value]: ' + hap.show());
+hap.value.note = this.midi_key;
+        console.log('[CircleMap value]: ' + hap.show());
         return hap;
     }
 }
@@ -124,16 +128,7 @@ let circleMapInstance = new CircleMapPattern();
 // Bind some Csound control channels to Strudel, to be 
 // controlled by sliders in the patch.
 let gk_Bower_level = createParam('gk_Bower_level');
-let gk_Bower_pressure = createParam('gk_Bower_pressure');
 let gk_Blower_level = createParam('gk_Blower_level');
-let gk_Blower_grainDensity = createParam('gk_Blower_grainDensity');
-let gk_Blower_grainDuration = createParam('gk_Blower_grainDuration');
-let gk_Blower_grainAmplitudeRange = createParam('gk_Blower_grainAmplitudeRange');
-let gk_Blower_grainFrequencyRange = createParam('gk_Blower_grainFrequencyRange');
-let gk_Sweeper_britel = createParam('gk_Sweeper_britel');
-let gk_Sweeper_britels = createParam('gk_Sweeper_britels');
-let gk_Sweeper_briteh = createParam('gk_Sweeper_briteh');
-let gk_Sweeper_britehs = createParam('gk_Sweeper_britehs');
 let gk_Droner_level = createParam('gk_Droner_level');
 let gk_FilteredSines_level = createParam('gk_FilteredSines_level');
 let gk_FMWaterBell_level = createParam('gk_FMWaterBell_level');
@@ -149,94 +144,52 @@ let gk_TubularBell_level = createParam('gk_TubularBell_level');
 let gk_Xing_level = createParam('gk_Xing_level');
 let gk_YiString_level = createParam('gk_YiString_level');
 let gk_ZakianFlute_level = createParam('gk_ZakianFlute_level');
-let gk_ReverbSC_feedback = createParam('gk_ReverbSC_feedback');
 let gk_MasterOutput_level = createParam('gk_MasterOutput_level');
 
-csac.track
-(
-[60*3,
 // In order for controls to work, `note` must come first!
-pure(0)
-.note().CircleMap(circleMapInstance, 1, slider(18.416, 1, 29))
-.echoWith(5, slider(0.5, 0, 4, .25), (p,n) => p.add(4*n))
-.csoundn(slider(6, 1, 17,1), 
-         slider(13, 1, 17,1), 
-         slider(11, 1, 17,1))
+pure(0).note()
+.CircleMap(circleMapInstance, 1, slider(10.184, 1, 29))
+.echoWith(5, slider(1.25, 0.25, 4, .25), 
+          (p,n) => p.add(4*n))
+//.jux(rev)
+.add(slider(12, 0, 72, 1))
+.clip(slider(1.5, .1, 10, .1))
+.pan(perlin)
 // CsoundAC way of doing harmony:
 .acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
 .acSM(scalePattern, "<0 1 1 0 3 2>/9")
 .acSCV(scalePattern)
-],
-[60*2,
-run(slider(8,3,8,1)).off(.25, x=>x.add(5))
-.add(slider(0, 12, 48, 12)).n()
-.euclid(8, 11)
-.slow(2)
-.jux(rev)
-// Strudel way of doing harmony:
-.sub(6)
-.chord("<Am9 Em9 Am7 Dm7b5 G7b9 CM7>/2")
-.dict('ireal-ext')
-.voicing()
-.csoundn(slider(6, 1, 17,1), 
-         slider(13, 1, 17,1), 
-         slider(11, 1, 17,1))],
-[60*4,
-// In order for controls to work, `note` must come first!
-pure(0)
-.slow(2)
-.note().CircleMap(circleMapInstance, 1, slider(11.192, 1, 29))
-.echoWith(5, slider(1.25, 0, 4, .25), (p,n) => p.add(5*n))
-.csoundn(slider(6, 1, 17,1), 
-         slider(13, 1, 17,1), 
-         slider(11, 1, 17,1))
-// CsoundAC way of doing harmony:
-.acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
-.acSM(scalePattern, "<0 1 1 0 3 2>/9")
-.acSCV(scalePattern)
-],
-)
+/// Strudel way of doing harmony:
+///.chord("<Am9 Em9 Am7 Dm7b5 G7b9 CM7>/2").dict('ireal-ext')
+///.voicing()
+///.dict('ireal-ext')
+///.voicing()
 // Master tempo:
 .slow(slider(1, 1, 8))
 .fast(slider(1, 1, 8))
-// Master bass.
-.add(slider(12, 0, 72, 1))
-// Master stacatto/legato.
-.clip(slider(2.3, .1, 10, .1))
-.pan(perlin)
-
-// Levels and other controls for Csound instruments. 
-// Levels are initially more or less balanced.
-/*  1 */ .gk_TubularBell_level(slider(0.55, 0, 1).sub(.5).mul(100))
-/*  2 */ .gk_Droner_level(slider(0.13, 0, 1).sub(.5).mul(100))
-/*  3 */ .gk_SeidelHarmOsc_level(slider(0.5, 0, 1).sub(.5).mul(100))
-/*  4 */ .gk_Shiner_level(slider(0.525, 0, 1).sub(.5).mul(100))
-/*  5 */ .gk_Xing_level(slider(0.1, 0, 1).sub(.5).mul(100))
-/*  6 */ .gk_Guitar_level(slider(0.6, 0, 1).sub(.5).mul(100))
-/*  7 */ .gk_FilteredSines_level(slider(0.22, 0, 1).sub(.5).mul(100))
-/*  8 */ .gk_Blower_level(slider(0.54, 0, 1).sub(.5).mul(100)) 
-         .gk_Blower_grainDensity(slider(90, 0, 1000)) 
-         .gk_Blower_grainDuration(slider(0.02, 0.01, 2)) 
-         .gk_Blower_grainAmplitudeRange(slider(100, 0, 1000)) 
-         .gk_Blower_grainFrequencyRange(slider(10, 0, 300)) 
-/*  9 */ .gk_Sweeper_level(slider(0.375, 0, 1).sub(.5).mul(100))
-         .gk_Sweeper_britel(slider(0.5, 0, 4))
-         .gk_Sweeper_britels(slider(0.25, 0, 4)) 
-         .gk_Sweeper_briteh(slider(4, 0, 4)) 
-         .gk_Sweeper_britehs(slider(0.5, 0, 4)) 
-/* 10 */ .gk_Plucked_level(slider(0.645, 0, 1).sub(.5).mul(100))
-/* 11 */ .gk_FMWaterBell_level(slider(0.6, 0, 1).sub(.5).mul(100))
-/* 12 */ .gk_YiString_level(slider(0.375, 0, 1).sub(.5).mul(100))
-/* 13 */ .gk_Harpsichord_level(slider(0.45, 0, 1).sub(.5).mul(100))
-/* 14 */ .gk_ZakianFlute_level(slider(0.5, 0, 1).sub(.5).mul(100))
-/* 15 */ .gk_Kung4_level(slider(0.5, 0, 1).sub(.5).mul(100))
-/* 16 */ .gk_Kung2_level(slider(0.55, 0, 1).sub(.5).mul(100))
-/* 17 */ .gk_Bower_level(slider(0.55, 0, 1).sub(.5).mul(100))  
-         .gk_Bower_pressure(slider(0.325, 0, 4))
-.gk_ReverbSC_feedback(slider(0.84, 0, 1))
-//.gain("<.03 .1@2 .2@3 .3@2 .02@2>/6".mul(3))
-.gk_MasterOutput_level(slider(0.556, 0, 1).sub(.5).mul(100))
-.pianoroll({fillActive:1,minMidi:24,maxMidi:108,cycles:16,playhead:.75})
+.csoundn(slider(3, 1, 16,1), 
+         slider(13, 1, 16,1), 
+         slider(11, 1, 16,1))
+// Levels and other controls for Csound instruments:
+.gk_Bower_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_Blower_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_Droner_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_FilteredSines_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_FMWaterBell_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_Guitar_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_Kung2_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_Kung4_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_Harpsichord_level(slider(0.507, 0, 1).sub(.5).mul(100))
+.gk_Plucked_level(slider(0.738, 0, 1).sub(.5).mul(100))
+.gk_SeidelHarmOsc_level(slider(0.667, 0, 1).sub(.5).mul(100))
+.gk_Shiner_level(slider(0.956, 0, 1).sub(.5).mul(100))
+.gk_Sweeper_level(slider(0.328, 0, 1).sub(.5).mul(100))
+.gk_TubularBell_level(slider(0.381, 0, 1).sub(.5).mul(100))
+.gk_Xing_level(slider(0.479, 0, 1).sub(.5).mul(100))
+.gk_YiString_level(slider(0.562, 0, 1).sub(.5).mul(100))
+.gk_ZakianFlute_level(slider(0.812, 0, 1).sub(.5).mul(100))
+.gk_MasterOutput_level(slider(0.362, 0, 1).sub(.5).mul(100))
+.pianoroll({fillActive:1,minMidi:24,maxMidi:96,cycles:16,playhead:.75})
 
 -->
     
@@ -244,7 +197,7 @@ pure(0)
 
 <!-- END define "Strudel" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
     
-    <div id="controls_view" class="w3-container" style="margin:2%;position:absolute;top:70px;z-index:2;background:transparent;">
+    <div id="controls_view" class="w3-container" style="position:absolute;top:70px;z-index:2;background:transparent;">
     <form id='persist'>
     <table>
     <col width="2*">
@@ -253,8 +206,6 @@ pure(0)
     <col width="100px">
     
 <!-- BEGIN Define "Controls" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
-
-<!-- We comment out all HTML inputs that have been made into Strudel sliders.
     
     <tr style="height:1em;"></tr>    
     <tr>
@@ -410,9 +361,6 @@ pure(0)
     <td>
     <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.92</output>
     </tr>
-    
-    -->
-    
     <tr>
     <td>
     <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
@@ -430,8 +378,6 @@ pure(0)
     <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.005</output>
     </tr>
     
-    <!--
-    
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
@@ -441,8 +387,6 @@ pure(0)
     <td>
     <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-12</output>
     </tr>
-    
-    -->
     
     <tr style="height:1em;"></tr>    
     <tr>
@@ -465,7 +409,7 @@ pure(0)
     <input type="button" id='default' value="Defaults" class="w3-btn w3-hover-text-light-green"/>
     </form>   
     </div>
-    <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin:1%;">
+    <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
     <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
 
@@ -480,42 +424,20 @@ October 2023</h3>
 <p>This is a piece of interactive visual music implemented using my all-HTML5 
 system for making and performing computer music, 
 <a href="https://github.com/gogins/cloud-5">cloud-5</a>. The title refers to 
-the use of Strudel to cycle through this composition, while the performer 
-varies, by live coding, canonical relationships (along with other things) 
-within the piece.
+the ability of Strudel to cycle through a composition while varying, by 
+live coding, canonical relationships within the piece.
 
 <p>cloud-5 runs exclusively in standard Web browsers from a local or remote 
-Web server. The system includes <a href="https://github.com/gogins/csound-wasm">
-WebAssembly builds</a> of <a href="https://csound.com/">Csound</a> and my 
-algorithmic composition library <a href="https://github.com/gogins/csound-ac">
-CsoundAC</a>, the live coding system <a href="https://github.com/tidalcycles/strudel">
-Strudel</a>, and whatever other JavaScript or WebAssembly components are needed.
+Web server. The system includes <a href="https://github.com/gogins/csound-wasm">WebAssembly 
+builds of Csound and my algorithmic composition library CsoundAC</a>, 
+the live coding system <a href="https://github.com/tidalcycles/strudel">Strude</a>, 
+and whatever other JavaScript or WebAssembly components are needed.
 
-<p>I composed this piece using:
-
-<ul>
-<li>A Strudel patch that uses the 
-<a href="https://mathworld.wolfram.com/CircleMap.html">circle map chaotic 
-dynamical system</a> to generate notes, incorporated into the Strudel patch 
-using my <a href="https://github.com/gogins/cloud-5/blob/main/public/statefulpatterns.mjs">
-StatefulPatterns adapter class</a> that brings stateful objects into the 
-otherwise stateless paradigm of _pure functional reactive programming_ used by 
-Strudel.
-<li>The patch also uses 
-<a href="https://github.com/gogins/csound-ac/blob/master/CsoundAC/ChordSpaceBase.hpp">CsoundAC's 
-Scale class</a> (via StatefulPatterns) to automatically generate quasi-tonal 
-chord progressions and modulations, using <a href="http://dmitri.tymoczko.com/">
-Dmitri Tymoczko's</a> <a href="https://dmitri.mycpanel.princeton.edu/mozart.pdf">
-model of functional harmony</a>.
-<li>A Csound orchestra with fairly complex instrument definitions, including 
-both pad-like and percussive sounds. Sliders in the Strudel patch directly 
-control parameters of the Csound instruments.
-<li>A music visualizer written in OpenGL Shader Language.
-</ul>
-
-<p>I set up the Strudel patch to make it easy to shape the piece by live 
-coding during performance. However, the piece can also be run without 
-user intervention, and can even run indefinitely as an "always-on" composition.
+<p>I composed this piece using an orchestra of fairly complex Csound 
+instruments together with a Strudel patch that uses CsoundAC for generating 
+chord progressions and modulations. I set up the Strudel patch to make it easy 
+to shape the piece by live coding during performance. The piece also includes 
+a music visualizer written in OpenGL Shader Language.
 
 <p>Feel free to use this piece as a template for creating new pieces of this 
 type... as long as it honors the licenses and doesn't sound too much like this 
@@ -543,13 +465,12 @@ Steinarsson's MS thesis</a> with code from <a
 href="https://github.com/pingec/downsample-lttb">
 https://github.com/pingec/downsample-lttb</a>.
 
-<p>The music visualization code is borrowed from <a 
-href="https://www.shadertoy.com/view/NdG3zw">
-<i>Audio Reactive Galaxy</i></a>
-by <a href="https://www.shadertoy.com/user/JelyMe314">JelyMe314</a>.
+<p>The music visualization code is adapted from <a 
+href="https://www.shadertoy.com/view/4ljGD1"><b><i>Sound Sinus Wave</i></b></a>
+by <a href="https://www.shadertoy.com/user/Eitraz">Eitraz</a>
 
 <p>Some of the Csound instruments are by me, others are adapted by me from 
-patches originally written by others (as noted in the orchestra).
+patches originally written by others as noted in the orchestra.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -2272,7 +2193,7 @@ f 0 560
     </textarea>
     
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-        #line 2196
+        #line 1599
         precision highp float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -2340,90 +2261,27 @@ f 0 560
         
 // BEGIN Define fragment shader. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-//CBS
-//Parallax scrolling fractal galaxy.
-//Inspired by JoshP's Simplicity shader: https://www.shadertoy.com/view/lslGWr
-
-// http://www.fractalforums.com/new-theories-and-research/very-simple-formula-for-fractal-patterns/
-float field(in vec3 p,float s) {
-	float strength = 7. + .03 * log(1.e-6 + fract(sin(iTime) * 4373.11));
-	float accum = s/4.;
-	float prev = 0.;
-	float tw = 0.;
-	for (int i = 0; i < 26; ++i) {
-		float mag = dot(p, p);
-		p = abs(p) / mag + vec3(-.5, -.4, -1.5);
-		float w = exp(-float(i) / 7.);
-		accum += w * exp(-strength * pow(abs(mag - prev), 2.2));
-		tw += w;
-		prev = mag;
-	}
-	return max(0., 5. * accum / tw - .7);
-}
-
-// Less iterations for second layer
-float field2(in vec3 p, float s) {
-	float strength = 7. + .03 * log(1.e-6 + fract(sin(iTime) * 4373.11));
-	float accum = s/4.;
-	float prev = 0.;
-	float tw = 0.;
-	for (int i = 0; i < 18; ++i) {
-		float mag = dot(p, p);
-		p = abs(p) / mag + vec3(-.5, -.4, -1.5);
-		float w = exp(-float(i) / 7.);
-		accum += w * exp(-strength * pow(abs(mag - prev), 2.2));
-		tw += w;
-		prev = mag;
-	}
-	return max(0., 5. * accum / tw - .7);
-}
-
-vec3 nrand3( vec2 co )
-{
-	vec3 a = fract( cos( co.x*8.3e-3 + co.y )*vec3(1.3e5, 4.7e5, 2.9e5) );
-	vec3 b = fract( sin( co.x*0.3e-3 + co.y )*vec3(8.1e5, 1.0e5, 0.1e5) );
-	vec3 c = mix(a, b, 0.5);
-	return c;
-}
-
+#define WAVES 8.0
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-    vec2 uv = 2. * fragCoord.xy / iResolution.xy - 1.;
-	vec2 uvs = uv * iResolution.xy / max(iResolution.x, iResolution.y);
-	vec3 p = vec3(uvs / 4., 0) + vec3(1., -1.3, 0.);
-	p += .2 * vec3(sin(iTime / 16.), sin(iTime / 12.),  sin(iTime / 128.));
-	
-	float freqs[4];
-	//Sound
-	freqs[0] = texture( iChannel0, vec2( 0.01, 0.25 ) ).x;
-	freqs[1] = texture( iChannel0, vec2( 0.07, 0.25 ) ).x;
-	freqs[2] = texture( iChannel0, vec2( 0.15, 0.25 ) ).x;
-	freqs[3] = texture( iChannel0, vec2( 0.30, 0.25 ) ).x;
+	vec2 uv = -1.0 + 2.0 * fragCoord.xy / iResolution.xy;
 
-	float t = field(p,freqs[2]);
-	float v = (1. - exp((abs(uv.x) - 1.) * 6.)) * (1. - exp((abs(uv.y) - 1.) * 6.));
+	float time = iTime * 1.0;
 	
-    //Second Layer
-	vec3 p2 = vec3(uvs / (4.+sin(iTime*0.11)*0.2+0.2+sin(iTime*0.15)*0.3+0.4), 1.5) + vec3(2., -1.3, -1.);
-	p2 += 0.25 * vec3(sin(iTime / 16.), sin(iTime / 12.),  sin(iTime / 128.));
-	float t2 = field2(p2,freqs[3]);
-	vec4 c2 = mix(.4, 1., v) * vec4(1.3 * t2 * t2 * t2 ,1.8  * t2 * t2 , t2* freqs[0], t2);
-	
-	
-	//Let's add some stars
-	//Thanks to http://glsl.heroku.com/e#6904.0
-	vec2 seed = p.xy * 2.0;	
-	seed = floor(seed * iResolution.x);
-	vec3 rnd = nrand3( seed );
-	vec4 starcolor = vec4(pow(rnd.y,40.0));
-	
-	//Second Layer
-	vec2 seed2 = p2.xy * 2.0;
-	seed2 = floor(seed2 * iResolution.x);
-	vec3 rnd2 = nrand3( seed2 );
-	starcolor += vec4(pow(rnd2.y,40.0));
-	
-	fragColor = mix(freqs[3]-.3, 1., v) * vec4(1.5*freqs[2] * t * t* t , 1.2*freqs[1] * t * t, freqs[3]*t, 1.0)+c2+starcolor;
+	vec3 color = vec3(0.0);
+
+	for (float i=0.0; i<WAVES + 1.0; i++) {
+		float freq = texture(iChannel0, vec2(i / WAVES, 0.0)).x * 7.0;
+
+		vec2 p = vec2(uv);
+
+		p.x += i * 0.04 + freq * 0.03;
+		p.y += sin(p.x * 10.0 + time) * cos(p.x * 2.0) * freq * 0.2 * ((i + 1.0) / WAVES);
+		float intensity = abs(0.01 / p.y) * clamp(freq, 0.35, 2.0);
+		color += vec3(1.0 * intensity * (i / 5.0), 0.5 * intensity, 1.75 * intensity) * (3.0 / WAVES);
+	}
+
+	fragColor = vec4(color, 1.0);
 }
 
 // END Define fragment shader. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
