@@ -152,19 +152,34 @@ let gk_ZakianFlute_level = createParam('gk_ZakianFlute_level');
 let gk_ReverbSC_feedback = createParam('gk_ReverbSC_feedback');
 let gk_MasterOutput_level = createParam('gk_MasterOutput_level');
 
+csac.track
+(
+[60*3,
 // In order for controls to work, `note` must come first!
-///run(slider(8,3,8,1))
-pure(0).note()
-.CircleMap(circleMapInstance, 1, slider(10.184, 1, 29))
-.echoWith(5, slider(1.25, 0.25, 4, .25), (p,n) => p.add(4*n))
-.euclid(8, 19)
+pure(0)
+.note().CircleMap(circleMapInstance, 1, slider(18.416, 1, 29))
+.echoWith(5, slider(0.5, 0, 4, .25), (p,n) => p.add(4*n))],
+[60*2,
+run(slider(8,3,8,1)).off(.25, x=>x.add(5)).add(slider(36, 12, 48, 12))
+.note()
+.euclid(8, 11)
+.slow(2)
+.jux(rev)],
+[60*3,
+// In order for controls to work, `note` must come first!
+pure(0)
+.note().CircleMap(circleMapInstance, 1, slider(11.192, 1, 29))
+.echoWith(5, slider(1.25, 0, 4, .25), (p,n) => p.add(5*n))],
+)
 // Master tempo:
 .slow(slider(1, 1, 8))
 .fast(slider(1, 1, 8))
-//.jux(rev)
 .add(slider(12, 0, 72, 1))
-.clip(slider(1.5, .1, 10, .1))
+.clip(slider(2.3, .1, 10, .1))
 .pan(perlin)
+.csoundn(slider(6, 1, 17,1), 
+         slider(13, 1, 17,1), 
+         slider(11, 1, 17,1))
 // CsoundAC way of doing harmony:
 .acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
 .acSM(scalePattern, "<0 1 1 0 3 2>/9")
@@ -174,9 +189,7 @@ pure(0).note()
 ///.voicing()
 ///.dict('ireal-ext')
 ///.voicing()
-.csoundn(slider(3, 1, 17,1), 
-         slider(13, 1, 17,1), 
-         slider(11, 1, 17,1))
+
 // Levels and other controls for Csound instruments. 
 // Levels are initially more or less balanced.
 /*  1 */ .gk_TubularBell_level(slider(0.55, 0, 1).sub(.5).mul(100))
@@ -206,7 +219,8 @@ pure(0).note()
 /* 17 */ .gk_Bower_level(slider(0.55, 0, 1).sub(.5).mul(100))  
          .gk_Bower_pressure(slider(0.325, 0, 4))
 .gk_ReverbSC_feedback(slider(0.84, 0, 1))
-.gk_MasterOutput_level(slider(0.5, 0, 1).sub(.5).mul(100))
+//.gain("<.03 .1@2 .2@3 .3@2 .02@2>/6".mul(3))
+.gk_MasterOutput_level(slider(0.556, 0, 1).sub(.5).mul(100))
 .pianoroll({fillActive:1,minMidi:24,maxMidi:108,cycles:16,playhead:.75})
 
 -->

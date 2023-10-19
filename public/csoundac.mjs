@@ -32,6 +32,12 @@ let audioContext = new AudioContext();
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
 export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns};
 
+/**
+ * Similar to `arrange,` but permits a section to be silenced by setting its 
+ * number of cycles to 0; `sections` is an array of arrays, in the format 
+ * `[[cycles, Pattern],...]`. Useful for assembling Patterns into longer-form 
+ * compositions.
+ */
 export function track(...sections) {
     sections = sections.filter(function(element) {
         return element[0] >= 1;
