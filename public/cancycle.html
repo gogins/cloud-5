@@ -162,6 +162,7 @@ pure(0).note()
 .slow(slider(1, 1, 8, .5)).fast(slider(2.5, 1, 8, .5))
 .sub(slider(12, 12, 48, 6)).add(slider(0, 12, 48, 6))
 .clip(slider(0.6, .1, 10, .1))
+.gain(slider(.5, 0, 1))
 .csoundn(slider(1, 1, 17,1), 
          slider(13, 1, 17,1), 
          slider(6, 1, 17,1))
@@ -182,6 +183,8 @@ run(slider(8,3,8,1)).n()
 .chord("<Am9 E7b5 Am7 Dm7b5 G7b9 CM7>/2")
 .dict('ireal-ext')
 .voicing()
+.clip(slider(1, .1, 10, .1))
+.gain(slider(.5, 0, 1))
 .csoundn(slider(6, 1, 17,1), 
          slider(13, 1, 17,1), 
          slider(11, 1, 17,1))],
@@ -192,6 +195,8 @@ pure(0).note()
 .echoWith(5, slider(1.25, 0, 4, .25), (p,n) => p.add(5*n))
 .slow(slider(1, 1, 8, .5)).fast(slider(1, 1, 8, .5))
 .sub(slider(0, 12, 48, 6)).add(slider(0, 12, 48, 6))
+.clip(slider(0.6, .1, 10, .1))
+.gain(slider(.5, 0, 1))
 .csoundn(slider(9, 1, 17,1), 
          slider(3, 1, 17,1), 
          slider(7, 1, 17,1))
