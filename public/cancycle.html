@@ -160,7 +160,7 @@ pure(0).note()
 // 10.184 is good.
 .CircleMap(circleMapInstance, 1, slider(10.184, 1, 29))
 .echoWith(4, slider(0.25, 0, 4, .25), (p,n) => p.add(3*n))
-.slow(slider(1, 1, 8, .5)).fast(slider(3.5, 1, 8, .5))
+.slow(slider(2.5, 1, 8, .5)).fast(slider(3.5, 1, 8, .5))
 .sub(slider(3, 0, 48, 3)).add(slider(0, 12, 48, 3))
 .clip(slider(0.6, .1, 10, .1))
 .csoundn(slider(1, 1, 17,1), 
