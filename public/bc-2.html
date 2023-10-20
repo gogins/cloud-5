@@ -58,7 +58,6 @@
             <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
-            <li id="mini_console" class="w3-btn w3-text-light-green"></li>
         </ul>
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
@@ -69,186 +68,30 @@
     <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
     
     <!--
-    
+
 const csac = await import('../csoundac.mjs');
-csac.diagnostic_level(csac.NEVER);
-
-let scale = csac.Scale('D_major');
-let scalePattern = new csac.ScalePatterns(scale, 5);
-
-let circle_map_counter = 0;
-/**
- * Classes based on StatefulPatterns can be used to define stateful Patterns.
- *
- * This particular `stateful` class is instrumented with debug information to 
- * prove whether or not evaluations are triggered when they should be, e.g. 
- * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
- * per second, and so on; also, there should be exactly 1 call to `CircleMap`
- * for every note triggered by the Pattern.
- */
-class CircleMapPattern extends csac.StatefulPatterns {
-    constructor(omega = 1/3, kappa = 1) {
-        super();
-        this.registerPatterns();
-        this.theta1 = 0;
-        this.theta = 0;
-        this.omega = omega;
-        this.kappa = kappa;
-        this.midi_key = 36;
-        this.bass = 36;
-        this.range = 48;
-    }
-    /**
-     * Patternify the omega parameter of the circle map.
-     */
-    CircleMap(is_onset, kappa, omega, hap) {
-         if (is_onset === true) {
-            this.kappa = kappa;
-            this.omega = omega;
-            this.theta1 = this.theta + this.omega + (this.kappa / (2 * Math.PI)) * Math.sin(this.theta * 2 * Math.PI);
-            this.theta = this.theta1 % 1;
-            // Theta represents the phase of an instantaneous frequency that 
-            // can be negative, but we only care about its position on the 
-            // circle.
-            this.midi_key = Math.round((Math.abs(this.theta) * this.range) + this.bass);
-            circle_map_counter = circle_map_counter + 1;
-            // csac.diagnostic('[CircleMap] sync onset: ' + ' circle_map_counter: '  + circle_map_counter + ' theta: ' + this.theta + ' note: ' + this.midi_key + '\n', csac.WARNING);
-        }
-        hap.value.note = this.midi_key;
-        return hap;
-    }
-}
-
-let circleMapInstance = new CircleMapPattern();
+csac.diagnostic_level(csac.INFORMATION);
 
 // Bind some Csound control channels to Strudel, to be 
 // controlled by sliders in the patch.
-let gk_Bower_level = createParam('gk_Bower_level');
-let gk_Bower_pressure = createParam('gk_Bower_pressure');
-let gk_Blower_level = createParam('gk_Blower_level');
-let gk_Blower_grainDensity = createParam('gk_Blower_grainDensity');
-let gk_Blower_grainDuration = createParam('gk_Blower_grainDuration');
-let gk_Blower_grainAmplitudeRange = createParam('gk_Blower_grainAmplitudeRange');
-let gk_Blower_grainFrequencyRange = createParam('gk_Blower_grainFrequencyRange');
-let gk_Sweeper_britel = createParam('gk_Sweeper_britel');
-let gk_Sweeper_britels = createParam('gk_Sweeper_britels');
-let gk_Sweeper_briteh = createParam('gk_Sweeper_briteh');
-let gk_Sweeper_britehs = createParam('gk_Sweeper_britehs');
-let gk_Droner_level = createParam('gk_Droner_level');
-let gk_FilteredSines_level = createParam('gk_FilteredSines_level');
-let gk_FMWaterBell_level = createParam('gk_FMWaterBell_level');
-let gk_Guitar_level = createParam('gk_Guitar_level');
-let gk_SeidelHarmOsc_level = createParam('gk_SeidelHarmOsc_level');
-let gk_Harpsichord_level = createParam('gk_Harpsichord_level');
-let gk_Kung2_level = createParam('gk_Kung2_level');
-let gk_Kung4_level = createParam('gk_Kung4_level');
-let gk_Plucked_level = createParam('gk_Plucked_level');
-let gk_Shiner_level = createParam('gk_Shiner_level');
 let gk_Sweeper_level = createParam('gk_Sweeper_level');
-let gk_TubularBell_level = createParam('gk_TubularBell_level');
-let gk_Xing_level = createParam('gk_Xing_level');
-let gk_YiString_level = createParam('gk_YiString_level');
-let gk_ZakianFlute_level = createParam('gk_ZakianFlute_level');
-let gk_ReverbSC_feedback = createParam('gk_ReverbSC_feedback');
-let gk_MasterOutput_level = createParam('gk_MasterOutput_level');
 
-csac.track
-(
-[60*3,
-// In order for controls to work, `note` must come first!
-pure(0).note()
-.CircleMap(circleMapInstance, 1, slider(14.664, 1, 29))
-.echoWith(2, slider(1.5, 0, 4, .25), (p,n) => p.add(2*n))
-.slow(slider(1, 1, 8, .5)).fast(slider(2.5, 1, 8, .5))
-.sub(slider(12, 12, 48, 6)).add(slider(0, 12, 48, 6))
-.clip(slider(0.6, .1, 10, .1))
-.csoundn(slider(1, 1, 17,1), 
-         slider(13, 1, 17,1), 
-         slider(6, 1, 17,1))
-// CsoundAC way of doing harmony:
-.acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
-.acSM(scalePattern, "<0 1 1 0 3 2>/9")
-.acSCV(scalePattern)
-],
-[60*2,
-run(slider(8,3,8,1)).n()
- .offset(slider(1, 0, 6, 1))
- .off(.25, x=>x.add(5))
-.slow(slider(1, 1, 8, .5)).fast(slider(3, 1, 8, .5))
-.sub(slider(0, 0, 48, 3)).add(slider(0, 0, 48, 3))
-.euclid(8, 13)
-.jux(rev)
-// Strudel way of doing harmony:
-.chord("<Am9 E7b5 Am7 Dm7b5 G7b9 CM7>/2")
-.dict('ireal-ext')
-.voicing()
-.csoundn(slider(6, 1, 17,1), 
-         slider(13, 1, 17,1), 
-         slider(11, 1, 17,1))],
-[60*3,
-// In order for controls to work, `note` must come first!
-pure(0).note()
-.CircleMap(circleMapInstance, 1, slider(11.192, 1, 29))
-.echoWith(5, slider(1.25, 0, 4, .25), (p,n) => p.add(5*n))
-.slow(slider(1, 1, 8, .5)).fast(slider(1, 1, 8, .5))
-.sub(slider(0, 12, 48, 6)).add(slider(0, 12, 48, 6))
-.csoundn(slider(9, 1, 17,1), 
-         slider(3, 1, 17,1), 
-         slider(7, 1, 17,1))
-// CsoundAC way of doing harmony:
-.acST(scalePattern, "<1 1 1 1 -3 5>/3")
-.acSM(scalePattern, "<0 1 2 3 3 2>/9")
-.acSCV(scalePattern)
-],
-)
-// Master tempo:
-.slow(slider(1, 1, 8, .25)).fast(slider(1, 1, 8, .25))
-// Master bass.
-.sub(slider(12, 12, 48, 1)).add(slider(0, 12, 48, 1))
-// Master stacatto/legato.
-.clip(slider(2.3, .1, 10, .1))
-.pan(perlin)
-
-// Levels and other controls for Csound instruments. 
-// Levels are initially more or less balanced.
-/*  1 */ .gk_TubularBell_level(slider(0.55, 0, 1).sub(.5).mul(100))
-/*  2 */ .gk_Droner_level(slider(0.13, 0, 1).sub(.5).mul(100))
-/*  3 */ .gk_SeidelHarmOsc_level(slider(0.5, 0, 1).sub(.5).mul(100))
-/*  4 */ .gk_Shiner_level(slider(0.525, 0, 1).sub(.5).mul(100))
-/*  5 */ .gk_Xing_level(slider(0.1, 0, 1).sub(.5).mul(100))
-/*  6 */ .gk_Guitar_level(slider(0.6, 0, 1).sub(.5).mul(100))
-/*  7 */ .gk_FilteredSines_level(slider(0.22, 0, 1).sub(.5).mul(100))
-/*  8 */ .gk_Blower_level(slider(0.54, 0, 1).sub(.5).mul(100)) 
-         .gk_Blower_grainDensity(slider(90, 0, 1000)) 
-         .gk_Blower_grainDuration(slider(0.02, 0.01, 2)) 
-         .gk_Blower_grainAmplitudeRange(slider(100, 0, 1000)) 
-         .gk_Blower_grainFrequencyRange(slider(10, 0, 300)) 
-/*  9 */ .gk_Sweeper_level(slider(0.375, 0, 1).sub(.5).mul(100))
-         .gk_Sweeper_britel(slider(0.5, 0, 4))
-         .gk_Sweeper_britels(slider(0.25, 0, 4)) 
-         .gk_Sweeper_briteh(slider(4, 0, 4)) 
-         .gk_Sweeper_britehs(slider(0.5, 0, 4)) 
-/* 10 */ .gk_Plucked_level(slider(0.645, 0, 1).sub(.5).mul(100))
-/* 11 */ .gk_FMWaterBell_level(slider(0.6, 0, 1).sub(.5).mul(100))
-/* 12 */ .gk_YiString_level(slider(0.375, 0, 1).sub(.5).mul(100))
-/* 13 */ .gk_Harpsichord_level(slider(0.45, 0, 1).sub(.5).mul(100))
-/* 14 */ .gk_ZakianFlute_level(slider(0.5, 0, 1).sub(.5).mul(100))
-/* 15 */ .gk_Kung4_level(slider(0.5, 0, 1).sub(.5).mul(100))
-/* 16 */ .gk_Kung2_level(slider(0.55, 0, 1).sub(.5).mul(100))
-/* 17 */ .gk_Bower_level(slider(0.55, 0, 1).sub(.5).mul(100))  
-         .gk_Bower_pressure(slider(0.325, 0, 4))
-.gk_ReverbSC_feedback(slider(0.84, 0, 1))
-//.gain("<.03 .1@2 .2@3 .3@2 .02@2>/6".mul(3))
-.gk_MasterOutput_level(slider(0.556, 0, 1).sub(.5).mul(100))
-.pianoroll({fillActive:1,minMidi:24,maxMidi:108,cycles:16,playhead:.75})
-
+run(slider(7,3,8,1)).off(.25, x=>x.add(4)).n().sub(8)
+  .offset(slider(2,0,4,1))
+  .jux(rev)
+  .chord("<Am9 Em9 Am7 Dm7 G7b9 CM7>/2").dict('ireal-ext').voicing()
+  .pianoroll({minMidi:24,maxMidi:127,cycles:32,playhead:.9})
+  .slow(slider(2.06, 1, 6))
+  .csoundn("6 4 9 1")
+  .gain(slider(0.678, .5, 1))
+  .gk_Sweeper_level(slider(0,0,40))
 -->
     
     </strudel-repl-component>
 
 <!-- END define "Strudel" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
     
-    <div id="controls_view" class="w3-container" style="margin:2%;position:absolute;top:70px;z-index:2;background:transparent;">
+    <div id="controls_view" class="w3-container" style="position:absolute;top:70px;z-index:2;background:transparent;">
     <form id='persist'>
     <table>
     <col width="2*">
@@ -257,152 +100,114 @@ pure(0).note()
     <col width="100px">
     
 <!-- BEGIN Define "Controls" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
-
-<!-- We comment out all HTML inputs that have been made into Strudel sliders.
     
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
-    <label for=gk_TubularBell_level>01 TubularBell (dB)</label>
+    <label for=gk_Guitar_level>&ensp;1 Guitar level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-13 id=gk_TubularBell_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=21 id=gk_Guitar_level step=.001>
     <td>
-    <output for=gk_TubularBell_level id=gk_TubularBell_level_output>-13</output>
+    <output for=gk_Guitar_level id=gk_Guitar_level_output>21</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_FilteredSines_level>&ensp;2 FilteredSines level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_FilteredSines_level step=.001>
+    <td>
+    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>3</output>
+    </tr>
+    
+    <tr>
+    <td>
+    <label for=gk_Blower_level>&ensp;3 Blower level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_Blower_level step=.001>
+    <td>
+    <output for=gk_Blower_level id=gk_Blower_level_output>-5</output>
+    </tr>
+
+     <tr>
+    <td>
+    <label for=gk_Sweeper_level>&ensp;4 Sweeper level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-1 id=gk_Sweeper_level step=.001>
+    <td>
+    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>-1</output>
     </tr>
 
     <tr>
     <td>
-    <label for=gk_Droner_level>02 Droner (dB)</label>
+    <label for=gk_Plucked_level>&ensp;5 Plucked level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-30 id=gk_Droner_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=15 id=gk_Plucked_level step=.001>
     <td>
-    <output for=gk_Droner_level id=gk_Droner_level_output>-30</output>
+    <output for=gk_Plucked_level id=gk_Plucked_level_output>15</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_FMWaterBell_level>&ensp;6 FM Water Bell level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=7 id=gk_FMWaterBell_level step=.001>
+    <td>
+    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>7</output>
     </tr>
     
     <tr>
     <td>
-    <label for=gk_SeidelHarmOsc_level>03 SeidelHarmOsc (dB)</label>
+    <label for=gk_YiString_level>&ensp;7 Yi String level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-10 id=gk_SeidelHarmOsc_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-5 id=gk_YiString_level step=.001>
     <td>
-    <output for=gk_SeidelHarmOsc_level id=gk_SeidelHarmOsc_level_output>-10</output>
+    <output for=gk_YiString_level id=gk_YiString_level_output>-5</output>
     </tr>
-    
+
     <tr>
     <td>
-    <label for=gk_Shiner_level>04 Shiner (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_Shiner_level step=.001>
-    <td>
-    <output for=gk_Shiner_level id=gk_Shiner_level_output>-6</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_Xing_level>05 Xing (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-36 id=gk_Xing_level step=.001>
-    <td>
-    <output for=gk_Xing_level id=gk_Xing_level_output>-36</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_Guitar_level>06 Guitar (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=10 id=gk_Guitar_level step=.001>
-    <td>
-    <output for=gk_Guitar_level id=gk_Guitar_level_output>10</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_FilteredSines_level>07 FilteredSines (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_FilteredSines_level step=.001>
-    <td>
-    <output for=gk_FilteredSines_level id=gk_FilteredSines_level_output>0</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_Blower_level>08 Blower (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_Blower_level step=.001>
-    <td>
-    <output for=gk_Blower_level id=gk_Blower_level_output>0</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_Sweeper_level>09 Sweeper (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_Sweeper_level step=.001>
-    <td>
-    <output for=gk_Sweeper_level id=gk_Sweeper_level_output>6</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_Plucked_level>10 Plucked (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_Plucked_level step=.001>
-    <td>
-    <output for=gk_Plucked_level id=gk_Plucked_level_output>3</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_FMWaterBell_level>11 FMWaterBell (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=3 id=gk_FMWaterBell_level step=.001>
-    <td>
-    <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>3</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_YiString_level>12 YiString (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_YiString_level step=.001>
-    <td>
-    <output for=gk_YiString_level id=gk_YiString_level_output>-6</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gk_Harpsichord_level>13 Harpsichord (dB)</label>
+    <label for=gk_Harpsichord_level>&ensp;8 Harpsichord level</label>
     <td>
     <input class=persistent-element type=range min=-40 max=40 value=-2 id=gk_Harpsichord_level step=.001>
     <td>
     <output for=gk_Harpsichord_level id=gk_Harpsichord_level_output>-2</output>
     </tr>
-    
+
     <tr>
     <td>
-    <label for=gk_ZakianFlute_level>14 ZakianFlute (dB)</label>
+    <label for=gk_ZakianFlute_level>&ensp;9 Zakian Flute level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_ZakianFlute_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=2.5 id=gk_ZakianFlute_level step=.001>
     <td>
-    <output for=gk_ZakianFlute_level id=gk_ZakianFlute_level_output>0</output>
+    <output for=gk_ZakianFlute_level id=gk_ZakianFlute_level_output>2.5</output>
     </tr>
-    
-    <tr>
+
+     <tr>
     <td>
-    <label for=gk_Kung4_level>15 Kung4 (dB)</label>
+    <label for=gk_Kung4_level>10 Kung instrument 4 level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=6 id=gk_Kung4_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung4_level step=.001>
     <td>
-    <output for=gk_Kung4_level id=gk_Kung4_level_output>6</output>
+    <output for=gk_Kung4_level id=gk_Kung4_level_output>-8</output>
     </tr>
-    
+
     <tr>
     <td>
-    <label for=gk_Kung2_level>15 Kung2 (dB)</label>
+    <label for=gk_Kung2_level>11 Kung instrument 2 level</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-7 id=gk_Kung2_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Kung2_level step=.001>
     <td>
-    <output for=gk_Kung2_level id=gk_Kung2_level_output>-7</output>
+    <output for=gk_Kung2_level id=gk_Kung2_level_output>-8</output>
+    </tr>
+
+    <tr>
+    <td>
+    <label for=gk_Bower_level>12 Bower level</label>
+    <td>
+    <input class=persistent-element type=range min=-40 max=40 value=-8 id=gk_Bower_level step=.001>
+    <td>
+    <output for=gk_Bower_level id=gk_Bower_level_output>-8</output>
     </tr>
 
     <tr style="height:1em;"></tr>    
@@ -410,52 +215,35 @@ pure(0).note()
     <td>
     <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
     <td>
-    <input class=persistent-element type=range min=0 max=1 value=.92 id=gk_ReverbSC_feedback step=.001>
+    <input class=persistent-element type=range min=0 max=1 value=.83 id=gk_ReverbSC_feedback step=.001>
     <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.92</output>
+    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.83</output>
     </tr>
-    
-    -->
-    
     <tr>
     <td>
     <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
     <td>
-    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
+    <input class=persistent-element type=range min=0 max=20000 value=10000 id=gk_ReverbSC_frequency_cutoff step=.001>
     <td>
-    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>12000</output>
+    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>1000</output>
     </tr>
     <tr>
     <td>
     <label for=gi_ReverbSC_delay_modulation>Reverb delay modulation</label>
     <td>
-    <input class=persistent-element type=range min=0 max=2 value=.005 id=gi_ReverbSC_delay_modulation step=.001>
+    <input class=persistent-element type=range min=0 max=2 value=.05 id=gi_ReverbSC_delay_modulation step=.001>
     <td>
-    <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.005</output>
+    <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
     </tr>
-    
-    <!--
     
     <tr style="height:1em;"></tr>    
     <tr>
     <td>
     <label for=gk_MasterOutput_level>Master output level (dB)</label>
     <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-12 id=gk_MasterOutput_level step=.001>
+    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_MasterOutput_level step=.001>
     <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-12</output>
-    </tr>
-    
-    -->
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_MasterOutput_duration>Duration (0 is indefinite)</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=1000 value=540 id=gk_MasterOutput_duration step=.001>
-    <td>
-    <output for=gk_MasterOutput_duration id=gk_MasterOutput_duration_output>540</output>
+    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>0</output>
     </tr>
     </table>
     <p>
@@ -469,57 +257,39 @@ pure(0).note()
     <input type="button" id='default' value="Defaults" class="w3-btn w3-hover-text-light-green"/>
     </form>   
     </div>
-    <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin:1%;">
+    <div id='console_view' class="w3-text-sand" style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color;margin-left:53px;">
     </div>
     <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
 
 <!-- BEGIN define "About" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-<h1>Cancycle</h1>
+<h1>CsoundAC Example No. 3 ChordPatterns</h1>
 <h3>Michael Gogins<br>
-October 2023</h3>
+August 2023</h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This is a piece of interactive visual music implemented using my all-HTML5 
-system for making and performing computer music, 
-<a href="https://github.com/gogins/cloud-5">cloud-5</a>. The title refers to 
-the use of Strudel to cycle through this composition, while the performer 
-varies, by live coding, canonical relationships (along with other things) 
-within the piece.
+<p>This is an online piece of electroacoustic music, rendered in your Web 
+browser using high-resolution audio. It will play indefinitely, never ending, 
+always changing. The piece demonstrates and tests all the Patterns implemented 
+in the ScalePatterns class found in csoundac.mjs.
 
-<p>cloud-5 runs exclusively in standard Web browsers from a local or remote 
-Web server. The system includes <a href="https://github.com/gogins/csound-wasm">
-WebAssembly builds</a> of <a href="https://csound.com/">Csound</a> and my 
-algorithmic composition library <a href="https://github.com/gogins/csound-ac">
-CsoundAC</a>, the live coding system <a href="https://github.com/tidalcycles/strudel">
-Strudel</a>, and whatever other JavaScript or WebAssembly components are needed.
+<p>The notes in this piece are generated by 
+<a href="https://strudel.tidalcycles.org/">Strudel</a>, a JavaScript 
+implementation of Strudel Cycles, which is accessed from a REPL embedded 
+in this piece -- use the Strudel button to view the Strudel REPL. The user can 
+edit the Strudel code that generates the score, and click on the update button 
+to hear it. Thanks to Felix Roos for helpful hints along the way. Strudel 
+sends its notes to Csound for synthesis.
 
-<p>I composed this piece using:
+<p>The notes are played by a Csound orchestra that is embedded in this Web 
+page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
+build of Csound</a>. This in turn includes my 
+<a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
+algorithmic composition.
 
-<ul>
-<li>A Strudel patch that uses the 
-<a href="https://mathworld.wolfram.com/CircleMap.html">circle map chaotic 
-dynamical system</a> to generate notes, incorporated into the Strudel patch 
-using my <a href="https://github.com/gogins/cloud-5/blob/main/public/statefulpatterns.mjs">
-StatefulPatterns adapter class</a> that brings stateful objects into the 
-otherwise stateless paradigm of _pure functional reactive programming_ used by 
-Strudel.
-<li>The patch also uses 
-<a href="https://github.com/gogins/csound-ac/blob/master/CsoundAC/ChordSpaceBase.hpp">CsoundAC's 
-Scale class</a> (via StatefulPatterns) to automatically generate quasi-tonal 
-chord progressions and modulations, using <a href="http://dmitri.tymoczko.com/">
-Dmitri Tymoczko's</a> <a href="https://dmitri.mycpanel.princeton.edu/mozart.pdf">
-model of functional harmony</a>.
-<li>A Csound orchestra with fairly complex instrument definitions, including 
-both pad-like and percussive sounds. Sliders in the Strudel patch directly 
-control parameters of the Csound instruments.
-<li>A music visualizer written in OpenGL Shader Language.
-</ul>
-
-<p>I set up the Strudel patch to make it easy to shape the piece by live 
-coding during performance. However, the piece can also be run without 
-user intervention, and can even run indefinitely as an "always-on" composition.
+<p>The synthesized audio is then sampled (using a WebAudio Analyzer) to generate 
+a sine-wave visualization of the music.
 
 <p>Feel free to use this piece as a template for creating new pieces of this 
 type... as long as it honors the licenses and doesn't sound too much like this 
@@ -547,13 +317,12 @@ Steinarsson's MS thesis</a> with code from <a
 href="https://github.com/pingec/downsample-lttb">
 https://github.com/pingec/downsample-lttb</a>.
 
-<p>The music visualization code is borrowed from <a 
-href="https://www.shadertoy.com/view/NdG3zw">
-<i>Audio Reactive Galaxy</i></a>
-by <a href="https://www.shadertoy.com/user/JelyMe314">JelyMe314</a>.
+<p>The music visualization code is adapted from <a 
+href="https://www.shadertoy.com/view/4ljGD1"><b><i>Sound Sinus Wave</i></b></a>
+by <a href="https://www.shadertoy.com/user/Eitraz">Eitraz</a>
 
 <p>Some of the Csound instruments are by me, others are adapted by me from 
-patches originally written by others (as noted in the orchestra).
+patches originally written by others as noted in the orchestra.
 <p>
 
 <a href="http://michaelgogins.tumblr.com">
@@ -614,22 +383,11 @@ maxalloc 5, 8
 maxalloc 6, 8
 maxalloc 7, 8
 maxalloc 8, 8
-maxalloc 9, 8
-maxalloc 10, 8
-maxalloc 11, 8
-maxalloc 12, 8
-maxalloc 13, 8
-maxalloc 14, 8
-maxalloc 15, 8
-maxalloc 16, 8
-maxalloc 17, 8
 
 connect "Blower", "outleft", "ReverbSC", "inleft"
 connect "Blower", "outright", "ReverbSC", "inright"
 connect "Bower", "outleft", "ReverbSC", "inleft"
 connect "Bower", "outright", "ReverbSC", "inright"
-connect "Droner", "outleft", "ReverbSC", "inleft"
-connect "Droner", "outright", "ReverbSC", "inright"
 connect "FilteredSines", "outleft", "ReverbSC", "inleft"
 connect "FilteredSines", "outright", "ReverbSC", "inright"
 connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
@@ -644,18 +402,10 @@ connect "Kung4", "outleft", "ReverbSC", "inleft"
 connect "Kung4", "outright", "ReverbSC", "inright"
 connect "Plucked", "outleft", "ReverbSC", "inleft"
 connect "Plucked", "outright", "ReverbSC", "inright"
-connect "SeidelHarmOsc", "outleft", "ReverbSC", "inleft"
-connect "SeidelHarmOsc", "outright", "ReverbSC", "inright"
-connect "Shiner", "outleft", "ReverbSC", "inleft"
-connect "Shiner", "outright", "ReverbSC", "inright"
 connect "Sweeper", "outleft", "ReverbSC", "inleft"
 connect "Sweeper", "outright", "ReverbSC", "inright"
-connect "TubularBell", "outleft", "ReverbSC", "inleft"
-connect "TubularBell", "outright", "ReverbSC", "inright"
 connect "YiString", "outleft", "ReverbSC", "inleft"
 connect "YiString", "outright", "ReverbSC", "inright"
-connect "Xing", "outleft", "ReverbSC", "inleft"
-connect "Xing", "outright", "ReverbSC", "inright"
 connect "ZakianFlute", "outleft", "ReverbSC", "inleft"
 connect "ZakianFlute", "outleft", "ReverbSC", "inleft"
 connect "ReverbSC", "outleft", "MasterOutput", "inleft"
@@ -664,474 +414,13 @@ connect "ReverbSC", "outright", "MasterOutput", "inright"
 alwayson "ReverbSC"
 alwayson "MasterOutput"
 
-gk_TubularBell_level chnexport "gk_TubularBell_level", 3
-gi_TubularBell_crossfade chnexport "gi_TubularBell_crossfade", 3
-gi_TubularBell_vibrato_depth chnexport "gi_TubularBell_vibrato_depth", 3
-gi_TubularBell_vibrato_rate chnexport "gi_TubularBell_vibrato_rate", 3
-gk_TubularBell_level init 0
-gi_TubularBell_crossfade init 2
-gi_TubularBell_vibrato_depth init .1
-gi_TubularBell_vibrato_rate init 5
-gk_TubularBell_midi_dynamic_range chnexport "gk_TubularBell_midi_dynamic_range", 3 ; 127
-gk_TubularBell_midi_dynamic_range init 30
-gk_TubularBell_space_left_to_right chnexport "gk_TubularBell_space_left_to_right", 3
-gk_TubularBell_space_left_to_right init .5
-gi_TubularBell_isine ftgen 0, 0, 65537, 10, 1
-gi_TubularBell_icosine ftgen 0, 0, 65537, 11, 1
-gi_TubularBell_icook3 ftgen 0, 0, 65537, 10, 1, .4, 0.2, 0.1, 0.1, .05
-instr TubularBell
-; Authors: Perry Cook, John ffitch, Michael Gogins
-i_instrument = p1
-i_time = p2
-i_physical_decay = 15
-if p3 == -1 then
-i_duration = i_physical_decay
-else
-i_duration = p3
-endif
-i_midi_key = p4
-i_midi_velocity = p5
-k_space_front_to_back = p6
-if p7 ==0 then
-k_space_left_to_right = gk_TubularBell_space_left_to_right
-else
-k_space_left_to_right = p7
-endif
-k_space_bottom_to_top = p8
-i_phase = p9
-i_frequency = cpsmidinn(i_midi_key)
-; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_overall_amps = 12.5
-i_normalization = ampdb(-i_overall_amps) / 2
-i_midi_dynamic_range = i(gk_TubularBell_midi_dynamic_range)
-i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(gk_TubularBell_level)
-iattack = 0.002
-isustain = p3
-irelease = 0.05
-iindex = 1
-ifn1 = gi_TubularBell_isine
-ifn2 = gi_TubularBell_icook3
-ifn3 = gi_TubularBell_isine
-ifn4 = gi_TubularBell_isine
-ivibefn = gi_TubularBell_icosine
-a_signal fmbell 1, i_frequency, iindex, gi_TubularBell_crossfade, gi_TubularBell_vibrato_depth, gi_TubularBell_vibrato_rate, ifn1, ifn2, ifn3, ifn4, ivibefn
-i_attack = .002
-i_sustain = i_duration
-i_release = 0.01
-; As with most software instruments that are modeled on an impulse exciting a
-; resonator, there should be two envelopes. The "physical" envelope must have a
-; fixed decay ending at zero.
-i_declick_minimum = .001
-i_attack = .001 / i_frequency + i_declick_minimum
-i_exponent = 30
-a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
-; The de-clicking envelope must have attack and release segments that damp 
-; artifacts in the signal. The duration of these segments depends on 
-; the behavior of the instrument, and may vary as a function of frequency.
-i_declick_attack = .004
-i_declick_release = i_declick_minimum * 2
-; The end of the note must be extended _past_ the end of the release segment.
-xtratim 1
-a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
-; The envelope of the instrument is the product of the physical envelope times 
-; the declicking envelope. 
-a_envelope = a_physical_envelope * a_declicking_envelope
-; That envelope is then low-pass filtered to remove most discontinuities.
-a_filtered_envelope tonex a_envelope, 320, 4
-a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
-a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
-prints "TubularBell              i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-endin
-
-gk_Droner_partial1 chnexport "gk_Droner_partial1", 3
-gk_Droner_partial2 chnexport "gk_Droner_partial2", 3
-gk_Droner_partial3 chnexport "gk_Droner_partial3", 3
-gk_Droner_partial4 chnexport "gk_Droner_partial4", 3
-gk_Droner_partial5 chnexport "gk_Droner_partial5", 3
-gk_Droner_partial6 chnexport "gk_Droner_partial6", 3
-gk_Droner_partial7 chnexport "gk_Droner_partial7", 3
-gk_Droner_partial8 chnexport "gk_Droner_partial8", 3
-gk_Droner_partial9 chnexport "gk_Droner_partial9", 3
-gk_Droner_partial10 chnexport "gk_Droner_partial10", 3
-gk_Droner_level chnexport "gk_Droner_level", 3
-gi_Droner_waveform chnexport "gi_Droner_waveform", 3
-gk_Droner_partial1 init .5
-gk_Droner_partial2 init .05
-gk_Droner_partial3 init .1
-gk_Droner_partial4 init .2
-gk_Droner_partial5 init .1
-gk_Droner_partial6 init 0
-gk_Droner_partial7 init 0
-gk_Droner_partial8 init 0
-gk_Droner_partial9 init 0
-gk_Droner_partial10 init 0
-gk_Droner_level init 0
-gi_Droner_waveform init 0
-gk_Droner_space_left_to_right chnexport "gk_Droner_space_left_to_right", 3
-gk_Droner_space_left_to_right init .5
-gi_Droner_sine ftgen 0, 0, 65537, 10, 1, 0, .02
-instr Droner
-i_instrument = p1
-i_time = p2
-; Make indefinite notes last no longer than the physical decay.
-i_physical_decay = 200000
-if p3 == -1 then
-i_duration = i_physical_decay
-else
-i_duration = p3
-endif
-i_midi_key = p4
-i_midi_velocity = p5
-k_space_front_to_back = p6
-if p7 ==0 then
-k_space_left_to_right = gk_Droner_space_left_to_right
-else
-k_space_left_to_right = p7
-endif
-k_space_bottom_to_top = p8
-i_phase = p9
-i_frequency = cpsmidinn(i_midi_key)
-; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_overall_amps = 19
-i_normalization = ampdb(-i_overall_amps) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(gk_Droner_level)
-k1 = gk_Droner_partial1
-k2 = gk_Droner_partial2
-k3 = gk_Droner_partial3
-k4 = gk_Droner_partial4
-k5 = gk_Droner_partial5
-k6 = gk_Droner_partial6
-k7 = gk_Droner_partial7
-k8 = gk_Droner_partial8
-k9 = gk_Droner_partial9
-k10 = gk_Droner_partial10
-iwaveform = gi_Droner_waveform
-iattack = .5
-idecay = .5
-isustain = p3
-aenvelope transegr 0.0, iattack / 2.0, 1.5, 1 / 2.0, iattack / 2.0, -1.5, 1, isustain, 0.0, 1, idecay / 2.0, 1.5, 1 / 2.0, idecay / 2.0, -1.5, 0
-ihertz = cpsmidinn(i_midi_key)
-if iwaveform == 0 goto i_waveform_0
-if iwaveform == 1 goto i_waveform_1
-if iwaveform == 2 goto i_waveform_2
-i_waveform_0:
-asignal poscil3 1, ihertz, gi_Droner_sine
-goto i_waveform_endif
-i_waveform_1:
-asignal vco2 1, ihertz, 8 ; integrated saw
-goto i_waveform_endif
-i_waveform_2:
-asignal vco2 1, ihertz, 12 ; triangle
-i_waveform_endif:
-a_signal chebyshevpoly asignal, 0, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10
-;adeclicking linsegr 0, .004, 1, p3 - .014, 1, .1, 0
-;a_signal = asignal * adeclicking
-;
-; The de-clicking envelope must have attack and release segments that damp 
-; artifacts in the signal. The duration of these segments depends on 
-; the behavior of the instrument, and may vary as a function of frequency.
-i_declick_attack = .005
-i_declick_release = .01
-; The end of the note must be extended _past_ the end of the release segment.
-xtratim 1
-a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
-; The envelope of the instrument is the product of the physical envelope times 
-; the declicking envelope. 
-a_envelope = aenvelope * a_declicking_envelope
-; That envelope is then low-pass filtered to remove most discontinuities.
-a_filtered_envelope tonex a_envelope, 40, 4
-a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
-print p1,p2,p3,p4,p5,p6,p7,p8
-prints "Droner                   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
-endin
-
-gi_SeidelHarmOsc_tabsz init 2^16
-gi_SeidelHarmOsc_Sin     ftgen 0, 0, gi_SeidelHarmOsc_tabsz, 9, 1,1,0
-gi_SeidelHarmOsc_Tri     ftgen 0, 0, gi_SeidelHarmOsc_tabsz, 9, 1,1,0,  3,0.333,180,  5,0.2,0,  7,0.143,180, 9,0.111,0, 11,0.091,180, 13,0.077,0, 15,0.067,180, 17,0.059,0, 19,0.053,180, 21,0.048,0, 23,0.043,180, 25,0.04,0, 27,0.037,180, 29,0.034,0, 31,0.032,180
-gi_SeidelHarmOsc_Saw     ftgen 0, 0, gi_SeidelHarmOsc_tabsz, 7, 0, gi_SeidelHarmOsc_tabsz/2, 1, 0, -1, gi_SeidelHarmOsc_tabsz/2, 0
-gi_SeidelHarmOsc_Square  ftgen 0, 0, gi_SeidelHarmOsc_tabsz, 7, 1, gi_SeidelHarmOsc_tabsz/2, 1, 0, -1, gi_SeidelHarmOsc_tabsz/2, -1
-gi_SeidelHarmOsc_Prime   ftgen 0, 0, gi_SeidelHarmOsc_tabsz, 9, 1,1,0,  2,0.5,0,  3,0.3333,0,  5,0.2,0,   7,0.143,0,  11,0.0909,0,  13,0.077,0,   17,0.0588,0,  19,0.0526,0, 23,0.0435,0, 27,0.037,0, 31,0.032,180
-gi_SeidelHarmOsc_Fib     ftgen 0, 0, gi_SeidelHarmOsc_tabsz, 9, 1,1,0,  2,0.5,0,  3,0.3333,0,  5,0.2,0,   8,0.125,0,  13,0.0769,0,  21,0.0476,0,  34,0.0294,0 ;,  55,0.0182,0,  89,0.0112,0, 144,0.0069,0
-gi_SeidelHarmOsc_NumTables = 5
-gi_SeidelHarmOsc_List ftgen 1000, 0, gi_SeidelHarmOsc_NumTables, -2, gi_SeidelHarmOsc_Tri, gi_SeidelHarmOsc_Saw, gi_SeidelHarmOsc_Square, gi_SeidelHarmOsc_Prime, gi_SeidelHarmOsc_Fib, gi_SeidelHarmOsc_Sin
-gi_SeidelHarmOsc_Morf ftgen 1001, 0, gi_SeidelHarmOsc_tabsz, 10, 1
-gi_SeidelHarmOsc_lforabsz init 2^13
-gi_SeidelHarmOsc_LfoTri ftgen 0, 0, gi_SeidelHarmOsc_lforabsz, 7, 0, gi_SeidelHarmOsc_lforabsz/4, 1, gi_SeidelHarmOsc_lforabsz/2, -1, gi_SeidelHarmOsc_lforabsz/4, 0
-gk_SeidelHarmOsc_level chnexport "gk_SeidelHarmOsc_level", 3 ;  0
-gi_SeidelHarmOsc_attack chnexport "gi_SeidelHarmOsc_attack", 3 ;  0.003
-gi_SeidelHarmOsc_petals chnexport "gi_SeidelHarmOsc_petals", 3 ;  2.99
-gi_SeidelHarmOsc_release chnexport "gi_SeidelHarmOsc_release", 3 ;  0.01
-gk_SeidelHarmOsc_midi_dynamic_range chnexport "gk_SeidelHarmOsc_midi_dynamic_range", 3 ;  20
-gk_SeidelHarmOsc_level init 0
-gi_SeidelHarmOsc_attack init 0.003
-gi_SeidelHarmOsc_petals init 2.99
-gi_SeidelHarmOsc_release init 0.01
-gk_SeidelHarmOsc_midi_dynamic_range init 20
-gk_SeidelHarmOsc_P1 chnexport "gk_SeidelHarmOsc_P1", 3
-gk_SeidelHarmOsc_IN1CON chnexport "gk_SeidelHarmOsc_IN1CON", 3
-gk_SeidelHarmOsc_IN1C1 chnexport "gk_SeidelHarmOsc_IN1C1", 3
-gk_SeidelHarmOsc_P1 init 0.1
-gk_SeidelHarmOsc_IN1CON init 0.1
-gk_SeidelHarmOsc_IN1C1 init 1
-gk_SeidelHarmOsc_P2 chnexport "gk_SeidelHarmOsc_P2", 3
-gk_SeidelHarmOsc_IN2C1 chnexport "gk_SeidelHarmOsc_IN2C1", 3
-gk_SeidelHarmOsc_IN2CON chnexport "gk_SeidelHarmOsc_IN2CON", 3
-gk_SeidelHarmOsc_P2 init 0.1
-gk_SeidelHarmOsc_IN2C1 init 1
-gk_SeidelHarmOsc_IN2CON init 0.1
-gk_SeidelHarmOsc_P3 chnexport "gk_SeidelHarmOsc_P3", 3
-gk_SeidelHarmOsc_IN3C1 chnexport "gk_SeidelHarmOsc_IN3C1", 3
-gk_SeidelHarmOsc_IN3CON chnexport "gk_SeidelHarmOsc_IN3CON", 3
-gk_SeidelHarmOsc_P3 init 0.1
-gk_SeidelHarmOsc_IN3C1 init 1
-gk_SeidelHarmOsc_IN3CON init 0.1
-gk_SeidelHarmOsc_P4 chnexport "gk_SeidelHarmOsc_P4", 3
-gk_SeidelHarmOsc_IN4C1 chnexport "gk_SeidelHarmOsc_IN4C1", 3
-gk_SeidelHarmOsc_IN4CON chnexport "gk_SeidelHarmOsc_IN4CON", 3
-gk_SeidelHarmOsc_P4 init 0.1
-gk_SeidelHarmOsc_IN4C1 init 1
-gk_SeidelHarmOsc_IN4CON init 0.1
-gi_SeidelHarmOsc_pitch_bend_table ftgen 0, 0, 1024, -7, 1, 1024, 1 
-gi_SeidelHarmOsc_sine ftgen 0, 0, 65537, 10, 1
-instr SeidelHarmOsc
-i_instrument = p1
-i_time = p2
-i_sustain = p3
-xtratim gi_SeidelHarmOsc_attack + gi_SeidelHarmOsc_release
-i_midi_key = p4
-i_midi_dynamic_range = i(gk_SeidelHarmOsc_midi_dynamic_range)
-i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
-// Spatial location is specified in Ambisonic coordinates.
-k_space_front_to_back = p6
-// AKA stereo pan.
-k_space_left_to_right = p7
-k_space_bottom_to_top = p8
-i_phase = p9
-i_frequency = cpsmidinn(i_midi_key)
-// Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 87
-i_normalization = ampdb(-i_level_correction) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(gk_SeidelHarmOsc_level)
-; prints("p1=%f, p2=%f, p3=%f, p4=%f\n", p1, p2, p3, p4)
-;;;kfreq chnget sprintf("FREQ%d", p4)
-kfreq init i_frequency
-kin1con init 0
-kin2con init 0
-kin3con init 0
-kin4con init 0
-koff  init 0.001
-koff1 init 0.001
-koff2 init 2 * 0.001
-koff3 init 3 * 0.001
-koff4 init 5 * 0.001
-koffa = scale2(gk_SeidelHarmOsc_P1, 0.001, 0.1, -10, 10)
-if (gk_SeidelHarmOsc_IN1CON == 1) then
-koffb = scale2(gk_SeidelHarmOsc_IN1C1, 0.001, 0.1, 0, 10)
-koff = koffa + koffb
-else
-koff = koffa
-endif
-koff1 = koff
-koff2 = 2 * koff
-koff3 = 3 * koff
-koff4 = 5 * koff
-itbl = gi_SeidelHarmOsc_Morf
-kndx init 0
-kndxa = scale2(gk_SeidelHarmOsc_P2, 0, gi_SeidelHarmOsc_NumTables-1.01, -10, 10)
-if (gk_SeidelHarmOsc_IN2CON == 1) then
-kndxb = scale2(gk_SeidelHarmOsc_IN2C1, 0, gi_SeidelHarmOsc_NumTables-1.01, 0, 10)
-kndx = kndxa + kndxb
-else
-kndx = kndxa
-endif
-ftmorf kndx, gi_SeidelHarmOsc_List, gi_SeidelHarmOsc_Morf
-kamp init 0.8/9
-; a1 oscil3 kamp, kfreq, itbl
-a2 oscil3 kamp, kfreq+koff1, itbl
-a3 oscil3 kamp, kfreq+koff2, itbl
-a4 oscil3 kamp, kfreq+koff3, itbl
-a5 oscil3 kamp, kfreq+koff4, itbl
-a6 oscil3 kamp, kfreq-koff1, itbl
-a7 oscil3 kamp, kfreq-koff2, itbl
-a8 oscil3 kamp, kfreq-koff3, itbl
-a9 oscil3 kamp, kfreq-koff4, itbl
-kdst init 0
-kdsta = scale2(gk_SeidelHarmOsc_P3, 0, 10, -10, 10)
-if (gk_SeidelHarmOsc_IN3CON == 1) then
-kdstb = scale2(gk_SeidelHarmOsc_IN3C1, 0, 10, 0, 10)
-kdst = kdsta + kdstb
-else
-kdst = kdsta
-endif
-aL = a2+a4+a6+a8
-aR = a3+a5+a7+a9
-aoutL = aL + distort1(aL, kdst, 0.1, 0, 0)
-aoutR = aR + distort1(aR, kdst, 0.1, 0, 0)
-kpana = scale2(gk_SeidelHarmOsc_P4, 0, 7, -10, 10)
-if (gk_SeidelHarmOsc_IN4CON == 1) then
-kpanb = scale2(gk_SeidelHarmOsc_IN4C1, 0, 5, 0, 10)
-kpan = kpana + kpanb
-else
-kpan = kpana
-endif
-if (kpan == 0) then
-kext = 0
-else
-kext = 0.1
-endif
-klfoL oscili 0.49, kpan-kext, gi_SeidelHarmOsc_LfoTri, 90
-klfoR oscili 0.49, kpan+kext, gi_SeidelHarmOsc_LfoTri, 270
-klfoL += 0.5
-klfoR += 0.5
-aoutL1, aoutR1 pan2 aoutL, klfoL
-aoutL2, aoutR2 pan2 aoutR, klfoR
-aoutL = aoutL1+aoutL2
-aoutR = aoutR1+aoutR2
-aenv madsr 0.07,0,1,0.7
-a_out_left = aoutL * aenv * k_gain * i_amplitude
-a_out_right = aoutR * aenv * k_gain * i_amplitude
-;;; outs aoutL*aenv, aoutR*aenv
-;;; a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-prints "SeidelHarmOsc            i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
-endin
-
-gk_Shiner_midi_dynamic_range chnexport "gk_Shiner_midi_dynamic_range", 3 ;  127
-gk_Shiner_attack chnexport "gk_Shiner_attack", 3 ;  .0125
-gk_Shiner_release chnexport "gk_Shiner_release", 3 ;  .0125
-gk_Shiner_level chnexport "gk_Shiner_level", 3 ;  0.5
-gk_Shiner_midi_dynamic_range init 20
-gk_Shiner_attack init .0125
-gk_Shiner_release init .0125
-gk_Shiner_level init 0
-gk_Shiner_front_to_back chnexport "gk_Shiner_front_to_back", 3 ;  0
-gk_Shiner_left_to_right chnexport "gk_Shiner_left_to_right", 3 ;  0.5
-gk_Shiner_bottom_to_top chnexport "gk_Shiner_bottom_to_top", 3 ;  0
-gk_Shiner_front_to_back init 0
-gk_Shiner_left_to_right init 0.5
-gk_Shiner_bottom_to_top init 0
-instr Shiner
-i_instrument = p1
-i_time = p2
-; Make indefinite notes last no longer than the physical decay.
-i_physical_decay = 20
-if p3 == -1 then
-i_duration = i_physical_decay
-else
-i_duration = p3
-endif
-i_midi_key = p4
-i_midi_dynamic_range = i(gk_Shiner_midi_dynamic_range)
-i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
-if p7 ==0 then
-k_space_left_to_right = gk_Shiner_left_to_right
-else
-k_space_left_to_right = p7
-endif
-k_space_bottom_to_top = p8
-i_phase = p9
-i_frequency = cpsmidinn(i_midi_key)
-; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 42.5
-i_normalization = ampdb(-i_level_correction) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(gk_Shiner_level)
-iattack = i(gk_Shiner_attack)
-idecay = i(gk_Shiner_release)
-isustain = i_duration
-a_physical_envelope transeg 0.0, iattack / 2.0, 1.5, i_amplitude / 2.0, iattack / 2.0, -1.5, i_amplitude, isustain, 0.0, i_amplitude, idecay / 2.0, 1.5, i_amplitude / 2.0, idecay / 2.0, -1.5, 0
-ihertz = cpsmidinn(i_midi_key)
-gk_Harmonics = 1 * 20
-a_signal vco2 4, ihertz, 12
-kgain = ampdb(gk_Shiner_level) * .5
-; The end of the note must be extended _past_ the end of the release segment.
-xtratim 1
-a_declicking_envelope cossegr 0, .005, 1,  i_duration, 1,  .01, 0
-; The envelope of the instrument is the product of the physical envelope times 
-; the declicking envelope. 
-a_envelope = a_physical_envelope * a_declicking_envelope
-; That envelope is then low-pass filtered to remove most discontinuities.
-a_filtered_envelope tonex a_envelope, 40, 4
-a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
-prints "Shiner                   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
-endin
-
-gk_Xing_level chnexport "gk_Xing_level", 3
-gk_Xing_level init 0
-gi_Xing_isine ftgen 0, 0, 65537, 10, 1
-instr Xing
-; Author: Andrew Horner
-i_instrument = p1
-i_time = p2
-i_duration = p3
-i_midi_key = p4
-i_midi_velocity = p5
-k_space_front_to_back = p6
-k_space_left_to_right = p7
-k_space_bottom_to_top = p8
-i_phase = p9
-i_overall_amps = 75
-i_normalization = ampdb(-i_overall_amps) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-i_frequency = cpsmidinn(i_midi_key)
-k_gain = ampdb(gk_Xing_level)
-iinstrument = p1
-istarttime = p2
-ioctave = p4
-idur = p3
-kfreq = k(i_frequency)
-iamp = 1
-inorm = 32310
-aamp1 linseg 0,.001,5200,.001,800,.001,3000,.0025,1100,.002,2800,.0015,1500,.001,2100,.011,1600,.03,1400,.95,700,1,320,1,180,1,90,1,40,1,20,1,12,1,6,1,3,1,0,1,0
-adevamp1 linseg 0, .05, .3, idur - .05, 0
-adev1 poscil adevamp1, 6.7, gi_Xing_isine, .8
-amp1 = aamp1 * (1 + adev1)
-aamp2 linseg 0,.0009,22000,.0005,7300,.0009,11000,.0004,5500,.0006,15000,.0004,5500,.0008,2200,.055,7300,.02,8500,.38,5000,.5,300,.5,73,.5,5.,5,0,1,1
-adevamp2 linseg 0,.12,.5,idur-.12,0
-adev2 poscil adevamp2, 10.5, gi_Xing_isine, 0
-amp2 = aamp2 * (1 + adev2)
-aamp3 linseg 0,.001,3000,.001,1000,.0017,12000,.0013,3700,.001,12500,.0018,3000,.0012,1200,.001,1400,.0017,6000,.0023,200,.001,3000,.001,1200,.0015,8000,.001,1800,.0015,6000,.08,1200,.2,200,.2,40,.2,10,.4,0,1,0
-adevamp3 linseg 0, .02, .8, idur - .02, 0
-adev3 poscil adevamp3, 70, gi_Xing_isine ,0
-amp3 = aamp3 * (1 + adev3)
-awt1 poscil amp1, i_frequency, gi_Xing_isine
-awt2 poscil amp2, 2.7 * i_frequency, gi_Xing_isine
-awt3 poscil amp3, 4.95 * i_frequency, gi_Xing_isine
-asig = awt1 + awt2 + awt3
-arel linenr 1,0, idur, .06
-a_signal = asig * arel * (iamp / inorm)
-i_attack = .002
-i_sustain = p3
-i_release = 0.01
-xtratim i_attack + i_release
-a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
-a_signal = a_signal * i_amplitude * a_declicking * k_gain
-a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
-prints "Xing                     i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-endin
-
 gk_Guitar_midi_dynamic_range chnexport "gk_Guitar_midi_dynamic_range", 3 ; 127
 gk_Guitar_midi_dynamic_range init 30
 gk_Guitar_level chnexport "gk_Guitar_level", 3
 gk_Guitar_level init 0
 gk_Guitar_space_left_to_right chnexport "gk_Guitar_space_left_to_right", 3
 gk_Guitar_space_left_to_right init .5
+
 instr Guitar
 ; Michael Gogins
 ; Simple emulation of a Spanish guitar.
@@ -1174,6 +463,7 @@ a_signal = (.6 * a_top_body + .8 * a_bottom_body + .6 * a_whole_body + .4 * a_si
 ; a_signal oscils .1, i_frequency2, 0
 ; For testing envelopes with a DC signal (shows only the envelope).
 ; a_signal = .25
+
 ; As with most software instruments that are modeled on an impulse exciting a 
 ; resonator, there should be two envelopes. The "physical" envelope must have a 
 ; fixed decay ending at zero.
@@ -1195,19 +485,31 @@ a_envelope = a_physical_envelope * a_declicking_envelope
 ; That envelope is then low-pass filtered to remove most discontinuities.
 a_filtered_envelope tonex a_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "Guitar                   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_FilteredSines_level chnexport "gk_FilteredSines_level", 3
 gi_FilteredSines_attack chnexport "gi_FilteredSines_attack", 3
 gi_FilteredSines_release chnexport "gi_FilteredSines_release", 3
+
 gk_FilteredSines_level init 0
 gi_FilteredSines_attack init 1
 gi_FilteredSines_release init 1
+
 gi_FilteredSines_bergeman ftgen 0, 0, 65537, 10, .28, 1, .74, .66, .78, .48, .05, .33, 0.12, .08, .01, .54, 0.19, .08, .05, 0.16, .01, 0.11, .3, .02, 0.2 ; Bergeman f1
+
 instr FilteredSines
 ; Author: Michael Bergeman
 ; Modified by: Michael Gogins
@@ -1271,11 +573,21 @@ i_release = 0.01
 xtratim (i_attack + i_release)
 a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
 a_signal = a_signal * i_amplitude * a_declicking * k_gain * 1.88
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "FilteredSines            i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
+
 
 gk_Blower_grainDensity chnexport "gk_Blower_grainDensity", 3
 gk_Blower_grainDuration chnexport "gk_Blower_grainDuration", 3
@@ -1283,16 +595,20 @@ gk_Blower_grainAmplitudeRange chnexport "gk_Blower_grainAmplitudeRange", 3
 gk_Blower_grainFrequencyRange chnexport "gk_Blower_grainFrequencyRange", 3
 gk_Blower_level chnexport "gk_Blower_level", 3
 gk_Blower_midi_dynamic_range chnexport "gk_Blower_midi_dynamic_range", 3
+
 gk_Blower_grainDensity init 90
 gk_Blower_grainDuration init 0.2
 gk_Blower_grainAmplitudeRange init 100
 gk_Blower_grainFrequencyRange init 10
 gk_Blower_level init 0
 gk_Blower_midi_dynamic_range init 20
+
 gk_Blower_space_left_to_right chnexport "gk_Blower_space_left_to_right", 3
 gk_Blower_space_left_to_right init .5
+
 gi_Blower_grtab ftgen 0, 0, 65537, 10, 1, .3, .1, 0, .2, .02, 0, .1, .04
 gi_Blower_wintab ftgen 0, 0, 65537, 10, 1, 0, .5, 0, .33, 0, .25, 0, .2, 0, .167
+
 instr Blower
 //////////////////////////////////////////////
 // Original by Hans Mikelson.
@@ -1355,10 +671,20 @@ i_release = 0.01
 xtratim i_attack + i_release
 a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
 a_signal = a_signal * i_amplitude * a_declicking * k_gain
-prints "Blower                   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
+#endif
+;printks "Blower         i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(a_out_left)), dbamp(rms(a_out_right))
 endin
 
 gk_Sweeper_midi_dynamic_range chnexport "gk_Sweeper_midi_dynamic_range", 3 ;  127
@@ -1369,6 +695,7 @@ gk_Sweeper_briteh chnexport "gk_Sweeper_briteh", 3 ;  2.9
 gk_Sweeper_britels chnexport "gk_Sweeper_britels", 3 ;  2
 gk_Sweeper_britehs chnexport "gk_Sweeper_britehs", 3 ;  1
 gk_Sweeper_level chnexport "gk_Sweeper_level", 3 ;  0
+
 gk_Sweeper_midi_dynamic_range init 20
 gk_Sweeper_attack init .125
 gk_Sweeper_release init .25
@@ -1379,8 +706,10 @@ gk_Sweeper_britehs init .5
 gk_Sweeper_level init 0
 gk_Sweeper_space_left_to_right chnexport "gk_Sweeper_space_left_to_right", 3
 gk_Sweeper_space_left_to_right init .5
+
 gi_Sweeper_sine ftgen 0, 0, 65537, 10, 1
 gi_Sweeper_octfn ftgen 0, 0, 65537, -19, 1, 0.5, 270, 0.5
+
 instr Sweeper
 //////////////////////////////////////////////
 // Original by Iain McCurdy.
@@ -1406,6 +735,7 @@ i_level_correction = 34.2
 i_normalization = ampdb(-i_level_correction) / 2
 i_amplitude = ampdb(i_midi_velocity) * i_normalization
 k_gain = ampdb(gk_Sweeper_level)
+
 iattack = i(gk_Sweeper_attack)
 irelease = i(gk_Sweeper_release)
 isustain = p3
@@ -1434,6 +764,7 @@ a1,a2 pan2 a1, k_space_left_to_right
 aleft delay a1, rnd(0.1)
 aright delay a2, rnd(0.11)
 a_signal = (aleft + aright)
+
 ; As with most software instruments that are modeled on an impulse exciting a 
 ; resonator, there should be two envelopes. The "physical" envelope must have a 
 ; fixed decay ending at zero.
@@ -1450,19 +781,32 @@ a_envelope = a_declicking_envelope
 ; That envelope is then low-pass filtered to remove most discontinuities.
 a_filtered_envelope tonex a_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
-prints "Sweeper                  i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
+outs a_out_left, a_out_right
+#endif
 endin
+
 
 gk_Plucked_midi_dynamic_range chnexport "gk_Plucked_midi_dynamic_range", 3 ; 127
 gk_Plucked_midi_dynamic_range init 30
 gk_Plucked_space_left_to_right chnexport "gk_Plucked_space_left_to_right", 3
 gk_Plucked_space_left_to_right init .5
 gk_Plucked_level chnexport "gk_Plucked_level", 3
-gk_Plucked_level init 0
+gk_Plucked_level init 50
+
 gi_Plucked_sine ftgen 0, 0, 65537, 10, 1
+
 instr Plucked
 ; Author: Michael Gogins
 i_instrument = p1
@@ -1504,6 +848,10 @@ a_signal = (asignal1 + asignal2 + asignal3)
 ; resonator, there are two envelopes, one for the physical decay with a 
 ; fixed release ending at zero, and one with a release segment to remove 
 ; clicks from the attack and release.
+;
+; As with most software instruments that are modeled on an impulse exciting a 
+; resonator, there should be two envelopes. The "physical" envelope must have a 
+; fixed decay ending at zero.
 i_declick_minimum = .001
 i_attack = .001 / i_frequency2 + i_declick_minimum
 i_exponent = 7
@@ -1522,10 +870,19 @@ a_envelope = a_physical_envelope * a_declicking_envelope
 ; That envelope is then low-pass filtered to remove most discontinuities.
 a_filtered_envelope tonex a_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "Plucked                  i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 //////////////////////////////////////////////
@@ -1542,19 +899,23 @@ gk_FMWaterBell_crossfade chnexport "gk_FMWaterBell_crossfade", 3 ; .5
 gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
 gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
 gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
-gk_FMWaterBell_level init 0
+
+gk_FMWaterBell_level init -8
 gi_FMWaterBell_attack init 0.002
 gi_FMWaterBell_release init 0.01
 gi_FMWaterBell_sustain init 20
 gi_FMWaterBell_sustain_level init .1
-gk_FMWaterBell_index init 0
+gk_FMWaterBell_index init .5
 gk_FMWaterBell_crossfade init .5
 gk_FMWaterBell_vibrato_depth init 0.05
 gk_FMWaterBell_vibrato_rate init 6
 gk_FMWaterBell_midi_dynamic_range init 20
+
 gk_FMWaterBell_space_left_to_right chnexport "gk_FMWaterBell_space_left_to_right", 3
 gk_FMWaterBell_space_left_to_right init .5
+
 gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
+
 instr FMWaterBell
 i_instrument = p1
 i_time = p2
@@ -1586,10 +947,19 @@ a_envelope transeg 0, gi_FMWaterBell_attack, 6,  1, gi_FMWaterBell_sustain, -6, 
 a_declicking cossegr 0, i_releasing_attack, 1, gi_FMWaterBell_sustain - 1, 1, i_releasing_release, 0
 ;;;a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
 a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "FMWaterBell              i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_YiString_midi_dynamic_range chnexport "gk_YiString_midi_dynamic_range", 3 ;  127
@@ -1597,13 +967,16 @@ gk_YiString_level chnexport "gk_YiString_level", 3 ;  0
 gk_YiString_reverb_send chnexport "gk_YiString_reverb_send", 3 ;  .5
 gk_YiString_chorus_send chnexport "gk_YiString_chorus_send", 3 ;  .5
 gi_YiString_overlap chnexport "gi_YiString_overlap", 3 ;  .1
+
 gk_YiString_midi_dynamic_range init 20
-gk_YiString_level init 0
+gk_YiString_level init 30
 gk_YiString_reverb_send init .5
 gk_YiString_chorus_send init .5
 gi_YiString_overlap init .1
+
 gk_YiString_space_left_to_right chnexport "gk_YiString_space_left_to_right", 3
 gk_YiString_space_left_to_right init .5
+
 instr YiString
 //////////////////////////////////////////////
 // Original by Steven Yi.
@@ -1654,6 +1027,14 @@ a_envelope = a_physical_envelope * a_declicking_envelope
 ; That envelope is then low-pass filtered to remove most discontinuities.
 a_filtered_envelope tonex a_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_signal_reverb = a_signal * gk_YiString_reverb_send
 a_signal_chorus = a_signal * gk_YiString_chorus_send
 a_out_left, a_out_right pan2 a_signal_reverb, p7
@@ -1662,7 +1043,9 @@ outleta "outright",  a_out_right
 a_out_left, a_out_right pan2 a_signal_chorus, p7
 outleta "chorusleft", a_out_left 
 outleta "chorusright", a_out_right 
-prints "Yistring                 i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+;printks "YiString         %9.4f  %9.4f\n", 0.5, a_out_left, a_out_right
+#endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_Harpsichord_level chnexport "gk_Harpsichord_level", 3
@@ -1671,13 +1054,16 @@ gk_Harpsichord_reflection chnexport "gk_Harpsichord_reflection", 3
 gk_Harpsichord_pluck chnexport "gk_Harpsichord_pluck", 3
 gk_Harpsichord_midi_dynamic_range chnexport "gk_Harpsichord_midi_dynamic_range", 3
 gk_Harpsichord_space_left_to_right chnexport "gk_Harpsichord_space_left_to_right", 3
+
 gk_Harpsichord_level init 0
 gk_Harpsichord_pick init .075
 gk_Harpsichord_reflection init .5
 gk_Harpsichord_pluck init .75
 gk_Harpsichord_midi_dynamic_range init 20
 gk_Harpsichord_space_left_to_right init .5
+
 gi_Harpsichord_harptable ftgen 0, 0, 65537, 7, -1, 1024, 1, 1024, -1
+
 instr Harpsichord
 i_instrument = p1
 i_time = p2
@@ -1723,10 +1109,21 @@ a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick
 a_envelope = a_declicking_envelope
 a_filtered_envelope tonex a_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
+
+
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "Harpsichord              i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+#endif
+;printks "Harpsichord      %9.4f   %9.4f\n", 0.5, a_out_left, a_out_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_ZakianFlute_midi_dynamic_range chnexport "gk_ZakianFlute_midi_dynamic_range", 3 ;  20
@@ -1734,11 +1131,13 @@ gk_ZakianFlute_level chnexport "gk_ZakianFlute_level", 3 ;  0
 gk_ZakianFlute_pan chnexport "gk_ZakianFlute_pan", 3 ;  .5
 gi_ZakianFLute_seed chnexport "gi_ZakianFLute_seed", 3 ;  .5
 gi_ZakianFLute_space_left_to_front chnexport "gi_ZakianFLute_space_left_to_front", 3 ;  .5
+
 gk_ZakianFlute_midi_dynamic_range init 20
-gk_ZakianFlute_level init 0
+gk_ZakianFlute_level init -16
 gk_ZakianFlute_pan init .5
 gi_ZakianFLute_seed init .5
 gi_ZakianFLute_space_left_to_front init .5
+
 gi_ZakianFLute_f2  ftgen 0, 0, 16, -2, 40, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 10240
 gi_ZakianFlute_f26 ftgen 0, 0, 65537, -10, 2000, 489, 74, 219, 125, 9, 33, 5, 5
 gi_ZakianFlute_f27 ftgen 0, 0, 65537, -10, 2729, 1926, 346, 662, 537, 110, 61, 29, 7
@@ -1753,6 +1152,7 @@ gi_ZakianFlute_f35 ftgen 0, 0, 65537, -10, 2661, 87, 33, 18
 gi_ZakianFlute_f36 ftgen 0, 0, 65537, -10, 174, 12
 gi_ZakianFlute_f37 ftgen 0, 0, 65537, -10, 314, 13
 gi_ZakianFlute_wtsin ftgen 0, 0, 65537, 10, 1
+
 instr ZakianFlute
 ; Author: Lee Zakian
 ; Adapted by: Michael Gogins
@@ -1965,17 +1365,26 @@ a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick
 ; That envelope is then low-pass filtered to remove most discontinuities.
 a_filtered_envelope tonex a_declicking_envelope, 40, 4
 a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
-prints "ZakianFlute              i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+
+prints "%24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_signal *= .7
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
+#endif
 endin
 
 gi_Kung4_detune_cents chnexport "gk_Kung4_detune_cents", 3
 gi_Kung4_detune_cents init 8
 gk_Kung4_level chnexport "gk_Kung4_level", 3
-gk_Kung4_level init 0
+gk_Kung4_level init -20
 gk_Kung4_midi_dynamic_range chnexport "gk_Kung4_midi_dynamic_range", 3
 gk_Kung4_midi_dynamic_range init 30
 gk_Kung4_space_left_to_right chnexport "gk_Kung4_space_left_to_right", 3
@@ -1984,6 +1393,7 @@ gi_Kung4_modulation_ratio_start chnexport "gi_Kung4_modulation_ratio_start", 3
 gi_Kung4_modulation_ratio_start init 1.7
 gi_Kung4_modulation_ratio_end chnexport "gi_Kung4_modulation_ratio_end", 3
 gi_Kung4_modulation_ratio_end init .5
+
 gi_Kung4_sine ftgen 0, 0, 65537, 10, 1
 gi_Kung4_cosine ftgen 0, 0, 65537, 11, 1
 gi_Kung4_ln ftgen 0, 9, 65537, -12, 20.0  ;unscaled ln(I(x)) from 0 to 20.0
@@ -2062,9 +1472,10 @@ a_envelope = a_physical_envelope * a_declicking_envelope
 a_filtered_envelope tonex a_envelope, 40, 4
 a_out_left = a_out_left * i_amplitude * a_filtered_envelope * k_gain 
 a_out_right = a_out_right * i_amplitude * a_filtered_envelope * k_gain 
+
 outleta "outleft", a_out_left 
 outleta "outright", a_out_right
-prints "Kung4                    i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 /**
@@ -2150,7 +1561,7 @@ instr Kung2
 a_out_left, a_out_right Kung2_
 outleta "outleft", a_out_left 
 outleta "outright", a_out_right
-prints "Kung2                    i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_Bower_midi_dynamic_range chnexport "gk_Bower_midi_dynamic_range", 3
@@ -2159,13 +1570,16 @@ gk_Bower_release chnexport "gk_Bower_release", 3
 gk_Bower_level chnexport "gk_Bower_level", 3
 gk_Bower_pressure chnexport "gk_Bower_pressure", 3
 gk_Bower_space_left_to_right chnexport "gk_Bower_space_left_to_right", 3
+
 gk_Bower_midi_dynamic_range init 20
 gk_Bower_attack init .125
 gk_Bower_release init .125
 gk_Bower_level init 0
 gk_Bower_pressure init 0.325
 gk_Bower_space_left_to_right init 0.75
+
 gi_Bower_sine ftgen 0,0,65537,10,1
+
 instr Bower
 i_instrument = p1
 i_time = p2
@@ -2204,20 +1618,32 @@ kvibamp = 0
 iminfreq = i(kfreq) / 1.5
 aSig wgbow kamp,kfreq,gk_Bower_pressure,krat,kvibf,kvibamp,gi_Bower_sine,iminfreq
 a_signal = aSig * kenvelope * k_gain
-prints "Bower                    i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
+#endif
+;printks "Blower         i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(a_out_left)), dbamp(rms(a_out_right))
 endin
 
 gk_ReverbSC_feedback chnexport "gk_ReverbSC_feedback", 3
 gk_ReverbSC_wet chnexport "gk_ReverbSC_wet", 3
 gi_ReverbSC_delay_modulation chnexport "gi_ReverbSC_delay_modulation", 3
 gk_ReverbSC_frequency_cutoff chnexport "gk_ReverbSC_frequency_cutoff", 3
+
 gk_ReverbSC_feedback init 0.875
 gk_ReverbSC_wet init 0.5
 gi_ReverbSC_delay_modulation init 0.0075
 gk_ReverbSC_frequency_cutoff init 15000
+
 instr ReverbSC
 gk_ReverbSC_dry = 1.0 - gk_ReverbSC_wet
 aleftin init 0
@@ -2231,15 +1657,15 @@ aleftoutmix = aleftin * gk_ReverbSC_dry + aleftout * gk_ReverbSC_wet
 arightoutmix = arightin * gk_ReverbSC_dry + arightout * gk_ReverbSC_wet
 outleta "outleft", aleftoutmix
 outleta "outright", arightoutmix
-prints "ReverbSC                 i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
-gk_MasterOutput_duration chnexport "gk_MasterOutput_duration", 3 ; 0
 gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
+
 gk_MasterOutput_level init 0
 gS_MasterOutput_filename init ""
-gk_MasterOutput_duration init 540
+
 instr MasterOutput
 aleft inleta "inleft"
 aright inleta "inright"
@@ -2248,26 +1674,20 @@ printks2 "Master gain: %f\n", k_gain
 iamp init 1
 aleft butterlp aleft, 18000
 aright butterlp aright, 18000
-a_fadeout linsegr 1, 1000000000, 1, 6, 0
-k_times times
-if (gk_MasterOutput_duration != 0) then
-if (k_times > gk_MasterOutput_duration) then
-turnoff2 p1, 0, 1
-schedulek "ExitNow", 10, 1
+outs aleft * k_gain, aright * k_gain
+; We want something that will play on my phone.
+i_amplitude_adjustment = ampdbfs(-3) / 32767
+i_filename_length strlen gS_MasterOutput_filename
+if i_filename_length > 0 then
+prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
+fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
 endif
-endif
-outs aleft * k_gain * a_fadeout, aright * k_gain * a_fadeout
-prints "MasterOutput             i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-endin
-
-instr ExitNow
-prints "ExitNow                  i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-exitnow
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 </CsInstruments>
 <CsScore>
-f 0 560
+f 0 1000000000
 </CsScore>
 </CsoundSynthesizer>
 
@@ -2276,7 +1696,7 @@ f 0 560
     </textarea>
     
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-        #line 2196
+        #line 1599
         precision highp float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -2344,90 +1764,27 @@ f 0 560
         
 // BEGIN Define fragment shader. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-//CBS
-//Parallax scrolling fractal galaxy.
-//Inspired by JoshP's Simplicity shader: https://www.shadertoy.com/view/lslGWr
-
-// http://www.fractalforums.com/new-theories-and-research/very-simple-formula-for-fractal-patterns/
-float field(in vec3 p,float s) {
-	float strength = 7. + .03 * log(1.e-6 + fract(sin(iTime) * 4373.11));
-	float accum = s/4.;
-	float prev = 0.;
-	float tw = 0.;
-	for (int i = 0; i < 26; ++i) {
-		float mag = dot(p, p);
-		p = abs(p) / mag + vec3(-.5, -.4, -1.5);
-		float w = exp(-float(i) / 7.);
-		accum += w * exp(-strength * pow(abs(mag - prev), 2.2));
-		tw += w;
-		prev = mag;
-	}
-	return max(0., 5. * accum / tw - .7);
-}
-
-// Less iterations for second layer
-float field2(in vec3 p, float s) {
-	float strength = 7. + .03 * log(1.e-6 + fract(sin(iTime) * 4373.11));
-	float accum = s/4.;
-	float prev = 0.;
-	float tw = 0.;
-	for (int i = 0; i < 18; ++i) {
-		float mag = dot(p, p);
-		p = abs(p) / mag + vec3(-.5, -.4, -1.5);
-		float w = exp(-float(i) / 7.);
-		accum += w * exp(-strength * pow(abs(mag - prev), 2.2));
-		tw += w;
-		prev = mag;
-	}
-	return max(0., 5. * accum / tw - .7);
-}
-
-vec3 nrand3( vec2 co )
-{
-	vec3 a = fract( cos( co.x*8.3e-3 + co.y )*vec3(1.3e5, 4.7e5, 2.9e5) );
-	vec3 b = fract( sin( co.x*0.3e-3 + co.y )*vec3(8.1e5, 1.0e5, 0.1e5) );
-	vec3 c = mix(a, b, 0.5);
-	return c;
-}
-
+#define WAVES 8.0
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-    vec2 uv = 2. * fragCoord.xy / iResolution.xy - 1.;
-	vec2 uvs = uv * iResolution.xy / max(iResolution.x, iResolution.y);
-	vec3 p = vec3(uvs / 4., 0) + vec3(1., -1.3, 0.);
-	p += .2 * vec3(sin(iTime / 16.), sin(iTime / 12.),  sin(iTime / 128.));
-	
-	float freqs[4];
-	//Sound
-	freqs[0] = texture( iChannel0, vec2( 0.01, 0.25 ) ).x;
-	freqs[1] = texture( iChannel0, vec2( 0.07, 0.25 ) ).x;
-	freqs[2] = texture( iChannel0, vec2( 0.15, 0.25 ) ).x;
-	freqs[3] = texture( iChannel0, vec2( 0.30, 0.25 ) ).x;
+	vec2 uv = -1.0 + 2.0 * fragCoord.xy / iResolution.xy;
 
-	float t = field(p,freqs[2]);
-	float v = (1. - exp((abs(uv.x) - 1.) * 6.)) * (1. - exp((abs(uv.y) - 1.) * 6.));
+	float time = iTime * 1.0;
 	
-    //Second Layer
-	vec3 p2 = vec3(uvs / (4.+sin(iTime*0.11)*0.2+0.2+sin(iTime*0.15)*0.3+0.4), 1.5) + vec3(2., -1.3, -1.);
-	p2 += 0.25 * vec3(sin(iTime / 16.), sin(iTime / 12.),  sin(iTime / 128.));
-	float t2 = field2(p2,freqs[3]);
-	vec4 c2 = mix(.4, 1., v) * vec4(1.3 * t2 * t2 * t2 ,1.8  * t2 * t2 , t2* freqs[0], t2);
-	
-	
-	//Let's add some stars
-	//Thanks to http://glsl.heroku.com/e#6904.0
-	vec2 seed = p.xy * 2.0;	
-	seed = floor(seed * iResolution.x);
-	vec3 rnd = nrand3( seed );
-	vec4 starcolor = vec4(pow(rnd.y,40.0));
-	
-	//Second Layer
-	vec2 seed2 = p2.xy * 2.0;
-	seed2 = floor(seed2 * iResolution.x);
-	vec3 rnd2 = nrand3( seed2 );
-	starcolor += vec4(pow(rnd2.y,40.0));
-	
-	fragColor = mix(freqs[3]-.3, 1., v) * vec4(1.5*freqs[2] * t * t* t , 1.2*freqs[1] * t * t, freqs[3]*t, 1.0)+c2+starcolor;
+	vec3 color = vec3(0.0);
+
+	for (float i=0.0; i<WAVES + 1.0; i++) {
+		float freq = texture(iChannel0, vec2(i / WAVES, 0.0)).x * 7.0;
+
+		vec2 p = vec2(uv);
+
+		p.x += i * 0.04 + freq * 0.03;
+		p.y += sin(p.x * 10.0 + time) * cos(p.x * 2.0) * freq * 0.2 * ((i + 1.0) / WAVES);
+		float intensity = abs(0.01 / p.y) * clamp(freq, 0.35, 2.0);
+		color += vec3(1.0 * intensity * (i / 5.0), 0.5 * intensity, 1.75 * intensity) * (3.0 / WAVES);
+	}
+
+	fragColor = vec4(color, 1.0);
 }
 
 // END Define fragment shader. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2945,24 +2302,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             // not at the end?
             if (message === null) {
               return;
-            }
-            if (csound) {
-                const trimmed = message.trimEnd();
-                csound.GetScoreTime().then((score_time) => {
-                    let delta = score_time;
-                    // calculate (and subtract) whole days
-                    let days = Math.floor(delta / 86400);
-                    delta -= days * 86400;
-                    // calculate (and subtract) whole hours
-                    let hours = Math.floor(delta / 3600) % 24;
-                    delta -= hours * 3600;
-                    // calculate (and subtract) whole minutes
-                    let minutes = Math.floor(delta / 60) % 60;
-                    delta -= minutes * 60;
-                    // what's left is seconds
-                    let seconds = delta % 60;  // in theory the modulus is not required
-                    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f %.80s", days, hours, minutes, seconds, trimmed));
-                });
             }
             message_callback_buffer = message_callback_buffer + message;
             if (message_callback_buffer.endsWith("\n")) {
