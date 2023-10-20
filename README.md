@@ -308,9 +308,24 @@ see updated pieces.
 
 ## Release Notes
 
+### [v0.1beta6](https://github.com/gogins/cloud-5/commits/v0.1beta6)
+
+ - Introduced the CsoundAC `track` function, a variant of Strudel's `arrange` 
+   that does not crash when the number of cycles for a section is set to zero 
+   to silence it.
+   
+ - Improved the CsoundAC `csoundn` output to send all control parameters 
+   with names beginning `gi` or `gk` to Csound as control channel values; 
+   these channels must first be set up in the Csound orchestra with the same 
+   names.
+   
+ - Added `cancyle.html`, a piece designed for live performance by doing a 
+   modest amount of live coding during play.
+   
+
 ### [v0.1beta5](https://github.com/gogins/cloud-5/commits/v0.1beta5)
 
-- Updated Strudel to get the extremely useful `slider`, which can be either 
+ - Updated Strudel to get the extremely useful `slider`, which can be either 
    discrete or continuous. The `slider` is embedded directly into the Strudel 
    patch.
  

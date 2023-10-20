@@ -157,59 +157,57 @@ csac.track
 [60*3,
 // In order for controls to work, `note` must come first!
 pure(0).note()
-.CircleMap(circleMapInstance, 1, slider(14.664, 1, 29))
-.echoWith(2, slider(1.5, 0, 4, .25), (p,n) => p.add(2*n))
-.slow(slider(1, 1, 8, .5)).fast(slider(2.5, 1, 8, .5))
-.sub(slider(12, 12, 48, 6)).add(slider(0, 12, 48, 6))
+// 10.184 is good.
+.CircleMap(circleMapInstance, 1, slider(10.184, 1, 29))
+.echoWith(4, slider(0.25, 0, 4, .25), (p,n) => p.add(3*n))
+.slow(slider(1, 1, 8, .5)).fast(slider(3.5, 1, 8, .5))
+.sub(slider(3, 0, 48, 3)).add(slider(0, 12, 48, 3))
 .clip(slider(0.6, .1, 10, .1))
-.gain(slider(.5, 0, 1))
 .csoundn(slider(1, 1, 17,1), 
-         slider(13, 1, 17,1), 
+         slider(3, 1, 17,1), 
          slider(6, 1, 17,1))
 // CsoundAC way of doing harmony:
 .acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
-.acSM(scalePattern, "<0 1 1 0 3 2>/9")
+.acSM(scalePattern, "<0 1 1 0 3 2>/24")
 .acSCV(scalePattern)
 ],
-[60*2,
+[60,
 run(slider(8,3,8,1)).n()
- .offset(slider(1, 0, 6, 1))
- .off(.25, x=>x.add(5))
-.slow(slider(1, 1, 8, .5)).fast(slider(3, 1, 8, .5))
-.sub(slider(0, 0, 48, 3)).add(slider(0, 0, 48, 3))
-.euclid(8, 13)
+ .offset(slider(5, 0, 6, 1))
+ .off(.5, x=>x.add(9))
+.slow(slider(2, 1, 8, .5)).fast(slider(3, 1, 8, .5))
+.sub(slider(6, 0, 48, 3)).add(slider(0, 0, 48, 3))
+.euclid(8, 10)
 .jux(rev)
 // Strudel way of doing harmony:
-.chord("<Am9 E7b5 Am7 Dm7b5 G7b9 CM7>/2")
+.chord("<Am9 E7b5 Am9 Dm7b5 G7b9 CM7>/2")
 .dict('ireal-ext')
 .voicing()
 .clip(slider(1, .1, 10, .1))
-.gain(slider(.5, 0, 1))
 .csoundn(slider(6, 1, 17,1), 
-         slider(13, 1, 17,1), 
+         slider(5, 1, 17,1), 
          slider(11, 1, 17,1))],
 [60*3,
 // In order for controls to work, `note` must come first!
 pure(0).note()
-.CircleMap(circleMapInstance, 1, slider(11.192, 1, 29))
+.CircleMap(circleMapInstance, 1, slider(10.156, 1, 29))
 .echoWith(5, slider(1.25, 0, 4, .25), (p,n) => p.add(5*n))
-.slow(slider(1, 1, 8, .5)).fast(slider(1, 1, 8, .5))
-.sub(slider(0, 12, 48, 6)).add(slider(0, 12, 48, 6))
-.clip(slider(0.6, .1, 10, .1))
-.gain(slider(.5, 0, 1))
+.slow(slider(1.5, 1, 8, .5)).fast(slider(1, 1, 8, .5))
+.sub(slider(9, 0, 48, 3)).add(slider(0, 0, 48, 3))
+.clip(slider(2.2, .1, 10, .1))
 .csoundn(slider(9, 1, 17,1), 
-         slider(3, 1, 17,1), 
+         slider(5, 1, 17,1), 
          slider(7, 1, 17,1))
 // CsoundAC way of doing harmony:
-.acST(scalePattern, "<1 1 1 1 -3 5>/3")
+.acST(scalePattern, "<-1 -1 -1 -1 -1 -1 -1>/3")
 .acSM(scalePattern, "<0 1 2 3 3 2>/9")
 .acSCV(scalePattern)
 ],
 )
-// Master tempo:
+// Master tempo.
 .slow(slider(1, 1, 8, .25)).fast(slider(1, 1, 8, .25))
 // Master bass.
-.sub(slider(12, 12, 48, 1)).add(slider(0, 12, 48, 1))
+.sub(slider(12, 0, 48, 1)).add(slider(0, 12, 48, 1))
 // Master stacatto/legato.
 .clip(slider(2.3, .1, 10, .1))
 .pan(perlin)
@@ -244,7 +242,7 @@ pure(0).note()
          .gk_Bower_pressure(slider(0.325, 0, 4))
 .gk_ReverbSC_feedback(slider(0.84, 0, 1))
 //.gain("<.03 .1@2 .2@3 .3@2 .02@2>/6".mul(3))
-.gk_MasterOutput_level(slider(0.556, 0, 1).sub(.5).mul(100))
+.gk_MasterOutput_level(slider(0.493, 0, 1).sub(.5).mul(100))
 .pianoroll({fillActive:1,minMidi:24,maxMidi:108,cycles:16,playhead:.75})
 
 -->
@@ -523,8 +521,10 @@ control parameters of the Csound instruments.
 </ul>
 
 <p>I set up the Strudel patch to make it easy to shape the piece by live 
-coding during performance. However, the piece can also be run without 
-user intervention, and can even run indefinitely as an "always-on" composition.
+coding during performance. The basic idea is that there are three rather 
+repetitive sections, and the performer is expected to introduce variations in 
+these sections by moving the sliders (especially the circle map parameters and 
+the run and offset parameters), and by removing and adding code during play.
 
 <p>Feel free to use this piece as a template for creating new pieces of this 
 type... as long as it honors the licenses and doesn't sound too much like this 
