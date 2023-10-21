@@ -1,0 +1,165 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}
+  \definecolor{links}{HTML}{2A1B81}
+  \hypersetup{colorlinks,linkcolor=,urlcolor=links}
+  %\usetheme{Frankfurt}
+  \usecolortheme{seagull}
+  % or ...
+  \setbeamercovered{transparent}
+  % or whatever (possibly just delete it)
+}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{fancyvrb}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{attachfile}
+\usepackage{ifthen}
+
+\newboolean{localPieces} %Declaration, defaults to false
+\setboolean{localPieces}{false} %Assignment
+
+\title[Luck Dragon] % (optional, use only with long paper titles)
+{Luck Dragon}
+
+\author[Gogins] % (optional, use only with lots of authors)
+{Michael Gogins \\ \url{http://michaelgogins.tumblr.com} }
+% - Give the names in the same order as the appear in the paper.
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+\institute[Irreducible Productions] % (optional, but mostly needed)
+{
+  Irreducible Productions\\
+  New York
+}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date[27 October 2023] % (optional, should be abbreviation of conference name)
+{27 October 2023}
+% - Either use conference name or its abbreviation.
+% - Not really informative to the audience, more for people (including
+%   yourself) who are reading the slides online
+
+\subject{Computer Music}
+\expandafter\def\expandafter\insertshorttitle\expandafter{%
+    \insertshorttitle\hfill%
+    \insertframenumber\,/\,\inserttotalframenumber}
+% This is only inserted into the PDF information catalog. Can be left
+% out. 
+\begin{document}
+\lstset{basicstyle=\ttfamily\tiny,commentstyle=\ttfamily\tiny,tabsize=2,breaklines,fontadjust=true,keepspaces=false,fancyvrb=true,showstringspaces=false,moredelim=[is][\textbf]{\\emph\{}{\}}}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+	I talk about my way of doing algorithmic composition. Many references and examples herein are by hyperlink to the World Wide Web. Most of my pieces are made using \href{http://csound.github.io/}{Csound}, including \href{https://gogins.github.io/}{cloud-5}, which I will demonstrate.
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+\begin{frame}{About Me}
+
+\begin{itemize}
+\item I was born in 1950 Salt Lake City. I've lived in Minneapolis, Sonoma County, Los Angeles, Seattle, and New York.
+\item My wife Heidi and I own a farm in Bovina, and we keep a co-op on the Upper West Side.
+\item I have had too many interests, but I was always interested in the future and in music.
+\item While majoring in comparative religion at the University of Washington, I took seminars in computer music with John Rahn.
+\item After that, computer music gradually but completely took over. I programmed trading systems as a day job.
+\item \emph{Note well}: I was never either an academic or, after a few years in L.A., a performing musician.
+\item More about me \href{https://michaelgogins.tumblr.com/}{here}.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{cloud-5}
+
+\begin{itemize}
+\item cloud-5 is my system, or rather toolkit, for making computer music entirely in the HTML5 environment.
+\item That is to say, all the pieces run in an ordinary Web browser, and they have \emph{no} external dependencies.
+\item You can run  pieces either using a local Web server, or from a regular Web server on the Internet.
+\item One limitation: no reading from or writing to the file system.
+\item cloud-5 consists my WebAssembly build of Csound, the WebAssembly build of my algorithmic composition system CsoundAC, the live coding system Strudel, and some standard JavaScript libraries.  All these things are packaged in the cloud-5 release.
+\item I will now perform Cancycle from my local Web server.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Getting Started}
+
+\begin{enumerate}
+\item Download the latest release of cloud-5 from xxx. The release is the cloud-5.zip file.
+\item Unzip the release on your computer.
+\item Run a local Web server in the cloud-5 directory. If you have Python on your computer, it's as simple as xxxx.
+\item Open your Web browser to xxx and run one of the sample pieces.
+\item If you write a new piece, adapt an existing piece and keep the new file in the cloud-5 directory.
+\item Use the Developer Tools to debug the piece.
+\item You may need to clear the browser caches and do a hard refresh to see any changes you make.
+\end{enumerate}
+
+\end{frame}
+
+\begin{frame}{Tape Music}
+
+\begin{itemize}
+\item In the misty beginnings --- before computers, even before the Moog synthesizer ---there was \emph{electronic music}.
+\item It was composed by splicing together snippets of recording tape. It could be musique concrète a la Pierre Schaeffer, or Stockhausen-type music made with oscillators and filters.
+\item Even now that tape recorders are vanishing back into the mists, music made with technology to create a sound recording for playback is still sometimes called \emph{tape music}.
+\item Most of my pieces are, in fact, tape music, because that gives me the most power. In theory, no mistake goes unfixed, and no possible improvement is not found. Of course, this all takes absolutely forever....
+\item I use all the same software for tape music that I use in cloud-5, but I also read and write soundfiles, use sample banks and VST plugins, and even write C++ code as part of my pieces.
+\item Here's an example: xxx.
+
+\end{itemize}
+
+
+\end{frame}
+
+\begin{frame}{Questions?}
+
+\end{frame}
+
+
+\begin{frame}[allowframebreaks]
+  \frametitle<presentation>{Resources}
+    
+  \begin{thebibliography}{10}
+    
+  \beamertemplatebookbibitems
+  % Start with overview books.
+
+  \bibitem{GBlog} \href{http://michaelgogins.tumblr.com/}{Michael Gogins, blog}.
+  
+  \bibitem{GGithub} \href{https://github.com/gogins/gogins.github.io}{Michael Gogins. ``Computer Music Resources.''}
+
+  \bibitem{CQT2008} \href{http://www.sciencemag.org/content/320/5874/346.abstract}{Clifton Callender, Ian Quinn, and Dmitri Tymoczko. ``Generalized voice-leading spaces.'' \emph{Science}, 320:346–
+348, 2008.}
+
+  \bibitem{G1991} {Michael Gogins. ``How I Became Obsessed with Finding a Mandelbrot Set for Sounds,'' \textbf{\textit{News of Music}} \textbf{13}:129-139.}
+
+  \bibitem{FS2005} \href{http://www.mtosmt.org/issues/mto.05.11.3/mto.05.11.3.fiore_satyendra.pdf}{T.M. Fiore and R. Satyendra. ``Generalized Contextual
+Groups.'' \emph{Music Theory Online}, 11(3), 2005}.
+
+  \bibitem{G2006}
+    \href{https://www.dropbox.com/s/ztej71n2fbn4tq4/Lindenmayer_Systems_Based_on_Riemannian_Transformations.pdf}{Michael Gogins. ``Score generation in voice-leading
+and chord spaces.'' In Georg Essl and Ichiro Fujinaga,
+editors, \emph{Proceedings of the 2006 International Computer Music Conference}, San Francisco, California,
+2006. International Computer Music Association.}
+
+  \bibitem{T2006} \href{http://www.sciencemag.org/content/313/5783/72.abstract?ijkey=wzKBea3ktKdu2&keytype=ref&siteid=sci}{Dmitri Tymoczko. ``The Geometry of Musical Chords.'' \emph{Science}, 313:72–74, 2006.}
+
+  \end{thebibliography}
+
+\end{frame}
+
+\end{document}
+
+
