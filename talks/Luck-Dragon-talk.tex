@@ -86,9 +86,9 @@
 \begin{frame}{cloud-5}
 
 \begin{itemize}
-\item \href{https://gogins.github.io/cloud-5.html}{cloud-5} is my system/toolkit for making \emph{real computer music} entirely in the HTML5 environment.
+\item \href{https://gogins.github.io/cloud-5.html}{cloud-5} is my system/toolkit for making \emph{real computer music} -- entirely in the HTML5 environment.
 \item That is, all cloud-5 pieces run in an ordinary Web browser, and they have \emph{no} external dependencies.
-\item Pieces run either from a regular Web server on the Internet, or from a local Web server.
+\item Pieces are hosted either on a regular Web server on the Internet, or on a local Web server.
 \item Only limitation: Can't read from or write to the file system.
 \item cloud-5 includes \href{https://github.com/gogins/csound-wasm}{WebAssembly builds} of \href{http://csound.github.io}{Csound} and my algorithmic composition system \href{https://github.com/gogins/csound-ac}{CsoundAC}, the live coding system \href{https://github.com/tidalcycles/strudel}{Strudel}, and some standard JavaScript libraries -- all packaged in the cloud-5 release.
 \item I will now perform \href{http://localhost:8000/cancycle.html}{\emph{Cancycle}} from my local Web server.
@@ -100,11 +100,11 @@
 \begin{frame}{Getting Started with cloud-5}
 
 \begin{enumerate}
-\item Download cloud-5.zip from \href{https://github.com/gogins/cloud-5/releases}{GitHub}, in the \emph{Assets} menu.
+\item Download cloud-5.zip from \href{https://github.com/gogins/cloud-5/releases}{GitHub}, in the \emph{Assets} menu, bottom of page.
 \item Unzip cloud-5.zip on your computer.
-\item In a terminal, change to the \texttt{cloud-5/cloud-5} directory, and run a Web server, e.g.: \texttt{python3 -m http.server}.
-\item Open your Web browser to \url{http://localhost:8000} and play a sample piece.
-\item If you write a new piece, adapt an existing piece using a text editor, and keep the new file in the  \texttt{cloud-5/cloud-5} directory.
+\item In a terminal, change to the \texttt{cloud-5/cloud-5} directory and run a Web server, e.g.: \texttt{python3 -m http.server}.
+\item Open a Web browser to \url{http://localhost:8000} and play a sample piece.
+\item If you write a new piece, adapt an existing piece using a text editor; save it in the  \texttt{cloud-5/cloud-5} directory.
 \item Use the browser's developer tools to debug the piece.
 \item You may need to clear the browser caches and do a hard refresh to see changes that you make.
 \end{enumerate}
@@ -116,25 +116,28 @@
 
 \begin{itemize}
 \item In the mists of time --- before computers, before even the Moog synthesizer ---there was \emph{electronic music}.
-\item It was composed by splicing together snippets of recording tape. It could be musique concrète a la Pierre Schaeffer, or Stockhausen-type music made with oscillators and filters.
+\item It was composed by splicing together snippets of recording tape. It could be musique concrète à la Pierre Schaeffer, or Stockhausen-type music made with oscillators and filters.
 \item Even now that tape recorders are vanishing back into the mists, music made with technology to create a sound recording for playback is still sometimes called \emph{tape music}.
-\item Most of my pieces are, in fact, tape music, because that gives me the most power. In theory, no mistake goes unfixed, and no possible improvement is not found. Of course, this all takes absolutely forever....
+\item Most of my pieces are, in fact, tape music, \emph{because that gives me the most power}. In theory, no mistake goes unfixed, and no possible improvement is not found. Of course, this all takes absolutely forever....
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Tape Music II}
 
 \begin{itemize}
-\item I use all the same software for my tape music that I use in cloud-5... but I also:
+\item I use all the same software for tape music pieces that I use in cloud-5.... But I also:
 \item Read and write soundfiles (and other files).
-\item Use sample banks.
-\item Use Csound plugins.
-\item Use VST plugins.
-\item Embed HTML and JavaScript in my pieces.
-\item Even embed C++ code in my pieces.
-\item Here are some examples: 
-\item \href{https://music.amazon.com/artists/B0016KQMPA/michael-gogins}{On Amazon Music}.
-\item \href{https://www.youtube.com/@michaelgogins}{On YouTube}.
+\item Use \href{https://www.zanderjaz.com/downloads/soundfonts}{sample banks}.
+\item Use Csound plugins from \href{https://github.com/csound-plugins/risset-data/tree/master}{Risset} and \href{https://github.com/csound-plugins/csound-externals}{csound-externals}.
+\item Use \href{https://github.com/gogins/csound-vst3-opcodes}{VST3 plugins}.
+\item \href{https://github.com/gogins/csound-webserver-opcodes}{Embed HTML and JavaScript} in my pieces.
+\item Even \href{https://github.com/gogins/csound-cxx-opcodes}{embed C++ code} in my pieces.
+\item Some finished works: 
+\begin{itemize}
+\item \href{https://www.youtube.com/@michaelgogins}{On YouTube}, e.g.\href{https://music.youtube.com/watch?v=3_ahbL44p-E&si=2ScceuKnI0Pqye5G}{\emph{Two Dualities}}.
+\item \href{https://music.amazon.com/artists/B0016KQMPA/michael-gogins}{On Amazon Music}, e.g. \href{https://music.amazon.com/albums/B0016UPQRK?trackAsin=B0016UGIW2\&do=play\&ref=dm_sh_26UFIwpvtSDIIQmF2rIxH1qXC}{\emph{csound-2005-03-06--03.38.19.py}}.
+
+\end{itemize}
 \end{itemize}
 
 \end{frame}
