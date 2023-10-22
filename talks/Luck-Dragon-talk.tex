@@ -26,7 +26,7 @@
 \setboolean{localPieces}{false} %Assignment
 
 \title[Luck Dragon] % (optional, use only with long paper titles)
-{Luck Dragon}
+{Luck Dragon Talk}
 
 \author[Gogins] % (optional, use only with lots of authors)
 {Michael Gogins \\ \url{http://michaelgogins.tumblr.com} }
@@ -62,67 +62,84 @@
 \end{frame}
 
 \begin{frame}{Outline}
-	I talk about my way of doing algorithmic composition. Many references and examples herein are by hyperlink to the World Wide Web. Most of my pieces are made using \href{http://csound.github.io/}{Csound}, including \href{https://gogins.github.io/}{cloud-5}, which I will demonstrate.
-  \tableofcontents
+	I will talk about my way of making music. Almost all my pieces use \href{http://csound.github.io/}{Csound} for synthesis, but I use it with other languages for score generation, including Python, C++, Lisp, JavaScript, and recently \href{https://github.com/tidalcycles/strudel}{Strudel} in \href{https://gogins.github.io/cloud-5.html/}{cloud-5}, which I will demonstrate. There are hyperlinks in these slides to external resources.
+\tableofcontents
   % You might wish to add the option [pausesections]
 \end{frame}
 
+\section{About Me}
 \begin{frame}{About Me}
 
 \begin{itemize}
-\item I was born in 1950 Salt Lake City. I've lived in Minneapolis, Sonoma County, Los Angeles, Seattle, and New York.
+\item I was born in 1950 in Salt Lake City. I've lived in Minneapolis, Sonoma County, LA, Seattle, and NYC.
 \item My wife Heidi and I own a farm in Bovina, and we keep a co-op on the Upper West Side.
-\item I have had too many interests, but I was always interested in the future and in music.
-\item While majoring in comparative religion at the University of Washington, I took seminars in computer music with John Rahn.
-\item After that, computer music gradually but completely took over. I programmed trading systems as a day job.
-\item \emph{Note well}: I was never either an academic or, after a few years in L.A., a performing musician.
+%\item I have had too many interests, but I was always interested in the future and in music.
+\item While getting my BA in comparative religion at the University of Washington, I studied computer music with John Rahn.
+\item Computer music gradually but completely took over. I programmed trading systems as a day job.
+\item \emph{Note well}: I was never either an academic or, after a few years in LA, a performing musician.
 \item More about me \href{https://michaelgogins.tumblr.com/}{here}.
 \end{itemize}
 
 \end{frame}
 
+\section{cloud-5}
 \begin{frame}{cloud-5}
 
 \begin{itemize}
-\item cloud-5 is my system, or rather toolkit, for making computer music entirely in the HTML5 environment.
-\item That is to say, all the pieces run in an ordinary Web browser, and they have \emph{no} external dependencies.
-\item You can run  pieces either using a local Web server, or from a regular Web server on the Internet.
-\item One limitation: no reading from or writing to the file system.
-\item cloud-5 consists my WebAssembly build of Csound, the WebAssembly build of my algorithmic composition system CsoundAC, the live coding system Strudel, and some standard JavaScript libraries.  All these things are packaged in the cloud-5 release.
-\item I will now perform Cancycle from my local Web server.
+\item \href{https://gogins.github.io/cloud-5.html}{cloud-5} is my system/toolkit for making \emph{real computer music} entirely in the HTML5 environment.
+\item That is, all cloud-5 pieces run in an ordinary Web browser, and they have \emph{no} external dependencies.
+\item Pieces run either from a regular Web server on the Internet, or from a local Web server.
+\item Only limitation: Can't read from or write to the file system.
+\item cloud-5 includes \href{https://github.com/gogins/csound-wasm}{WebAssembly builds} of \href{http://csound.github.io}{Csound} and my algorithmic composition system \href{https://github.com/gogins/csound-ac}{CsoundAC}, the live coding system \href{https://github.com/tidalcycles/strudel}{Strudel}, and some standard JavaScript libraries -- all packaged in the cloud-5 release.
+\item I will now perform \href{http://localhost:8000/cancycle.html}{\emph{Cancycle}} from my local Web server.
 \end{itemize}
 
 \end{frame}
 
-\begin{frame}{Getting Started}
+\section{Getting Started}
+\begin{frame}{Getting Started with cloud-5}
 
 \begin{enumerate}
-\item Download the latest release of cloud-5 from xxx. The release is the cloud-5.zip file.
-\item Unzip the release on your computer.
-\item Run a local Web server in the cloud-5 directory. If you have Python on your computer, it's as simple as xxxx.
-\item Open your Web browser to xxx and run one of the sample pieces.
-\item If you write a new piece, adapt an existing piece and keep the new file in the cloud-5 directory.
-\item Use the Developer Tools to debug the piece.
-\item You may need to clear the browser caches and do a hard refresh to see any changes you make.
+\item Download cloud-5.zip from \href{https://github.com/gogins/cloud-5/releases}{GitHub}, in the \emph{Assets} menu.
+\item Unzip cloud-5.zip on your computer.
+\item In a terminal, change to the \texttt{cloud-5/cloud-5} directory, and run a Web server, e.g.: \texttt{python3 -m http.server}.
+\item Open your Web browser to \url{http://localhost:8000} and play a sample piece.
+\item If you write a new piece, adapt an existing piece using a text editor, and keep the new file in the  \texttt{cloud-5/cloud-5} directory.
+\item Use the browser's developer tools to debug the piece.
+\item You may need to clear the browser caches and do a hard refresh to see changes that you make.
 \end{enumerate}
 
 \end{frame}
 
-\begin{frame}{Tape Music}
+\section{Tape Music}
+\begin{frame}{Tape Music I}
 
 \begin{itemize}
-\item In the misty beginnings --- before computers, even before the Moog synthesizer ---there was \emph{electronic music}.
+\item In the mists of time --- before computers, before even the Moog synthesizer ---there was \emph{electronic music}.
 \item It was composed by splicing together snippets of recording tape. It could be musique concrète a la Pierre Schaeffer, or Stockhausen-type music made with oscillators and filters.
 \item Even now that tape recorders are vanishing back into the mists, music made with technology to create a sound recording for playback is still sometimes called \emph{tape music}.
 \item Most of my pieces are, in fact, tape music, because that gives me the most power. In theory, no mistake goes unfixed, and no possible improvement is not found. Of course, this all takes absolutely forever....
-\item I use all the same software for tape music that I use in cloud-5, but I also read and write soundfiles, use sample banks and VST plugins, and even write C++ code as part of my pieces.
-\item Here's an example: xxx.
-
 \end{itemize}
+\end{frame}
 
+\begin{frame}{Tape Music II}
+
+\begin{itemize}
+\item I use all the same software for my tape music that I use in cloud-5... but I also:
+\item Read and write soundfiles (and other files).
+\item Use sample banks.
+\item Use Csound plugins.
+\item Use VST plugins.
+\item Embed HTML and JavaScript in my pieces.
+\item Even embed C++ code in my pieces.
+\item Here are some examples: 
+\item \href{https://music.amazon.com/artists/B0016KQMPA/michael-gogins}{On Amazon Music}.
+\item \href{https://www.youtube.com/@michaelgogins}{On YouTube}.
+\end{itemize}
 
 \end{frame}
 
+%\section{Questions?}
 \begin{frame}{Questions?}
 
 \end{frame}
