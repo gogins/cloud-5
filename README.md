@@ -213,6 +213,10 @@ out simple, and get more and more complicated and capable.
    visualization written in GLSL. There is an embedded Strudel REPL that 
    allows the user to live code the piece, while showing an animated piano 
    roll display of the generated notes.
+   
+ - [Cancycle](cancycle.html), a piece in three sections designed for live 
+   coding.
+
 
 ## Experiments and Tests
 
@@ -229,8 +233,6 @@ These are pieces being used to develop and test new features of cloud-5.
  - [Cloud Music No. 12](cloud_music_no_12.html), similar to No. 10, but 
    stacks a mixture of ordinary and generative Patterns to see if they 
    are correctly scheduled.
-   
- - [Cancycle](cancycle.html), work in progress.
    
 ## Extending cloud-5
 
