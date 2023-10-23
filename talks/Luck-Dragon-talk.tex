@@ -62,7 +62,7 @@
 \end{frame}
 
 \begin{frame}{Outline}
-	I will talk about my way of making music. Almost all my pieces use \href{http://csound.github.io/}{Csound} for synthesis, but I use it with other languages for score generation, including Python, C++, Lisp, JavaScript, and recently \href{https://github.com/tidalcycles/strudel}{Strudel} in \href{https://gogins.github.io/cloud-5.html/}{cloud-5}, which I will demonstrate. There are hyperlinks in these slides to external resources.
+	I will talk about my way of doing algorithmic composition. Almost all my pieces use \href{http://csound.github.io/}{Csound} for synthesis, but I use it with other languages for score generation, including Python, C++, Lisp, JavaScript, and recently \href{https://github.com/tidalcycles/strudel}{Strudel} in \href{https://gogins.github.io/cloud-5.html/}{cloud-5}, which I will demonstrate. There are hyperlinks in these slides to external resources.
 \tableofcontents
   % You might wish to add the option [pausesections]
 \end{frame}
@@ -87,11 +87,11 @@
 
 \begin{itemize}
 \item \href{https://gogins.github.io/cloud-5.html}{cloud-5} is my system/toolkit for making \emph{real computer music} -- entirely in the HTML5 environment.
-\item That is, all cloud-5 pieces run in an ordinary Web browser, and they have \emph{no} external dependencies.
+\item That is, all cloud-5 pieces run (sometimes forever!) in an ordinary Web browser, and they have \emph{no} external dependencies.
 \item Pieces are hosted either on a regular Web server on the Internet, or on a local Web server.
-\item Only limitation: Can't read from or write to the file system.
-\item cloud-5 includes \href{https://github.com/gogins/csound-wasm}{WebAssembly builds} of \href{http://csound.github.io}{Csound} and my algorithmic composition system \href{https://github.com/gogins/csound-ac}{CsoundAC}, the live coding system \href{https://github.com/tidalcycles/strudel}{Strudel}, and some standard JavaScript libraries -- all packaged in the cloud-5 release.
-\item I will now perform \href{http://localhost:8000/cancycle.html}{\emph{Cancycle}} from my local Web server.
+\item \emph{Only} limitation: Pieces can't read or write on the filesystem.
+\item cloud-5 includes \href{https://github.com/gogins/csound-wasm}{WebAssembly builds} of \href{http://csound.github.io}{Csound} and my algorithmic composition system \href{https://github.com/gogins/csound-ac}{CsoundAC} that works with chord spaces, the live coding system \href{https://github.com/tidalcycles/strudel}{Strudel}, and some standard JavaScript libraries -- all packaged in the cloud-5 release.
+\item I will now perform \href{http://localhost:8000/cancycle.html}{\emph{Cancycle}}.
 \end{itemize}
 
 \end{frame}
@@ -117,15 +117,15 @@
 \begin{itemize}
 \item In the mists of time --- before computers, before even the Moog synthesizer ---there was \emph{electronic music}.
 \item It was composed by splicing together snippets of recording tape. It could be musique concrète à la Pierre Schaeffer, or Stockhausen-type music made with oscillators and filters.
-\item Even now that tape recorders are vanishing back into the mists, music made with technology to create a sound recording for playback is still sometimes called \emph{tape music}.
-\item Most of my pieces are, in fact, tape music, \emph{because that gives me the most power}. In theory, no mistake goes unfixed, and no possible improvement is not found. Of course, this all takes absolutely forever....
+\item Even now that tape recorders are vanishing back into the mists, music made using technology to create a sound recording for playback is still sometimes called \emph{tape music}.
+\item Most of my pieces are, in fact, tape music, \emph{because that gives the composer the greatest power}. In theory, no mistake goes unfixed, and no possible improvement is not found. Of course, this all takes absolutely forever....
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Tape Music II}
 
 \begin{itemize}
-\item I use all the same software for tape music pieces that I use in cloud-5.... But I also:
+\item I use all the same software for tape music pieces that I use in cloud-5... but I also:
 \item Read and write soundfiles (and other files).
 \item Use \href{https://www.zanderjaz.com/downloads/soundfonts}{sample banks}.
 \item Use Csound plugins from \href{https://github.com/csound-plugins/risset-data/tree/master}{Risset} and \href{https://github.com/csound-plugins/csound-externals}{csound-externals}.
@@ -134,8 +134,8 @@
 \item Even \href{https://github.com/gogins/csound-cxx-opcodes}{embed C++ code} in my pieces.
 \item Some finished works: 
 \begin{itemize}
-\item \href{https://www.youtube.com/@michaelgogins}{On YouTube}, e.g.\href{https://music.youtube.com/watch?v=3_ahbL44p-E&si=2ScceuKnI0Pqye5G}{\emph{Two Dualities}}.
-\item \href{https://music.amazon.com/artists/B0016KQMPA/michael-gogins}{On Amazon Music}, e.g. \href{https://music.amazon.com/albums/B0016UPQRK?trackAsin=B0016UGIW2\&do=play\&ref=dm_sh_26UFIwpvtSDIIQmF2rIxH1qXC}{\emph{csound-2005-03-06--03.38.19.py}}.
+\item \href{https://www.youtube.com/@michaelgogins}{On YouTube}, e.g.\href{https://music.youtube.com/watch?v=3_ahbL44p-E&si=2ScceuKnI0Pqye5G}{\emph{Two Dualities}}, operations in chord space.
+\item \href{https://music.amazon.com/artists/B0016KQMPA/michael-gogins}{On Amazon Music}, e.g. \href{https://music.amazon.com/albums/B0016UPQRK?trackAsin=B0016UGIW2\&do=play\&ref=dm_sh_26UFIwpvtSDIIQmF2rIxH1qXC}{\emph{csound-2005-03-06--03.38.19.py}}, \emph{In C} meets \emph{Musikalisches Würfelspiel}. 
 
 \end{itemize}
 \end{itemize}
