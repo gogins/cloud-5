@@ -113,9 +113,7 @@ with open(pattern_mjs_filepath, "r+") as file:
         ctx,
         haps: haps.filter(inFrame),
   '''
-  replace_with = '''globalThis.haps_from_outputs = [];
-
-Pattern.prototype.pianoroll = function (options = {}) {
+  replace_with = '''Pattern.prototype.pianoroll = function (options = {}) {
   let { cycles = 4, playhead = 0.5, overscan = 1, hideNegative = false } = options;
 
   let from = -cycles * playhead;
@@ -125,19 +123,21 @@ Pattern.prototype.pianoroll = function (options = {}) {
     (ctx, haps, t) => {
       const inFrame = (event) =>
         (!hideNegative || event.whole.begin >= 0) && event.whole.begin <= t + to && event.endClipped >= t + from;
-        // Usually haps is much much larger than haps_from_outputs.
-        if (globalThis.haps_from_outputs.length > 0) {
-            haps.push(...globalThis.haps_from_outputs);
-            haps = haps_from_outputs.filter(inFrame);
-            globalThis.haps_from_outputs = haps;
-        } else {
-            haps = haps.filter(inFrame);
-        }
-        pianoroll({
-        ...options,
-        time: t,
-        ctx,
-        haps: haps,
+      // Usually haps is much much larger than haps_from_outputs.
+      if (globalThis.haps_from_outputs) {
+      } else {
+        globalThis.haps_from_outputs = [];
+      }
+      if (globalThis.haps_from_outputs.length > 0) {
+        haps.push(...globalThis.haps_from_outputs);
+        haps = globalThis.haps_from_outputs.filter(inFrame);
+        globalThis.haps_from_outputs = haps;
+      }
+      pianoroll({
+          ...options,
+          time: t,
+          ctx,
+          haps: haps.filter(inFrame),
 '''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
