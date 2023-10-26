@@ -269,7 +269,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
             }
             // Color the event by both insno and gain.
             // insno is hue, and gain is value, in HSV.
-            if (typeof globalThis.haps_from_outputs != 'undefined') {
+            if (globalThis.haps_from_outputs) {
                 if (typeof hap.value !== 'object') {
                     hap.value = {note: p4, gain: gain};
                 } else {
