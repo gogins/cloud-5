@@ -165,11 +165,10 @@ with open(cyclist_mjs_filepath, "r+") as file:
   now() {'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
-  find_this ='''     this.setStarted(true);'''
+  find_this ='''    this.setStarted(true);'''
   replace_with = '''    this.setStarted(true);
     
     globalThis.haps_from_outputs = null;'''
-  
   patched_text = patched_text.replace(find_this, replace_with);
   print(patched_text)
   file.seek(0)
