@@ -147,7 +147,8 @@ with open(pattern_mjs_filepath, "r+") as file:
   file.write(patched_text)
 
 '''
-Fixes Strudel to store the single Cyclist in globalThis.
+Fixes Strudel to store the single Cyclist in globalThis, 
+and to null the Haps buffer for pianoroll in the start function.
 '''
 cyclist_mjs_filepath = "strudel/packages/core/cyclist.mjs";
 print(f"Patching '{cyclist_mjs_filepath}'")
@@ -164,11 +165,44 @@ with open(cyclist_mjs_filepath, "r+") as file:
   now() {'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
+  find_this ='''     this.setStarted(true);'''
+  replace_with = '''    this.setStarted(true);
+    
+    globalThis.haps_from_outputs = null;'''
+  
+  patched_text = patched_text.replace(find_this, replace_with);
   print(patched_text)
   file.seek(0)
   file.truncate()
   file.write(patched_text)
+  
+'''
+Fixes Strudel to send Haps to `pianoroll` directly from the default output.
+'''
+webaudio_mjs_filepath = "strudel/packages/webaudio/webaudio.mjs";
+print(f"Patching '{webaudio_mjs_filepath}'")
+with open(webaudio_mjs_filepath, "r+") as file:
+  find_this = '''export const webaudioOutputTrigger = (t, hap, ct, cps) => superdough(hap2value(hap), t - ct, hap.duration / cps, cps);
+export const webaudioOutput = (hap, deadline, hapDuration) => superdough(hap2value(hap), deadline, hapDuration);'''
+  replace_with = '''export const webaudioOutputTrigger = (t, hap, ct, cps) => {
+  if (globalThis.haps_from_outputs) {
+      globalThis.haps_from_outputs.push(hap);
+  }
+  superdough(hap2value(hap), t - ct, hap.duration / cps, cps);
+};
 
+export const webaudioOutput = (hap, deadline, hapDuration) => {
+  if (globalThis.haps_from_outputs) {
+      globalThis.haps_from_outputs.push(hap);
+  }
+  superdough(hap2value(hap), deadline, hapDuration);
+};'''
+  text = file.read()
+  patched_text = text.replace(find_this, replace_with)
+  print(patched_text)
+  file.seek(0)
+  file.truncate()
+  file.write(patched_text)
   
   
 
