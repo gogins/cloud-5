@@ -911,77 +911,38 @@ export class PitvPatterns extends StatefulPatterns {
      *             element of the PITV group in the Pattern's state.
      */
     acPV(is_onset, hap) {
-        if (is_onset === true) {
-            let frequency;
-            try {
-                frequency = getFrequency(hap);
-            } catch (error) {
-                diagnostic('[acPV] not a note!\n', WARNING);
-                return;
-            }
-            let current_midi_key = frequencyToMidiInteger(frequency);
-            let eop = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(1);
-            let epcs = eop.epcs();
-            let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-            hap = setPitch(hap, new_midi_key);
-            if (diagnostic_level() >= WARNING) diagnostic(['[acPV value]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
-            this.acPV_counter = this.acPV_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPV', this.acPV_counter, hap);
-            }
-        } else {
-            let frequency;
-            try {
-                frequency = getFrequency(hap);
-            } catch (error) {
-                diagnostic('[acPV] not a note!\n', WARNING);
-                return;
-            }
-            let current_midi_key = frequencyToMidiInteger(frequency);
-            let eop = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(1);
-            let epcs = eop.epcs();
-            let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
-            hap = setPitch(hap, new_midi_key);
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acPV value]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        let frequency;
+        try {
+            frequency = getFrequency(hap);
+        } catch (error) {
+            diagnostic('[acPV] not a note!\n', WARNING);
+            return;
         }
+        let current_midi_key = frequencyToMidiInteger(frequency);
+        let eop = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(1);
+        let epcs = eop.epcs();
+        let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acPV value]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;
     }
     /**
      * acPVV:      Move notes in the Pattern to fit the element of the PITV 
      *             group in the Pattern's state.
      */
-    acPVV(is_onset, hap) {
-        if (is_onset === true) {
-            let frequency;
-            try {
-                frequency = getFrequency(hap);
-            } catch (error) {
-                diagnostic('[acPVV value] not a note!\n', WARNING);
-                return;
-            }
-            let current_midi_key = frequencyToMidiInteger(frequency);
-            let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
-            let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
-            hap = setPitch(hap, new_midi_key);
-            if (diagnostic_level() >= WARNING) diagnostic(['[acPVV onset]:', 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
-            this.acPVV_counter = this.acPVV_counter + 1;
-            if (diagnostic_level() >= INFORMATION) {
-                print_counter('acPVV', this.acPVV_counter, hap);
-            }
-        } else {
-            let frequency;
-            try {
-                frequency = getFrequency(hap);
-            } catch (error) {
-                diagnostic('[acPVV value] not a note!\n', WARNING);
-                return;
-            }
-            let current_midi_key = frequencyToMidiInteger(frequency);
-            let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
-            let new_midi_key = csoundac.closestPitch(current_midi_key, voiced_chord);
-            hap = setPitch(hap, new_midi_key);
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+    acPVV(is_onset, bass, hap) {
+        let frequency;
+        try {
+            frequency = getFrequency(hap);
+        } catch (error) {
+            diagnostic('[acPVV value] not a note!\n', WARNING);
+            return;
         }
+        let current_midi_key = frequencyToMidiInteger(frequency);
+        let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+        let new_midi_key = bass + csoundac.closestPitch(current_midi_key, voiced_chord);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;
     }
 }
