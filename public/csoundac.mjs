@@ -286,6 +286,25 @@ export const csoundn = register('csoundn', (instrument, pat) => {
 });
 
 /**
+ * Sends the voices of a CsoundAC Chord to Strudel as a `stack` of Haps.
+ * Please note, the voices of the Chord should be specified as actual MIDI 
+ * key numbers, and not merely pitch-classes.
+ */
+let chordn_counter = 0;
+export const chordn = register('chordn', (chord_, pat) => {
+    let chord = chord_;
+    return pat.onTrigger((tidal_time, hap) => {
+        let haps = [];
+        for (let voice of chord.voices(); voice < chord.voices(); ++voice) {
+            let midi_key = chord[voice];
+            let new_hap = new Hap(hap.whole, hap.part, midi_key, hap.context)
+            new_hap.value = midi_key;
+            haps.push(new_hap);
+        }
+    }};
+});
+
+/**
  * Creates and initializes a CsoundAC Chord object. This function should be 
  * called from module scope in Strudel code before creating any Patterns. The 
  * Chord class is based on Dmitri Tymoczko's model of chord space, and 
