@@ -295,13 +295,13 @@ export const chordn = register('chordn', (chord_, pat) => {
     let chord = chord_;
     return pat.onTrigger((tidal_time, hap) => {
         let haps = [];
-        for (let voice of chord.voices(); voice < chord.voices(); ++voice) {
+        for (let voice = chord.voices(); voice < chord.voices(); ++voice) {
             let midi_key = chord[voice];
             let new_hap = new Hap(hap.whole, hap.part, midi_key, hap.context)
             new_hap.value = midi_key;
             haps.push(new_hap);
         }
-    }};
+    });
 });
 
 /**
