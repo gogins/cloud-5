@@ -492,8 +492,7 @@ export class ChordPatterns extends StatefulPatterns {
      * Contextual Group of Fiore and Satyendra to the Chord of this. The 
      * modality is set in the constructor of this class.
      */
-    static acCQ_counter = 0;
-    acCQ(is_onset, semitones, hap) {
+     acCQ(is_onset, semitones, hap) {
         if (is_onset === true) {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCQ onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.Q(semitones, this.ac_modality, 1);
@@ -946,22 +945,14 @@ export class PitvPatterns extends StatefulPatterns {
         return hap;
     }
     /**
-     * acPVV:      Move notes in the Pattern to fit the element of the PITV 
-     *             group in the Pattern's state.
+     * acPVV:      Generate a note that represents a particular voice of the 
+     *             Chord.
      */
-    acPVV(is_onset, bass, hap) {
-        let frequency;
-        try {
-            frequency = getFrequency(hap);
-        } catch (error) {
-            diagnostic('[acPVV value] not a note!\n', WARNING);
-            return;
-        }
-        let current_midi_key = frequencyToMidiInteger(frequency);
+    acPVV(is_onset, voice, hap) {
         let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
-        let new_midi_key = bass + csoundac.closestPitch(current_midi_key, voiced_chord);
+        let new_midi_key = voiced_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
-        if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;
     }
 }
