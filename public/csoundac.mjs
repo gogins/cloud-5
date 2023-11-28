@@ -182,6 +182,8 @@ export function hsvToRgb(h,s,v) {
   }).join('');
 };
 
+let csoundn_counter = 0;
+
 /**
  * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
  * translated to Csound pfields as follows:
@@ -199,7 +201,6 @@ export function hsvToRgb(h,s,v) {
  *        defaulting to 0.5.
  *  p8 -- Spatial height dimension, from a `height` control, defaulting to 0.
  */
-let csoundn_counter = 0;
 export const csoundn = register('csoundn', (instrument, pat) => {
     let p1;
     if (typeof instrument === 'string') {
@@ -285,12 +286,13 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     });
 });
 
+let chordn_counter = 0;
+
 /**
  * Sends the voices of a CsoundAC Chord to Strudel as a `stack` of Haps.
  * Please note, the voices of the Chord should be specified as actual MIDI 
  * key numbers, and not merely pitch-classes.
  */
-let chordn_counter = 0;
 export const chordn = register('chordn', (chord_, pat) => {
     let chord = chord_;
     return pat.onTrigger((tidal_time, hap) => {
@@ -351,9 +353,10 @@ export function Scale(name) {
  * PITV index corresponds to a voiced chord. This enables algorithmically 
  * generating harmonies and voicings by independently varying P, I, T, and V.
  */
-export function Pitv(voices, range) {
+export function Pitv(voices, bass, range) {
     if (diagnostic_level() >= DEBUG) diagnostic('[Pitv] Creating PITV group...\n');
     let pitv = new csoundac.PITV();
+    pitv.bass = bass;
     pitv.initialize(voices, range, 1., false);
     pitv.P = 0;
     pitv.I = 0;
@@ -401,6 +404,7 @@ export class ChordPatterns extends StatefulPatterns {
         this.acCQ_semitones = null;
         this.acCOP_counter = 0;
         this.acCV_counter = 0;
+        this.acCVV_counter = 0;
     }
     /**
      * Applies a Chord or chord name to this.
@@ -513,7 +517,6 @@ export class ChordPatterns extends StatefulPatterns {
      * transformed such that their voices are out of range back to a more 
      * normal form.
      */
-    static acCOP_counter = 0;
     acCOP(is_onset, hap) {
         if (is_onset === true) {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acCOP onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
@@ -530,7 +533,6 @@ export class ChordPatterns extends StatefulPatterns {
      * Applies the Chord of this to the _pitch-class_ of the Hap, i.e., moves 
      * the _pitch-class_ of the Hap to the nearest _pitch-class_ of the Chord.
      */
-    static acCV_counter = 0;
     acCV(is_onset, hap) {
         if (is_onset === true) {
             let frequency;
@@ -570,6 +572,16 @@ export class ChordPatterns extends StatefulPatterns {
                 //~ print_counter('acCV value', ChordPatterns.acCV_counter, hap);
             //~ }
         }
+        return hap;
+    }
+    /**
+     * acCVV:      Generate a note that represents a particular voice of the 
+     *             Chord.
+     */
+    acCVV(is_onset, voice, hap) {
+        let new_midi_key = this.ac_chord.getPitch(voice) + this.pitv.bass;
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;
     }
 }
@@ -641,7 +653,7 @@ export class ScalePatterns extends StatefulPatterns {
         return hap;
     }
     /** 
-     *acSS:        Insert the Chord at the specified scale step of the Scale in 
+     * acSS:       Insert the Chord at the specified scale step of the Scale in 
      *             the Pattern's state, into the state.
      */
     acSS(is_onset, scale_step, hap) {
@@ -758,7 +770,6 @@ export class ScalePatterns extends StatefulPatterns {
      * acSCV:      Move notes in the Pattern to fit the Chord in the Pattern's 
      *             state.
      */
-    static acSCV_counter = 0;
     acSCV(is_onset, hap) {
         if (is_onset === true) {
             let frequency;
@@ -857,11 +868,13 @@ export class PitvPatterns extends StatefulPatterns {
         }
         return hap;
     }
+
+    static acPI_counter = 1;
+
     /**
      * acPI:       Set the inversion index of the PITV element in the Pattern's 
      *             state.
      */
-    static acPI_counter = 1;
     acPI(is_onset, I, hap) {
         if (is_onset === true) {
             if (this.acPI_I != I) {
@@ -950,7 +963,7 @@ export class PitvPatterns extends StatefulPatterns {
      */
     acPVV(is_onset, voice, hap) {
         let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
-        let new_midi_key = voiced_chord.getPitch(voice);
+        let new_midi_key = voiced_chord.getPitch(voice) + this.pitv.bass;
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;

@@ -217,7 +217,6 @@ out simple, and get more and more complicated and capable.
  - [Cancycle](cancycle.html), a piece in three sections designed for live 
    coding.
 
-
 ## Experiments and Tests
 
 These are pieces being used to develop and test new features of cloud-5.
@@ -233,6 +232,14 @@ These are pieces being used to develop and test new features of cloud-5.
  - [Cloud Music No. 12](cloud_music_no_12.html), similar to No. 10, but 
    stacks a mixture of ordinary and generative Patterns to see if they 
    are correctly scheduled.
+
+## Documentation
+
+ - [cloud-5 documentation](jsdocs).
+
+ - [Strudel documentation](https://strudel.tidalcycles.org/workshop/getting-started).
+
+ - [Csound documentation](https://csound.com/docs/manual/index.html).
    
 ## Extending cloud-5
 
