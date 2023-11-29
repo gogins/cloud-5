@@ -403,6 +403,7 @@ export class ChordPatterns extends StatefulPatterns {
         this.acCQ_counter = 0;
         this.acCQ_semitones = null;
         this.acCOP_counter = 0;
+        this.acCRP_counter = 0;
         this.acCV_counter = 0;
         this.acCVV_counter = 0;
     }
@@ -530,6 +531,26 @@ export class ChordPatterns extends StatefulPatterns {
         return hap;
     }
     /**
+     * Transforms the Chord of this to its 'RP' form; 'chord' is an extremely 
+     * flexible and therefore ambiguous term, but the 'RP' form is a chord 
+     * where the octaves are folded within the indicated range, and like 'OP'
+     * the order of the voices does not matter. This 
+     * transformation can be useful for returning chords that have been 
+     * transformed such that their voices are out of range back to a user-
+     * defined range.
+     */
+    acCRP(is_onset, range, hap) {
+        if (is_onset === true) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCRP onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.eRP(range);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCRP onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acCRP_counter = this.acCRP_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acCRP', this.acCRP_counter, hap);
+            }
+        }
+        return hap;
+    }    /**
      * Applies the Chord of this to the _pitch-class_ of the Hap, i.e., moves 
      * the _pitch-class_ of the Hap to the nearest _pitch-class_ of the Chord.
      */
@@ -578,8 +599,8 @@ export class ChordPatterns extends StatefulPatterns {
      * acCVV:      Generate a note that represents a particular voice of the 
      *             Chord.
      */
-    acCVV(is_onset, voice, hap) {
-        let new_midi_key = this.ac_chord.getPitch(voice) + this.pitv.bass;
+    acCVV(is_onset, bass, voice, hap) {
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;

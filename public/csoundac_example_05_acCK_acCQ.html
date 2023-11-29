@@ -69,62 +69,23 @@
     
     <!--
     
-const csac = await import('../csoundac.mjs');
-/**
- * Classes can be used to define stateful Patterns; such classes can have an 
- * 'evaluate' method that sets a 'value' property, which could be of any type. 
- * Using classes makes it easy to encapsulate different collections of state.
- *
- * This particular `stateful` class is instrumented with debug information to 
- * prove whether or not evaluations are triggered when they should be, e.g. 
- * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
- * per second, and so on; also, there should be exactly 1 call to `evaluate`
- * for every note triggered by the Pattern.
- */
-class LogisticPattern extends csac.StatefulPatterns {
-    constructor(c = .998, y = .5) {
-        super();
-        this.registerPatterns();
-        // Initial values.
-        this.c = c;
-        this.y = y;
-        this.value = 36;
-        this.prior_time = 0;
-        this.current_time = 0;
-        this.delta_time = 0;
-    }
-    /**
-     * Patternify the 'c' coefficient of the logistic equation.
-     */
-    Logistic(is_onset, c, hap) {
-        if (is_onset) {
-            // This has been invoked from a trigger and should update state.
-            this.c = c;
-            let y1 = 4 * this.c * this.y * (1 - this.y);
-            this.value = Math.round(y1 * 36 + 36);
-            csac.diagnostic('[Logistic onset] value: ' + this.value + '\n');
-            this.y = y1;
-            this.delta_time = this.current_time - this.prior_time;
-            this.prior_time = this.current_time;
-        }
-        hap.value = this.midi_key;
-        csac.diagnostic('[Logistic query] ' + hap.show() + '\n');
-        return hap;
-     }
-}
+cconst csac = await import('../csoundac.mjs');
 
-let logisticInstance = new LogisticPattern();
 let GM = csac.Chord('GM9');
 let chordPattern = new csac.ChordPatterns(GM);
 run(8)
-.scale('C4 major')  
-.acCV(chordPattern)  
+//.scale('C4 major')  
+//.acCV(chordPattern)  
 .acCQ(chordPattern, "0 1 2 3 4 5".slow(8))
-.every(64, x=>x.acCK(chordPattern))
+.every(64, x=>x.acCK(chordPattern, 1))
+//.acCOP(chordPattern)
+.acCVV(chordPattern, 60, "0, 1, 2, 3, 4")
+//.add("48")
 .note()
+.csoundn("6 7 1")    
 .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
-.csoundn("6")    
-.legato(3)  
+
+
 -->
     
     </strudel-repl-component>

@@ -235,11 +235,11 @@ These are pieces being used to develop and test new features of cloud-5.
 
 ## Documentation
 
- - [cloud-5 documentation](jsdocs).
+ - [cloud-5 reference](jsdocs).
 
  - [Strudel documentation](https://strudel.tidalcycles.org/workshop/getting-started).
 
- - [Csound documentation](https://csound.com/docs/manual/index.html).
+ - [Csound reference](https://csound.com/docs/manual/index.html).
    
 ## Extending cloud-5
 
