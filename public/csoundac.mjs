@@ -585,7 +585,6 @@ export class ChordPatterns extends StatefulPatterns {
     acCVV(is_onset, bass, voice, hap) {
         this.prior_chord = this.ac_chord;  
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
-        this.ac_chord = csoundac.voiceleadWithinRange(this.prior_chord, this.ac_chord, true);
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;
@@ -597,7 +596,7 @@ export class ChordPatterns extends StatefulPatterns {
     acCVVL(is_onset, bass, range, voice, hap) {
         this.prior_chord = this.ac_chord;  
         if (this.prior_chord != this.current_chord) {
-            this.ac_chord = csoundac.voiceleadWithinRange(this.prior_chord, this.ac_chord, true);
+            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, true);
         }
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
@@ -840,7 +839,7 @@ export class ScalePatterns extends StatefulPatterns {
     acSVVL(is_onset, bass, range, voice, hap) {
         this.prior_chord = this.ac_chord;  
         if (this.prior_chord != this.current_chord) {
-            this.ac_chord = csoundac.voiceleadWithinRange(this.prior_chord, this.ac_chord, true);
+            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, true);
         }
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
