@@ -289,24 +289,6 @@ export const csoundn = register('csoundn', (instrument, pat) => {
 let chordn_counter = 0;
 
 /**
- * Sends the voices of a CsoundAC Chord to Strudel as a `stack` of Haps.
- * Please note, the voices of the Chord should be specified as actual MIDI 
- * key numbers, and not merely pitch-classes.
- */
-export const chordn = register('chordn', (chord_, pat) => {
-    let chord = chord_;
-    return pat.onTrigger((tidal_time, hap) => {
-        let haps = [];
-        for (let voice = chord.voices(); voice < chord.voices(); ++voice) {
-            let midi_key = chord[voice];
-            let new_hap = new Hap(hap.whole, hap.part, midi_key, hap.context)
-            new_hap.value = midi_key;
-            haps.push(new_hap);
-        }
-    });
-});
-
-/**
  * Creates and initializes a CsoundAC Chord object. This function should be 
  * called from module scope in Strudel code before creating any Patterns. The 
  * Chord class is based on Dmitri Tymoczko's model of chord space, and 
@@ -391,6 +373,7 @@ export class ChordPatterns extends StatefulPatterns {
         } else {
             this.ac_modality = modality;
         }
+        this.prior_chord = this.ac_chord;
         this.value = 0;
         this.acC_counter = 0;
         this.acC_chord_string = null;
@@ -600,9 +583,25 @@ export class ChordPatterns extends StatefulPatterns {
      *             Chord.
      */
     acCVV(is_onset, bass, voice, hap) {
+        this.prior_chord = this.ac_chord;  
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        this.ac_chord = csoundac.voiceleadWithinRange(this.prior_chord, this.ac_chord, true);
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        return hap;
+    }
+    /**
+     * acCVVL:     Generate a note that represents a particular voice of the 
+     *             Chord, as the closest voice-leading from the prior Chord.
+     */
+    acCVVL(is_onset, bass, range, voice, hap) {
+        this.prior_chord = this.ac_chord;  
+        if (this.prior_chord != this.current_chord) {
+            this.ac_chord = csoundac.voiceleadWithinRange(this.prior_chord, this.ac_chord, true);
+        }
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acCVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         return hap;
     }
 }
@@ -632,6 +631,7 @@ export class ScalePatterns extends StatefulPatterns {
             if (diagnostic_level() >= DEBUG) diagnostic('[acS onset] using existing scale.\n');
         }
         this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
+        this.prior_chord = this.ac_chord;
         this.acS_counter = 0;
         this.acS_scale_string = null;
         this.acSS_counter = 0;
@@ -832,6 +832,21 @@ export class ScalePatterns extends StatefulPatterns {
          }
         return hap;
     }
+    /**
+     * acSVVL:     Generate a note that represents a particular voice of the 
+     *             current Chord, as the closest voice-leading from the prior 
+     *             Chord.
+     */
+    acSVVL(is_onset, bass, range, voice, hap) {
+        this.prior_chord = this.ac_chord;  
+        if (this.prior_chord != this.current_chord) {
+            this.ac_chord = csoundac.voiceleadWithinRange(this.prior_chord, this.ac_chord, true);
+        }
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acSVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        return hap;
+    }
 }
 
 /**
@@ -843,6 +858,7 @@ export class PitvPatterns extends StatefulPatterns {
     constructor(pitv) {
         super();
         this.registerPatterns();
+        this.prior_chord = null;
         this.pitv = pitv;
         this.acPP_counter = 0;
         this.acPP_P = null;
