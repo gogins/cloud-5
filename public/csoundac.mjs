@@ -354,8 +354,8 @@ export function Pitv(voices, bass, range) {
  * created at module scope and passed to the relevant Patterns.
  *
  * Some hacks are used to co-ordinate state with triggers:
- * -- Assume that chord changes happen only once at any given time.
- * -- In the trigger, apply the input to the Pattern if and only if the input 
+ *  - Assume that chord changes happen only once at any given time.
+ *  - In the trigger, apply the input to the Pattern if and only if the input 
  *    is different from the old input.
  */
 export class ChordPatterns extends StatefulPatterns {
@@ -467,7 +467,7 @@ export class ChordPatterns extends StatefulPatterns {
                 if (diagnostic_level() >= DEBUG) diagnostic(['[acCK onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
                 this.ac_chord = this.ac_chord.K();
                 if (diagnostic_level() >= WARNING) diagnostic(['[acCK onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
-                this.acCK_counter = ChordPatterns.acCK_counter + 1;
+                this.acCK_counter = this.acCK_counter + 1;
                 if (diagnostic_level() >= INFORMATION) {
                     print_counter('acCK', this.acCK_counter, hap);
                 }
@@ -583,10 +583,10 @@ export class ChordPatterns extends StatefulPatterns {
      *             Chord.
      */
     acCVV(is_onset, bass, voice, hap) {
-        this.prior_chord = this.ac_chord;  
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;  
         return hap;
     }
     /**
@@ -594,13 +594,13 @@ export class ChordPatterns extends StatefulPatterns {
      *             Chord, as the closest voice-leading from the prior Chord.
      */
     acCVVL(is_onset, bass, range, voice, hap) {
-        this.prior_chord = this.ac_chord;  
-        if (this.prior_chord != this.current_chord) {
-            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, true);
+        if (this.prior_chord != this.ac_chord) {
+            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
         }
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acCVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;  
         return hap;
     }
 }
@@ -837,16 +837,15 @@ export class ScalePatterns extends StatefulPatterns {
      *             Chord.
      */
     acSVVL(is_onset, bass, range, voice, hap) {
-        this.prior_chord = this.ac_chord;  
-        if (this.prior_chord != this.current_chord) {
-            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, true);
+        if (this.prior_chord != this.ac_chord) {
+            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
         }
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acSVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;  
         return hap;
-    }
-}
+    }}
 
 /**
  * Creates a class to hold state and defines Patterns for creating and using 
