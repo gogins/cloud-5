@@ -387,8 +387,10 @@ export class ChordPatterns extends StatefulPatterns {
         this.acCQ_semitones = null;
         this.acCOP_counter = 0;
         this.acCRP_counter = 0;
+        this.acCO_counter = 0;
         this.acCV_counter = 0;
         this.acCVV_counter = 0;
+        this.acCVVL_counter = 0;
     }
     /**
      * Applies a Chord or chord name to this.
@@ -533,7 +535,8 @@ export class ChordPatterns extends StatefulPatterns {
             }
         }
         return hap;
-    }    /**
+    }    
+    /**
      * Applies the Chord of this to the _pitch-class_ of the Hap, i.e., moves 
      * the _pitch-class_ of the Hap to the nearest _pitch-class_ of the Chord.
      */
@@ -578,6 +581,28 @@ export class ChordPatterns extends StatefulPatterns {
         }
         return hap;
     }
+
+    /**  
+     * acCO:      Transforms the Chord of this by the indicated number of 
+     *            octavewise revoicings: negative means subtract an octave 
+     *            from the highest voice, positive means add an octave to the 
+     *            lowest voice. This corresponds to the musician's notion of 
+     *            "inversion."
+     */
+    acCO(is_onset, revoicings, hap) {
+        if (is_onset) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCO] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.v(revoicings);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCO] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acCO_counter = this.acCO_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acCO', this.acCO_counter, hap);
+            }
+            this.prior_chord = this.ac_chord;  
+        }
+        return hap;       
+    }
+    
     /**
      * acCVV:      Generate a note that represents a particular voice of the 
      *             Chord.
@@ -585,7 +610,7 @@ export class ChordPatterns extends StatefulPatterns {
     acCVV(is_onset, bass, voice, hap) {
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
-        if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acCVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
         this.prior_chord = this.ac_chord;  
         return hap;
     }
@@ -595,7 +620,11 @@ export class ChordPatterns extends StatefulPatterns {
      */
     acCVVL(is_onset, bass, range, voice, hap) {
         if (this.prior_chord != this.ac_chord) {
-            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
+            let new_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
+            const message = ['[acCVVL]:', '\n  prior_chord: ', this.prior_chord.toString(), '\n  ac_chord:    ', this.ac_chord.toString(), '\n  new ac_chord:',new_chord.toString() + '\n'].join(' ');
+            if (diagnostic_level() >= DEBUG) diagnostic(message);
+            console.log(message);
+            this.ac_chord = new_chord;
         }
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
         hap = setPitch(hap, new_midi_key);
@@ -639,6 +668,7 @@ export class ScalePatterns extends StatefulPatterns {
         this.acST_scale_steps = null;
         this.acSM_counter = 0;
         this.acSM_index = null;
+        this.acSO_counter = 0;
         this.acSV_counter = 0;
         this.acSCV_counter = 0;
  
@@ -829,6 +859,38 @@ export class ScalePatterns extends StatefulPatterns {
             if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV value] new hap:        ', hap.show(), '\n'].join(' '));
             this.acSCV_counter = this.acSCV_counter + 1;
          }
+        return hap;
+    }
+    /**  
+     * acSO:      Transforms the Chord of this by the indicated number of 
+     *            octavewise revoicings: negative means subtract an octave 
+     *            from the highest voice, positive means add an octave to the 
+     *            lowest voice. This corresponds to the musician's notion of 
+     *            "inversion."
+     */
+    acSO(is_onset, revoicings, hap) {
+        if (is_onset) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCO] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.v(revoicings);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCO] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acSO_counter = this.acSO_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acSO', this.acSO_counter, hap);
+            }
+            this.prior_chord = this.ac_chord;  
+        }
+        return hap;       
+    }
+    
+        /**
+     * acSVV:      Generate a note that represents a particular voice of the 
+     *             Chord of this.
+     */
+    acCVV(is_onset, bass, voice, hap) {
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acCVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;  
         return hap;
     }
     /**

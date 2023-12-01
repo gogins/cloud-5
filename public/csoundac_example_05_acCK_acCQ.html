@@ -73,19 +73,17 @@ const csac = await import('../csoundac.mjs');
 
 let GM = csac.Chord('GM9');
 let chordPattern = new csac.ChordPatterns(GM);
-run(8)
-//.scale('C4 major')  
-//.acCV(chordPattern)  
+pure(1)
 .acCQ(chordPattern, "0 1 2 3 4 5".slow(8))
-.every(64, x=>x.acCK(chordPattern, 1))
+.acCK(chordPattern, "<1 0>".slow(4))
 .acCRP(chordPattern, 60)
-//.acCVV(chordPattern, 60, "0, 1, 2, 3, 4")
+.every(6, x=>x.acCVV(chordPattern, 60, "0, 1, 2, 3, 4"))
+.acCT(chordPattern, "<3 -3>".slow(8))
+.acCO(chordPattern, "<1 1 1 1 -2 -3>".slow(6))
 .acCVVL(chordPattern, 60, 36, "0, 1, 2, 3, 4")
-//.add("48")
 .note()
-.csoundn("6 7 1")    
-.pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
-
+.csoundn("<6 7 1>")    
+.pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})
 
 -->
     
