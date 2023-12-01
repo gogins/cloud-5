@@ -870,9 +870,9 @@ export class ScalePatterns extends StatefulPatterns {
      */
     acSO(is_onset, revoicings, hap) {
         if (is_onset) {
-            if (diagnostic_level() >= DEBUG) diagnostic(['[acCO] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSO] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.ac_chord = this.ac_chord.v(revoicings);
-            if (diagnostic_level() >= WARNING) diagnostic(['[acCO] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            if (diagnostic_level() >= WARNING) diagnostic(['[acSO] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
             this.acSO_counter = this.acSO_counter + 1;
             if (diagnostic_level() >= INFORMATION) {
                 print_counter('acSO', this.acSO_counter, hap);
@@ -1047,11 +1047,13 @@ export class PitvPatterns extends StatefulPatterns {
             return;
         }
         let current_midi_key = frequencyToMidiInteger(frequency);
-        let eop = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(1);
+        let result = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true);
+        let eop = result.get(1);
         let epcs = eop.epcs();
         let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acPV value]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = result.get(0);
         return hap;
     }
     /**
@@ -1063,8 +1065,24 @@ export class PitvPatterns extends StatefulPatterns {
         let new_midi_key = voiced_chord.getPitch(voice) + this.pitv.bass;
         hap = setPitch(hap, new_midi_key);
         if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = voiced_chord;
         return hap;
-    }
+    }    
+    /**
+     * acPVVL:     Generate a note that represents a particular voice of the 
+     *             Chord, as the closest voice-leading from the prior element of this.
+     */
+   acPVVL(is_onset, voice, hap) {
+       this.ac_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+       if (this.prior_chord != this.ac_chord) {
+            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
+       }
+       let new_midi_key = this.ac_chord.getPitch(voice) + this.pitv.bass;
+       hap = setPitch(hap, new_midi_key);
+       if (diagnostic_level() >= DEBUG) diagnostic(['[acPVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+       this.prior_chord = this.ac_chord;
+       return hap;
+   }
 }
 
 
