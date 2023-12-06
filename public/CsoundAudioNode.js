@@ -71,6 +71,10 @@ class CsoundAudioNode extends AudioWorkletNode {
                      // this.message_callback("[" + window.performance.now() + " Received GetScoreTimeResult with: " + data[1] + ".]\n");
                     this.resolveGetScoreTime(data[1]);
                     break;
+                case "IsPlayingResult":
+                    // this.message_callback("[" + window.performance.now() + " Received IsPlayingResult with: " + data[1] + ".]\n");
+                    this.resolveIsPlaying(this.is_playing);
+                    break;
                 case "ReadScoreResult":
                     // this.message_callback("[" + window.performance.now() + " Received ReadScoreResult with: " + data[1] + ".]\n");
                     this.resolveReadScore(data[1]);
@@ -96,6 +100,7 @@ class CsoundAudioNode extends AudioWorkletNode {
         this.reset_();
         this.CompileCsdTextPromise = null;
         this.CompileOrcPromise = null;
+        this.IsPlayingPromise = null;
         this.StopPromise = null;
         this.CleanupPromise = null;
         this.GetScoreTimePromise = null;
@@ -280,15 +285,7 @@ class CsoundAudioNode extends AudioWorkletNode {
         return result;
     };
     async getScoreTime() {
-        // this.message_callback("[" + window.performance.now() + " GetScoreTime.]\n");
-        let promise = new Promise((resolve, reject) => {
-            // Not exactly intuitive!
-            this.resolveGetScoreTime = resolve;
-            this.port.postMessage(["GetScoreTime"]);
-        });
-        let result = await promise;
-        // this.message_callback("[" + window.performance.now() + " GetScoreTime resolved with: " + result + ".]\n");
-        return result;
+        this.GetScoreTime();
     };
     GetSr() {
         this.port.postMessage(["GetSr"]);
@@ -314,8 +311,16 @@ class CsoundAudioNode extends AudioWorkletNode {
     inputMessage(text) {
         this.InputMessage(text);
     };
-    IsPlaying() {
-        this.port.postMessage(["IsPlaying"]);
+    async IsPlaying() {
+        // this.message_callback("[" + window.performance.now() + " IsPlaying.]\n");
+        let promise = new Promise((resolve, reject) => {
+            // Not exactly intuitive!
+            this.resolveIsPlaying = resolve;
+            this.port.postMessage(["IsPlaying"]);
+        });
+        let result = await promise;
+        // this.message_callback("[" + window.performance.now() + " IsPlaying resolved with: " + result + ".]\n");
+        return result;
     };
     isPlaying() {
         this.IsPlaying();

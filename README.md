@@ -317,6 +317,17 @@ see updated pieces.
 
 ## Release Notes
 
+### [v0.1beta7](https://github.com/gogins/cloud-5/commits/v0.1beta7)
+
+ - Updated Csound to version 6.19.0.
+
+ - Improved [csound-wasm](https://github.com/gogins/csound-wasm) 
+   and the [Cloud Music No. 9](cloud_music_no_9.html) example to support 
+   running either in NW.js with native Csound, or in Web browsers with 
+   Csound for WebAssembly. This makes it possible to compose pieces 
+   using Strudel that use native Csound, VST plugins, access to the local 
+   filesystem, and so on.
+
 ### [v0.1beta6](https://github.com/gogins/cloud-5/commits/v0.1beta6)
 
  - Introduced the CsoundAC `track` function, a variant of Strudel's `arrange` 

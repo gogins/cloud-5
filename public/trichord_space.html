@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <script src="CsoundAudioNode.js"></script>
-<script src="csoundloader.js"></script>
+<script src="csound_loader.js"></script>
 <script src='CsoundAC.js'></script>
-<script src="sprintf.js"></script>
-<script src="three.js"></script>
-<script src="TrackballControls.js"></script>
-<script src="tinycolor.js"></script>
-<script src="dat.gui.js"></script>
+<script src="silencio/js/sprintf.js"></script>
+<script src="silencio/js/three.js"></script>
+<script src="silencio/js/TrackballControls.js"></script>
+<script src="silencio/js/tinycolor.js"></script>
+<script src="silencio/js/dat.gui.js"></script>
 <style>
     .trichord-box {
         background:transparent;
@@ -50,8 +50,9 @@ folds half the space over itself. The chord space at startup is the
 combination of octave equivalence and permutational equivalence (OP). See: 
 Callendar, Quinn, and Tymoczko, "Generalized Voice-Leading Spaces," 
 <b><i>Science</i> 320</b>, 2008.</p>
+<p>Source code for this program <a href="https://github.com/gogins/csound-examples/blob/master/csound-extended-wasm/TrichordSpace.html">may be found here<a/>. 
 Source code for the CsoundAC library 
-that implements the chord spaces and transformations <a href="https://github.com/gogins/csound-ac">may be found here</a>.</p>
+that implements the chord spaces and transformations <a href="https://github.com/gogins/csound-extended">may be found here</a>.</p>
 <p>In OP, the augmented triads form a central column (white balls). It is 
 surrounded by 3 columns of major triads (red balls), and 3 columns of minor 
 triads (blue balls); each column is a different voicing of the triad. 
@@ -92,22 +93,22 @@ divides each OPT domain into two OPTI domains.</dd>
 <dd>
 <dl>
 <dt>Relative [R]</dt>
-<dd>Applies the relative transformation to the selected chord, e.g. I to/from vi./dd>
+<dd>Applies the relative transformation to the selected chord, e.g. I <=> vi./dd>
 <dt>Parallel [P]</dt>
-<dd>Applies parallel transformation to the selected chord, e.g. I to/from i.</dd>
+<dd>Applies parallel transformation to the selected chord, e.g. I <=> i.</dd>
 <dt>Leading-tone exchange [L]</dt>
-<dd>Applies the leading-tone transformation to the selected chord, e.g. I to/from iii.</dd>
+<dd>Applies the leading-tone transformation to the selected chord, e.g. I <=> iii.</dd>
 <dt>Slide [S]</dt>
-<dd>Applies the slide transformation to the selected chord, e.g. I to/from i#.</dd>
+<dd>Applies the slide transformation to the selected chord, e.g. I <=> i#.</dd>
 <dt>Nebenverwandt [N]</dt>
-<dd>Applies the Nebenverwandt transformation to the selected chord, e.g. I to/from iv.</dd>
+<dd>Applies the Nebenverwandt transformation to the selected chord, e.g. I <=> iv.</dd>
 <dt>Hexpole [X]</dt>
-<dd>Applies the hexpole transformation to the selected chord, e.g. I to/from vib.</dd>
+<dd>Applies the hexpole transformation to the selected chord, e.g. I <=> vib.</dd>
 <dd></dd>
 </dl>
 <dt>Dominant [D]</dt>
 <dd>Not a neo-Reimannian transformation, but transposes the chord down a 
-perfect fifth, e.g. V toI.</dd>
+perfect fifth, e.g. V => I.</dd>
 </dl>
 </div>
 </td>

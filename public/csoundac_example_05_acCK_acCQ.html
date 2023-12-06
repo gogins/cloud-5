@@ -71,18 +71,18 @@
     
 const csac = await import('../csoundac.mjs');
 
-let GM = csac.Chord('GM9');
+let GM = csac.Chord('Gm9');
 let chordPattern = new csac.ChordPatterns(GM);
-pure(1)
+pure(1).fast(3)
 .acCQ(chordPattern, "0 1 2 3 4 5".slow(8))
-.acCK(chordPattern, "<1 0>".slow(4))
+.acCK(chordPattern, "<1 0>".slow(12))
 .acCRP(chordPattern, 60)
-.every(6, x=>x.acCVV(chordPattern, 60, "0, 1, 2, 3, 4"))
-.acCT(chordPattern, "<3 -3>".slow(8))
-.acCO(chordPattern, "<1 1 1 1 -2 -3>".slow(6))
-.acCVVL(chordPattern, 60, 36, "0, 1, 2, 3, 4")
+.every(16, x=>x.acCVV(chordPattern, 60, "<0 1 2 3 4>"))
+.acCT(chordPattern, "<3 -7>".slow(8))
+.acCO(chordPattern, "<1 1 1 1 -2 -3>".slow(16))
+.acCVVL(chordPattern, 60, 36, "0, 1 2, 0 3, 4".fast(7))
 .note()
-.csoundn("<6 7 1>")    
+.csoundn("<6 7 1 9>")    
 .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})
 
 -->
