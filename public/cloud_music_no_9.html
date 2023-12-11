@@ -12,6 +12,7 @@
 <script src="ace.js"></script>
 <script src="tinycolor.js"></script>
 <script src="CsoundAudioNode.js"></script>
+<script src="csound_loader.js"></script>
 <script src="CsoundAC.js"></script>
 <script src="strudel_embed.js"></script>
 <script type="module" src="@strudel.cycles/csoundac"></script>
@@ -2729,10 +2730,11 @@ f 0 1000000000
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
                 let tidal_view = document.getElementById("tidal_view");
-                if (csound == null) {
+                //if (csound == null) {
+csound = await get_csound(csound_message_callback);
+                    /*
                     try {
-                        csound_message_callback("Trying to load CsoundAudioNode...\n");
-                        var AudioContext = window.AudioContext || window.webkitAudioContext;
+                                                var AudioContext = window.AudioContext || window.webkitAudioContext;
                         var audioContext = new AudioContext();
                         await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function() {
                             csound_message_callback("Creating CsoundAudioNode...\n");
@@ -2750,8 +2752,10 @@ f 0 1000000000
                     } catch (e) {
                         csound_message_callback(e + '\n');
                     }
-                }
-                if (csound.is_playing == false) {
+                */
+                //}
+                let is_playing = await csound.IsPlaying();
+                if (is_playing == false) {
                     let csd = await document.getElementById('csd').value;
                     console_editor.setValue("");
                     let result = await csound.CompileCsdText(csd);
