@@ -2392,7 +2392,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 // BEGIN Define score generator. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
                     scale = new CsoundAC.Scale("F major");
-                    alert("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
+                    csound_message_callback("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
                     let tempo = document.getElementById("gi_Composition_tempo").value;
                     let interval = 1 / tempo;
                     let interval_milliseconds = interval * 1000;

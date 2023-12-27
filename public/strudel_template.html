@@ -49,7 +49,7 @@ input {
 <body id="body" class="w3-medium w3-text-sand" style="height:100vh;">
 
     <!-- #region Canvas -->
-    
+  
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
 
@@ -192,7 +192,7 @@ input {
          
         -->
 
-    </strudel-repl-component>
+        </strudel-repl-component>
 
     <!-- endregion -->
     
@@ -2779,7 +2779,17 @@ input {
             txt += "gl.SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION) + "\n";
             csound_message_callback(txt);
         }());
-                  
+
+        function perform(output) {
+
+            // Set up Strudel?
+            // Generate and display fixed score?
+            // Visualize music?
+            // Music from visuals?
+            // Start Csound.
+        
+        }
+                    
         window.onload = function() {
             csound_message_callback("window.onload()...\n");
             $("#strudel_view").css("display", "none");         
@@ -2823,7 +2833,7 @@ input {
                }
              });
              $("#menu_item_render").click(async function(event) {
-                console.log("menu_item_render click...");     
+                console.log("menu_item_play click...");     
                 let strudel_view = document.getElementById("strudel_view");
                 csound = await get_csound(csound_message_callback);
                 let is_playing = await csound.IsPlaying();
@@ -2831,7 +2841,7 @@ input {
                     let csd = await document.getElementById('csd').value;
                     console_editor.setValue("");
                     let result = await csound.CompileCsdText(csd);
-                    await csound.SetOutput("Poustinia_v5d", "wav", "float");
+                    await csound.SetOutput("Poustinia-v5d", "wav", "float");
                     csound_message_callback("CompileCsdText returned: " + result + "\n");
                     await csound.Start();
                     csound_message_callback("Csound has started...\n");
@@ -2848,14 +2858,14 @@ input {
                     console.log("strudel_view:", strudel_view);
                     strudel_view.setCsound(csound);
                     strudel_view.startPlaying();
-                    $("#menu_item_render").html("Stop");
+                    $("#menu_item_play").html("Stop");
                 } else {
                     await clearInterval(interval_id);
                     await csound.Stop();
                     await csound.Cleanup();
                     csound.Reset();
                     csound_message_callback("Csound is stopping...\n");
-                    $("#menu_item_render").html("Render");
+                    $("#menu_item_play").html("Play");
                     strudel_view.stopPlaying();
                }
              });
