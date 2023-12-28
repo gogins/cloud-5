@@ -45,7 +45,9 @@ a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.o
 
 - [Cloud Music No. 6](cloud_music_no_6.html).
 
+<!--
 - [Cloud Music No. 7](cloud_music_no_7.html).
+-->
 
 - [Cloud Music No. 8](cloud_music_no_8.html).
 
