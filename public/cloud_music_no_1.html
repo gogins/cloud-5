@@ -2393,7 +2393,7 @@
 
     <!-- #region Log -->
 
-    <div id='console_view' class="w3-text-sand"
+    <div id="console_view" class="w3-text-sand"
         style="position:absolute;top:60px;z-index:4;width:100vw;height:90vh;background:transparent;margin-left:53px;opacity:60%">
     </div>
 
@@ -2504,44 +2504,42 @@
             $("#console_view").css("display", "none");
             $("#menu_item_play").click(async function (event) {
                 console.log("menu_item_play click...");
-                if (csound == null) {
-                    try {
-                        csound_message_callback("Trying to load CsoundAudioNode...\n");
-                        var AudioContext = window.AudioContext || window.webkitAudioContext;
-                        var audioContext = new AudioContext();
-                        await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function () {
-                            csound_message_callback("Creating CsoundAudioNode...\n");
-                            csound = new CsoundAudioNode(audioContext, csound_message_callback);
-                            csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
-                            analyser = new AnalyserNode(audioContext);
-                            analyser.fftSize = 2048;
-                            console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
-                            csound.connect(analyser);
-                            console.log("csound: " + csound);
-                        }, function (error) {
-                            csound_message_callback(error + '\n');
-                        });
-                        csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
-                    } catch (e) {
-                        csound_message_callback(e + '\n');
-                    }
-                    let csd = await document.getElementById('csd').value;
-                    console_editor.setValue("");
-                    let result = await csound.CompileCsdText(csd);
-                    csound_message_callback("CompileCsdText returned: " + result);
-                    await csound.Start();
-                    if (localStorage.length > 0) {
-                        $('#restore').trigger('click');
-                    } else {
-                        // Tricky! Otherwise we get _patch_ defaults, probably 
-                        // not correct; we need _html_ defaults.
-                        $('#default').trigger('click');
-                    }
-                    await csound.Perform();
-                    scale = new CsoundAC.Scale("F major");
-                    csound_message_callback("Csound is playing...\n");
-                    next_time = 0;
+                try {
+                    csound_message_callback("Trying to load CsoundAudioNode...\n");
+                    var AudioContext = window.AudioContext || window.webkitAudioContext;
+                    var audioContext = new AudioContext();
+                    await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function () {
+                        csound_message_callback("Creating CsoundAudioNode...\n");
+                        csound = new CsoundAudioNode(audioContext, csound_message_callback);
+                        csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
+                        analyser = new AnalyserNode(audioContext);
+                        analyser.fftSize = 2048;
+                        console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
+                        csound.connect(analyser);
+                        console.log("csound: " + csound);
+                    }, function (error) {
+                        csound_message_callback(error + '\n');
+                    });
+                    csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
+                } catch (e) {
+                    csound_message_callback(e + '\n');
                 }
+                let csd = await document.getElementById('csd').value;
+                console_editor.setValue("");
+                let result = await csound.CompileCsdText(csd);
+                csound_message_callback("CompileCsdText returned: " + result);
+                await csound.Start();
+                if (localStorage.length > 0) {
+                    $('#restore').trigger('click');
+                } else {
+                    // Tricky! Otherwise we get _patch_ defaults, probably 
+                    // not correct; we need _html_ defaults.
+                    $('#default').trigger('click');
+                }
+                await csound.Perform();
+                scale = new CsoundAC.Scale("F major");
+                csound_message_callback("Csound is playing...\n");
+                next_time = 0;
             });
             $("#menu_item_stop").click(async function (event) {
                 console.log("menu_item_stop click...");
