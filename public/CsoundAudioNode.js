@@ -104,6 +104,7 @@ class CsoundAudioNode extends AudioWorkletNode {
         this.StopPromise = null;
         this.CleanupPromise = null;
         this.GetScoreTimePromise = null;
+        this.GetGetControlChannelPromise = null;
         this.ReadScorePromise = null;
         this.ResetPromise = null;
         this.port.onmessage = this.onMessage.bind(this);
@@ -219,11 +220,19 @@ class CsoundAudioNode extends AudioWorkletNode {
     getAPIVersion() {
         this.GetAPIVersion();
     };
-    GetControlChannel(name) {
-        return this.port.postMessage(["GetControlChannel", name]);
+    async GetControlChannel(name) {
+        // this.message_callback("[" + window.performance.now() + " GetControlChannel.]\n");
+        let promise = new Promise((resolve, reject) => {
+            // Not exactly intuitive!
+            this.resolveGetControlChannel = resolve;
+            this.port.postMessage(["GetControlChannel", name]);
+        });
+        let result = await promise;
+        // this.message_callback("[" + window.performance.now() + " GetControlChannel resolved with: " + result + ".]\n");
+        return result;    
     };
-    getControlChannel(name) {
-        return this.GetControlChannel(name);
+    async getControlChannel(name) {
+        this.GetControlChannel(name);
     };
     GetCurrentTimeSamples() {
         this.port.postMessage(["GetCurrentTimeSamples"]);

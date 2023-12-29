@@ -1931,9 +1931,9 @@ GUI.CLASS_CLOSE_BOTTOM = 'close-bottom';
 GUI.CLASS_DRAG = 'drag';
 GUI.DEFAULT_WIDTH = 245;
 // BEGIN MKG
-// Changed to always show "Csound"
-GUI.TEXT_CLOSED = 'Csound';
-GUI.TEXT_OPEN = 'Csound';
+// Changed to always show "Controls"
+GUI.TEXT_CLOSED = 'Controls';
+GUI.TEXT_OPEN = 'Controls';
 // END MKG
 GUI._keydownHandler = function (e) {
   if (document.activeElement.type !== 'text' && (e.which === HIDE_KEY_CODE || e.keyCode === HIDE_KEY_CODE)) {

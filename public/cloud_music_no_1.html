@@ -75,11 +75,11 @@
     <!-- #region About -->
 
     <div id="about_view" class="w3-container "
-        style="position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
+        style="font-size:11px;position:absolute;top:70px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
 
-        <h1>Cloud Music No. 1</h1>
-        <h3>Michael Gogins<br>
-            October 2022</h3>
+        <h1 style="font-size: 15px;">Cloud Music No. 1</h1>
+        <h2 style="font-size: 13px;">Michael Gogins<br>
+            October 2022</h2>
 
         <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License"
                 style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a>
@@ -113,7 +113,7 @@
                 tools.
         </ul>
 
-        <h2>Credits</h2>
+        <h2 style="font-size: 13px;">Credits</h2>
 
         <p>I created this piece by adapting Jarble's <a href="https://www.shadertoy.com/view/Nl3BWn"><i>Fractal mosaic
                     16</i></a>, which has an open-source license compatible with the license of this piece.
@@ -853,25 +853,6 @@
         console_editor.setDisplayIndentGuides(false);
         console_editor.renderer.setOption("showGutter", false);
         console_editor.renderer.setOption("showLineNumbers", true);
-        var csound_message_callback = function (message) {
-            // Split in case the newline is in the middle of the message but 
-            // not at the end?
-            message_callback_buffer = message_callback_buffer + message;
-            if (message_callback_buffer.endsWith("\n")) {
-                console.log(message_callback_buffer);
-                let lines = console_editor.getSession().getLength();
-                // Prevent the console editor from hogging memory.
-                if (lines > 5000) {
-                    console_editor.getSession().removeFullLines(0, 2500);
-                    lines = console_editor.getSession().getLength();
-                }
-                console_editor.moveCursorTo(lines, 0);
-                console_editor.scrollToLine(lines);
-                console_editor.insert(message_callback_buffer);
-                message_callback_buffer = "";
-            }
-        };
-
         (async function () {
             CsoundAC = await createCsoundAC();
             score = new CsoundAC.Score();
@@ -1073,7 +1054,9 @@
         var parameters = {
             gi_Composition_tempo: 180,
             gi_Composition_density: 50,
-            gk_FMWaterBell_level: 30,
+            gk_Guitar_level: 0,
+            gk_Plucked_level: 0,
+            gk_FMWaterBell_level: 0,
             gi_FMWaterBell_attack: 0.002,
             gi_FMWaterBell_release: 0.01,
             gi_FMWaterBell_exponent: 15,
@@ -1083,140 +1066,110 @@
             gk_FMWaterBell_crossfade: .5,
             gk_FMWaterBell_vibrato_depth: 0.05,
             gk_FMWaterBell_vibrato_rate: 6,
-            gk_Bower_level: 0.5,
-            gk_Bower_pressure: 0.25,
-            gk_Blower_grainDensity: .150,
-            gk_Blower_grainDuration: .2,
-            gk_Blower_grainAmplitudeRange: .1,
-            gk_Blower_grainFrequencyRange: .033,
-            gk_Blower_level: 0.5,
-            gk_Buzzer_harmonics: 15,
-            gk_Buzzer_level: 0.5,
-            gk_Droner_partial1: 0.1,
-            gk_Droner_partial2: 0.1,
-            gk_Droner_partial3: 0.1,
-            gk_Droner_partial4: 0.1,
-            gk_Droner_partial5: 0.1,
-            gk_Droner_level: -15,
-            gk_Phaser_ratio1: 1,
-            gk_Phaser_ratio2: .3333334,
-            gk_Phaser_index1: 1,
-            gk_Phaser_index2: .0125,
-            gk_Phaser_level: 0.5,
-            gk_PianoteqOut_level: 8,
-            gk_Shiner_level: -20,
-            gk_Sweeper_britel: 0,
-            gk_Sweeper_briteh: 2.9,
-            gk_Sweeper_britels: .2 / 3,
-            gk_Sweeper_britehs: 2.5 / 2,
-            gk_Sweeper_level: 0.5,
+            gk_YiString_level: 0,
+            gk_Harpsichord_level: 0,
             gk_ZakianFlute_level: 0,
-            gk_MasterOutput_level: .4,
+            gk_Kung4_level: 0,
+            gk_Kung2_level: 0,
+            gk_Bower_level: 0,
+            gk_Bower_pressure: 0.25,
+            gk_MasterOutput_level: 0,
+            gk_ReverbSC_wet: 0.5,
+            gk_ReverbSC_feedback: 0.85,
+            gk_ReverbSC_delay_modulation: 0.0075,
+            gk_ReverbSC_frequency_cutoff: 9000,
             gk_overlap: 0.05,
         };
 
         var default_json = {
-            "preset": "Default",
-            "remembered": {
-                "Default": {
-                    "0": {
-                        "gk_overlap": 5.504950495049505,
-                        "gk_MasterOutput_level": -10,
-                        "gi_FMWaterBell_attack": 0.002936276551436901,
-                        "gi_FMWaterBell_release": 0.022698875468554768,
-                        "gi_FMWaterBell_exponent": 12.544773011245312,
-                        "gi_FMWaterBell_sustain": 5.385256143273636,
-                        "gi_FMWaterBell_sustain_level": 0.08267388588088297,
-                        "gk_FMWaterBell_crossfade": 0.48250728862973763,
-                        "gk_FMWaterBell_index": 1.1401499375260309,
-                        "gk_FMWaterBell_vibrato_depth": 0.2897954989209742,
-                        "gk_FMWaterBell_vibrato_rate": 4.762100503545371,
-                        "gk_FMWaterBell_level": 0.0,
-                        "gk_Phaser_ratio1": 1,
-                        "gk_Phaser_ratio2": 0.3333334,
-                        "gk_Phaser_index1": 1,
-                        "gk_Phaser_index2": 2,
-                        "gk_Phaser_level": 0, //14.608203677510609,
-                        "gk_Bower_pressure": 3.050919377652051,
-                        "gk_Bower_level": 0,
-                        "gk_Droner_partial1": 0.11032374600527997,
-                        "gk_Droner_partial2": 0.4927052938724468,
-                        "gk_Droner_partial3": 0.11921634014172572,
-                        "gk_Droner_partial4": 0.06586077532305128,
-                        "gk_Droner_partial5": 0.6616645824649159,
-                        "gk_Droner_level": -15,
-                        "gk_Sweeper_britel": 0.2773844231570179,
-                        "gk_Sweeper_briteh": 3.382178217821782,
-                        "gk_Sweeper_britels": 0.19575671852899576,
-                        "gk_Sweeper_britehs": 0.8837340876944837,
-                        "gk_Sweeper_level": 0,
-                        "gk_Buzzer_harmonics": 2.608203677510608,
-                        "gk_Buzzer_level": 0, // 24.74681753889675,
-                        "gk_Shiner_level": -20,
-                        "gk_Blower_grainDensity": 79.99177885109444,
-                        "gk_Blower_grainDuration": 0.2,
-                        "gk_Blower_grainAmplitudeRange": 87.88408180043162,
-                        "gk_Blower_grainFrequencyRange": 30.596081700708627,
-                        "gk_Blower_level": 0,
-                        "gk_ZakianFlute_level": 0,
-                        "gk_PianoteqOut_level": 0
-                    }
-                }
-            },
-            "closed": false,
-            "folders": {
-                "Master": {
-                    "preset": "Default",
-                    "closed": true,
-                    "folders": {}
-                },
-                "FMWaterBell": {
-                    "preset": "Default",
-                    "closed": false,
-                    "folders": {}
-                },
-                "Phaser": {
-                    "preset": "Default",
-                    "closed": true,
-                    "folders": {}
-                },
-                "Bower": {
-                    "preset": "Default",
-                    "closed": true,
-                    "folders": {}
-                },
-                "Droner": {
-                    "preset": "Default",
-                    "closed": false,
-                    "folders": {}
-                },
-                "Sweeper": {
-                    "preset": "Default",
-                    "closed": false,
-                    "folders": {}
-                },
-                "Buzzer": {
-                    "preset": "Default",
-                    "closed": false,
-                    "folders": {}
-                },
-                "Shiner": {
-                    "preset": "Default",
-                    "closed": false,
-                    "folders": {}
-                },
-                "Blower": {
-                    "preset": "Default",
-                    "closed": false,
-                    "folders": {}
-                },
-                "Pianoteq": {
-                    "preset": "Default",
-                    "closed": false,
-                    "folders": {}
-                }
-            }
-        };
+  "preset": "Default",
+  "remembered": {
+    "Default": {
+      "0": {
+        "gk_overlap": 0.05,
+        "gk_MasterOutput_level": 0,
+        "gi_Composition_density": 50,
+        "gi_Composition_tempo": 180,
+        "gk_ReverbSC_wet": 0.5,
+        "gk_ReverbSC_feedback": 0.85,
+        "gk_ReverbSC_delay_modulation": 0.0075,
+        "gk_ReverbSC_frequency_cutoff": 9000,
+        "gk_Guitar_level": 0,
+        "gk_Plucked_level": 0,
+        "gk_FMWaterBell_level": 0,
+        "gi_FMWaterBell_attack": 0.002,
+        "gi_FMWaterBell_release": 0.01,
+        "gi_FMWaterBell_exponent": 15,
+        "gi_FMWaterBell_sustain": 20,
+        "gi_FMWaterBell_sustain_level": 0.1,
+        "gk_FMWaterBell_crossfade": 0.5,
+        "gk_FMWaterBell_index": 0.5,
+        "gk_FMWaterBell_vibrato_depth": 0.05,
+        "gk_FMWaterBell_vibrato_rate": 6,
+        "gk_YiString_level": 0,
+        "gk_Harpsichord_level": 0,
+        "gk_ZakianFlute_level": 0,
+        "gk_Kung4_level": 0,
+        "gk_Kung2_level": 0,
+        "gk_Bower_level": 0,
+        "gk_Bower_pressure": 0.25
+      }
+    }
+  },
+  "closed": false,
+  "folders": {
+    "Master": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Guitar": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Plucked": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "FMWaterBell": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "YiString": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Harpsichord": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Zakian Flute": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Kung4": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Kung2": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Bower": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    }
+  }
+}
 
         function build_dat_gui_menu() {
             csound_message_callback("build_dat_gui_menu...\n");
@@ -1256,13 +1209,23 @@
             var dat_gui = document.getElementById('menu_item_dat_gui');
             dat_gui.appendChild(gui.domElement);
             gui.remember(parameters);
+
             var Master = gui.addFolder('Master');
             add_slider(Master, 'gk_overlap', 0, 20);
             add_slider(Master, 'gk_MasterOutput_level', -40, 40);
             add_slider(Master, 'gi_Composition_density', 0, 127);
             add_slider(Master, 'gi_Composition_tempo', 2, 480);
             add_slider(Master, 'gk_MasterOutput_level', -40, 40);
+            add_slider(Master, 'gk_ReverbSC_wet', 0, 1);
+            add_slider(Master, 'gk_ReverbSC_feedback', 0, 1);
+            add_slider(Master, 'gk_ReverbSC_delay_modulation', 0, .01);
+            add_slider(Master, 'gk_ReverbSC_frequency_cutoff', 0, 20000);
+            var Guitar = gui.addFolder('Guitar');
+            add_slider(Guitar, 'gk_Guitar_level', -40, 40);
+            var Plucked = gui.addFolder('Plucked');
+            add_slider(Plucked, 'gk_Plucked_level', -40, 40);
             var FMWaterBell = gui.addFolder('FMWaterBell');
+            add_slider(FMWaterBell, 'gk_FMWaterBell_level', -40, 40);
             add_slider(FMWaterBell, 'gi_FMWaterBell_attack', 0, .1);
             add_slider(FMWaterBell, 'gi_FMWaterBell_release', 0, .1);
             add_slider(FMWaterBell, 'gi_FMWaterBell_exponent', -30, 30);
@@ -1272,42 +1235,19 @@
             add_slider(FMWaterBell, 'gk_FMWaterBell_index', 0, 15);
             add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_depth', 0, 10);
             add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_rate', 0, 10);
-            add_slider(FMWaterBell, 'gk_FMWaterBell_level', -40, 40);
-            var Phaser = gui.addFolder('Phaser');
-            add_slider(Phaser, 'gk_Phaser_ratio1', 0, 5);
-            add_slider(Phaser, 'gk_Phaser_ratio2', 0, 5);
-            add_slider(Phaser, 'gk_Phaser_index1', 0, 15);
-            add_slider(Phaser, 'gk_Phaser_index2', 0, 15);
-            add_slider(Phaser, 'gk_Phaser_level', -40, 40);
-            var Bower = gui.addFolder('Bower');
-            add_slider(Bower, 'gk_Bower_pressure', 0, 5);
-            add_slider(Bower, 'gk_Bower_level', -40, 40);
-            var Droner = gui.addFolder('Droner');
-            add_slider(Droner, 'gk_Droner_partial1', 0, 1);
-            add_slider(Droner, 'gk_Droner_partial2', 0, 1);
-            add_slider(Droner, 'gk_Droner_partial3', 0, 1);
-            add_slider(Droner, 'gk_Droner_partial4', 0, 1);
-            add_slider(Droner, 'gk_Droner_partial5', 0, 1);
-            add_slider(Droner, 'gk_Droner_level', -40, 40);
-            var Sweeper = gui.addFolder('Sweeper');
-            add_slider(Sweeper, 'gk_Sweeper_britel', 0, 4);
-            add_slider(Sweeper, 'gk_Sweeper_briteh', 0, 4);
-            add_slider(Sweeper, 'gk_Sweeper_britels', 0, 4);
-            add_slider(Sweeper, 'gk_Sweeper_britehs', 0, 4);
-            add_slider(Sweeper, 'gk_Sweeper_level', -40, 40);
-            var Buzzer = gui.addFolder('Buzzer');
-            add_slider(Buzzer, 'gk_Buzzer_harmonics', 0, 20);
-            add_slider(Buzzer, 'gk_Buzzer_level', -40, 40);
-            var Shiner = gui.addFolder('Shiner');
-            add_slider(Shiner, 'gk_Shiner_level', -40, 40);
-            var Blower = gui.addFolder('Blower');
-            add_slider(Blower, 'gk_Blower_grainDensity', 0, 400);
-            add_slider(Blower, 'gk_Blower_grainDuration', 0, .5);
-            add_slider(Blower, 'gk_Blower_grainAmplitudeRange', 0, 400);
-            add_slider(Blower, 'gk_Blower_grainFrequencyRange', 0, 100);
-            add_slider(Blower, 'gk_Blower_level', -40, 40);
+            var Bower = gui.addFolder('YiString');
+            add_slider(Bower, 'gk_YiString_level', -40, 40);
+            var Harpsichord = gui.addFolder('Harpsichord');
+            add_slider(Harpsichord, 'gk_Harpsichord_level', -40, 40);
             var Flute = gui.addFolder('Zakian Flute');
             add_slider(Flute, 'gk_ZakianFlute_level', -40, 40);
+            var Kung4 = gui.addFolder('Kung4');
+            add_slider(Kung4, 'gk_Kung4_level', -40, 40);
+            var Kung2 = gui.addFolder('Kung2');
+            add_slider(Kung2, 'gk_Kung2_level', -40, 40);
+            var Bower = gui.addFolder('Bower');
+            add_slider(Bower, 'gk_Bower_level', -40, 40);
+            add_slider(Bower, 'gk_Bower_pressure', 0, 5);
             gui.revert();
             document.addEventListener("keydown", function (e) {
                 var e_char = String.fromCharCode(e.keyCode || e.charCode);
@@ -1363,14 +1303,14 @@
 
     <CsoundSynthesizer>
     <CsOptions>
-    -+msg_color=0 -m34 -d --sample-accurate -f -odac 
+    -+msg_color=0 -m165 -d --sample-accurate -f -odac 
     </CsOptions>
     <CsInstruments>
     
     sr = 48000
     ksmps = 128
     nchnls = 2
-    0dbfs = 8
+    0dbfs = 100
     
     gi_ampmidicurve_dynamic_range init .375
     gi_ampmidicurve_exponent init 5
@@ -2361,7 +2301,10 @@
     
     gk_MasterOutput_level init 0
     gS_MasterOutput_filename init ""
-    
+
+    chn_k "gk_MasterOutput_output_level_left", 3
+    chn_k "gk_MasterOutput_output_level_right", 3
+
     instr MasterOutput
     aleft inleta "inleft"
     aright inleta "inright"
@@ -2370,15 +2313,22 @@
     iamp init 1
     aleft butterlp aleft, 18000
     aright butterlp aright, 18000
-    outs aleft * k_gain, aright * k_gain
+    a_out_left = aleft * k_gain
+    a_out_right = aright * k_gain
+    outs a_out_left, a_out_right
     ; We want something that will play on my phone.
     i_amplitude_adjustment = ampdbfs(-3) / 32767
     i_filename_length strlen gS_MasterOutput_filename
     if i_filename_length > 0 then
     prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
-    fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
+    fout gS_MasterOutput_filename, 18, a_out_left * i_amplitude_adjustment, a_out_right * i_amplitude_adjustment
     endif
     prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+    gk_MasterOutput_output_level_left = dbfsamp(rms(a_out_left))
+    gk_MasterOutput_output_level_right = dbfsamp(rms(a_out_right))
+    chnset gk_MasterOutput_output_level_left, "gk_MasterOutput_output_level_left"
+    chnset gk_MasterOutput_output_level_right, "gk_MasterOutput_output_level_right"
+    printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
     endin
     
     </CsInstruments>
@@ -2424,6 +2374,7 @@
             <!-- <li id="menu_item_score" class="w3-btn w3-hover-text-light-green">Score</li> -->
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
+            <li id="mini_console" class="w3-btn w3-text-green w3-hover-text-light-green"></li>
             <li id="menu_item_dat_gui" class="w3-btn w3-left-align w3-hover-text-light-green w3-right"></li>
         </ul>
     </div>
@@ -2439,10 +2390,32 @@
         console_editor.renderer.setOption("showGutter", false);
         console_editor.renderer.setOption("showLineNumbers", true);
 
-        var csound_message_callback = function (message) {
+        var csound_message_callback = async function (message) {
             if (message === null) {
                 return;
             }
+            let level_left = -100;
+            let level_right = -100;
+            if (csound) {
+                (async function() {
+                    score_time = await csound.GetScoreTime();
+                    level_left = await csound.GetControlChannel("gk_MasterOutput_output_level_left");
+                    level_right = await csound.GetControlChannel("gk_MasterOutput_output_level_right");
+                    let delta = score_time;
+                    // calculate (and subtract) whole days
+                    let days = Math.floor(delta / 86400);
+                    delta -= days * 86400;
+                    // calculate (and subtract) whole hours
+                    let hours = Math.floor(delta / 3600) % 24;
+                    delta -= hours * 3600;
+                    // calculate (and subtract) whole minutes
+                    let minutes = Math.floor(delta / 60) % 60;
+                    delta -= minutes * 60;
+                    // what's left is seconds
+                    let seconds = delta % 60;  // in theory the modulus is not required
+                    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f  l: %-6.2f dBA r: %-6.2f dBA", days, hours, minutes, seconds, level_left, level_right));
+                }());
+            }            
             // Split in case the newline is in the middle of the message but 
             // not at the end?
             message_callback_buffer = message_callback_buffer + message;
@@ -2609,6 +2582,7 @@
                 $(output_selector).val(slider_value);
             });
             $('#default').on('click', function () {
+                /// Try parameters here.
                 let defaults = { "gk_Phaser_ratio2": "1", "gk_ReverbSC_feedback": "0.994", "gk_MasterOutput_level": "-17.329", "gk_Blower_grainDensity": "90", "gk_Blower_grainFrequencyRange": "10", "strudel-settingsfontSize": "18", "gk_Blower_grainAmplitudeRange": "100", "strudel-settingsisLineWrappingEnabled": "false", "gk_ReverbSC_frequency_cutoff": "7260.785", "gk_Droner_partial5": "0.1", "gk_Droner_partial2": "0.05", "gk_Droner_partial3": "0.1", "gi_ReverbSC_delay_modulation": "0.111", "strudel-settingsisLineNumbersDisplayed": "true", "gk_Droner_partial4": "0.2", "gk_Phaser_level": "-22.716", "strudel-settingssoundsFilter": "all", "strudel-settingslatestCode": "stack(\"0,3,[11 6]\"\n  .add(\"<0 1 2 [3 4] 5 7 8>\")\n  .transpose(\"<0 1 2 1>/8\")\n  .slow(7).degradeBy(.125)\n  .transpose(60)\n  .legato(.95)\n  .iter(2)\n  .note()\n  .csoundm(\"1 2\"),\n\"0,4,[7 6]\"\n  .sub(\"<0 1 2 3 4 5 [7 8] 9>\")\n  .transpose(\"<0 1 -1 1>/3\")\n  .iter(4)\n  .slow(7)\n  .transpose(\"<48 36>/7\")\n  .legato(.95)\n  .note()\n  .csoundm(\"2 3\"))\n  .slow(12)\n  //.scale(slowcat('D dorian', 'G mixolydian', 'C dorian', 'F mixolydian')/18)\n  .pianoroll({cycles:120})", "gk_Droner_level": "-32.362", "gk_Phaser_attack": "0.125", "gk_Phaser_release": "0.125", "strudel-settingskeybindings": "codemirror", "strudel-settingsfontFamily": "monospace", "gi_Droner_waveform": "0", "gk_Blower_grainDuration": "0.2005", "strudel-settingsisAutoCompletionEnabled": "false", "strudel-settingsactiveFooter": "intro", "gk_Phaser_index2": "2.481", "gk_Phaser_ratio1": "1.287", "strudel-settingspanelPosition": "bottom", "gk_Droner_partial1": "0.5", "gk_Phaser_index1": "1.502", "strudel-settingstheme": "strudelTheme", "strudel-settingsisZen": "false", "gk_Blower_level": "-13.905" };
                 for (let [key, value] of Object.entries(defaults)) {
                     console.log(key, value);
