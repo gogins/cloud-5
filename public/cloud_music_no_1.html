@@ -1270,8 +1270,6 @@
                 }
             });
         };
-        // Restore defaults.
-        //${""}.trigger("click");
 
         var gk_update = function (name, value) {
             var numberValue = parseFloat(value);
@@ -2421,14 +2419,14 @@
                     } else if (level_left > -12) {
                         $("#vu_meter_left").css("color", "orange")
                     } else {
-                        $("#vu_meter_left").css("color", "green");
+                        $("#vu_meter_left").css("color", "lightgreen");
                     }
                     if (level_right > 0) {
                         $("#vu_meter_right").css("color", "red");
                     } else if (level_right > -12) {
                         $("#vu_meter_right").css("color", "orange")
                     } else {
-                        $("#vu_meter_right").css("color", "green");
+                        $("#vu_meter_right").css("color", "lightgreen");
                     }
                     $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
                     $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_right));
