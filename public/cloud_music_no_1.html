@@ -16,7 +16,7 @@
         try {
             var fs = require("fs");
             var __dirname = fs.realpathSync.native(".");
-        } catch(e) {
+        } catch (e) {
             console.log(e);
         }
     </script>
@@ -1087,16 +1087,16 @@
     "Default": {
       "0": {
         "gk_overlap": 0.05,
-        "gk_MasterOutput_level": 0,
+        "gk_MasterOutput_level": -8.746403616933826,
         "gi_Composition_density": 50,
         "gi_Composition_tempo": 180,
         "gk_ReverbSC_wet": 0.5,
         "gk_ReverbSC_feedback": 0.85,
         "gk_ReverbSC_delay_modulation": 0.0075,
         "gk_ReverbSC_frequency_cutoff": 9000,
-        "gk_Guitar_level": 0,
-        "gk_Plucked_level": 0,
-        "gk_FMWaterBell_level": 0,
+        "gk_Guitar_level": -9.798602548294287,
+        "gk_Plucked_level": 0.7233867653103161,
+        "gk_FMWaterBell_level": 37.02424989724621,
         "gi_FMWaterBell_attack": 0.002,
         "gi_FMWaterBell_release": 0.01,
         "gi_FMWaterBell_exponent": 15,
@@ -1106,12 +1106,12 @@
         "gk_FMWaterBell_index": 0.5,
         "gk_FMWaterBell_vibrato_depth": 0.05,
         "gk_FMWaterBell_vibrato_rate": 6,
-        "gk_YiString_level": 0,
-        "gk_Harpsichord_level": 0,
-        "gk_ZakianFlute_level": 0,
-        "gk_Kung4_level": 0,
-        "gk_Kung2_level": 0,
-        "gk_Bower_level": 0,
+        "gk_YiString_level": 26.5022605836416,
+        "gk_Harpsichord_level": 13.349773941635839,
+        "gk_ZakianFlute_level": 24.39786272092067,
+        "gk_Kung4_level": 24.923962186600903,
+        "gk_Kung2_level": 13.349773941635839,
+        "gk_Bower_level": 24.923962186600903,
         "gk_Bower_pressure": 0.25
       }
     }
@@ -1140,32 +1140,32 @@
     },
     "YiString": {
       "preset": "Default",
-      "closed": true,
+      "closed": false,
       "folders": {}
     },
     "Harpsichord": {
       "preset": "Default",
-      "closed": true,
+      "closed": false,
       "folders": {}
     },
     "Zakian Flute": {
       "preset": "Default",
-      "closed": true,
+      "closed": false,
       "folders": {}
     },
     "Kung4": {
       "preset": "Default",
-      "closed": true,
+      "closed": false,
       "folders": {}
     },
     "Kung2": {
       "preset": "Default",
-      "closed": true,
+      "closed": false,
       "folders": {}
     },
     "Bower": {
       "preset": "Default",
-      "closed": true,
+      "closed": false,
       "folders": {}
     }
   }
@@ -1191,9 +1191,10 @@
             let CM = CsoundAC.chordForName("CM");
             CM = CM.T(-4.);
             csound_message_callback(CM.information());
-            csound_message_callback(CM.information_debug(-1));            
+            csound_message_callback(CM.information_debug(-1));
             csound_message_callback("$(window).on(\"load\")...\n");
             let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400 };
+
             try {
                 var temporary_json = Silencio.restoreDatGuiJson(default_json);
                 //default_json = temporary_json;
@@ -1209,7 +1210,6 @@
             var dat_gui = document.getElementById('menu_item_dat_gui');
             dat_gui.appendChild(gui.domElement);
             gui.remember(parameters);
-
             var Master = gui.addFolder('Master');
             add_slider(Master, 'gk_overlap', 0, 20);
             add_slider(Master, 'gk_MasterOutput_level', -40, 40);
@@ -1248,7 +1248,6 @@
             var Bower = gui.addFolder('Bower');
             add_slider(Bower, 'gk_Bower_level', -40, 40);
             add_slider(Bower, 'gk_Bower_pressure', 0, 5);
-            gui.revert();
             document.addEventListener("keydown", function (e) {
                 var e_char = String.fromCharCode(e.keyCode || e.charCode);
                 if (e.ctrlKey === true) {
@@ -1271,12 +1270,14 @@
                 }
             });
         };
+        // Restore defaults.
+        //${""}.trigger("click");
 
         var gk_update = function (name, value) {
             var numberValue = parseFloat(value);
+            console.log("gk_update: name: " + name + " value: " + numberValue);
             if (typeof csound !== 'undefined') {
                 if (csound !== null) {
-                    console.log("gk_update: name: " + name + " value: " + numberValue);
                     csound.SetControlChannel(name, numberValue);
                 }
             }
@@ -1303,7 +1304,7 @@
 
     <CsoundSynthesizer>
     <CsOptions>
-    -+msg_color=0 -m165 -d --sample-accurate -f -odac 
+    -+msg_color=0 -m162 -d --sample-accurate -f -odac 
     </CsOptions>
     <CsInstruments>
     
@@ -2375,6 +2376,8 @@
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About</li>
             <li id="mini_console" class="w3-btn w3-text-green w3-hover-text-light-green"></li>
+            <li id="vu_meter_left" class="w3-btn w3-hover-text-light-green"></li>
+            <li id="vu_meter_right" class="w3-btn w3-hover-text-light-green"></li>
             <li id="menu_item_dat_gui" class="w3-btn w3-left-align w3-hover-text-light-green w3-right"></li>
         </ul>
     </div>
@@ -2397,7 +2400,7 @@
             let level_left = -100;
             let level_right = -100;
             if (csound) {
-                (async function() {
+                (async function () {
                     score_time = await csound.GetScoreTime();
                     level_left = await csound.GetControlChannel("gk_MasterOutput_output_level_left");
                     level_right = await csound.GetControlChannel("gk_MasterOutput_output_level_right");
@@ -2413,9 +2416,25 @@
                     delta -= minutes * 60;
                     // what's left is seconds
                     let seconds = delta % 60;  // in theory the modulus is not required
-                    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f  l: %-6.2f dBA r: %-6.2f dBA", days, hours, minutes, seconds, level_left, level_right));
+                    if (level_left > 0) {
+                        $("#vu_meter_left").css("color", "red");
+                    } else if (level_left > -12) {
+                        $("#vu_meter_left").css("color", "orange")
+                    } else {
+                        $("#vu_meter_left").css("color", "green");
+                    }
+                    if (level_right > 0) {
+                        $("#vu_meter_right").css("color", "red");
+                    } else if (level_right > -12) {
+                        $("#vu_meter_right").css("color", "orange")
+                    } else {
+                        $("#vu_meter_right").css("color", "green");
+                    }
+                    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
+                    $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_right));
+                    $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
                 }());
-            }            
+            }
             // Split in case the newline is in the middle of the message but 
             // not at the end?
             message_callback_buffer = message_callback_buffer + message;
@@ -2448,7 +2467,7 @@
         };
 
         $(window).on("load", async function () {
-           csound_message_callback("$(window).on(\"load\"...\n");
+            csound_message_callback("$(window).on(\"load\"...\n");
             var txt = "\n";
             txt += "Browser CodeName: " + navigator.appCodeName + "\n";
             txt += "Browser Name: " + navigator.appName + "\n";
@@ -2502,12 +2521,11 @@
                 let result = await csound.CompileCsdText(csd);
                 csound_message_callback("CompileCsdText returned: " + result);
                 await csound.Start();
-                if (localStorage.length > 0) {
-                    $('#restore').trigger('click');
-                } else {
-                    // Tricky! Otherwise we get _patch_ defaults, probably 
-                    // not correct; we need _html_ defaults.
-                    $('#default').trigger('click');
+                // Send _current_ dat.gui control channel values to Csound 
+                // before actually performing.
+                for(let channel_name in parameters) {
+                    let channel_value = parseFloat(parameters[channel_name]);
+                    await csound.SetControlChannel(channel_name, channel_value);
                 }
                 await csound.Perform();
                 scale = new CsoundAC.Scale("F major");
