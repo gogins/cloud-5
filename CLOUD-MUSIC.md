@@ -94,6 +94,11 @@ Oops, that should work, but I don't actually _find_ the source maps....
 Build this project, then copy the entire contents of the `dist` directory 
 to your own Web site's public HTML directory.
 
+_**NOTE WELL**_: The `gogins.github.io` repository is maintained using 
+`pnpm run deploy` in the `cloud-5` repository. _DO NOT_ delete any files from  
+`gogins.github.io`, although pieces may be added there. In other words, 
+`gogins.github.io` can be a superset of `cloud-5`.
+
 ## Maintenance Notes!
 
 _If at all possible_, never edit _existing_ Strudel files, always add _new_ 

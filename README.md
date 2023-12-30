@@ -315,6 +315,11 @@ open a working Web site with playable pieces!
 It may be necessary to clear the browser cache and application site data to 
 see updated pieces.
 
+_**NOTE WELL**_: The `gogins.github.io` repository is maintained using 
+`pnpm run deploy` in this `cloud-5` repository. _DO NOT_ delete any files from  
+`gogins.github.io`, although pieces may be added there. In other words, 
+`gogins.github.io` can be a superset of `cloud-5`.
+
 ## Release Notes
 
 ### [v0.1beta7](https://github.com/gogins/cloud-5/commits/v0.1beta7)
