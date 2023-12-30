@@ -10,7 +10,7 @@ body {
     line-height: 140%;
     background: whitesmoke; 
 }
-p {
+p, ul, li {
     font-family: Georgia, Garamond, serif;
 }
 </style>

@@ -15,8 +15,8 @@ amounting to a new piece, co-composed with me.
 
 All source code for these pieces is available in the GitHub repository.
 
-The underlying technology is my [WebAssembly builds of Csound and CsoundAC]
-(https://github.com/gogins/csound-wasm). 
+The underlying technology is my 
+<a href="https://github.com/gogins/csound-wasm">WebAssembly builds of Csound and CsoundAC</a>.
 Some pieces may use third party libraries.
 
 # Installation

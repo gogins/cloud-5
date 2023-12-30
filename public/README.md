@@ -31,6 +31,26 @@ The underlying technology is my WebAssembly build of Csound with CsoundAC.
 Some pieces use third party libraries, especially [Strudel](https://github.com/tidalcycles/strudel),
 a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.org/).
 
+- A [Csound Player](player.html) that will play, and let you edit, any 
+Csound piece that you paste into the text area.
+
+- [Message from Another Planet](message.html), a Csound piece with a basic 
+HTML user interface.
+
+- [Strudel REPL](strudel_repl.html), exactly the same as the main Strudel Web 
+site.
+
+- [Trichord Space](trichord_space.html), an interactive piece that displays 
+Dmitri Tymoczko's chord space for trichords, with the ability to perform, 
+hear, and visualize various operations on the chords in the space.
+
+- [Scrims](scrims.html), a JavaScript piece that samples an animated WebGL 
+hopalong fractal to obtain notes that are then harmonized using CsoundAC's 
+chord space operations.
+
+For more information on the following pieces, read the _About_ page in the 
+piece itself.
+
 - [Cloud Music No. 1](cloud_music_no_1.html).
 
 - [Cloud Music No. 2](cloud_music_no_2.html).
@@ -39,17 +59,11 @@ a JavaScript port of the live coding system [Tidal Cycles](https://tidalcycles.o
 
 - [Cloud Music No. 4](cloud_music_no_4.html).
 
-<!--
-- [Cloud Music No. 5](cloud_music_no_5.html).
--->
-
 - [Cloud Music No. 6](cloud_music_no_6.html).
 
-<!--
-- [Cloud Music No. 7](cloud_music_no_7.html).
--->
-
 - [Cloud Music No. 8](cloud_music_no_8.html).
+
+- [Cloud Music No. 9](cloud_music_no_9.html).
 
 - [Cancycle](cancycle.html), a piece for live coding.
 
