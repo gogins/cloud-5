@@ -316,9 +316,9 @@ It may be necessary to clear the browser cache and application site data to
 see updated pieces.
 
 _**NOTE WELL**_: The `gogins.github.io` repository is maintained using 
-`pnpm run deploy` in this `cloud-5` repository. _DO NOT_ delete any files from 
-`gogins.github.io`, although pieces may be added there. In other words, 
-`gogins.github.io` can be a superset of `cloud-5`.
+`pnpm run deploy` in _this_ `cloud-5` repository. _DO NOT_ delete any files 
+from `gogins.github.io`, although pieces may be added there. In other words, 
+`gogins.github.io` can be the same as, or a superset of, `cloud-5`.
 
 ## Release Notes
 
