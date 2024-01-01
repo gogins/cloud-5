@@ -37,9 +37,14 @@ cloud-5 is used by my own Web site of "always-on" computer music pieces,
 For recent changes, see the _[Release Notes](#release-notes)_ at the end of 
 this document.
 
+It also is possible to run cloud-5 pieces locally in [NW.js](https://nwjs.io/) 
+using [csound.node](https://github.com/gogins/csound-extended-node). In this 
+case, csound.node provides a native code build of Csound, and such pieces can 
+load native code plugins and read and write to the local filesystem.
+
 ### Components
 
- - [Csound](https://csound.com/) version 6.18, one of the oldest and most 
+ - [Csound](https://csound.com/) version 6.19, one of the oldest and most 
    powerful sound programming languages, compiled for WebAssembly to run in 
    Web browers in [csound-wasm](https://github.com/gogins/csound-wasm).
    
@@ -96,11 +101,13 @@ this document.
    
  - All of the staggering panoply of capabilities that are built into every 
    standards-compliant Web browser, see [HTML5 Test](https://html5test.com/).
- 
+
+## Running in the Browser
+
 ### Limitations
 
-The major limitation of cloud-5 is that, because it runs only in Web browsers, 
-it is sandboxed and cannot write to the file system. In other words, cloud-5 
+The major limitation of running in the browser is that csound-5 pieces are 
+sandboxed, and cannot write to the file system. In other words, cloud-5 
 cannot write soundfiles, or any other kind of files. That means all audio is 
 streaming audio. 
 
@@ -166,6 +173,38 @@ local Web server to serve files from your cloud-5 directory.
  3. You should see this README as a Web page. Click on 
     [cloud_music_no_1.html](cloud_music_no_1.html) and verify that you see 
     animated graphics, and can play and hear the piece.
+
+ 4. Some cloud-5 pieces use the dat.gui library to create a popup menu of 
+    controls for Csound instruments or other purposes. You can create new 
+    presets, and you can get the Web browser to remember the current preset 
+    parameters in local storage. If you need to revert to the hard-coded 
+    parameters in a piece, clear local storage in the browser settings, or 
+    in the browser's debugger.
+
+## Running in NW.js
+ 
+It also is possible to run cloud-5 pieces locally in [NW.js](https://nwjs.io/) 
+using [csound.node](https://github.com/gogins/csound-extended-node). 
+
+This involves installing a number of pre-requisites, but the advantages 
+include somewhat higher performance from native code Csound, the ability to 
+use native plugins (both Csound plugin opcodes and VST3 plugins), and the 
+ability to read and write in the local filesystem.
+
+### Installation
+
+ 1. Install regular [Csound for desktop computers](https://csound.com/download.html).
+ 2. Install [pnpm](https://pnpm.io/installation).
+ 2. Install [csound.node](https://github.com/gogins/csound-extended-node). Note that 
+    the API for csound.node is virtually the same as the API for my WebAssembly build 
+    of Csound.
+ 2. Install [NW.js](https://nwjs.io/).
+
+### Configuration and Running
+
+Read about [csound.node](https://github.com/gogins/csound-extended-node) 
+and make sure that the application directory for your `csound.node` pieces is the 
+`cloud-5` directory, which includes necessary resources.
 
 ## Making Music
 
@@ -331,6 +370,9 @@ from `gogins.github.io`, although pieces may be added there. In other words,
 
  - Updated Csound, [csound-wasm](https://github.com/gogins/csound-wasm), 
    and Strudel to current versions.
+
+ - Pieces in cloud-5 can now also run locally in [NW.js](https://nwjs.io/) 
+   using [csound.node](https://github.com/gogins/csound-extended-node).
 
 ### [v0.1beta7](https://github.com/gogins/cloud-5/commits/v0.1beta7)
 
