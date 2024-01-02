@@ -371,8 +371,9 @@ from `gogins.github.io`, although pieces may be added there. In other words,
  - Updated Csound, [csound-wasm](https://github.com/gogins/csound-wasm), 
    and Strudel to current versions.
 
- - Pieces in cloud-5 can now also run locally in [NW.js](https://nwjs.io/) 
-   using [csound.node](https://github.com/gogins/csound-extended-node).
+ - Pieces in cloud-5, including pieces using Strudel, can now also run locally 
+   in [NW.js](https://nwjs.io/) using 
+   [csound.node](https://github.com/gogins/csound-extended-node).
 
 ### [v0.1beta7](https://github.com/gogins/cloud-5/commits/v0.1beta7)
 
