@@ -65,6 +65,10 @@ piece itself.
 
 - [Cloud Music No. 9](cloud_music_no_9.html).
 
+- [Cloud Music No. 13](cloud_music_no_13.html).
+
+- [Cloud Music No. 14](cloud_music_no_14.html).
+
 - [Cancycle](cancycle.html), a piece for live coding.
 
 ### Experiments
