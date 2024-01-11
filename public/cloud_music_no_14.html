@@ -125,8 +125,7 @@
 
         <p>I created the visuals for this piece by adapting Scruffy's
             <a href="https://www.shadertoy.com/view/4fXSRn"><i>TestShader09012024</i></a>,
-            which has an open-source license compatible
-            with the license of this piece.
+            which has an open-source license compatible with the license of this piece.
 
         <p>My code in CsoundAC for working with chords, scales, and voice-leading implements basic ideas from <a
                 href="http://dmitri.tymoczko.com/">Dmitri Tymoczko's work in music theory</a>.
@@ -266,59 +265,74 @@
         return abs(fract((a*.9+vec2(1.,0.75))*1.75)-.325);
     }
 
+    vec3 rgb2hsv(vec3 c){
+        vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+        vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+        vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+        float d = q.x - min(q.w, q.y);
+        float e = 1.0e-10;
+        return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+    }
+
+    vec3 hsv2rgb(vec3 c){
+        vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+        vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+        return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+    }
+
     vec3 palette(float t)
     {
-
         // A less bilious palette.
-        
-        ///vec3 a = vec3(0.938, 0.328, 0.718);
-        ///vec3 b = vec3(0.659, 0.438, 0.328);
-        ///vec3 c = vec3(0.388, 0.388, 0.296);
-        ///vec3 d = vec3(2.538, 2.478, 0.168);
-        vec3 a = vec3(0.75, 0.528, 0.718);
-        vec3 b = vec3(0.659, .438, 1.328);
-        vec3 c = vec3(0.388, 0.788, 0.5);
+        vec3 a = vec3(0.938, 0.328, 0.718);
+        vec3 b = vec3(0.659, 0.438, 0.328);
+        vec3 c = vec3(0.388, 0.388, 0.296);
         vec3 d = vec3(2.538, 2.478, 0.168);
+        ////vec3 a = vec3(0.75, 0.528, 0.718);
+        ////vec3 b = vec3(0.659, .438, 1.328);
+        ////vec3 c = vec3(0.388, 0.788, 0.5);
+        ////vec3 d = vec3(2.538, 2.478, 0.168);
         return a + b*cos( 6.28318*(c*t+d) );
     }
     
-    vec2 rotateUV(vec2 uv, float rotation)
-    {
+    vec2 rotateUV(vec2 uv, float rotation){
         float mid = 0.5;
+        ////float mid = 0.25;
         return vec2(
             cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
             cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
         );
     }
     
-    void mainImage( out vec4 fragColor, in vec2 fragCoord )
-    {
+    void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         vec2 uv = (fragCoord * 1.0 - iResolution.xy) / iResolution.y;
         vec2 uv0 = uv;
         vec3 finalColour = vec3(0.);
 
         // Slow it down...
-
-        float slowtime = iTime / 40.;
+        // Put a control on speed.
+        float slowtime = iTime / 50.;
         
-        for (float i = 0.; i < 36.; i++)
-        ///for (float i = 0.; i < 72.; i++)
+        // It would be nice to put a control on overall rotation or tilt.
+        ///for (float i = 0.; i < 36.; i++)
+        for (float i = 0.; i < 72.; i++)
         {
             uv = rotateUV(uv, slowtime*.1);
             uv = fract(uv*1.1)-.5;
             uv = rotateUV(uv, slowtime*.1);
-    
             float d = length(uv);
             vec3 col = palette(length(uv0) + i*.1 + d + slowtime);
-    
             d = sin(d*4.+slowtime)/4.;
-            d = abs(d);
-    
+            d = abs(d);            
             d = .02/d;
-            
+            ////d = .01/d;
             finalColour += col * d * .1 - (i*.0002);
         }
-        
+        vec3 hsv_ = rgb2hsv(finalColour);
+        // Put controls on HSV.
+        hsv_[2] = hsv_[2] / 2.;
+        hsv_[0] = hsv_[0] / 2.;
+        finalColour = hsv2rgb(hsv_);
         fragColor = vec4(finalColour,1.0);
         //fragColor = vec4(uv.x,uv.y,0.,1.0);
     }
@@ -551,7 +565,7 @@
              * Converts an RGB color value to HSV. The formula is 
              * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
              * Assumes r, g, and b are in [0, 255] and
-             * returns h, s, and v are in [0, 1].
+             * returns h, s, and v in [0, 1].
              */
             var rgb_to_hsv = function (rgb) {
                 r = rgb[0] / 255;
@@ -657,11 +671,13 @@
             var instrument_count = 8;
             var sampled_events = new Array();
             var playlist = new Map();
+            // Put a control on this.
             var gi_Composition_tempo = 25;
             var frame_translation_count = 0;
             var midi_key_begin = 36;
             var midi_key_range = 60;
             var maximum_voices = 8;
+            // Put a control on this.
             var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
             var sample_count = 0;
