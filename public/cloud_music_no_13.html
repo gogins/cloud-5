@@ -183,7 +183,7 @@
     <!-- #region Visuals to Music -->
 
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-            #line 1160
+            #line 186
             precision highp float;
             /**
              * These are all of the standard ShaderToy inputs. If any of these are 
@@ -216,6 +216,7 @@
             // (year, month, day, time in seconds)
             uniform float iSampleRate;
             // sound sample rate (i.e., 44100)
+            uniform float speed_control;
             
             /**
              * Theoretically, any fragment shader copied from the ShaderToy 
@@ -547,7 +548,7 @@
                     console.warn(gl.getProgramInfoLog(shader_program));
                 }
                 shader_program.inPos = gl.getAttribLocation(shader_program, "inPos");
-                shader_program.iMouse = gl.getUniformLocation(shader_program, "iMouse");
+                shader_program.iMouse = gl.getUniformLocation(shader_program, "iMouse");ƒ
                 shader_program.iResolution = gl.getUniformLocation(shader_program, "iResolution");
                 shader_program.iTime = gl.getUniformLocation(shader_program, "iTime");
                 shader_program.iTimeDelta = gl.getUniformLocation(shader_program, "iTimeDelta");

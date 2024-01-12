@@ -184,7 +184,7 @@
     <!-- #region Visuals to Music -->
 
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
-            #line 1160
+            #line 187
             precision highp float;
             /**
              * These are all of the standard ShaderToy inputs. If any of these are 
@@ -217,6 +217,10 @@
             // (year, month, day, time in seconds)
             uniform float iSampleRate;
             // sound sample rate (i.e., 44100)
+
+            uniform float GraphicsTempo;
+            uniform float GraphicsHue;
+            uniform float GraphicsValue;
             
             /**
              * Theoretically, any fragment shader copied from the ShaderToy 
@@ -283,7 +287,7 @@
 
     vec3 palette(float t)
     {
-        // A less bilious palette.
+        // A less bilious palette?
         vec3 a = vec3(0.938, 0.328, 0.718);
         vec3 b = vec3(0.659, 0.438, 0.328);
         vec3 c = vec3(0.388, 0.388, 0.296);
@@ -311,27 +315,27 @@
 
         // Slow it down...
         // Put a control on speed.
-        float slowtime = iTime / 50.;
+        float GraphicsTempo_ = iTime / GraphicsTempo;
         
         // It would be nice to put a control on overall rotation or tilt.
         ///for (float i = 0.; i < 36.; i++)
         for (float i = 0.; i < 72.; i++)
         {
-            uv = rotateUV(uv, slowtime*.1);
+            uv = rotateUV(uv, GraphicsTempo_*.1);
             uv = fract(uv*1.1)-.5;
-            uv = rotateUV(uv, slowtime*.1);
+            uv = rotateUV(uv, GraphicsTempo_*.1);
             float d = length(uv);
-            vec3 col = palette(length(uv0) + i*.1 + d + slowtime);
-            d = sin(d*4.+slowtime)/4.;
+            vec3 col = palette(length(uv0) + i*.1 + d + GraphicsTempo_);
+            d = sin(d*4.+GraphicsTempo_)/4.;
             d = abs(d);            
             d = .02/d;
             ////d = .01/d;
             finalColour += col * d * .1 - (i*.0002);
         }
         vec3 hsv_ = rgb2hsv(finalColour);
-        // Put controls on HSV.
-        hsv_[2] = hsv_[2] / 2.;
-        hsv_[0] = hsv_[0] / 2.;
+        // Put controls on value and hue.
+        hsv_[2] = hsv_[2] * GraphicsValue;
+        hsv_[0] = hsv_[0] * GraphicsHue;
         finalColour = hsv2rgb(hsv_);
         fragColor = vec4(finalColour,1.0);
         //fragColor = vec4(uv.x,uv.y,0.,1.0);
@@ -340,10 +344,10 @@
     </script>
 
     <script id="draw-shader-vs" type="x-shader/x-vertex">#version 300 es
-            in vec2 inPos;
-            void main() {
-                gl_Position = vec4(inPos.xy, 0.0, 1.0);
-            }
+        in vec2 inPos;
+        void main() {
+            gl_Position = vec4(inPos.xy, 0.0, 1.0);
+        }
     </script>
 
     <script>
@@ -496,9 +500,16 @@
                 shader_program.iChannel2 = gl.getUniformLocation(shader_program, "iChannel2");
                 shader_program.iChannel3 = gl.getUniformLocation(shader_program, "iChannel3");
                 shader_program.iSampleRate = gl.getUniformLocation(shader_program, "iSampleRate");
+
+                shader_program.GraphicsTempo = gl.getUniformLocation(shader_program, "GraphicsTempo");
+                shader_program.GraphicsHue = gl.getUniformLocation(shader_program, "GraphicsHue");
+                shader_program.GraphicsValue = gl.getUniformLocation(shader_program, "GraphicsValue");
                 gl.useProgram(shader_program);
 
                 gl.uniform1f(shader_program.iSampleRate, 48000.);
+                gl.uniform1f(shader_program.GraphicsTempo, parameters.GraphicsTempo);
+                gl.uniform1f(shader_program.GraphicsHue, parameters.GraphicsHue);
+                gl.uniform1f(shader_program.GraphicsValue, parameters.GraphicsValue);
                 var pos = [-1, -1,
                     1, -1,
                     1, 1,
@@ -729,7 +740,7 @@
                     let instrument_number = 1 + (hsv[0] * instrument_count);
                     // The instrument number must have a unique fractional tag.
                     let time = 0;
-                    let duration = .25 + (60 / gi_Composition_tempo * hsv[1] * 2);
+                    let duration = .25 + (60 / parameters.NoteTempo * hsv[1] * 2);
                     let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
                     //instrument_number = 4;
                     let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
@@ -831,8 +842,8 @@
              */
             async function sample_canvas(current_rendering_frame) {
                 //console.info("frame_sample_to_score.");
-                gi_Composition_tempo = Math.floor(parseFloat(parameters.gi_Composition_tempo));
-                event_velocity_threshold = parseFloat(parameters.gi_Composition_density);
+                gi_Composition_tempo = Math.floor(parseFloat(parameters.NoteTempo));
+                event_velocity_threshold = parseFloat(parameters.NoteDensity);
                 await translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
             }
 
@@ -849,12 +860,15 @@
                 gl.uniform1f(shader_program.iTime, tyme);
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
+                gl.uniform1f(shader_program.GraphicsTempo, 1.0 / parameters.GraphicsTempo);
+                gl.uniform1f(shader_program.GraphicsHue, parameters.GraphicsHue);
+                gl.uniform1f(shader_program.GraphicsValue, parameters.GraphicsValue);
                 //write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
                 gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);
                 current_time = performance.now() / 1000;
                 if (current_time >= next_time) {
                     if (typeof parameters !== 'undefined') {
-                        next_time = current_time + (60 / parameters.gi_Composition_tempo);
+                        next_time = current_time + (60 / parameters.NoteTempo);
                     }
                     sample_canvas(rendering_frame);
                 }
@@ -1093,7 +1107,11 @@
         */
 
         var parameters = {
-            gi_Composition_tempo: 180,
+            NoteTempo: 180,
+            NoteDensity: 75,
+            GraphicsTempo: .01,
+            GraphicsHue: .5,
+            GraphicsValue: .5,
             gi_Composition_density: 50,
             gk_Guitar_level: 0,
             gk_Plucked_level: 0,
@@ -1127,10 +1145,13 @@
             "remembered": {
                 "Default": {
                     "0": {
+                        "NoteTempo": 90.37097934436338,
+                        "NoteDensity": 57.97287020861165,
+                        "GraphicsTempo": 0.12763333675881205,
+                        "GraphicsHue": 0.5222484842256705,
+                        "GraphicsValue": 0.46963313123008943,
                         "gk_overlap": 4.26222770242499,
                         "gk_MasterOutput_level": -9.272503082614058,
-                        "gi_Composition_density": 75.50575421290587,
-                        "gi_Composition_tempo": 180,
                         "gk_ReverbSC_wet": 0.5,
                         "gk_ReverbSC_feedback": 0.9167694204685574,
                         "gk_ReverbSC_delay_modulation": 0.0075,
@@ -1159,6 +1180,11 @@
             },
             "closed": false,
             "folders": {
+                "Composition": {
+                    "preset": "Default",
+                    "closed": false,
+                    "folders": {}
+                },
                 "Master": {
                     "preset": "Default",
                     "closed": true,
@@ -1166,7 +1192,7 @@
                 },
                 "Guitar": {
                     "preset": "Default",
-                    "closed": false,
+                    "closed": true,
                     "folders": {}
                 },
                 "Plucked": {
@@ -1176,7 +1202,7 @@
                 },
                 "FMWaterBell": {
                     "preset": "Default",
-                    "closed": false,
+                    "closed": true,
                     "folders": {}
                 },
                 "YiString": {
@@ -1196,12 +1222,12 @@
                 },
                 "Kung4": {
                     "preset": "Default",
-                    "closed": false,
+                    "closed": true,
                     "folders": {}
                 },
                 "Kung2": {
                     "preset": "Default",
-                    "closed": false,
+                    "closed": true,
                     "folders": {}
                 },
                 "Bower": {
@@ -1230,11 +1256,15 @@
             // This updates the dat.gui GUI from the parameters, which are 
             // in global scope, so used by `add_slider` etc.
             gui.remember(parameters);
+            var Composition = gui.addFolder("Composition");
+            add_slider(Composition, "NoteTempo", 0, 100);
+            add_slider(Composition, "NoteDensity", 0, 127);
+            add_slider(Composition, "GraphicsTempo", 0, 1);
+            add_slider(Composition, "GraphicsHue", 0, 1);
+            add_slider(Composition, "GraphicsValue", 0, 1);
+            add_slider(Composition, 'gk_overlap', 0, 20);
             var Master = gui.addFolder('Master');
-            add_slider(Master, 'gk_overlap', 0, 20);
             add_slider(Master, 'gk_MasterOutput_level', -50, 50);
-            add_slider(Master, 'gi_Composition_density', 0, 127);
-            add_slider(Master, 'gi_Composition_tempo', 2, 480);
             add_slider(Master, 'gk_MasterOutput_level', -50, 50);
             add_slider(Master, 'gk_ReverbSC_wet', 0, 1);
             add_slider(Master, 'gk_ReverbSC_feedback', 0, 1);
@@ -2378,6 +2408,65 @@
                 console.log(`deleted ${name} from caches.`);
             });
         }
+
+        function not_csound(csound_) {
+            if (typeof csound_ === 'undefined') {
+                console.warn("csound is undefined.");
+                console.trace();
+                return true;
+            }
+            if (csound_ === null) {
+                console.warn("csound is null.");
+                console.trace();
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Replaces the order of instruments in a CsoundAC Score with a new order.
+         * Instrument numbers are re-ordered as if they are integers. The 
+         * new_order parameter is a map, e.g. `{1:5, 3:1, 4:17}`. The map need not 
+         * be complete.
+         */
+        function arrange(score, new_order_) {
+            if (non_csound(csound)) {
+                return;
+            }
+            csound.message("arrange: reassigning instrument numbers...\n")
+            let new_order = new Map(Object.entries(new_order_));
+            // Renumber the insnos in the Score. Fractional parts of old insnos are 
+            // preserved.
+            for (i = 0, n = score.data.length; i < n; ++i) {
+                let event_ = score.data[i];
+                let current_insno = event_.channel;
+                let current_insno_integer = Math.floor(current_insno);
+                let string_key = current_insno_integer.toString();
+                if (new_order.has(string_key)) {
+                    let new_insno_integer = new_order.get(string_key);
+                    let new_insno_fraction = current_insno - current_insno_integer;
+                    let new_insno = new_insno_integer + new_insno_fraction;
+                    csound.message("renumbered: " + event_.toIStatement());
+                    event_.channel = new_insno;
+                    score.data[i] = event_;
+                    csound.message("        to: " + score.data[i].toIStatement());
+                }
+            }
+            csound.message("arrange: finished reassigning instrument numbers.\n")
+        }
+
+        function write_file(filepath, data) {
+            var fs = require('fs');
+            try {
+                // Sync, so a bad .csd file doesn't blow up Csound 
+                // before the .csd file is written so it can be tested!
+                fs.writeFileSync(filepath, data, function (err) {
+                    console.error(err);
+                });
+            } catch (err) {
+                console.warn(err);
+            }
+        }
     </script>
 
     <!-- The menu bar has to stack on top of all layers in order for the 
@@ -2387,6 +2476,7 @@
         <ul class="menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <!-- <li id="menu_item_render" class="w3-btn w3-hover-text-light-green">Render</li> -->
+            <li id="menu_item_record" class="w3-btn w3-hover-text-light-green">Record</li>
             <li id="menu_item_stop" class="w3-btn w3-hover-text-light-green">Stop</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
             <!-- <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green">Strudel</li> -->
@@ -2485,7 +2575,7 @@
         };
 
         $(window).on("load", async function () {
-            csound_message_callback("$(window).on(\"load\"...\n");
+            csound_message_callback("\n$(window).on(\"load\"...\n");
             var txt = "\n";
             txt += "Browser CodeName: " + navigator.appCodeName + "\n";
             txt += "Browser Name: " + navigator.appName + "\n";
@@ -2551,6 +2641,20 @@
                 scale = new CsoundAC.Scale("F major");
                 csound_message_callback("Csound is playing...\n");
                 next_time = 0;
+            });
+            $("#menu_item_record").click(async function (event) {
+                console.log("menu_item_record click...");
+                // Start recording if not already recording, 
+                // stop recording if already recording.
+                if ($("#menu_item_record").html() == "Record") {
+                    csound.SetControlChannel("gk_record", 1);
+                    $("#menu_item_record").html("Stop recording")
+                    csound_message_callback("Csound has started recording...\n");
+                } else {
+                    csound.SetControlChannel("gk_record", 0);
+                    $("#menu_item_record").html("Record")
+                    csound_message_callback("Csound has stopped recording.\n");
+                }
             });
             $("#menu_item_stop").click(async function (event) {
                 console.log("menu_item_stop click...");
