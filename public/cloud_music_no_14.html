@@ -1137,7 +1137,6 @@
             gk_ReverbSC_feedback: 0.85,
             gk_ReverbSC_delay_modulation: 0.0075,
             gk_ReverbSC_frequency_cutoff: 9000,
-            gk_overlap: 0.05,
         };
 
         var default_json = {
@@ -1148,10 +1147,9 @@
                         "NoteTempo": 172.84965573938956,
                         "NoteDensity": 88.87781317439112,
                         "NoteDurationFactor": 0.6381666837940603,
-                        "GraphicsTempo": 0.14078717500770732,
+                        "GraphicsTempo": 0.04078717500770732,
                         "GraphicsHue": 0.7064022197102044,
                         "GraphicsValue": 0.2657486383722125,
-                        "gk_overlap": 4.26222770242499,
                         "gk_MasterOutput_level": -9.272503082614058,
                         "gk_ReverbSC_wet": 0.5,
                         "gk_ReverbSC_feedback": 0.9167694204685574,
@@ -1261,10 +1259,9 @@
             add_slider(Composition, "NoteTempo", 0, 200);
             add_slider(Composition, "NoteDensity", 0, 127);
             add_slider(Composition, "NoteDurationFactor", 0, 5);
-            add_slider(Composition, "GraphicsTempo", 0, 1);
+            add_slider(Composition, "GraphicsTempo", 0, .25);
             add_slider(Composition, "GraphicsHue", 0, 1);
             add_slider(Composition, "GraphicsValue", 0, 1);
-            add_slider(Composition, 'gk_overlap', 0, 20);
             var Master = gui.addFolder('Master');
             add_slider(Master, 'gk_MasterOutput_level', -50, 50);
             add_slider(Master, 'gk_MasterOutput_level', -50, 50);
