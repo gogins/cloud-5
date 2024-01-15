@@ -117,6 +117,12 @@ audio produced by cloud-5 to a digital audio workstation that _can_ write
 soundfiles. The maximum resolution of such soundfiles is floating-point 
 samples at 48 KHz, significantly higher resolution than the CD format.
 
+To set this up on the Mac, open the Audio MIDI Setup app, click on the `+` at
+the bottom, and click on Create Multi-Ouput Device, including both your 
+standard audio output and BlackHole. Then, in the Sound settings, select that 
+Multi-Output Device as the default output. Finally, in your DAW or recording 
+software, select BlackHole as the audio input device.
+
 ## Getting Started
 
 ### Pre-requisites

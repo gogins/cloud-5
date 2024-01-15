@@ -1351,7 +1351,7 @@
 
     <CsoundSynthesizer>
     <CsOptions>
-    -+msg_color=0 -m162 -d --sample-accurate -f -odac 
+    -+msg_color=0 -m162 -d --sample-accurate -f -odac
     </CsOptions>
     <CsInstruments>
     
@@ -2348,7 +2348,7 @@
     gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
     
     gk_MasterOutput_level init 0
-    gS_MasterOutput_filename init ""
+    gS_MasterOutput_filename init "cloud_music_no_14.wav"
 
     chn_k "gk_MasterOutput_output_level_left", 3
     chn_k "gk_MasterOutput_output_level_right", 3
@@ -2364,13 +2364,16 @@
     a_out_left = aleft * k_gain
     a_out_right = aright * k_gain
     outs a_out_left, a_out_right
+    /*
     ; We want something that will play on my phone.
     i_amplitude_adjustment = ampdbfs(-3) / 32767
     i_filename_length strlen gS_MasterOutput_filename
     if i_filename_length > 0 then
+    i_soundfile_handle fiopen gS_MasterOutput_filename, 2
     prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
-    fout gS_MasterOutput_filename, 18, a_out_left * i_amplitude_adjustment, a_out_right * i_amplitude_adjustment
+    fout i_soundfile_handle, 19, a_out_left * i_amplitude_adjustment, a_out_right * i_amplitude_adjustment
     endif
+    */
     prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
     gk_MasterOutput_output_level_left = dbfsamp(rms(a_out_left))
     gk_MasterOutput_output_level_right = dbfsamp(rms(a_out_right))
@@ -2466,6 +2469,39 @@
                 console.warn(err);
             }
         }
+
+        /**
+         * Creates a URL for a soundfile recorded by this piece.
+         * All such files exist by default in the Emscripten MEMFS filesystem 
+         * at '/'.
+         */
+        function url_for_soundfile() {
+            try {
+                let soundfile_name = "/" + document.title + ".wav";
+                // But see https://mimetype.io/audio/vnd.wav.
+                let mime_type = "audio/wav";
+                // `fs` is for the Web server's filesystem.
+                // What we need is Emscripten's MEMFS. Possibly because of the 
+                // design of WebAudio, FS is not exported in Csound for WASM. 
+                // But it is exported in CsoundAC.
+                // let content = fs.readFileSync(soundfile_name);
+                let content = CsoundAC.FS.readFile(soundfile_name, {encoding: 'binary}'});
+                console.log(`Offering download of "${soundfile_name}", with ${content.length} bytes...`);
+                var a = document.createElement('a');
+                a.download = soundfile_name;
+                a.href = URL.createObjectURL(new Blob([content], {type: mime_type}));
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                }, 2000);
+                // 
+            } catch (x) {
+                console.log(x);
+            }
+        }
     </script>
 
     <!-- The menu bar has to stack on top of all layers in order for the 
@@ -2475,7 +2511,7 @@
         <ul class="menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <!-- <li id="menu_item_render" class="w3-btn w3-hover-text-light-green">Render</li> -->
-            <li id="menu_item_record" class="w3-btn w3-hover-text-light-green">Record</li>
+            <!-- <li id="menu_item_record" class="w3-btn w3-hover-text-light-green">Record</li> -->
             <li id="menu_item_stop" class="w3-btn w3-hover-text-light-green">Stop</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
             <!-- <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green">Strudel</li> -->
@@ -2653,6 +2689,7 @@
                     csound.SetControlChannel("gk_record", 0);
                     $("#menu_item_record").html("Record")
                     csound_message_callback("Csound has stopped recording.\n");
+                    let soundefile_url = url_for_soundfile();
                 }
             });
             $("#menu_item_stop").click(async function (event) {
