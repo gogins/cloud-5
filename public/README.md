@@ -67,7 +67,8 @@ piece itself.
 
 - [Cloud Music No. 13](cloud_music_no_13.html).
 
-- [Cloud Music No. 14](cloud_music_no_14.html).
+- [Cloud Music No. 14](cloud_music_no_14.html). This one has a button so the user can 
+record a performance and download the resulting soundfile.
 
 - [Cancycle](cancycle.html), a piece for live coding.
 
