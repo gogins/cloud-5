@@ -30,6 +30,9 @@ class CsoundAudioNode extends AudioWorkletNode {
     resolveGetControlChannel(result) {
         return result;
     }
+    resolveGetFileData(result) {
+        return result;
+    }
     resolveReadScore(result) {
         return result;
     }
@@ -67,6 +70,9 @@ class CsoundAudioNode extends AudioWorkletNode {
                      // this.message_callback("[" + window.performance.now() + " Received GetControlChannelResult with: " + data[1] + ".]\n");
                     this.resolveGetControlChannel(data[1]);
                     break;
+                case "GetFileDataResult":
+                    this.resolveGetFileData(data[1]);
+                    break;
                 case "GetScoreTimeResult":
                      // this.message_callback("[" + window.performance.now() + " Received GetScoreTimeResult with: " + data[1] + ".]\n");
                     this.resolveGetScoreTime(data[1]);
@@ -103,6 +109,7 @@ class CsoundAudioNode extends AudioWorkletNode {
         this.IsPlayingPromise = null;
         this.StopPromise = null;
         this.CleanupPromise = null;
+        this.GetFileDataPromise = null;
         this.GetScoreTimePromise = null;
         this.GetGetControlChannelPromise = null;
         this.ReadScorePromise = null;
@@ -233,6 +240,20 @@ class CsoundAudioNode extends AudioWorkletNode {
     };
     async getControlChannel(name) {
         this.GetControlChannel(name);
+    };
+    async GetFileData(filename) {
+        // this.message_callback("[" + window.performance.now() + " GetControlChannel.]\n");
+        let promise = new Promise((resolve, reject) => {
+            // Not exactly intuitive!
+            this.resolveGetFileData = resolve;
+            this.port.postMessage(["GetFileData", filename]);
+        });
+        let result = await promise;
+        // this.message_callback("[" + window.performance.now() + " GetControlChannel resolved with: " + result + ".]\n");
+        return result;    
+    };
+    async getFileData(name) {
+        this.GetFileData(name);
     };
     GetCurrentTimeSamples() {
         this.port.postMessage(["GetCurrentTimeSamples"]);

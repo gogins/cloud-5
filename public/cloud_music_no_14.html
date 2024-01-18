@@ -2352,6 +2352,7 @@
 
     chn_k "gk_MasterOutput_output_level_left", 3
     chn_k "gk_MasterOutput_output_level_right", 3
+    gk_record init 0
 
     instr MasterOutput
     aleft inleta "inleft"
@@ -2364,15 +2365,17 @@
     a_out_left = aleft * k_gain
     a_out_right = aright * k_gain
     outs a_out_left, a_out_right
+
+    ; We need a toggle for recording/pausing.
+
+    gk_record chnget "gk_record"
     
-    ; We want something that will play on my phone.
-    i_amplitude_adjustment = ampdbfs(-3) / 32767
-    i_filename_length strlen gS_MasterOutput_filename
-    if i_filename_length > 0 then
-    prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
-    ;;; fout gS_MasterOutput_filename, 19, a_out_left * i_amplitude_adjustment, a_out_right * i_amplitude_adjustment
+    if gk_record == 1 then 
+    prints sprintf("Recording to output filename: %s\n", gS_MasterOutput_filename)
+    fout gS_MasterOutput_filename, 19, a_out_left, a_out_right
+    else 
+    prints "Not recording."
     endif
-    fout "/test_output.wav", 19, a_out_left, a_out_right
    
     prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
     gk_MasterOutput_output_level_left = dbfsamp(rms(a_out_left))
@@ -2475,21 +2478,17 @@
          * All such files exist by default in the Emscripten MEMFS filesystem 
          * at '/'.
          */
-        function url_for_soundfile() {
+        async function url_for_soundfile() {
             try {
-                let soundfile_name = "/" + document.title + ".wav";
+                let soundfile_name = document.title + ".wav";
                 // But see https://mimetype.io/audio/vnd.wav.
                 let mime_type = "audio/wav";
-                // `fs` is for the Web server's filesystem.
-                // What we need is Emscripten's MEMFS. Possibly because of the 
-                // design of WebAudio, FS is not exported in Csound for WASM. 
-                // But it is exported in CsoundAC.
-                // let content = fs.readFileSync(soundfile_name);
-                let content = CsoundAC.FS.readFile(soundfile_name, {encoding: 'binary'});
-                console.log(`Offering download of "${soundfile_name}", with ${content.length} bytes...`);
+                let file_data = await csound.GetFileData(soundfile_name);
+                console.log(`Offering download of "${soundfile_name}", with ${file_data.length} bytes...`);
                 var a = document.createElement('a');
                 a.download = soundfile_name;
-                a.href = URL.createObjectURL(new Blob([content], {type: mime_type}));
+                a.href = URL.createObjectURL(new Blob([file_data], {type: mime_type}));
+                // We hide the download link and automatically click it.
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
