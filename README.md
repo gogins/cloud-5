@@ -375,7 +375,16 @@ from `gogins.github.io`, although pieces may be added there. In other words,
 
 ## Release Notes
 
-### [v0.1](https://github.com/gogins/cloud-5/commits/v0.1)
+### [v0.2](https://github.com/gogins/cloud-5/commits/v0.2)
+
+ - Added _Record_ and _Pause_ button to _Cloud Music No. 14_, for the user to
+ download a soundfile that records the performance using Csound's `fout` 
+ opcode.
+
+ - Updated Csound, [csound-wasm](https://github.com/gogins/csound-wasm), 
+   and Strudel to current versions.
+
+ ### [v0.1](https://github.com/gogins/cloud-5/commits/v0.1)
 
  - Improved user interface and code organization in some pieces, making them 
    more usable as templates for newer pieces.
