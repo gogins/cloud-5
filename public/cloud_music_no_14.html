@@ -2690,7 +2690,7 @@
                 // stop recording if already recording.
                 if ($("#menu_item_record").html() == "Record") {
                     csound.SetControlChannel("gk_record", 1);
-                    $("#menu_item_record").html("Stop recording")
+                    $("#menu_item_record").html("Pause")
                     csound_message_callback("Csound has started recording...\n");
                 } else {
                     csound.SetControlChannel("gk_record", 0);
