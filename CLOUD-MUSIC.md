@@ -16,8 +16,9 @@ amounting to a new piece, co-composed with me.
 All source code for these pieces is available in the GitHub repository.
 
 The underlying technology is my 
-<a href="https://github.com/gogins/csound-wasm">WebAssembly builds of Csound and CsoundAC</a>.
-Some pieces may use third party libraries.
+<a href="https://github.com/gogins/csound-wasm">own WebAssembly builds of Csound and CsoundAC</a>.
+Some pieces may use third party libraries. The home page of Csound itself 
+is <a href="[xx](https://csound.com/)">here</a>.
 
 # Installation
 

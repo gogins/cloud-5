@@ -32,7 +32,10 @@ as an installation or kiosk) will be better off just using a personal
 computer.
 
 cloud-5 is used by my own Web site of "always-on" computer music pieces, 
-[cloud-music](https://gogins.github.io/).
+[cloud-music](https://gogins.github.io/). The underlying technology is my 
+<a href="https://github.com/gogins/csound-wasm">own WebAssembly builds of 
+Csound and CsoundAC</a>. Some pieces may use third party libraries. The home 
+page of Csound itself is <a href="[xx](https://csound.com/)">here</a>.
 
 For recent changes, see the _[Release Notes](#release-notes)_ at the end of 
 this document.
