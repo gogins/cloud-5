@@ -482,8 +482,32 @@ class CsoundAudioNode extends AudioWorkletNode {
     SetStringChannel(name, value) {
         this.port.postMessage(["SetStringChannel", name, value]);
     };
-    // Wiring into the Web Audio graph is up here in the upper half, 
-    // wiring within Csound is down in the lower half.
+    /**
+     * Starts the Csound performance with or without any connection to the 
+     * Web Audio signal flow graph. Such connections may be created in the 
+     * usual manner for constructing Web Audio graphs, either before, or 
+     * after, calling StartNode.
+     */
+    StartNode() {
+        // this.message_callback("[" + window.performance.now() + " StartNode.]\n");
+        try {
+            this.port.postMessage(["Start"]);
+            this.is_playing = true;
+            this.message_callback("is_playing...\n");
+        } catch (e) {
+            this.message_callback(e);
+        }
+    }
+    startNode() {
+        this.StartNode();
+    }
+    /**
+     * First connects to the default WebAudio output and the WebAudio 
+     * context's media source input, if it exists, and the MIDI input, 
+     * if it exists, then starts the Csound performance. Wiring into the Web 
+     * Audio graph is up here in the upper half, wiring within Csound is down 
+     * in the lower half.
+     */
     async Start() {
         // this.message_callback("[" + window.performance.now() + " Start.]\n");
         try {

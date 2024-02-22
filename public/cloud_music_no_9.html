@@ -2930,13 +2930,6 @@ instr MasterOutput uses instrument number 16
                     strudel_view.startPlaying();
                     $("#menu_item_play").html("Stop");
                 } else {
-                    await clearInterval(interval_id);
-                    await csound.Stop();
-                    await csound.Cleanup();
-                    csound.Reset();
-                    csound_message_callback("Csound is stopping...\n");
-                    $("#menu_item_play").html("Play");
-                    strudel_view.stopPlaying();
                 }
             });
             $("#menu_item_render").click(async function (event) {
