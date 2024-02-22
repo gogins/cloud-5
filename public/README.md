@@ -9,7 +9,7 @@ if ('caches' in window) {
 </script>
 # cloud-music 
 
-## Computer music in the cloud by Michael Gogins. 
+## Computer music in the cloud by Michael Gogins 
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
 <img alt="Creative Commons License" style="border-width:0" 
@@ -40,7 +40,7 @@ HTML user interface.
 - [Strudel REPL](strudel_repl.html), exactly the same as the main Strudel Web 
 site.
 
-- [Trichord Space](trichord_space.html), an interactive piece that displays 
+- [Trichord Space](trichord_space.cloud5.html), an interactive piece that displays 
 Dmitri Tymoczko's chord space for trichords, with the ability to perform, 
 hear, and visualize various operations on the chords in the space.
 

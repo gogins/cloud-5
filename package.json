@@ -7,7 +7,7 @@
     "package": "zip -r cloud-5.zip cloud-5",
     "build": "pnpm run build-strudel && vite build && mkdir -p cloud-5 && cp -rf strudel/website/dist/* cloud-5/ && rm cloud-5/CNAME && pandoc -s cloud-5.css --ascii=true README.md -o cloud-5/index.html && python3 patch-dist.py && cp -f favicon.ico cloud-5/ && pnpm run jsdoc && pnpm run package && ls -ll cloud-5",
     "deploy": "pnpm run build && rm -rf ~/gogins.github.io/_astro && rm -rf ~/gogins.github.io/assets && cp -rf cloud-5/* ~/gogins.github.io/ && pandoc -s cloud-5.css --ascii=true README.md --metadata title='cloud-5' -o ~/gogins.github.io/cloud-5.html && pandoc -s cloud-5.css --ascii=true public/README.md --metadata title='cloud-music' -o ~/gogins.github.io/index.html",
-    "run": "cd cloud-5 && python3 -m http.server"
+    "local": "cd cloud-5 && python3 -m http.server"
   },
   "dependencies": {
     "@strudel.cycles/core": "^0.8.2",

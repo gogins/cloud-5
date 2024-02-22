@@ -6,7 +6,7 @@ style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.p
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 
-Music in the cloud by Michael Gogins. 
+## Computer music in the cloud by Michael Gogins 
 
 This is real music. Each piece will play indefinitely in any standard Web 
 browser. There may or may not be animated visuals along with the music. The 
@@ -20,7 +20,7 @@ The underlying technology is my
 Some pieces may use third party libraries. The home page of Csound itself 
 is <a href="[xx](https://csound.com/)">here</a>.
 
-# Installation
+## Installation
 
 This repository is a bit of a hack, but I have tried to make it as 
 maintainable as possible.

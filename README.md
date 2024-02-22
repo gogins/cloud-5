@@ -1,5 +1,5 @@
 # [cloud-5](https://github.com/gogins/cloud-5)
-#### An HTML5-based computer music system with Csound, CsoundAC, and Strudel by [Michael Gogins](https://michaelgogins.tumblr.com). 
+#### An HTML5-based computer music system with Csound, CsoundAC, and Strudel by [Michael Gogins](https://michaelgogins.tumblr.com) 
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" 
 style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
@@ -242,7 +242,7 @@ out simple, and get more and more complicated and capable.
  - [Strudel REPL](strudel_repl.html), exactly the same as the main Strudel Web 
    site.
  
- - [Trichord Space](trichord_space.html), an interactive piece that displays 
+ - [Trichord Space](trichord_space.cloud5.html), an interactive piece that displays 
    Dmitri Tymoczko's chord space for trichords, with the ability to perform, 
    hear, and visualize various operations on the chords in the space.
  
