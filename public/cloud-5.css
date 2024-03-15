@@ -1,0 +1,156 @@
+/* A cloud-5 piece always fills the viewport and only the viewport. */
+
+html {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* The cloud-5 custom elements share a common style, which can be overridden by lower level styles. */
+
+.cloud5-body {
+  width: 100vw;
+  min-height: 100vh;
+  background-color:black;
+}
+
+.cloud5-score-canvas,
+.cloud5-shader-canvas {
+  background:black;
+  margin: 0px;
+  width: 100vw;
+  height: 100vh;
+}
+
+.cloud5-strudel-repl {
+  position: absolute;
+  top: 0px;
+  width:120em;
+  height:80em;
+  left: 40px;
+  /* Bring Strudel's self-determined font size back into line with ours. */
+  transform: scale(.666667);
+}
+
+.cloud5-log-editor {
+  background: transparent;
+  display: block;
+  margin: 0px;
+  width: 100%;
+  height: 100%;
+  font-size: 11px;
+  opacity: 70%;
+  color: rgb(255, 255, 200);
+  overflow-wrap: break-word;
+}
+
+cloud5-log {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  visibility: none;
+  display: block;
+  padding: 80px;
+  width: 100vw;
+  height: 100vh;
+  color: rgb(255, 255, 200, 67%);
+  background: transparent;
+}
+
+cloud5-strudel,
+cloud5-about {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: none;
+  display: none;
+  padding: 80px;
+  width: 100vw;
+  height:100vh;
+  font-size: 11px;
+  background: transparent;
+  color: rgb(255, 255, 200, 67%);
+  /* overflow-y: auto; */
+  overflow-wrap: break-word;
+}
+
+cloud5-shader, 
+cloud5-shadertoy {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: none;
+  display: none;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  font-size: 11px;
+  /* z-index: 5; */
+  background: transparent;
+  color: rgb(255, 255, 200, 67%);
+  /* overflow-y: auto; */
+  overflow-wrap: break-word;
+}
+
+cloud5-piano-roll {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  visibility: none;
+  display: none;
+  margin: 0px;
+  width: 100vw;
+  height: 100vh;
+  font-size: 11px;
+  /* z-index: 5; */
+  background:  black;
+   /* overflow-y: auto; */
+  overflow-wrap: break-word;
+}
+
+/**
+ * Stacking order for all overlays. The shader should always be at the bottom 
+ * and the menu bar should always be at the too.
+ */
+ cloud5-shader, cloud5-shadertoy {
+  z-index: 0;
+ }
+ cloud5-score {
+  z-index: 10;
+ }
+ cloud5-log {
+  z-index: 20;
+ }
+ cloud5-strudel {
+  z-index: 30;
+ }
+ cloud5-about {
+  z-index: 40;
+ }
+ cloud5-piece {
+  z-index: 50;
+ }
+/**
+ * Override styles of dat.gui menu to suit our styles.
+ */
+  
+.dg {
+    font: 12px 'Verdana', sans-serif;
+}
+
+.dg .c {
+    background: transparent;
+}
+
+.dg.main .close-button {
+    background: transparent;
+    font: 15px 'Verdana', sans-serif;
+}
+
+.dg.main .close-button:hover {
+    background: transparent;
+}
+
+input {
+    font: 1em/1.25em Verdana, sans-serif;
+    background: transparent;
+}

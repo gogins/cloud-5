@@ -790,9 +790,9 @@ if (typeof console === 'undefined') {
         var camera = this.camera;
         this.controls = new THREE.TrackballControls(camera, canvas);
         var controls = this.controls;
-        controls.rotateSpeed = 1.0;
-        controls.zoomSpeed = 1;
-        controls.panSpeed = 1;
+        controls.rotateSpeed = 8.0;
+        controls.zoomSpeed = 8.0;
+        controls.panSpeed = 8.0;
         controls.noZoom = false;
         controls.noPan = false;
         controls.staticMoving = true;
@@ -803,18 +803,17 @@ if (typeof console === 'undefined') {
         this.scene.add(light);
         var light2 = new THREE.AmbientLight(0x404040, 0.5);
         this.scene.add(light2);
-        var onResize = function() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-            this.renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-            this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
-            this.controls.handleResize();
-            this.camera.updateProjectionMatrix();
-            this.renderer.render(this.scene, this.camera);
-        };
-        window.addEventListener('resize', onResize, false);
+        window.addEventListener('resize', ((event) => this.onResize(event)), false);
     };
-
+    Score.prototype.onResize = function(event) {
+        this.canvas.width = this.canvas.clientWidth;
+        this.canvas.height = this.canvas.clientHeight;
+        this.renderer.setViewport(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
+        this.camera.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
+        this.controls.handleResize();
+        this.camera.updateProjectionMatrix();
+        this.renderer.render(this.scene, this.camera);
+    };
     /**
      * Adds the note to the 3D scene. Can be used with a fixed or a real-time score.
      */

@@ -54,7 +54,7 @@ with open(astro_config_mjs_filepath, "r+") as file:
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
   find_this = '''  vite: {
-     ssr: {
+    ssr: {
       // Example: Force a broken package to skip SSR processing, if needed
       // external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
     },'''
@@ -65,8 +65,7 @@ with open(astro_config_mjs_filepath, "r+") as file:
     },
     build: {
         sourcemap: true
-    },
-  },'''
+    },'''
   patched_text = patched_text.replace(find_this, replace_with)
   print(patched_text)
   file.seek(0)
