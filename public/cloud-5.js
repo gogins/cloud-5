@@ -56,6 +56,8 @@ class Cloud5Piece extends HTMLElement {
   #shader_overlay = null;
   set shader_overlay(shader) {
     this.#shader_overlay = shader;
+    // Back reference for shader to access Csound, etc.
+    shader.csound5_piece = this;
     this.show(this.#shader_overlay);
   }
   get shader_overlay() {
@@ -124,7 +126,7 @@ class Cloud5Piece extends HTMLElement {
    * notes for the piece, and so on.
    */
   #about_overlay = null;
-  csound_message_callback = async function(message) {
+  csound_message_callback = async function (message) {
     if (message === null) {
       return;
     }
@@ -214,7 +216,7 @@ class Cloud5Piece extends HTMLElement {
     this.mini_console = document.querySelector("#mini_console");
     let menu_item_play = document.querySelector('#menu_item_play');
     menu_item_play.onclick = ((event) => {
-      console.log("menu_item_play click...");
+      console.info("menu_item_play click...");
       this.show(this.piano_roll_overlay)
       this.hide(this.strudel_overlay);
       // this.hide(this.shader_overlay);
@@ -224,7 +226,7 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_render = document.querySelector('#menu_item_render');
     menu_item_render.onclick = ((event) => {
-      console.log("menu_item_render click...");
+      console.info("menu_item_render click...");
       this.show(this.piano_roll_overlay)
       this.hide(this.strudel_overlay);
       // this.hide(this.shader_overlay);
@@ -234,12 +236,12 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_stop = document.querySelector('#menu_item_stop');
     menu_item_stop.onclick = ((event) => {
-      console.log("menu_item_stop click...");
+      console.info("menu_item_stop click...");
       this.stop();
     });
     let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
     menu_item_fullscreen.onclick = ((event) => {
-      console.log("menu_item_fullscreen click...");
+      console.info("menu_item_fullscreen click...");
       if (this.piano_roll_overlay.requestFullscreen) {
         this.piano_roll_overlay.requestFullscreen();
       } else if (this.piano_roll_overlay.webkitRequestFullscreen) {
@@ -250,7 +252,7 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_strudel = document.querySelector('#menu_item_strudel');
     menu_item_strudel.onclick = ((event) => {
-      console.log("menu_item_strudel click...");
+      console.info("menu_item_strudel click...");
       //this.hide(this.piano_roll_overlay)
       this.toggle(this.strudel_overlay);
       // this.hide(this.shader_overlay);
@@ -259,7 +261,7 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_piano_roll = document.querySelector('#menu_item_piano_roll');
     menu_item_piano_roll.onclick = ((evemt) => {
-      console.log("menu_item_piano_roll click...");
+      console.info("menu_item_piano_roll click...");
       this.toggle(this.piano_roll_overlay)
       //this.hide(this.strudel_overlay);
       // this.hide(this.shader_overlay);
@@ -268,7 +270,7 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_log = document.querySelector('#menu_item_log');
     menu_item_log.onclick = ((event) => {
-      console.log("menu_item_log click...");
+      console.info("menu_item_log click...");
       //this.show(this.piano_roll_overlay)
       //this.hide(this.strudel_overlay);
       //this.hide(this.shader_overlay);
@@ -277,7 +279,7 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_about = document.querySelector('#menu_item_about');
     menu_item_about.onclick = ((event) => {
-      console.log("menu_item_about click...");
+      console.info("menu_item_about click...");
       this.hide(this.piano_roll_overlay)
       this.hide(this.strudel_overlay);
       ///this.hide(this.shader_overlay);
@@ -289,7 +291,7 @@ class Cloud5Piece extends HTMLElement {
     this.gui = new dat.GUI(dat_gui_parameters);
     let dat_gui = document.getElementById('menu_item_dat_gui');
     dat_gui.appendChild(this.gui.domElement);
-    document.addEventListener("keydown", function (e) {
+    document.onkeydown = ((e) => {
       let e_char = String.fromCharCode(e.keyCode || e.charCode);
       if (e.ctrlKey === true) {
         if (e_char === 'H') {
@@ -302,11 +304,13 @@ class Cloud5Piece extends HTMLElement {
           this.gui.closed = true;
           gui.closed = false;
         } else if (e_char === 'G') {
-          generate_score_hook();
+          this.score_generator_function_addon();
         } else if (e_char === 'P') {
-          parameters.play();
+          this.play();
         } else if (e_char === 'S') {
-          parameters.stop();
+          this.stop();
+        } else if (e_char === 'C') {
+          this?.piano_roll_overlay.recenter();
         }
       }
     });
@@ -356,7 +360,7 @@ class Cloud5Piece extends HTMLElement {
     this.csound_message_callback("Csound has started...\n");
     if (is_offline == false) {
       await this.csound.Perform();
-      console.log("strudel_view:", this.strudel_view);
+      console.info("strudel_view:", this.strudel_view);
       strudel_view?.setCsound(this.csound);
       strudel_view?.startPlaying();
     } else {
@@ -364,7 +368,7 @@ class Cloud5Piece extends HTMLElement {
       // thread.
       await this.csound.performAndPostProcess();
     }
-    this.piano_roll_overlay?.trackScoreTime();
+    this?.piano_roll_overlay.trackScoreTime();
     this?.csound_message_callback("Csound is playing...\n");
   }
   stop = async function () {
@@ -421,7 +425,7 @@ class Cloud5Piece extends HTMLElement {
   }
   gk_update(name, value) {
     const numberValue = parseFloat(value);
-    console.log("gk_update: name: " + name + " value: " + numberValue);
+    console.info("gk_update: name: " + name + " value: " + numberValue);
     if (non_csound(this.csound) == false) {
       this.csound.SetControlChannel(name, numberValue);
     }
@@ -479,15 +483,21 @@ class Cloud5PianoRoll extends HTMLElement {
     this.silencio_score.draw3D(this.canvas);
   }
   trackScoreTime() {
-    if (non_csound(this.csound5_piece.csound)) {
+    if (non_csound(this?.csound5_piece?.csound)) {
       return;
     }
-    let score_time = this.csound5_piece.csound.getScoreTime();
-    this.silencio_score.progress3D(score_time);
-    this.interval_id = setTimeout(() => this.trackScoreTime(), 200);
+    let interval_callback = async function () {
+      let score_time = await this?.csound5_piece?.csound?.GetScoreTime();
+      this?.silencio_score.progress3D(score_time);
+    };
+    let bound_interval_callback = interval_callback.bind(this);
+    this.interval_id = setInterval(bound_interval_callback, 200);
   }
   stop() {
     clearInterval(this.interval_id);
+  }
+  recenter() {
+    this.silencio_score.lookAtFullScore3D();
   }
 }
 customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
@@ -628,7 +638,7 @@ class Cloud5ShaderToy extends HTMLElement {
   void main() {
       gl_Position = vec4(inPos.xy, 0.0, 1.0);
   }`;
-  analyzer = null;
+  analyser = null;
   uniforms = {};
   uniform_locations = {};
   attributes = null;
@@ -709,7 +719,7 @@ class Cloud5ShaderToy extends HTMLElement {
       this.vertex_shader_code_addon = this.#shader_parameters_addon.vertex_shader_code_addon;
     }
     this.fragment_shader_code_addon = this.#shader_parameters_addon.fragment_shader_code_addon;
-    this.set_normals_function_addon = this.#shader_parameters_addon.set_normals_function_addon;
+    this.set_uniforms_function_addon = this.#shader_parameters_addon.set_uniforms_function_addon;
     this.get_attributes_function_addon = this.#shader_parameters_addon.get_attributes_function_addon;
     this.prepare_canvas();
     this.compile_shader();
@@ -730,17 +740,17 @@ class Cloud5ShaderToy extends HTMLElement {
     let devicePixelRatio_ = window.devicePixelRatio || 1
     this.canvas.width = this.canvas.clientWidth * devicePixelRatio_;
     this.canvas.height = this.canvas.clientHeight * devicePixelRatio_;
-    console.log("canvas.height: " + this.canvas.height);
-    console.log("canvas.width:  " + this.canvas.width);
+    console.info("canvas.height: " + this.canvas.height);
+    console.info("canvas.width:  " + this.canvas.width);
     this.gl = this.canvas.getContext("webgl2", { antialias: true });
     if (!this.gl) {
       alert("Could not create webgl2 context.");
     }
     let extensions = this.gl.getSupportedExtensions();
-    console.log("Supported extensions:\n" + extensions);
+    console.info("Supported extensions:\n" + extensions);
     if ("gpu" in navigator) {
       var gpu_adapter = navigator.gpu.requestAdapter();
-      console.log("WebGPU adapter: " + gpu_adapter);
+      console.info("WebGPU adapter: " + gpu_adapter);
     } else {
       console.warn("WebGPU is not available on this platform.");
     }
@@ -789,7 +799,7 @@ class Cloud5ShaderToy extends HTMLElement {
       }
       this.gl.attachShader(this.shader_program, shader_object);
       this.gl.linkProgram(this.shader_program);
-      console.log("translated shader:" + WEBGL_debug_shaders.getTranslatedShaderSource(shader_object));
+      console.info("translated shader:" + WEBGL_debug_shaders.getTranslatedShaderSource(shader_object));
     }
     status = this.gl.getProgramParameter(this.shader_program, this.gl.LINK_STATUS);
     if (!status) {
@@ -860,6 +870,17 @@ class Cloud5ShaderToy extends HTMLElement {
    * Runs the shader in an endless loop of animation frames.
    */
   render_frame(milliseconds) {
+    // Here we create an AnalyserNode as soon as Csound is available.
+    if (this.analyser) {
+    } else {
+      let csound = this?.csound5_piece?.csound;
+      if (csound) {
+        this.analyser = new AnalyserNode(csound.context);
+        this.analyser.fftSize = 2048;
+        console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
+        csound.connect(this.analyser);
+      }  
+    }
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     // Custom uniforms may be set in this addon. Such uniforms can be used 
@@ -910,7 +931,7 @@ class Cloud5Log extends HTMLElement {
     // not at the end?
     this.message_callback_buffer = this.message_callback_buffer + message;
     if (this.message_callback_buffer.endsWith("\n")) {
-      console.log(this.message_callback_buffer);
+      console.info(this.message_callback_buffer);
       let lines = this.console_editor.getSession().getLength();
       // Prevent the console editor from hogging memory.
       if (lines > 5000) {
@@ -944,7 +965,7 @@ try {
   var fs = require("fs");
   var __dirname = fs.realpathSync.native(".");
 } catch (e) {
-  console.log(e);
+  console.warn(e);
 }
 
 /**
@@ -959,7 +980,7 @@ if ('caches' in window) {
   caches.keys().then(function (names) {
     for (let name of names)
       caches.delete(name);
-    console.log(`deleted ${name} from caches.`);
+    console.info(`deleted ${name} from caches.`);
   });
 }
 
@@ -987,7 +1008,7 @@ function non_csound(csound_) {
  * be complete.
  */
 function arrange_silencio(score, new_order_) {
-  console.log("arrange: reassigning instrument numbers...")
+  console.info("arrange: reassigning instrument numbers...")
   let new_order = new Map(Object.entries(new_order_));
   // Renumber the insnos in the Score. Fractional parts of old insnos are 
   // preserved.
@@ -1000,13 +1021,13 @@ function arrange_silencio(score, new_order_) {
       let new_insno_integer = new_order.get(string_key);
       let new_insno_fraction = current_insno - current_insno_integer;
       let new_insno = new_insno_integer + new_insno_fraction;
-      console.log("renumbered: " + event_.toIStatement());
+      console.info("renumbered: " + event_.toIStatement());
       event_.channel = new_insno;
       score.data[i] = event_;
-      console.log("        to: " + score.data[i].toIStatement());
+      console.info("        to: " + score.data[i].toIStatement());
     }
   }
-  console.log("arrange: finished reassigning instrument numbers.\n")
+  console.info("arrange: finished reassigning instrument numbers.\n")
 }
 
 /**
@@ -1016,7 +1037,7 @@ function arrange_silencio(score, new_order_) {
  * be complete.
  */
 function arrange(score, new_order_) {
-  console.log("arrange: reassigning instrument numbers...\n")
+  console.info("arrange: reassigning instrument numbers...\n")
   let new_order = new Map(Object.entries(new_order_));
   // Renumber the insnos in the Score. Fractional parts of old insnos are 
   // preserved.
@@ -1029,13 +1050,13 @@ function arrange(score, new_order_) {
       let new_insno_integer = new_order.get(string_key);
       let new_insno_fraction = current_insno - current_insno_integer;
       let new_insno = new_insno_integer + new_insno_fraction;
-      console.log("renumbered: " + event_.toIStatement());
+      console.info("renumbered: " + event_.toIStatement());
       event_.setInstrument(new_insno);
       score.set(i, event_);
-      console.log("        to: " + event_.toIStatement());
+      console.info("        to: " + event_.toIStatement());
     }
   }
-  console.log("arrange: finished reassigning instrument numbers.\n")
+  console.info("arrange: finished reassigning instrument numbers.\n")
 }
 
 function write_file(filepath, data) {
@@ -1047,7 +1068,7 @@ function write_file(filepath, data) {
     });
   } catch (err) {
     navigator.clipboard.writeText(data);
-    console.log("Copied generated csd to system clipboard.\n")
+    console.info("Copied generated csd to system clipboard.\n")
     console.warn(err);
   }
 }
@@ -1059,7 +1080,7 @@ function write_file(filepath, data) {
 function copy_parameters(parameters) {
   const json_text = JSON.stringify(parameters, null, 4);
   navigator.clipboard.writeText(json_text);
-  console.log("Copied all control parameters to system clipboard.\n")
+  console.info("Copied all control parameters to system clipboard.\n")
 }
 
 function resize() {
