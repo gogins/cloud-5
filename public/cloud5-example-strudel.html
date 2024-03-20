@@ -13,12 +13,10 @@
     <script src="CsoundAudioNode.js"></script>
     <script src="csound_loader.js"></script>
     <script src="CsoundAC.js"></script>
-    <script src="PianoRoll3D.js"></script>
     <script src='Silencio.js'></script>
     <script src='ChordSpace.js'></script>
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
-    <script src="swissgl.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="stylesheet" href="cloud-5.css">
     <script src='cloud-5.js'></script>
@@ -1882,7 +1880,6 @@
     <cloud5-piece></cloud5-piece style="z-index:1000;">
     <cloud5-strudel></cloud5-strudel>
     <cloud5-shadertoy></cloud5-shadertoy>
-    <cloud5-piano-roll></cloud5-piano-roll>
     <cloud5-log></cloud5-log>
     <cloud5-about>
         <div>
@@ -1955,46 +1952,6 @@
     <script>
         let cloud5_piece = document.querySelector('cloud5-piece');
         let host = cloud5_piece;
-        // #region Score Generator
-        cloud5_piece.score_generator_function_addon = async function () {
-            cloud5_piece.csound.message("score_generator_function_addon...\n");
-            try {
-                let CsoundAC = await createCsoundAC();
-                // JavaScript can't follow the memory graph from a Score to 
-                // its ScoreModel; therefore, to keep the _Score_ in memory, 
-                // its _ScoreModel_ also must be kept in memory. That is done 
-                // here by making the ScoreModel global.
-                globalThis.score_model = new CsoundAC.ScoreModel();
-                let scale = new CsoundAC.Scale("C major");
-                //csound.message(scale.information());
-                let chord = scale.chord(1, 5, 4);
-                //csound.message(chord.eOP().information());
-                let lindenmayer = new CsoundAC.ChordLindenmayer();
-                lindenmayer.setAxiom("(seed P 3928394)(= P 72)(= Sc Cmajor {0,2,4,5,7,9,11})(++ C)(= C {0,4,7})(= M {0,4,7})(= N[d] 36.)(Sc P)(A)");
-                lindenmayer.addRule("(A)", "(B)(F N .5 R)(uni V 1 210)(W C R)(+ N[k] -1 R)(+ N[v] 2)(+ Sd -3 R)(W Cl R)([)(* S[t] .75)(- N[k] .5 R)(F N 1)(A)(])(M Sc 3 1)(uni N[x] 0 1)(+ N[t] 1)(R O t k .3333334)(F N 1.5 R)(R O t i .25)(- N[v] 2)(B)(+ Sd 4)(C Sd 4)(W Cl R)(+ Sd 3)(uni N[i] 1 5)(M Sc 3 0)(Sc P)(W N R)(A)(+ N[k] 2 R)(+ N[t] .5)(W N R)(A)");
-                lindenmayer.addRule("(A)", "(B)(F N .125 R)(uni V 1 111)(W C R)(+ N[k] -1 R)(+ N[v] 2)(+ Sd -1 R)(W Cl R)([)(* S[t] .75)(- N[k] .5 R)(F N 1)(A)(])(M Sc 3 1)(uni N[x] 0 1)(+ N[t] 1)(R O t k .041)(F N 1.5 R)(R O t i -.325)(- N[v] 2)(B)(+ Sd 4)(C Sd 4)(W Cl R)(+ Sd 3)(uni N[i] 1 5)(M Sc 3 0)(Sc P)(W N R)(A)(+ N[k] 2 R)(+ N[t] 5)(W N R)(A)");
-                lindenmayer.addRule("(B)", "(Sc P)(B)([)(/ S[t] 2)(/ 2 S[d])(+ N[k] 3)(uni V 1 101)(W C R)(A)(])");
-                //lindenmayer.addRule("(B)", "(Sc P)(B)([)(* S[t] 3.5)(B)(* 7 S[d])(B)(+ N[k] 2)(A)(])");
-                lindenmayer.setIterationCount(host.control_parameters_addon.gk_Iterations);
-                ///lindenmayer.setIterationCount(2);
-                let rescale = new CsoundAC.Rescale();
-                rescale.setRescale(0, true, false, 1., 0.);
-                rescale.setRescale(3, true, true, 1., 8.);
-                rescale.setRescale(4, true, false, 18., 72.);
-                rescale.setRescale(5, true, true, 60., 12.);
-                rescale.addChild(lindenmayer);
-                score_model.addChild(rescale);
-                score_model.generate();
-                let score = score_model.getScore();
-                host.csound.message(`generated ${score.size()} notes.\n`);
-                score.setDuration(7 * 60);
-                host.piano_roll_overlay.draw_csoundac_score(score);
-                return score;
-            } catch (err) {
-                alert(err.message);
-            }
-        };
-        // #endregion
         // #region Csound Code
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
         // #endregion
@@ -2173,14 +2130,10 @@
         var Xing = cloud5_piece.menu_folder_addon('Xing');
         cloud5_piece.menu_slider_addon(Xing, 'gk_Xing_level', -50, 50);
         //#endregion
-        // #region Piano Roll
-        let cloud5_piano_roll = document.querySelector('cloud5-piano-roll');
-        cloud5_piece.piano_roll_overlay = cloud5_piano_roll;
-        // #endregion
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
         cloud5_shader.shader_parameters_addon = {
-            fragment_shader_code_addon: `#version 300 es
+        fragment_shader_code_addon: `#version 300 es
         #line 2184
         precision highp float;
         /**
