@@ -1880,7 +1880,6 @@
         </CsoundSynthesizer>
     </textarea>
     <cloud5-piece></cloud5-piece style="z-index:1000;">
-    <cloud5-strudel></cloud5-strudel>
     <cloud5-shadertoy></cloud5-shadertoy>
     <cloud5-piano-roll></cloud5-piano-roll>
     <cloud5-log></cloud5-log>
@@ -1997,42 +1996,6 @@
         // #endregion
         // #region Csound Code
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
-        // #endregion
-        // #region Strudel
-        cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');
-        cloud5_piece.strudel_overlay.strudel_code_addon = `
-        const csac = await import('../csoundac.mjs');
-    csac.diagnostic_level(csac.INFORMATION);
-    
-    stack("0,3,[11 6]"
-      .add("<0 1 2 [3 4] 5 7 8>")
-      .transpose("<0 1 2 1>/8")
-      .slow(2)
-      .degradeBy(.125)
-      .transpose("48 36")
-      //.legato(.95)
-      .iter(2)
-      //.tune("ji_12c")
-      .add(24)
-      .note()
-      .csoundn("<1 2 8 10>")
-      .gain(.25),
-    "0,4,[7 6]"
-      .sub("<0 1 2 3 4 5 [7 8] 9>")
-      .transpose("<0 1 -1 1>/3")
-      .iter(4)
-      .slow(7)
-      .transpose("<48 36>/7")
-      //.legato(.95)
-      //tune("ji_12c")
-      .add(24)
-      .slow(.4)
-      .note()
-      .csoundn("<2 3 6>")
-      .gain(.3) 
-      )
-      .pianoroll({labels:1,fillActive:1,cycles:32,minMidi:18,maxMidi:127,playhead:.9})
-      `;
         // #endregion
         // #region Controls 
         cloud5_piece.control_parameters_addon = {

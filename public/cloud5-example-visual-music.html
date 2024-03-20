@@ -13,12 +13,10 @@
     <script src="CsoundAudioNode.js"></script>
     <script src="csound_loader.js"></script>
     <script src="CsoundAC.js"></script>
-    <script src="PianoRoll3D.js"></script>
     <script src='Silencio.js'></script>
     <script src='ChordSpace.js'></script>
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
-    <script src="swissgl.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="stylesheet" href="cloud-5.css">
     <script src='cloud-5.js'></script>
@@ -1879,10 +1877,168 @@
           </CsScore>
         </CsoundSynthesizer>
     </textarea>
+    <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
+        #line 1881
+        precision highp float;
+        /**
+         * These are all of the standard ShaderToy inputs. If any of these are 
+         * used in this shader, they must be created and initialized in the 
+         * JavaScript code.
+         */
+        uniform vec3 iResolution;
+        // viewport resolution (in pixels)
+        uniform float iTime;
+        // shader playback time (in seconds)
+        uniform float iTimeDelta;
+        // render time (in seconds)
+        uniform int iFrame;
+        // shader playback frame
+        uniform float iChannelTime[4];
+        // channel playback time (in seconds)
+        uniform vec3 iChannelResolution[4];
+        // channel resolution (in pixels)
+        uniform vec4 iMouse;
+        // mouse pixel coords. xy: current (if MLB down), zw: click
+        uniform sampler2D iChannel0;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel1;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel2;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel3;
+        // input channel. XX = 2D/Cube
+        uniform vec4 iDate;
+        // (year, month, day, time in seconds)
+        uniform float iSampleRate;
+        // sound sample rate (i.e., 44100)
+
+        uniform float GraphicsTempo;
+        uniform float GraphicsHue;
+        uniform float GraphicsValue;
+        
+        /**
+         * Theoretically, any fragment shader copied from the ShaderToy 
+         * editor can replace the body of the mainImage function below, 
+         * if all inputs actually used in the shader are defined and bound.
+         */
+
+        void mainImage(out vec4 _ufragColor, in vec2 _ufragCoord);
+        out vec4 _ushadertoy_out_color;
+        void main(){
+          (_ushadertoy_out_color = vec4(0.0, 0.0, 0.0, 0.0));
+          (_ushadertoy_out_color = vec4(1.0, 1.0, 1.0, 1.0));
+          vec4 _ucolor = vec4(0.0, 0.0, 0.0, 1.0);
+          mainImage(_ucolor, gl_FragCoord.xy);
+          if ((_ushadertoy_out_color.x < 0.0))
+          {
+            (_ucolor = vec4(1.0, 0.0, 0.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.y < 0.0))
+          {
+            (_ucolor = vec4(0.0, 1.0, 0.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.z < 0.0))
+          {
+            (_ucolor = vec4(0.0, 0.0, 1.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.w < 0.0))
+          {
+            (_ucolor = vec4(1.0, 1.0, 0.0, 1.0));
+          }
+          (_ushadertoy_out_color = vec4(_ucolor.xyz, 1.0));
+        }
+        float hash(int x) { return fract(sin(float(x))*7.847); } 
+
+        float dSegment(vec2 a, vec2 b, vec2 c)
+        {
+            vec2 ab = b-a;
+            vec2 ac = c-a;
+            float h = clamp(dot(ab, ac)/dot(ab, ab), 0., 1.);
+            vec2 point = a+ab*h;
+            return length(c-point);
+        }
+
+vec2 triangle_wave(vec2 a){
+    ///return abs(fract((a+vec2(1.,0.5))*1.5)-.5);
+    return abs(fract((a*.9+vec2(1.,0.75))*1.75)-.325);
+}
+
+vec3 rgb2hsv(vec3 c){
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c){
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+vec3 palette(float t)
+{
+    // A less bilious palette?
+    vec3 a = vec3(0.938, 0.328, 0.718);
+    vec3 b = vec3(0.659, 0.438, 0.328);
+    vec3 c = vec3(0.388, 0.388, 0.296);
+    vec3 d = vec3(2.538, 2.478, 0.168);
+    ////vec3 a = vec3(0.75, 0.528, 0.718);
+    ////vec3 b = vec3(0.659, .438, 1.328);
+    ////vec3 c = vec3(0.388, 0.788, 0.5);
+    ////vec3 d = vec3(2.538, 2.478, 0.168);
+    return a + b*cos( 6.28318*(c*t+d) );
+}
+
+vec2 rotateUV(vec2 uv, float rotation){
+    float mid = 0.5;
+    ////float mid = 0.25;
+    return vec2(
+        cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
+        cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
+    );
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ){
+    vec2 uv = (fragCoord * 1.0 - iResolution.xy) / iResolution.y;
+    vec2 uv0 = uv;
+    vec3 finalColour = vec3(0.);
+
+    // Slow it down...
+    // Put a control on speed.
+    float GraphicsTempo_ = iTime * GraphicsTempo;
+    
+    // It would be nice to put a control on overall rotation or tilt.
+    ///for (float i = 0.; i < 36.; i++)
+    for (float i = 0.; i < 72.; i++)
+    {
+        uv = rotateUV(uv, GraphicsTempo_*.1);
+        uv = fract(uv*1.1)-.5;
+        uv = rotateUV(uv, GraphicsTempo_*.1);
+        float d = length(uv);
+        vec3 col = palette(length(uv0) + i*.1 + d + GraphicsTempo_);
+        d = sin(d*4.+GraphicsTempo_)/4.;
+        d = abs(d);            
+        d = .02/d;
+        ////d = .01/d;
+        finalColour += col * d * .1 - (i*.0002);
+    }
+    vec3 hsv_ = rgb2hsv(finalColour);
+    // Put controls on value and hue.
+    hsv_[2] = hsv_[2] * GraphicsValue;
+    hsv_[0] = hsv_[0] * GraphicsHue;
+    finalColour = hsv2rgb(hsv_);
+    fragColor = vec4(finalColour,1.0);
+    //fragColor = vec4(uv.x,uv.y,0.,1.0);
+}
+
+    </script>
     <cloud5-piece></cloud5-piece style="z-index:1000;">
     <cloud5-strudel></cloud5-strudel>
     <cloud5-shadertoy></cloud5-shadertoy>
-    <cloud5-piano-roll></cloud5-piano-roll>
     <cloud5-log></cloud5-log>
     <cloud5-about>
         <div>
@@ -1955,46 +2111,6 @@
     <script>
         let cloud5_piece = document.querySelector('cloud5-piece');
         let host = cloud5_piece;
-        // #region Score Generator
-        cloud5_piece.score_generator_function_addon = async function () {
-            cloud5_piece.csound.message("score_generator_function_addon...\n");
-            try {
-                let CsoundAC = await createCsoundAC();
-                // JavaScript can't follow the memory graph from a Score to 
-                // its ScoreModel; therefore, to keep the _Score_ in memory, 
-                // its _ScoreModel_ also must be kept in memory. That is done 
-                // here by making the ScoreModel global.
-                globalThis.score_model = new CsoundAC.ScoreModel();
-                let scale = new CsoundAC.Scale("C major");
-                //csound.message(scale.information());
-                let chord = scale.chord(1, 5, 4);
-                //csound.message(chord.eOP().information());
-                let lindenmayer = new CsoundAC.ChordLindenmayer();
-                lindenmayer.setAxiom("(seed P 3928394)(= P 72)(= Sc Cmajor {0,2,4,5,7,9,11})(++ C)(= C {0,4,7})(= M {0,4,7})(= N[d] 36.)(Sc P)(A)");
-                lindenmayer.addRule("(A)", "(B)(F N .5 R)(uni V 1 210)(W C R)(+ N[k] -1 R)(+ N[v] 2)(+ Sd -3 R)(W Cl R)([)(* S[t] .75)(- N[k] .5 R)(F N 1)(A)(])(M Sc 3 1)(uni N[x] 0 1)(+ N[t] 1)(R O t k .3333334)(F N 1.5 R)(R O t i .25)(- N[v] 2)(B)(+ Sd 4)(C Sd 4)(W Cl R)(+ Sd 3)(uni N[i] 1 5)(M Sc 3 0)(Sc P)(W N R)(A)(+ N[k] 2 R)(+ N[t] .5)(W N R)(A)");
-                lindenmayer.addRule("(A)", "(B)(F N .125 R)(uni V 1 111)(W C R)(+ N[k] -1 R)(+ N[v] 2)(+ Sd -1 R)(W Cl R)([)(* S[t] .75)(- N[k] .5 R)(F N 1)(A)(])(M Sc 3 1)(uni N[x] 0 1)(+ N[t] 1)(R O t k .041)(F N 1.5 R)(R O t i -.325)(- N[v] 2)(B)(+ Sd 4)(C Sd 4)(W Cl R)(+ Sd 3)(uni N[i] 1 5)(M Sc 3 0)(Sc P)(W N R)(A)(+ N[k] 2 R)(+ N[t] 5)(W N R)(A)");
-                lindenmayer.addRule("(B)", "(Sc P)(B)([)(/ S[t] 2)(/ 2 S[d])(+ N[k] 3)(uni V 1 101)(W C R)(A)(])");
-                //lindenmayer.addRule("(B)", "(Sc P)(B)([)(* S[t] 3.5)(B)(* 7 S[d])(B)(+ N[k] 2)(A)(])");
-                lindenmayer.setIterationCount(host.control_parameters_addon.gk_Iterations);
-                ///lindenmayer.setIterationCount(2);
-                let rescale = new CsoundAC.Rescale();
-                rescale.setRescale(0, true, false, 1., 0.);
-                rescale.setRescale(3, true, true, 1., 8.);
-                rescale.setRescale(4, true, false, 18., 72.);
-                rescale.setRescale(5, true, true, 60., 12.);
-                rescale.addChild(lindenmayer);
-                score_model.addChild(rescale);
-                score_model.generate();
-                let score = score_model.getScore();
-                host.csound.message(`generated ${score.size()} notes.\n`);
-                score.setDuration(7 * 60);
-                host.piano_roll_overlay.draw_csoundac_score(score);
-                return score;
-            } catch (err) {
-                alert(err.message);
-            }
-        };
-        // #endregion
         // #region Csound Code
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
         // #endregion
@@ -2036,6 +2152,12 @@
         // #endregion
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
+            "NoteTempo": 180,
+            "NoteDensity": 75,
+            "NoteDurationFactor": 1,
+            "GraphicsTempo": .01,
+            "GraphicsHue": .5,
+            "GraphicsValue": .5,
             "gk_Duration_factor": 0.8682696259761612,
             "gk_Iterations": 4,
             "gk_MasterOutput_level": 20.,
@@ -2095,6 +2217,14 @@
             "gk_YiString_level": 0,
             "gk_Xing_level": 0
         };
+
+        let Composition = cloud5_piece.menu_folder_addon('Composition');
+        cloud5_piece.menu_slider_addon(Composition, "NoteTempo", 0, 200);
+        cloud5_piece.menu_slider_addon(Composition, "NoteDensity", 5, 200);
+        cloud5_piece.menu_slider_addon(Composition, "NoteDurationFactor", 0., 5.);
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25);
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1.);
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1.);
         let Master = cloud5_piece.menu_folder_addon('Master');
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
@@ -2172,145 +2302,13 @@
         cloud5_piece.menu_slider_addon(YiString, 'gk_YiString_level', -50, 50);
         var Xing = cloud5_piece.menu_folder_addon('Xing');
         cloud5_piece.menu_slider_addon(Xing, 'gk_Xing_level', -50, 50);
-        //#endregion
-        // #region Piano Roll
-        let cloud5_piano_roll = document.querySelector('cloud5-piano-roll');
-        cloud5_piece.piano_roll_overlay = cloud5_piano_roll;
         // #endregion
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
+        let fragment_shader = document.getElementById('draw-shader-fs').textContent;
         cloud5_shader.shader_parameters_addon = {
-            fragment_shader_code_addon: `#version 300 es
-        #line 2184
-        precision highp float;
-        /**
-         * These are all of the standard ShaderToy inputs. If any of these are 
-         * used in this shader, they must be created and initialized in the 
-         * JavaScript code.
-         */
-        uniform vec3 iResolution;
-        // viewport resolution (in pixels)
-        uniform float iTime;
-        // shader playback time (in seconds)
-        uniform float iTimeDelta;
-        // render time (in seconds)
-        uniform int iFrame;
-        // shader playback frame
-        uniform float iChannelTime[4];
-        // channel playback time (in seconds)
-        uniform vec3 iChannelResolution[4];
-        // channel resolution (in pixels)
-        uniform vec4 iMouse;
-        // mouse pixel coords. xy: current (if MLB down), zw: click
-        uniform sampler2D iChannel0;
-        // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel1;
-        // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel2;
-        // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel3;
-        // input channel. XX = 2D/Cube
-        uniform vec4 iDate;
-        // (year, month, day, time in seconds)
-        uniform float iSampleRate;
-        // sound sample rate (i.e., 44100)
-        uniform float spectral_tilt;
-        uniform float total_loudness;
-      
-        /**
-         * Theoretically, any fragment shader copied from the ShaderToy 
-         * editor can replace the body of the mainImage function below, 
-         * if all inputs actually used in the shader are defined and bound.
-         */
-
-        void mainImage(out vec4 _ufragColor, in vec2 _ufragCoord);
-        out vec4 _ushadertoy_out_color;
-        void main(){
-          (_ushadertoy_out_color = vec4(0.0, 0.0, 0.0, 0.0));
-          (_ushadertoy_out_color = vec4(1.0, 1.0, 1.0, 1.0));
-          vec4 _ucolor = vec4(0.0, 0.0, 0.0, 1.0);
-          mainImage(_ucolor, gl_FragCoord.xy);
-          if ((_ushadertoy_out_color.x < 0.0))
-          {
-            (_ucolor = vec4(1.0, 0.0, 0.0, 1.0));
-          }
-          if ((_ushadertoy_out_color.y < 0.0))
-          {
-            (_ucolor = vec4(0.0, 1.0, 0.0, 1.0));
-          }
-          if ((_ushadertoy_out_color.z < 0.0))
-          {
-            (_ucolor = vec4(0.0, 0.0, 1.0, 1.0));
-          }
-          if ((_ushadertoy_out_color.w < 0.0))
-          {
-            (_ucolor = vec4(1.0, 1.0, 0.0, 1.0));
-          }
-          (_ushadertoy_out_color = vec4(_ucolor.xyz, 1.0));
-        }
-
-        // https://www.shadertoy.com/view/DtsyWl
-        // Colourful waves of smoke based upon an example on 
-        // GLSL sandbox water turbulence effect by joltz0r and 
-        // David Hoskins's implementation https://www.shadertoy.com/view/MdlXz8
-        #define TAU 6.28318530718
-        #define MAX_ITER 8
-
-        // cosine based palette, 4 vec3 params
-        // By Inigo Quilez https://iquilezles.org/articles/palettes/
-        vec3 palette( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
-        {
-            return a + b*cos( 6.28318*(c*t+d) );
-        }
-
-        // All components are in the range [0…1], including hue.
-        vec3 rgb2hsv(vec3 c)
-        {
-            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-
-            float d = q.x - min(q.w, q.y);
-            float e = 1.0e-10;
-            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-        }
-
-        // All components are in the range [0…1], including hue.
-        vec3 hsv2rgb(vec3 c)
-        {
-            vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-            vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-            return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-        }
-
-        void mainImage( out vec4 fragColor, in vec2 fragCoord )
-        {
-            float time = iTime * .095 + 23.0;
-            vec2 uv = fragCoord/iResolution.xy;;
-            vec2 p = mod(uv*TAU, TAU) - 213.0;
-            vec2 i = vec2(p);
-            float c = 1.0;
-            float inten = .005;
-            for (int n = 0; n < MAX_ITER; n++) {
-                float t = time * (1.0 - (3.5 / float(n + 1)));
-                i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-                c += 1.0 / length(vec2(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
-            }
-            c /= float(MAX_ITER);
-            c = 1.17 - pow(c, 1.4);
-            vec3 colour = vec3(pow(abs(c), 10.0));
-            colour = clamp(colour + vec3(0.095), 0.0, 1.0);
-            float palettePhase = abs(sin(uv.x * uv.y + iTime * 0.05)) + iTime * 0.1;
-            vec3 col = palette(palettePhase, vec3(0.5, 0.5, 0.5), vec3(0.5, 0.5, 0.5), vec3(2.0, 1.0, 0.0), vec3(0.50, 0.20, 0.25));
-            col *=  colour;
-            col = rgb2hsv(col);
-            col.x *= (spectral_tilt * 5.);
-            col.z *= (total_loudness * 3.);
-            col = hsv2rgb(col);
-            fragColor = vec4(col, 1.0);
-        }
-        `,
-            set_uniforms_function_addon: (function() {
+            fragment_shader_code_addon: fragment_shader,
+            set_uniforms_function_addon: (function () {
                 if (this.analyser) {
                     let spectral_tilt = 0;
                     let total_loudness = 0;
@@ -2334,6 +2332,13 @@
                     let total_loudness_location = this.uniform_locations['total_loudness'];
                     this.gl.uniform1f(total_loudness_location, total_loudness);
                 }
+                let parameters = this.cloud5_piece.control_parameters_addon;
+                let GraphicsTempo_location = this.uniform_locations['GraphicsTempo'];
+                this.gl.uniform1f(GraphicsTempo_location, parameters.GraphicsTempo);
+                let GraphicsHue_location = this.uniform_locations['GraphicsHue'];
+                this.gl.uniform1f(GraphicsHue_location, parameters.GraphicsHue);
+                let GraphicsValue_location = this.uniform_locations['GraphicsValue'];
+                this.gl.uniform1f(GraphicsValue_location, parameters.GraphicsValue);
             }).bind(cloud5_shader),
         };
         cloud5_piece.shader_overlay = cloud5_shader;

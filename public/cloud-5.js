@@ -57,7 +57,7 @@ class Cloud5Piece extends HTMLElement {
   set shader_overlay(shader) {
     this.#shader_overlay = shader;
     // Back reference for shader to access Csound, etc.
-    shader.csound5_piece = this;
+    shader.cloud5_piece = this;
     this.show(this.#shader_overlay);
   }
   get shader_overlay() {
@@ -108,7 +108,7 @@ class Cloud5Piece extends HTMLElement {
   #piano_roll_overlay = null;
   set piano_roll_overlay(piano_roll) {
     this.#piano_roll_overlay = piano_roll;
-    this.#piano_roll_overlay.csound5_piece = this;
+    this.#piano_roll_overlay.cloud5_piece = this;
   }
   get piano_roll_overlay() {
     return this.#piano_roll_overlay;
@@ -196,8 +196,8 @@ class Cloud5Piece extends HTMLElement {
         </li>
         <li id="menu_item_stop" title="Stop performance" class="w3-btn w3-hover-text-light-green">Stop</li>
         <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
-        <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green">Strudel</li>
-        <li id="menu_item_piano_roll" title="Show/hide piano roll score" class="w3-btn w3-hover-text-light-green">Score
+        <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green" style="display:none;">Strudel</li>
+        <li id="menu_item_piano_roll" title="Show/hide piano roll score" class="w3-btn w3-hover-text-light-green" style="display:none;">Score
         </li>
         <li id="menu_item_log" title="Show/hide message log" class="w3-btn w3-hover-text-light-green">Log
         </li>
@@ -332,12 +332,14 @@ class Cloud5Piece extends HTMLElement {
       }
     }
     let csd;
-    // csd = this.csound_code_addon.slice();
-    let score = await this?.score_generator_function_addon();
-    if (score) {
-      let csound_score = await score.getCsoundScore(12., false);
-      csound_score = csound_score.concat("\n</CsScore>");
-      csd = this.csound_code_addon.replace("</CsScore>", csound_score);
+    csd = this.csound_code_addon.slice();
+    if (this.score_generator_function_addon) {
+      let score = await this.score_generator_function_addon();
+      if (score) {
+        let csound_score = await score.getCsoundScore(12., false);
+        csound_score = csound_score.concat("\n</CsScore>");
+        csd = this.csound_code_addon.replace("</CsScore>", csound_score);
+      }
     }
     this?.log_overlay.clear();
     if (is_offline == true) {
@@ -360,6 +362,7 @@ class Cloud5Piece extends HTMLElement {
     this.csound_message_callback("Csound has started...\n");
     if (is_offline == false) {
       await this.csound.Perform();
+      
       console.info("strudel_view:", this.strudel_view);
       strudel_view?.setCsound(this.csound);
       strudel_view?.startPlaying();
@@ -443,7 +446,7 @@ customElements.define("cloud5-piece", Cloud5Piece);
 class Cloud5PianoRoll extends HTMLElement {
   constructor() {
     super();
-    this.csound5_piece = null;
+    this.cloud5_piece = null;
     this.silencio_score = new Silencio.Score();
     this.csoundac_score = null;
     this.canvas = null;
@@ -457,6 +460,8 @@ class Cloud5PianoRoll extends HTMLElement {
     if (this.csoundac_score !== null) {
       this.draw(this.csoundac_score);
     }
+    let menu_button = document.getElementById("menu_item_piano_roll");
+    menu_button.style.display = 'inline';
   }
   draw_csoundac_score(score) {
     this.silencio_score = new Silencio.Score();
@@ -483,11 +488,11 @@ class Cloud5PianoRoll extends HTMLElement {
     this.silencio_score.draw3D(this.canvas);
   }
   trackScoreTime() {
-    if (non_csound(this?.csound5_piece?.csound)) {
+    if (non_csound(this?.cloud5_piece?.csound)) {
       return;
     }
     let interval_callback = async function () {
-      let score_time = await this?.csound5_piece?.csound?.GetScoreTime();
+      let score_time = await this?.cloud5_piece?.csound?.GetScoreTime();
       this?.silencio_score.progress3D(score_time);
     };
     let bound_interval_callback = interval_callback.bind(this);
@@ -520,7 +525,8 @@ class Cloud5Strudel extends HTMLElement {
     </strudel-repl-component>
     `;
     this.strudel_component = this.querySelector('#strudel_view');
-
+    let menu_button = document.getElementById("menu_item_strudel");
+    menu_button.style.display = 'inline';
   }
   start() {
     this.strudel_component.startPlaying();
@@ -611,12 +617,12 @@ class Cloud5Shader extends HTMLElement {
     * Back reference to the piece, which can be used e.g. to get a reference to 
     * Csound.
     */
-  #csound5_piece = null;
-  set csound5_piece(piece) {
-    this.#csound5_piece = piece;
+  #cloud5_piece = null;
+  set cloud5_piece(piece) {
+    this.#cloud5_piece = piece;
   }
-  get csound5_piece() {
-    return this.#csound5_piece;
+  get cloud5_piece() {
+    return this.#cloud5_piece;
   }
 }
 customElements.define("cloud5-shader", Cloud5Shader);
@@ -674,12 +680,12 @@ class Cloud5ShaderToy extends HTMLElement {
    * Back reference to the piece, which can be used e.g. to get a reference to 
    * Csound.
    */
-  #csound5_piece = null;
-  set csound5_piece(piece) {
-    this.#csound5_piece = piece;
+  #cloud5_piece = null;
+  set cloud5_piece(piece) {
+    this.#cloud5_piece = piece;
   }
-  get csound5_piece() {
-    return this.#csound5_piece;
+  get cloud5_piece() {
+    return this.#cloud5_piece;
   }
   /**
    * A number of parameters must be up to date at the same time before the 
@@ -873,13 +879,13 @@ class Cloud5ShaderToy extends HTMLElement {
     // Here we create an AnalyserNode as soon as Csound is available.
     if (this.analyser) {
     } else {
-      let csound = this?.csound5_piece?.csound;
+      let csound = this?.cloud5_piece?.csound;
       if (csound) {
         this.analyser = new AnalyserNode(csound.context);
         this.analyser.fftSize = 2048;
         console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
         csound.connect(this.analyser);
-      }  
+      }
     }
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -913,7 +919,7 @@ customElements.define("cloud5-shadertoy", Cloud5ShaderToy);
 class Cloud5Log extends HTMLElement {
   constructor() {
     super();
-    this.csound5_piece = null;
+    this.cloud5_piece = null;
   }
   connectedCallback() {
     this.innerHTML = `<div 
