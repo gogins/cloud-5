@@ -13,12 +13,10 @@
     <script src="CsoundAudioNode.js"></script>
     <script src="csound_loader.js"></script>
     <script src="CsoundAC.js"></script>
-    <script src="PianoRoll3D.js"></script>
     <script src='Silencio.js'></script>
     <script src='ChordSpace.js'></script>
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
-    <script src="swissgl.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="stylesheet" href="cloud-5.css">
     <script src='cloud-5.js'></script>
@@ -2273,7 +2271,7 @@
             fragColor = vec4(col, 1.0);
         }
         `,
-            set_uniforms_function_addon: (function() {
+            pre_draw_frame_function_addon: (function() {
                 if (this.analyser) {
                     let spectral_tilt = 0;
                     let total_loudness = 0;

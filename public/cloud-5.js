@@ -362,16 +362,19 @@ class Cloud5Piece extends HTMLElement {
     this.csound_message_callback("Csound has started...\n");
     if (is_offline == false) {
       await this.csound.Perform();
-      
-      console.info("strudel_view:", this.strudel_view);
-      strudel_view?.setCsound(this.csound);
-      strudel_view?.startPlaying();
+      if (typeof strudel_view !== 'undefined') {
+        if (strudel_view !== null) {
+          console.info("strudel_view:", this.strudel_view);
+          strudel_view?.setCsound(this.csound);
+          strudel_view?.startPlaying();
+        }
+      }
     } else {
       // Returns before finishing because Csound will perform in a separate 
       // thread.
       await this.csound.performAndPostProcess();
     }
-    this?.piano_roll_overlay.trackScoreTime();
+    this?.piano_roll_overlay?.trackScoreTime();
     this?.csound_message_callback("Csound is playing...\n");
   }
   stop = async function () {
@@ -696,16 +699,14 @@ class Cloud5ShaderToy extends HTMLElement {
    *  fragment_shader_addon: code,    \\ Required GLSL code.
    *  vertex_shader_addon: code,      \\ Has a default value, but may be 
    *                                  \\ overridden with custom GLSL code.
-   *  set_uniforms_addon: function,   \\ Optional JavaScript function to set 
-   *                                  \\ uniforms, e.g. in a music visualizer. 
-   *                                  \\ Called in the animation loop before 
-   *                                  \\ drawing a frame.
-   *  get_attributes_addon: function, \\ Optional JavaScript function to get 
-   *                                  \\ attributes such as buffers or 
-   *                                  \\ samplers, e.g. for sampling the 
-   *                                  \\ shader to generate musical notes.
-   *                                  \\ Called in the animation loop after 
-   *                                  \\ drawing a frame.                  
+   *  pre_draw_frame_function_addon,  \\ Optional JavaScript function to be 
+   *                                  \\ caalled in the animation loop before 
+   *                                  \\ drawing each frame, e.g. for setting 
+   *                                  \\ program uniforms.
+   *  post_draw_frame_function_addon, \\ Optional JavaScript function to called 
+   *                                  \\ the animation loop immediately after 
+   *                                  \\ drawing each frame, e.g. for getting 
+   *                                  \\ attributes or reading buffers.                
    * }`
    */
   #shader_parameters_addon = null;
@@ -725,8 +726,8 @@ class Cloud5ShaderToy extends HTMLElement {
       this.vertex_shader_code_addon = this.#shader_parameters_addon.vertex_shader_code_addon;
     }
     this.fragment_shader_code_addon = this.#shader_parameters_addon.fragment_shader_code_addon;
-    this.set_uniforms_function_addon = this.#shader_parameters_addon.set_uniforms_function_addon;
-    this.get_attributes_function_addon = this.#shader_parameters_addon.get_attributes_function_addon;
+    this.pre_draw_frame_function_addon = this.#shader_parameters_addon.pre_draw_frame_function_addon;
+    this.post_draw_frame_function_addon = this.#shader_parameters_addon.post_draw_frame_function_addon;
     this.prepare_canvas();
     this.compile_shader();
     this.get_uniforms();
@@ -891,8 +892,8 @@ class Cloud5ShaderToy extends HTMLElement {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     // Custom uniforms may be set in this addon. Such uniforms can be used 
     // e.g. to control audio visualizations.
-    if (this.set_uniforms_function_addon) {
-      this.set_uniforms_function_addon();
+    if (this.pre_draw_frame_function_addon) {
+      this.pre_draw_frame_function_addon();
     }
     // There are some default uniforms, modeled on ShaderToy.
     let seconds = milliseconds / 1000;
@@ -903,8 +904,8 @@ class Cloud5ShaderToy extends HTMLElement {
     this.gl.drawElements(this.gl.TRIANGLES, this.webgl_buffers.inx.len, this.gl.UNSIGNED_SHORT, 0);
     // Custom attributes may be accessed in this addon. Such attributes can be 
     // used e.g. to sample visuals and translate them to musical notes.
-    if (this.get_attributes_function_addon) {
-      this.get_attributes_function_addon();
+    if (this.post_draw_frame_function_addon) {
+      this.post_draw_frame_function_addon();
     }
     this.rendering_frame++;
     requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));

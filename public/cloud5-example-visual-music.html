@@ -2036,8 +2036,146 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
 }
 
     </script>
+    <script id="visuals-to-notes">
+
+        async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
+            if (csound == null) {
+                return;
+            }
+            if (!csound.is_playing) {
+                return;
+            }
+            let x = 0;
+            // y is zero at the bottom of the canvas.
+            let y = 0;
+            let width = canvas.width;
+            let height = 1;
+            let format = gl.RGBA;
+            let type = gl.UNSIGNED_BYTE;
+            readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
+            // Translate the sample format from byte RGBA to float HSV.
+            let hsv_image_sample = [];
+            for (let byte_i = 0; byte_i < image_sample_buffer.length; byte_i = byte_i + 4) {
+                let rgb = image_sample_buffer.slice(byte_i, byte_i + 3);
+                let hsv = rgb_to_hsv(rgb);
+                hsv_image_sample.push([hsv_image_sample.length + 1, hsv[2], hsv]);
+            }
+            // Downsample the HSV samples.
+            let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
+            sampled_events.length = 0;
+            on_events.length = 0;
+            off_events.length = 0;
+            score.clear();
+            // Translate the HSV samples to Csound event vectors.
+            // 0 is p1 insno (hsv[0](, tagged by downsampled pixel, 
+            //   positive for on or negative for off.
+            // 1 is p2 time always 0.
+            // 2 is p3 duration (either hsv[1] or -1, must be 0 for off
+            //   events).
+            // 3 is p4 MIDI key (downsampled pixel).
+            // 4 is p5 MIDI velocity (hsv[2]).
+            for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
+                let hsv = downsampled_pixels[downsampled_pixel_i][2];
+                let instrument_number = 1 + (hsv[0] * instrument_count);
+                // The instrument number must have a unique fractional tag.
+                let time = 0;
+                let duration = (.25 + (60 / parameters.NoteTempo * hsv[1] * 2)) * parameters.NoteDurationFactor;
+                let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
+                //instrument_number = 4;
+                let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
+                instrument_number = parseFloat(insno);
+                let midi_velocity = hsv[2] * 128;
+                let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
+                sampled_events.push(event_for_pixel);
+            }
+            console.log(sprintf("sampled_events.length: %d\n", sampled_events.length));
+            // Events that are playing but not loud enough, are turned off.
+            for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                let sampled_event = sampled_events[sampled_event_i];
+                let key = sampled_event[0];
+                if (playing_events.has(key) == true) {
+                    let off_event = playing_events.get(key);
+                    let instrument_number = off_event[0];
+                    if (threshold > sampled_event[4]) {
+                        csound.KillInstance(instrument_number, "", 4, true);
+                        console.log("Turned off instrument number: " + instrument_number + ".");
+                        playing_events.delete(key);
+                    }
+                }
+            }
+            console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
+            // Events that are loud enough but not playing, are turned on.
+            for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                let sampled_event = sampled_events[sampled_event_i];
+                let key = sampled_event[0];
+                if (playing_events.has(key) == false) {
+                    if (sampled_event[4] >= threshold) {
+                        playing_events.set(key, sampled_event);
+                        on_events.push(sampled_event);
+                    }
+                }
+            }
+            console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
+            console.log(sprintf("on_events.length:      %d\n", on_events.length));
+            CsoundAC.setCorrectNegativeDurations(false);
+            // Limit number of on events, play N loudest only. Could also pick at random.
+            on_events.sort(function (a, b) {
+                if (a[5] < b[5]) {
+                    return 1;
+                }
+                if (b[5] < a[5]) {
+                    return -1;
+                }
+                return 0;
+            });
+            let voices = Math.min(on_events.length, maximum_voices);
+            for (let i = 0; i < voices; i++) {
+                let on_event = on_events[i];
+                let time = 0;
+                let duration = on_event[2];
+                let status = 144;
+                let instrument_number = on_event[0];
+                ///let instrument_number = 8;
+                let key = on_event[3];
+                let velocity = on_event[4];
+                velocity = 60 + (velocity / 7);
+                let phase = 0;
+                let pan = .01 + Math.random() * .8;
+                let depth = 0;
+                let height = 0;
+                let pitches = 4095;
+                score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
+            }
+            if (score.size() > 0) {
+                if (sample_count % 4 == 0) {
+                    if (sample_count % 24 == 0) {
+                        let scales = scale.modulations(chord);
+                        if (scales.size() > 1) {
+                            scale = scales.get(Math.floor(Math.random() * scales.size()));
+                            csound_message_callback(sprintf("\nScale: %s\n", scale.name()));
+                        }
+                    }
+                    let root_progression = root_progressions[Math.floor(Math.random() * root_progressions.length)];
+                    let chord_name = chord.eOP().name();
+                    if (chord_name.length == 0) {
+                        chord_name = chord.eOP().toString();
+                    }
+                    csound_message_callback(sprintf("\nChord: %s\n\n", chord_name));
+                    chord = scale.transpose_degrees(chord, root_progression, 3)
+                }
+                CsoundAC.apply(score, chord, 0, 1000000, true);
+                let score_text = score.getCsoundScore(12., true);
+                csound.ReadScore(score_text);
+            }
+            sample_count++;
+        }
+
+        function get_attributes() {
+
+        }
+
+    </script>
     <cloud5-piece></cloud5-piece style="z-index:1000;">
-    <cloud5-strudel></cloud5-strudel>
     <cloud5-shadertoy></cloud5-shadertoy>
     <cloud5-log></cloud5-log>
     <cloud5-about>
@@ -2113,42 +2251,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         let host = cloud5_piece;
         // #region Csound Code
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
-        // #endregion
-        // #region Strudel
-        cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');
-        cloud5_piece.strudel_overlay.strudel_code_addon = `
-        const csac = await import('../csoundac.mjs');
-    csac.diagnostic_level(csac.INFORMATION);
-    
-    stack("0,3,[11 6]"
-      .add("<0 1 2 [3 4] 5 7 8>")
-      .transpose("<0 1 2 1>/8")
-      .slow(2)
-      .degradeBy(.125)
-      .transpose("48 36")
-      //.legato(.95)
-      .iter(2)
-      //.tune("ji_12c")
-      .add(24)
-      .note()
-      .csoundn("<1 2 8 10>")
-      .gain(.25),
-    "0,4,[7 6]"
-      .sub("<0 1 2 3 4 5 [7 8] 9>")
-      .transpose("<0 1 -1 1>/3")
-      .iter(4)
-      .slow(7)
-      .transpose("<48 36>/7")
-      //.legato(.95)
-      //tune("ji_12c")
-      .add(24)
-      .slow(.4)
-      .note()
-      .csoundn("<2 3 6>")
-      .gain(.3) 
-      )
-      .pianoroll({labels:1,fillActive:1,cycles:32,minMidi:18,maxMidi:127,playhead:.9})
-      `;
         // #endregion
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
@@ -2305,6 +2407,162 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         // #endregion
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
+        // The basic method here is to extend just this one instance of 
+        // Cloud5ShaderToy with new class member veriables and functions 
+        // for turning video samples into notes.
+        cloud5_shader['current_time'] = 0;
+        cloud5_shader['prior_time'] = 0;
+        cloud5_shader['next_time'] = 0;
+        cloud5_shader['translate_sample_to_csound_events'] = async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
+            if (this.csound == null) {
+                return;
+            }
+            if (!this.csound.IsPlaying) {
+                return;
+            }
+            let x = 0;
+            // y is zero at the bottom of the canvas.
+            let y = 0;
+            let width = this.canvas.width;
+            let height = 1;
+            let format = gl.RGBA;
+            let type = gl.UNSIGNED_BYTE;
+            readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
+            // Translate the sample format from byte RGBA to float HSV.
+            let hsv_image_sample = [];
+            for (let byte_i = 0; byte_i < image_sample_buffer.length; byte_i = byte_i + 4) {
+                let rgb = image_sample_buffer.slice(byte_i, byte_i + 3);
+                let hsv = rgb_to_hsv(rgb);
+                hsv_image_sample.push([hsv_image_sample.length + 1, hsv[2], hsv]);
+            }
+            // Downsample the HSV samples.
+            let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
+            sampled_events.length = 0;
+            on_events.length = 0;
+            off_events.length = 0;
+            score.clear();
+            // Translate the HSV samples to Csound event vectors.
+            // 0 is p1 insno (hsv[0](, tagged by downsampled pixel, 
+            //   positive for on or negative for off.
+            // 1 is p2 time always 0.
+            // 2 is p3 duration (either hsv[1] or -1, must be 0 for off
+            //   events).
+            // 3 is p4 MIDI key (downsampled pixel).
+            // 4 is p5 MIDI velocity (hsv[2]).
+            for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
+                let hsv = downsampled_pixels[downsampled_pixel_i][2];
+                let instrument_number = 1 + (hsv[0] * instrument_count);
+                // The instrument number must have a unique fractional tag.
+                let time = 0;
+                let duration = (.25 + (60 / parameters.NoteTempo * hsv[1] * 2)) * parameters.NoteDurationFactor;
+                let midi_key = Math.floor(midi_key_begin + downsampled_pixel_i);
+                //instrument_number = 4;
+                let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
+                instrument_number = parseFloat(insno);
+                let midi_velocity = hsv[2] * 128;
+                let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
+                sampled_events.push(event_for_pixel);
+            }
+            console.log(sprintf("sampled_events.length: %d\n", sampled_events.length));
+            // Events that are playing but not loud enough, are turned off.
+            for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                let sampled_event = sampled_events[sampled_event_i];
+                let key = sampled_event[0];
+                if (playing_events.has(key) == true) {
+                    let off_event = playing_events.get(key);
+                    let instrument_number = off_event[0];
+                    if (threshold > sampled_event[4]) {
+                        csound.KillInstance(instrument_number, "", 4, true);
+                        console.log("Turned off instrument number: " + instrument_number + ".");
+                        playing_events.delete(key);
+                    }
+                }
+            }
+            console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
+            // Events that are loud enough but not playing, are turned on.
+            for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                let sampled_event = sampled_events[sampled_event_i];
+                let key = sampled_event[0];
+                if (playing_events.has(key) == false) {
+                    if (sampled_event[4] >= threshold) {
+                        playing_events.set(key, sampled_event);
+                        on_events.push(sampled_event);
+                    }
+                }
+            }
+            console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
+            console.log(sprintf("on_events.length:      %d\n", on_events.length));
+            CsoundAC.setCorrectNegativeDurations(false);
+            // Limit number of on events, play N loudest only. Could also pick at random.
+            on_events.sort(function (a, b) {
+                if (a[5] < b[5]) {
+                    return 1;
+                }
+                if (b[5] < a[5]) {
+                    return -1;
+                }
+                return 0;
+            });
+            let voices = Math.min(on_events.length, maximum_voices);
+            for (let i = 0; i < voices; i++) {
+                let on_event = on_events[i];
+                let time = 0;
+                let duration = on_event[2];
+                let status = 144;
+                let instrument_number = on_event[0];
+                ///let instrument_number = 8;
+                let key = on_event[3];
+                let velocity = on_event[4];
+                velocity = 60 + (velocity / 7);
+                let phase = 0;
+                let pan = .01 + Math.random() * .8;
+                let depth = 0;
+                let height = 0;
+                let pitches = 4095;
+                score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
+            }
+            if (score.size() > 0) {
+                if (sample_count % 4 == 0) {
+                    if (sample_count % 24 == 0) {
+                        let scales = scale.modulations(chord);
+                        if (scales.size() > 1) {
+                            scale = scales.get(Math.floor(Math.random() * scales.size()));
+                            csound_message_callback(sprintf("\nScale: %s\n", scale.name()));
+                        }
+                    }
+                    let root_progression = root_progressions[Math.floor(Math.random() * root_progressions.length)];
+                    let chord_name = chord.eOP().name();
+                    if (chord_name.length == 0) {
+                        chord_name = chord.eOP().toString();
+                    }
+                    csound_message_callback(sprintf("\nChord: %s\n\n", chord_name));
+                    chord = scale.transpose_degrees(chord, root_progression, 3)
+                }
+                CsoundAC.apply(score, chord, 0, 1000000, true);
+                let score_text = score.getCsoundScore(12., true);
+                this.csound.ReadScore(score_text);
+            }
+            sample_count++;
+        }.bind(csound5_shader);
+        cloud5_shader['sample_canvas'] = async function (current_rendering_frame) {
+            /** 
+             * As the last step in rendering the scene, this function reads 
+             * one row of the canvas (the sample) into an array of pixels, 
+             * then translates that row into a set of Csound events, the 
+             * mapping determined by a separate function. An attempt is made 
+             * to avoid stalling the WebGL rendering pipeline by reading the 
+             * pixels from the canvas only when a memory fence around 
+             * the GPU pipeline becomes passable.
+             */
+            //console.info("frame_sample_to_score.");
+            let parameters = this.shader_parameters_addon;
+            let gi_Composition_tempo = Math.floor(parseFloat(parameters.NoteTempo));
+            let event_velocity_threshold = parseFloat(parameters.NoteDensity);
+            await this.translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
+        }.bind(cloud5_shader);
+
+
+        // They are then in scope of the addon.
         let fragment_shader = document.getElementById('draw-shader-fs').textContent;
         cloud5_shader.shader_parameters_addon = {
             fragment_shader_code_addon: fragment_shader,
@@ -2339,6 +2597,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 this.gl.uniform1f(GraphicsHue_location, parameters.GraphicsHue);
                 let GraphicsValue_location = this.uniform_locations['GraphicsValue'];
                 this.gl.uniform1f(GraphicsValue_location, parameters.GraphicsValue);
+            }).bind(cloud5_shader),
+            get_attributes_function_addon: (function () {
+                this.prior_time = this.current_time;
+                this.current_time = performance.now() / 1000;
+                if (this.current_time >= this.next_time) {
+                    if (typeof parameters !== 'undefined') {
+                        this.next_time = this.current_time + (60 / this.parameters.NoteTempo);
+                    }
+                    this.sample_canvas(rendering_frame);
+                }
             }).bind(cloud5_shader),
         };
         cloud5_piece.shader_overlay = cloud5_shader;
