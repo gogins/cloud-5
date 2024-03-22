@@ -1161,8 +1161,8 @@ var rgb_to_hsv = function (rgb) {
   return [h, s, v];
 }
 
-async function readPixelsAsync(x, y, w, h, format, type, sample) {
-  const buffer = this.gl.createBuffer();
+async function read_pixels_async(gl, x, y, w, h, format, type, sample) {
+  const buffer = gl.createBuffer();
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
   gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
   gl.readPixels(x, y, w, h, format, type, 0);
