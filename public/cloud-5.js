@@ -168,6 +168,9 @@ class Cloud5Piece extends HTMLElement {
     };
     this.log_overlay?.log(message);
   }
+  log(message) {
+    this.csound_message_callback(message);
+  }
   /**
     * Metadata to be written to output files. The user may assign 
     * values to any of these fields.
@@ -1099,17 +1102,17 @@ function resize() {
   console.info("resize: image_sample_buffer.length: " + image_sample_buffer.length);
 }
 
-function clientWaitAsync(sync, flags, interval_ms) {
+function client_wait_async(gl, sync, flags, interval_ms) {
   return new Promise((resolve, reject) => {
     function test() {
-      const result = this.gl.clientWaitSync(sync, flags, 0);
-      if (result === this.gl.WAIT_FAILED) {
+      const result = gl.clientWaitSync(sync, flags, 0);
+      if (result === gl.WAIT_FAILED) {
         reject();
         return;
       }
       // This is the workaround for platforms where maximum 
       // timeout is always 0.
-      if (result === this.gl.TIMEOUT_EXPIRED) {
+      if (result === gl.TIMEOUT_EXPIRED) {
         setTimeout(test, interval_ms);
         return;
       }
@@ -1119,11 +1122,11 @@ function clientWaitAsync(sync, flags, interval_ms) {
   });
 }
 
-async function getBufferSubDataAsync(target, buffer, srcByteOffset, dstBuffer,
+async function get_buffer_sub_data_async(gl, target, buffer, srcByteOffset, dstBuffer,
   /* optional */ dstOffset, /* optional */ length) {
-  const sync = this.gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+  const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
   gl.flush();
-  await clientWaitAsync(sync, 0, 10);
+  await client_wait_async(gl, sync, 0, 10);
   gl.deleteSync(sync);
   gl.bindBuffer(target, buffer);
   gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
@@ -1167,7 +1170,7 @@ async function read_pixels_async(gl, x, y, w, h, format, type, sample) {
   gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
   gl.readPixels(x, y, w, h, format, type, 0);
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-  await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
+  await get_buffer_sub_data_async(gl, gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
   gl.deleteBuffer(buffer);
 }
 

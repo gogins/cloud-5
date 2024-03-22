@@ -2036,145 +2036,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
 }
 
     </script>
-    <script id="visuals-to-notes">
-
-        async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
-            if (csound == null) {
-                return;
-            }
-            if (!csound.is_playing) {
-                return;
-            }
-            let x = 0;
-            // y is zero at the bottom of the canvas.
-            let y = 0;
-            let width = canvas.width;
-            let height = 1;
-            let format = gl.RGBA;
-            let type = gl.UNSIGNED_BYTE;
-            readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
-            // Translate the sample format from byte RGBA to float HSV.
-            let hsv_image_sample = [];
-            for (let byte_i = 0; byte_i < image_sample_buffer.length; byte_i = byte_i + 4) {
-                let rgb = image_sample_buffer.slice(byte_i, byte_i + 3);
-                let hsv = rgb_to_hsv(rgb);
-                hsv_image_sample.push([hsv_image_sample.length + 1, hsv[2], hsv]);
-            }
-            // Downsample the HSV samples.
-            let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
-            sampled_events.length = 0;
-            on_events.length = 0;
-            off_events.length = 0;
-            score.clear();
-            // Translate the HSV samples to Csound event vectors.
-            // 0 is p1 insno (hsv[0](, tagged by downsampled pixel, 
-            //   positive for on or negative for off.
-            // 1 is p2 time always 0.
-            // 2 is p3 duration (either hsv[1] or -1, must be 0 for off
-            //   events).
-            // 3 is p4 MIDI key (downsampled pixel).
-            // 4 is p5 MIDI velocity (hsv[2]).
-            for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
-                let hsv = downsampled_pixels[downsampled_pixel_i][2];
-                let instrument_number = 1 + (hsv[0] * instrument_count);
-                // The instrument number must have a unique fractional tag.
-                let time = 0;
-                let duration = (.25 + (60 / parameters.NoteTempo * hsv[1] * 2)) * parameters.NoteDurationFactor;
-                let midi_key = Math.floor(this.midi_key_begin + downsampled_pixel_i);
-                //instrument_number = 4;
-                let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
-                instrument_number = parseFloat(insno);
-                let midi_velocity = hsv[2] * 128;
-                let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
-                sampled_events.push(event_for_pixel);
-            }
-            console.info(sprintf("sampled_events.length: %d\n", sampled_events.length));
-            // Events that are playing but not loud enough, are turned off.
-            for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
-                let sampled_event = sampled_events[sampled_event_i];
-                let key = sampled_event[0];
-                if (playing_events.has(key) == true) {
-                    let off_event = playing_events.get(key);
-                    let instrument_number = off_event[0];
-                    if (threshold > sampled_event[4]) {
-                        csound.KillInstance(instrument_number, "", 4, true);
-                        console.info("Turned off instrument number: " + instrument_number + ".");
-                        playing_events.delete(key);
-                    }
-                }
-            }
-            console.info(sprintf("playing_events.size:   %d\n", playing_events.size));
-            // Events that are loud enough but not playing, are turned on.
-            for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
-                let sampled_event = sampled_events[sampled_event_i];
-                let key = sampled_event[0];
-                if (playing_events.has(key) == false) {
-                    if (sampled_event[4] >= threshold) {
-                        playing_events.set(key, sampled_event);
-                        on_events.push(sampled_event);
-                    }
-                }
-            }
-            console.info(sprintf("playing_events.size:   %d\n", playing_events.size));
-            console.info(sprintf("on_events.length:      %d\n", on_events.length));
-            CsoundAC.setCorrectNegativeDurations(false);
-            // Limit number of on events, play N loudest only. Could also pick at random.
-            on_events.sort(function (a, b) {
-                if (a[5] < b[5]) {
-                    return 1;
-                }
-                if (b[5] < a[5]) {
-                    return -1;
-                }
-                return 0;
-            });
-            let voices = Math.min(on_events.length, maximum_voices);
-            for (let i = 0; i < voices; i++) {
-                let on_event = on_events[i];
-                let time = 0;
-                let duration = on_event[2];
-                let status = 144;
-                let instrument_number = on_event[0];
-                ///let instrument_number = 8;
-                let key = on_event[3];
-                let velocity = on_event[4];
-                velocity = 60 + (velocity / 7);
-                let phase = 0;
-                let pan = .01 + Math.random() * .8;
-                let depth = 0;
-                let height = 0;
-                let pitches = 4095;
-                score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
-            }
-            if (score.size() > 0) {
-                if (sample_count % 4 == 0) {
-                    if (sample_count % 24 == 0) {
-                        let scales = scale.modulations(chord);
-                        if (scales.size() > 1) {
-                            scale = scales.get(Math.floor(Math.random() * scales.size()));
-                            csound_message_callback(sprintf("\nScale: %s\n", scale.name()));
-                        }
-                    }
-                    let root_progression = root_progressions[Math.floor(Math.random() * root_progressions.length)];
-                    let chord_name = chord.eOP().name();
-                    if (chord_name.length == 0) {
-                        chord_name = chord.eOP().toString();
-                    }
-                    csound_message_callback(sprintf("\nChord: %s\n\n", chord_name));
-                    chord = scale.transpose_degrees(chord, root_progression, 3)
-                }
-                CsoundAC.apply(score, chord, 0, 1000000, true);
-                let score_text = score.getCsoundScore(12., true);
-                csound.ReadScore(score_text);
-            }
-            sample_count++;
-        }
-
-        function get_attributes() {
-
-        }
-
-    </script>
     <cloud5-piece></cloud5-piece style="z-index:1000;">
     <cloud5-shadertoy></cloud5-shadertoy>
     <cloud5-log></cloud5-log>
@@ -2479,7 +2340,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             // 4 is p5 MIDI velocity (hsv[2]).
             for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
                 let hsv = downsampled_pixels[downsampled_pixel_i][2];
-                let instrument_number = 1 + (hsv[0] * instrument_count);
+                let instrument_number = 1 + (hsv[0] * this.instrument_count);
                 // The instrument number must have a unique fractional tag.
                 let time = 0;
                 let duration = (.25 + (60 / this.cloud5_piece.control_parameters_addon.NoteTempo * hsv[1] * 2)) * this.cloud5_piece.control_parameters_addon.NoteDurationFactor;
@@ -2493,14 +2354,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             }
             console.info(sprintf("sampled_events.length: %d\n", this.sampled_events.length));
             // Events that are playing but not loud enough, are turned off.
-            for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+            for (let sampled_event_i = 0; sampled_event_i < this.sampled_events.length; sampled_event_i++) {
                 let sampled_event = this.sampled_events[sampled_event_i];
                 let key = sampled_event[0];
                 if (this.playing_events.has(key) == true) {
                     let off_event = this.playing_events.get(key);
                     let instrument_number = off_event[0];
                     if (threshold > sampled_event[4]) {
-                        csound.KillInstance(instrument_number, "", 4, true);
+                        this.cloud5_piece.csound.KillInstance(instrument_number, "", 4, true);
                         console.info("Turned off instrument number: " + instrument_number + ".");
                         this.playing_events.delete(key);
                     }
@@ -2520,7 +2381,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             }
             console.info(sprintf("playing_events.size:   %d\n", this.playing_events.size));
             console.info(sprintf("on_events.length:      %d\n", this.on_events.length));
-            CsoundAC.setCorrectNegativeDurations(false);
+            this.CsoundAC.setCorrectNegativeDurations(false);
             // Limit number of on events, play N loudest only. Could also pick at random.
             this.on_events.sort(function (a, b) {
                 if (a[5] < b[5]) {
@@ -2550,27 +2411,27 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 this.score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
             }
             if (this.score.size() > 0) {
-                if (sample_count % 4 == 0) {
-                    if (sample_count % 24 == 0) {
-                        let scales = this.scale.modulations(chord);
+                if (this.sample_count % 4 == 0) {
+                    if (this.sample_count % 24 == 0) {
+                        let scales = this.scale.modulations(this.chord);
                         if (scales.size() > 1) {
                             this.scale = scales.get(Math.floor(Math.random() * scales.size()));
-                            csound_message_callback(sprintf("\nScale: %s\n", scale.name()));
+                            this.cloud5_piece.log(sprintf("\nScale: %s\n", this.scale.name()));
                         }
                     }
-                    let root_progression = this.root_progressions[Math.floor(Math.random() * root_progressions.length)];
+                    let root_progression = this.root_progressions[Math.floor(Math.random() * this.root_progressions.length)];
                     let chord_name = this.chord.eOP().name();
                     if (chord_name.length == 0) {
                         chord_name = this.chord.eOP().toString();
                     }
-                    csound_message_callback(sprintf("\nChord: %s\n\n", chord_name));
+                    this.cloud5_piece.log(sprintf("\nChord: %s\n\n", chord_name));
                     this.chord = this.scale.transpose_degrees(this.chord, root_progression, 3)
                 }
-                CsoundAC.apply(this.score, this.chord, 0, 1000000, true);
+                this.CsoundAC.apply(this.score, this.chord, 0, 1000000, true);
                 let score_text = this.score.getCsoundScore(12., true);
                 this.cloud5_piece.csound.ReadScore(score_text);
             }
-            sample_count++;
+            this.sample_count++;
         }.bind(cloud5_shader);
         cloud5_shader['sample_canvas'] = async function (current_rendering_frame) {
             /** 
