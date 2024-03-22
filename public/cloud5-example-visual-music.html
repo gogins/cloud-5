@@ -2464,7 +2464,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 hsv_image_sample.push([hsv_image_sample.length + 1, hsv[2], hsv]);
             }
             // Downsample the HSV samples.
-            let downsampled_pixels = downsample_lttb(hsv_image_sample, midi_key_range);
+            let downsampled_pixels = downsample_lttb(hsv_image_sample, this.midi_key_range);
             this.sampled_events.length = 0;
             this.on_events.length = 0;
             this.off_events.length = 0;
