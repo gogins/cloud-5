@@ -16,6 +16,10 @@
  
 // import csound_audio_processor_module from 'CsoundAudioProcessor.js';
 
+/**
+ * Provides the Csound API as in csound_threaded.hpp, but implemented in 
+ * WebAssembly.
+ */
 class CsoundAudioNode extends AudioWorkletNode {
     resolveCleanup(result) {
         return result;

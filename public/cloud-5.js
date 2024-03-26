@@ -34,17 +34,19 @@ class Cloud5Piece extends HTMLElement {
     super();
     this.csound = null;
   }
+
+  #csound_code_addon = null;
   /**
     * May be assigned the text of a Csound .csd patch. If so, the Csound 
     * patch will be compiled and run for every performance.
     */
-  #csound_code_addon = null;
   set csound_code_addon(code) {
     this.#csound_code_addon = code;
   }
   get csound_code_addon() {
     return this.#csound_code_addon;
   }
+  #shader_overlay = null;
   /**
   * May be assigned an instance of a cloud5-shader overlay. If so, 
   * the GLSL shader will run at all times, and will normally create the 
@@ -53,7 +55,6 @@ class Cloud5Piece extends HTMLElement {
   * or to sample the video canvas to generate notes for performance by 
   * Csound.
   */
-  #shader_overlay = null;
   set shader_overlay(shader) {
     this.#shader_overlay = shader;
     // Back reference for shader to access Csound, etc.
@@ -63,6 +64,7 @@ class Cloud5Piece extends HTMLElement {
   get shader_overlay() {
     return this.#shader_overlay;
   }
+  #control_parameters_addon = null;
   /**
     * May be assigned a JavaScript object consisting of Csound control 
     * parameters, with default values. The naming convention must be global 
@@ -79,13 +81,13 @@ class Cloud5Piece extends HTMLElement {
     * The Csound orchestra should define matching control channels. Such 
     * parameters may also be used to control other processes.
     */
-  #control_parameters_addon = null;
   set control_parameters_addon(parameters) {
     this.#control_parameters_addon = parameters;
   }
   get control_parameters_addon() {
     return this.#control_parameters_addon;
   }
+  #score_generator_function_addon = null;
   /**
    * May be assigned a score generating function. If so, the score generator 
    * will be called for each performance, and must generate and return a 
@@ -93,19 +95,18 @@ class Cloud5Piece extends HTMLElement {
    * format, appended to the Csound patch, displayed in the piano roll 
    * overlay, and played or rendered by Csound.
    */
-  #score_generator_function_addon = null;
   set score_generator_function_addon(score_generator_function) {
     this.#score_generator_function_addon = score_generator_function;
   }
   get score_generator_function_addon() {
     return this.#score_generator_function_addon;
   }
+  #piano_roll_overlay = null;
   /**
    * May be assigned an instance of a cloud5-piano-roll overlay. If so, the 
    * Score button will show or hide an animated, zoomable piano roll display 
    * of the generated CsoundAC Score.
    */
-  #piano_roll_overlay = null;
   set piano_roll_overlay(piano_roll) {
     this.#piano_roll_overlay = piano_roll;
     this.#piano_roll_overlay.cloud5_piece = this;
@@ -115,7 +116,7 @@ class Cloud5Piece extends HTMLElement {
   }
   /**
    * May be assigned an instance of the cloud5-log overlay. If so, the Log 
-   * button will show or hide a scrolling  view of messages from Csound or 
+   * button will show or hide a scrolling view of messages from Csound or 
    * other sources.
    */
   #log_overlay = null;
@@ -322,6 +323,12 @@ class Cloud5Piece extends HTMLElement {
       nw_window?.close();
     });
   }
+  /**
+   * Invokes Csound and/or Strudel to perform music, by default to 
+   * the audio output interface, but optionally to a local soundfile.
+   * 
+   * @param {*} is_offline If true, renders to a local soundfile.
+   */
   render = async function (is_offline) {
     this.csound = await get_csound((message) => this.csound_message_callback(message));
     if (non_csound(this.csound)) {
@@ -380,6 +387,9 @@ class Cloud5Piece extends HTMLElement {
     this?.piano_roll_overlay?.trackScoreTime();
     this?.csound_message_callback("Csound is playing...\n");
   }
+  /**
+   * Stops Csound and Strudel from performing.
+   */
   stop = async function () {
     this.piano_roll_overlay?.stop();
     await this.csound.Stop();
@@ -388,16 +398,32 @@ class Cloud5Piece extends HTMLElement {
     strudel_view?.stopPlaying();
     this.csound_message_callback("Csound has stopped.\n");
   };
+  /**
+   * Helper function to show custom element overlays.
+   * 
+   * @param {*} overlay 
+   */
   show(overlay) {
     if (overlay) {
       overlay.style.display = 'block';
     }
   }
+  /**
+   * Helper function to hide custom element overlays.
+   * 
+   * @param {*} overlay 
+   */
   hide(overlay) {
     if (overlay) {
       overlay.style.display = 'none';
     }
   }
+  /**
+   * Helper function to show the overlay if it is 
+   * hidden, or to hide the overlay if it is visible
+   * 
+   * @param {*} overlay 
+   */
   toggle(overlay) {
     if (overlay) {
       if (overlay.checkVisibility() == true) {
@@ -419,6 +445,12 @@ class Cloud5Piece extends HTMLElement {
       }
     }
   }
+  /**
+   * Adds a new folder to the Controls menu of the piece.
+   * 
+   * @param {String} name The name of the folder. 
+   * @returns (Object) The new folder.
+   */
   menu_folder_addon(name) {
     let folder = this.gui.addFolder(name);
     return folder;
