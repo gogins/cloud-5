@@ -18,7 +18,10 @@
 
 /**
  * Provides the Csound API as in csound_threaded.hpp, but implemented in 
- * WebAssembly.
+ * WebAssembly. For a more complete description of what these functions 
+ * do, see csound_threaded.hpp in the Csound GitHub repository, and of course 
+ * the Csound API Reference. The semantics of all functions are virtually 
+ * identical and the signatures are as equivalent as I could make them.
  */
 class CsoundAudioNode extends AudioWorkletNode {
     resolveCleanup(result) {

@@ -1,5 +1,5 @@
-/**
- * C S O U N D A C   M O D U L E   F O R   S T R U D E L
+/*
+ * CSOUNDAC MODULE FOR STRUDEL
  *
  * Author: Michael Gogins
  * 
@@ -25,8 +25,16 @@
  * in this module, as with all other modules directly imported in code 
  * run by the Strudel REPL, must not use template strings.
  */
+
+/**
+ * Global instance of Csound, shared with Strudel.
+ */
 let csound = globalThis.__csound__;
+/**
+ * Global instance of CsoundAC.
+ */
 let csoundac = globalThis.__csoundac__;
+
 let audioContext = new AudioContext();
 
 import {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns} from '../statefulpatterns.mjs';
@@ -34,9 +42,12 @@ export {diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR
 
 /**
  * Similar to `arrange,` but permits a section to be silenced by setting its 
- * number of cycles to 0; `sections` is an array of arrays, in the format 
- * `[[cycles, Pattern],...]`. Useful for assembling Patterns into longer-form 
+ * number of cycles to 0; useful for assembling Patterns into longer-form 
  * compositions.
+ * 
+ * @param  {...any} sections An array of arrays, in the format 
+ * `[[cycles, Pattern],...]`. 
+ * @returns {Pattern} A Pattern.
  */
 export function track(...sections) {
     sections = sections.filter(function(element) {
@@ -50,6 +61,9 @@ export function track(...sections) {
 /**
  * Returns the frequency corresponding to any of various ways that pitch 
  * is represented in Strudel events.
+ *
+ * @param {Hap} hap A Hap that has some sort of pitch. 
+ * @returns {number} Its frequency in cycles per second.
  */
 const getFrequency = (hap) => {
     let {
@@ -76,6 +90,10 @@ const getFrequency = (hap) => {
 /**
  * A utility that assigns a pitch represented as a MIDI key number to the Hap, 
  * using the existing pitch property if it exists.
+ *
+ * @param {Hap} hap The Hap.
+ * @param {number} midi_key A MIDI key number.
+ * @returns {Hap} A new Hap.
  */
 export function setPitch(hap, midi_key) {
     if (typeof hap.value === 'undefined') {
@@ -98,6 +116,9 @@ export function setPitch(hap, midi_key) {
 /**
  * A utility that returns the MIDI key number for a frequency in Hz, 
  * as a real number allowing fractions for microtones.
+ *
+ * @param {number} frequency The frequency in cycles per second.
+ * @returns {number} A (possibly fractional) MIDI key number.
  */
 export function frequencyToMidiReal(frequency) {
     const middle_c = 261.62558;
@@ -109,6 +130,9 @@ export function frequencyToMidiReal(frequency) {
 /**
  * A utility that returns the MIDI key number for a frequency in Hz, 
  * as the nearest integer.
+ * 
+ * @param {number} frequency The frequency in cycles per second.
+ * @returns {number} The MIDI key number as an integer.
  */
 export function frequencyToMidiInteger(frequency) {
     let midi_key = frequencyToMidiReal(frequency);
@@ -119,6 +143,9 @@ export function frequencyToMidiInteger(frequency) {
  * A utility for making a _value_ copy of a Chord (or a Scale, which 
  * is derived from Chord). Object b is resized to the size of a, and a's 
  * pitches are copied to b. Currently, only pitches are copied.
+ * 
+ * @param {Chord} a The source Chord (or Scale).
+ * @param {Chord} b The target Chord (or Scale).
  */
 export function Clone(a, b) {
     b.resize(a.voices())
@@ -147,7 +174,14 @@ export function set_instrument_count(new_count) {
     instrument_count = new_count;
     return old_count;
 }
-
+/**
+ * Returns the RGB color for an HSV color.
+ * 
+ * @param {number} h The hue.
+ * @param {number} s The saturation.
+ * @param {number} v The value.
+ * @returns {Array} The RGB color.
+ */
 export function hsvToRgb(h,s,v) {
   var rgb, i, data = [];
   if (s === 0) {
@@ -185,9 +219,11 @@ export function hsvToRgb(h,s,v) {
 let csoundn_counter = 0;
 
 /**
- * Sends notes to Csound for rendering with MIDI semantics. The Hap value is
- * translated to Csound pfields as follows:
- *
+ * @function csoundn
+ * 
+ * @description A Pattern that sends notes to Csound for rendering with MIDI 
+ * semantics. Hap values are translated to Csound pfields as follows:
+ * <pre>
  *  p1 -- Csound instrument either as a number (1-based, can be a fraction),
  *        or as a string name.
  *  p2 -- time in beats (usually seconds) from start of performance.
@@ -200,6 +236,9 @@ let csoundn_counter = 0;
  *  p7 -- Spatial pan dimension, from Strudel's `pan` control, in [0, 1],
  *        defaulting to 0.5.
  *  p8 -- Spatial height dimension, from a `height` control, defaulting to 0.
+ * </pre>
+ * @param {number} instrument The Csound instrument number (p1); may be patternified.
+ * @param {Pattern} pat The target of this Pattern.
  */
 export const csoundn = register('csoundn', (instrument, pat) => {
     let p1;
@@ -297,6 +336,9 @@ let chordn_counter = 0;
  * corresponds to one voice of the Chord. Chords are equipped with numerous 
  * operations from pragmatic music theory, atonal music theory, and 
  * neo-Riemannian music theory.
+ *
+ * @param {string} name The common musical name of the Chord, e.g. "Cb9."
+ * @returns {Chord} A new CsoundAC Chord object.
  */
 export function Chord(name) {
     if (diagnostic_level() >= DEBUG) diagnostic('[csacChord] Creating Chord...\n');
@@ -314,6 +356,9 @@ export function Chord(name) {
  * scale degrees, transposing Chords by scale degrees, generating all 
  * possible modulations given a pivot chord, and implementing secondary 
  * dominants and tonicizations based on scale degree.
+ * 
+ * @param {Scale} name The common musical name of the Scale, e.g. "C major."
+ * @returns {Scale} A new Scale object.
  */
 export function Scale(name) {
     name = name.replace('_', ' ');
@@ -334,6 +379,12 @@ export function Scale(name) {
  * chords, such that each voiced chord corresponds to a PITV index, and each 
  * PITV index corresponds to a voiced chord. This enables algorithmically 
  * generating harmonies and voicings by independently varying P, I, T, and V.
+ *
+ * @param {number} voices The number of voices in the chord space.
+ * @param {number} bass The lowest pitch (as a MIDI key number) in the chord 
+ * space.
+ * @param {number} range The range (in MIDI key numbers) of the chord space.
+ * @returns {PITV} A new PITV object.
  */
 export function Pitv(voices, bass, range) {
     if (diagnostic_level() >= DEBUG) diagnostic('[Pitv] Creating PITV group...\n');
@@ -394,6 +445,11 @@ export class ChordPatterns extends StatefulPatterns {
     }
     /**
      * Applies a Chord or chord name to this.
+     * 
+     * @param {boolean} is_onset Whether this Hap is the onset of its cycle.
+     * @param {string} chord_id Identifies the chord.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acC(is_onset, chord_id, hap) {
         if (is_onset === true) {
@@ -420,6 +476,11 @@ export class ChordPatterns extends StatefulPatterns {
     }
     /**
      * Applies a transposition to the Chord of this.
+     * 
+     * @param {boolean} is_onset Indicates whether or not this is Hap onset of its cycle.
+     * @param {number} semitones Number of semitones to transpose; may be negative.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCT(is_onset, semitones, hap) {
         if (is_onset === true) {
@@ -440,6 +501,11 @@ export class ChordPatterns extends StatefulPatterns {
      * Applies an inversion to the Chord of this. The transformation can be 
      * patternified with a Pattern of flips (changes in the value of the flip 
      * input).
+     * 
+     * @param {boolean} is_onset Indicates whether or not this is Hap onset of its cycle.
+     * @param {number} center The center of reflection.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} The new Hap.
      */
     acCI(is_onset, center, flip, hap) {
         if (is_onset === true) {
@@ -461,6 +527,11 @@ export class ChordPatterns extends StatefulPatterns {
      * Contextual Group of Fiore and Satyendra to the Chord of this. The 
      * transformation can be patternified with a Pattern of flips (changes in 
      * the value of the flip input).
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} flip If this value changes, the transformation is applied.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCK(is_onset, flip, hap) {
         if (is_onset === true) {
@@ -481,6 +552,12 @@ export class ChordPatterns extends StatefulPatterns {
      * Applies the contexual transposition operation of the Generalized 
      * Contextual Group of Fiore and Satyendra to the Chord of this. The 
      * modality is set in the constructor of this class.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} semitones The number of semitones by which this Chord 
+     * is to be tranposed; may be negative.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
      acCQ(is_onset, semitones, hap) {
         if (is_onset === true) {
@@ -502,6 +579,10 @@ export class ChordPatterns extends StatefulPatterns {
      * transformation can be useful for returning chords that have been 
      * transformed such that their voices are out of range back to a more 
      * normal form.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCOP(is_onset, hap) {
         if (is_onset === true) {
@@ -523,6 +604,11 @@ export class ChordPatterns extends StatefulPatterns {
      * transformation can be useful for returning chords that have been 
      * transformed such that their voices are out of range back to a user-
      * defined range.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} range The range of this chord space.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCRP(is_onset, range, hap) {
         if (is_onset === true) {
@@ -539,6 +625,10 @@ export class ChordPatterns extends StatefulPatterns {
     /**
      * Applies the Chord of this to the _pitch-class_ of the Hap, i.e., moves 
      * the _pitch-class_ of the Hap to the nearest _pitch-class_ of the Chord.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCV(is_onset, hap) {
         if (is_onset === true) {
@@ -588,6 +678,11 @@ export class ChordPatterns extends StatefulPatterns {
      *            from the highest voice, positive means add an octave to the 
      *            lowest voice. This corresponds to the musician's notion of 
      *            "inversion."
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} revoicings The number of octavewise revoicings to apply.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCO(is_onset, revoicings, hap) {
         if (is_onset) {
@@ -606,6 +701,12 @@ export class ChordPatterns extends StatefulPatterns {
     /**
      * acCVV:      Generate a note that represents a particular voice of the 
      *             Chord.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} bass The MIDI key number of the lowest pitch.
+     * @param {number} voice The number of the voice of the Chord to use.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCVV(is_onset, bass, voice, hap) {
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
@@ -617,6 +718,14 @@ export class ChordPatterns extends StatefulPatterns {
     /**
      * acCVVL:     Generate a note that represents a particular voice of the 
      *             Chord, as the closest voice-leading from the prior Chord.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} bass The MIDI key of the lowest pitch to use.
+     * @param {number} range The range in MIDI keys. Pitches are wrapped back up or down
+     * if the revoicing takes them out of this range.
+     * @param {number} voice The number of the voice in the Chord to use.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCVVL(is_onset, bass, range, voice, hap) {
         if (this.prior_chord != this.ac_chord) {
@@ -675,6 +784,11 @@ export class ScalePatterns extends StatefulPatterns {
     }
     /**
      * acS:        Insert a CsoundAC Scale into the Pattern's state.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Scale} scale The Scale object to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acS(is_onset, scale, hap) {
         if (is_onset === true) {
@@ -705,6 +819,11 @@ export class ScalePatterns extends StatefulPatterns {
     /** 
      * acSS:       Insert the Chord at the specified scale step of the Scale in 
      *             the Pattern's state, into the state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} scale_step The specific scale step of the Chord in the Scale.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acSS(is_onset, scale_step, hap) {
         if (is_onset === true) {
@@ -724,6 +843,12 @@ export class ScalePatterns extends StatefulPatterns {
     /**
      * acST:       Transpose the Chord in the Pattern's state by the specified 
      *             number of scale steps in the Scale in the state.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} scale_steps The number of steps in this Scale by which to 
+     * transpose the Chord in this.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acST(is_onset, scale_steps, hap) {
         if (is_onset === true) {
@@ -744,6 +869,11 @@ export class ScalePatterns extends StatefulPatterns {
      * acSM:       Modulate from the Scale in the Pattern's state, using the 
      *             Chord in the state as a pivot, choosing one of the possible 
      *             modulations by index.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} index The index of the specific modulation to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acSM(is_onset, index, hap) {
         if (is_onset === true) {
@@ -777,6 +907,10 @@ export class ScalePatterns extends StatefulPatterns {
     /**
      * acSV:       Move notes in the Pattern to fit the Scale in the Pattern's 
      *             state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acSV(is_onset, hap) {
         if (is_onset === true) {
@@ -819,6 +953,10 @@ export class ScalePatterns extends StatefulPatterns {
     /**
      * acSCV:      Move notes in the Pattern to fit the Chord in the Pattern's 
      *             state.
+     *
+     * @param {number} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acSCV(is_onset, hap) {
         if (is_onset === true) {
@@ -867,6 +1005,12 @@ export class ScalePatterns extends StatefulPatterns {
      *            from the highest voice, positive means add an octave to the 
      *            lowest voice. This corresponds to the musician's notion of 
      *            "inversion."
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} revoicings The number of octavewise revoicings to apply 
+     * to the Chord in this.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acSO(is_onset, revoicings, hap) {
         if (is_onset) {
@@ -882,9 +1026,16 @@ export class ScalePatterns extends StatefulPatterns {
         return hap;       
     }
     
-        /**
+    /**
      * acSVV:      Generate a note that represents a particular voice of the 
      *             Chord of this.
+     *
+     * @param {boolean} is_onset Indicates whether the Hap is the onset of this cycle.
+     * @param {number} bass The lowest possible voice; lower pitches are 
+     * reflected back up.
+     * @param {number} voice The voice of the Chord to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acCVV(is_onset, bass, voice, hap) {
         let new_midi_key = bass + this.ac_chord.getPitch(voice);
@@ -897,6 +1048,13 @@ export class ScalePatterns extends StatefulPatterns {
      * acSVVL:     Generate a note that represents a particular voice of the 
      *             current Chord, as the closest voice-leading from the prior 
      *             Chord.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} bass The lowest pitch in this chord space.
+     * @param {number} range The range of this chord space.
+     * @param {number} voice The number of the Chord voice to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acSVVL(is_onset, bass, range, voice, hap) {
         if (this.prior_chord != this.ac_chord) {
@@ -936,6 +1094,11 @@ export class PitvPatterns extends StatefulPatterns {
     }
     /**
      * acP:        Insert a CsoundAC PITV group into the Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {PITV} pitv The PITV object to be inserted.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acP(is_onset, pitv, hap) {
         if (is_onset == true) {
@@ -951,6 +1114,11 @@ export class PitvPatterns extends StatefulPatterns {
     /**
      * acPP:       Set the prime form index of the PITV element in the Pattern's 
      *             state.
+     * 
+     * @param {boolean} is_onset 
+     * @param {number} P The PITV index of the prime form.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acPP(is_onset, P, hap) {
         if (is_onset === true) {
@@ -971,6 +1139,11 @@ export class PitvPatterns extends StatefulPatterns {
     /**
      * acPI:       Set the inversion index of the PITV element in the Pattern's 
      *             state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} I The PITV inversion.
+     * @param {Hap} hap  The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acPI(is_onset, I, hap) {
         if (is_onset === true) {
@@ -986,8 +1159,13 @@ export class PitvPatterns extends StatefulPatterns {
         return hap;
     }
     /**
-     * acPT:       Set the transposition index of the PITV element in the 
+     * acPT:       Set the transposition of the PITV element in the 
      *             Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} T The PITV transposition.
+     * @param {Hap} hap  The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acPT(is_onset, T, hap) {
         if (is_onset === true) {
@@ -1005,6 +1183,11 @@ export class PitvPatterns extends StatefulPatterns {
     /**
      * acPO:       Set the octavewise voicing index of the PITV element in the 
      *             Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} V The index of the octavewise revoicing in this PITV.
+     * @param {Hap} hap  The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acPO(is_onset, V, hap) {
         if (is_onset == true) {
@@ -1020,8 +1203,12 @@ export class PitvPatterns extends StatefulPatterns {
         return hap;
     }
     /**
-     * acPC:       Insert the Chord corresponding to the PITV element into the 
-     *             Pattern's state.
+     * acPC:       Insert the Chord corresponding to the current PITV element 
+     *             into the Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acPC(is_onset, hap) {
         if (is_onset === true) {
@@ -1036,7 +1223,11 @@ export class PitvPatterns extends StatefulPatterns {
     }
     /**
      * acPV:       Move notes in the Pattern to fit the pitch-class set of the 
-     *             element of the PITV group in the Pattern's state.
+     *             current element of the PITV group in the Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acPV(is_onset, hap) {
         let frequency;
@@ -1058,7 +1249,12 @@ export class PitvPatterns extends StatefulPatterns {
     }
     /**
      * acPVV:      Generate a note that represents a particular voice of the 
-     *             Chord.
+     *             Chord represented by the current elemet of the PITV in this.
+     * 
+     * @param {boolean} is_onset 
+     * @param {number} voice 
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
     acPVV(is_onset, voice, hap) {
         let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
@@ -1071,6 +1267,11 @@ export class PitvPatterns extends StatefulPatterns {
     /**
      * acPVVL:     Generate a note that represents a particular voice of the 
      *             Chord, as the closest voice-leading from the prior element of this.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} voice The number of the voice in thre chord that is to ber used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
      */
    acPVVL(is_onset, voice, hap) {
        this.ac_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);

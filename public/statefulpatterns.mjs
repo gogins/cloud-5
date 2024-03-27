@@ -1,5 +1,5 @@
-/**
- * S T A T E F U L P A T T E R N S   M O D U L E   F O R   S T R U D E L
+/*
+ * STATEFULPATTERNS MODULE FOR STRUDEL
  *
  * Author: Michael Gogins
  * 
@@ -17,6 +17,9 @@ let diagnostic_level_ = 5;
 
 /**
  * Gets and/or sets the level of diagnostic messages.
+ * 
+ * @param {number} new_level The new diagnostic level.
+ * @returns {number} The previous diagnostic level.
  */
 export function diagnostic_level(new_level) {
     let old_level = diagnostic_level_;
@@ -36,6 +39,9 @@ export const NEVER = 0;
 /**
  * Prints a diagnostic message to both the Strudel logger and the Csound 
  * log. Messages are printed only for the specifed diagnostic level or less.
+ *
+ * @param {string} message Text of the message.
+ * @param {number} level Diagnostic level, defaulting to WARNING.
  */
 export function diagnostic(message, level = WARNING) {
     if (level >= diagnostic_level_) {
@@ -53,9 +59,9 @@ export function diagnostic(message, level = WARNING) {
  * each of which takes an instance of the class as a first parameter, and the 
  * Pattern as the last parameter. Class methods must have the following syntax 
  * and semantics:
- * ```
+ * <pre>
  * Class.Pat(is_onset, [0 or more arguments to be patternified], hap) {...}
- * ```
+ * </pre>
  * Strudel will pass `true` for `is_onset` on the onset of the Pattern's cycle, 
  * and `false` for `is_onset` for every query in that cycle. Therefore, the 
  * class method must update its state if `is_onset` is true, and return the 

@@ -5,7 +5,7 @@
  * custom methods can be called.
  * 
  * In general, rather than subclassing these custom elements (although that 
- * is possible), users should define and set hook functions, code text, and 
+ * is possible), users should define and set addon functions, code text, and 
  * other properties of the custom elements. All such user-defined properties 
  * have names ending in `_addon`.
  * 
@@ -20,7 +20,7 @@
  *    elements. The w3.css style sheet is used internally and should also be 
  *    included.
  * 3. In a script element of the Web page:
- *    a. Define adds as JavaScript variables.
+ *    a. Define addons as JavaScript variables.
  *    b. Obtain DOM objects from custom elements.
  *    c. Assign custom elements and addons to their respective properties.
  */
@@ -103,9 +103,9 @@ class Cloud5Piece extends HTMLElement {
   }
   #piano_roll_overlay = null;
   /**
-   * May be assigned an instance of a cloud5-piano-roll overlay. If so, the 
-   * Score button will show or hide an animated, zoomable piano roll display 
-   * of the generated CsoundAC Score.
+   * May be assigned the DOM object of a <cloud5-piano-roll> element overlay. 
+   * If so, the Score button will show or hide an animated, zoomable piano 
+   * roll display of the generated CsoundAC Score.
    */
   set piano_roll_overlay(piano_roll) {
     this.#piano_roll_overlay = piano_roll;
@@ -115,18 +115,31 @@ class Cloud5Piece extends HTMLElement {
     return this.#piano_roll_overlay;
   }
   /**
-   * May be assigned an instance of the cloud5-log overlay. If so, the Log 
-   * button will show or hide a scrolling view of messages from Csound or 
+   * May be assigned the DOM object of a <cloud5-log> element overlay. If so, 
+   * the Log button will show or hide a scrolling view of messages from Csound or 
    * other sources.
    */
   #log_overlay = null;
-  /**
-   * May be assigned an instance of the cloud5-about overlay. If so,
-   * the About button will show or hide the overlay. The inner HTML of this 
-   * element may contain license information, authorship, credits, program 
-   * notes for the piece, and so on.
-   */
   #about_overlay = null;
+  /**
+   * May be assigned the DOM object of a <cloud5-about> element overlay. If 
+   * so, the About button will show or hide the overlay. The inner HTML of 
+   * this element may contain license information, authorship, credits, 
+   * program notes for the piece, or other information.
+   */
+  get about_overlay() {
+    return this.#about_overlay;
+  }
+  set about_overlay(overlay) {
+    this.#about_overlay = overlay;
+  }
+  /**
+   * Called by Csound during performance, and prints the message to the 
+   * scrolling text area of a <csound5-log> element overlay. This function may 
+   * also be called by user code.
+   * 
+   * @param {string} message 
+   */
   csound_message_callback = async function (message) {
     if (message === null) {
       return;
@@ -169,6 +182,11 @@ class Cloud5Piece extends HTMLElement {
     };
     this.log_overlay?.log(message);
   }
+  /**
+   * A convenience function for printing the message in the 
+   * scrolling <csound5-log> element overlay.
+   * @param {string} message 
+   */
   log(message) {
     this.csound_message_callback(message);
   }
@@ -324,10 +342,15 @@ class Cloud5Piece extends HTMLElement {
     });
   }
   /**
-   * Invokes Csound and/or Strudel to perform music, by default to 
-   * the audio output interface, but optionally to a local soundfile.
+   * @function render
    * 
-   * @param {*} is_offline If true, renders to a local soundfile.
+   * @memberof Cloud5Piece
+   * 
+   * @description Invokes Csound and/or Strudel to perform music, by default to 
+   * the audio output interface, but optionally to a local soundfile. Acts as an 
+   * async member function because it is bound to this.
+   * 
+   * @param {Boolean} is_offline If true, renders to a local soundfile.
    */
   render = async function (is_offline) {
     this.csound = await get_csound((message) => this.csound_message_callback(message));
@@ -401,7 +424,7 @@ class Cloud5Piece extends HTMLElement {
   /**
    * Helper function to show custom element overlays.
    * 
-   * @param {*} overlay 
+   * @param {Object} overlay 
    */
   show(overlay) {
     if (overlay) {
@@ -411,7 +434,7 @@ class Cloud5Piece extends HTMLElement {
   /**
    * Helper function to hide custom element overlays.
    * 
-   * @param {*} overlay 
+   * @param {Object} overlay 
    */
   hide(overlay) {
     if (overlay) {
@@ -422,7 +445,7 @@ class Cloud5Piece extends HTMLElement {
    * Helper function to show the overlay if it is 
    * hidden, or to hide the overlay if it is visible
    * 
-   * @param {*} overlay 
+   * @param {Object} overlay 
    */
   toggle(overlay) {
     if (overlay) {
@@ -434,12 +457,15 @@ class Cloud5Piece extends HTMLElement {
     }
   }
   /**
-   * Sends the values of the parameters to the Csound control channels 
-   * with the same names.
+   * Sends a dictionary of parameters to Csound at the start of performance. 
+   * The keys are the literal Csound control channel names, and the values are 
+   * the values of those channels.
+   * 
+   * @param {Object} parameters 
    */
-  send_parameters(parameters_) {
+  send_parameters(parameters) {
     if (non_csound(this.csound) == false) {
-      for (const [name, value] of Object.entries(parameters_)) {
+      for (const [name, value] of Object.entries(parameters)) {
         this.csound.Message(name + ": " + value + "\n");
         this.csound.SetControlChannel(name, parseFloat(value));
       }
@@ -448,13 +474,24 @@ class Cloud5Piece extends HTMLElement {
   /**
    * Adds a new folder to the Controls menu of the piece.
    * 
-   * @param {String} name The name of the folder. 
-   * @returns (Object) The new folder.
+   * @param {string} name The name of the folder. 
+   * @returns {Object} The new folder.
    */
   menu_folder_addon(name) {
     let folder = this.gui.addFolder(name);
     return folder;
   }
+  /**
+   * Adds a new slider to a folder of the Controls menu of the piece.
+   * 
+   * @param {Object} gui_folder The folder in which to place the slider.
+   * @param {string} token The name of the slider, usually the name of a 
+   * Csound message channel.
+   * @param {number} minimum The minimum value of the slider (may be 
+   * negative).
+   * @param {number} maximum The maximum value of the slider.
+   * @param {number} step An optional value for the granularity of values.
+   */
   menu_slider_addon(gui_folder, token, minimum, maximum, step) {
     const on_parameter_change = ((value) => {
       this.gk_update(token, value);
@@ -464,6 +501,14 @@ class Cloud5Piece extends HTMLElement {
     // work, and to be able to save/restore new presets.
     this.gui.remember(this.control_parameters_addon);
   }
+  /**
+   * Called by the browser when the user updates the value of a control in the 
+   * Controls menu, and sends the update to the Csound control channel with 
+   * the same name.
+   * 
+   * @param {string} name The literal name of the Csound control channel.
+   * @param {number} value The current value of that channel.
+   */
   gk_update(name, value) {
     const numberValue = parseFloat(value);
     console.info("gk_update: name: " + name + " value: " + numberValue);
@@ -471,6 +516,15 @@ class Cloud5Piece extends HTMLElement {
       this.csound.SetControlChannel(name, numberValue);
     }
   }
+  /**
+   * Adds a user-defined onclick handler function to the Controls menu of the 
+   * piece.
+   * 
+   * @param {Object} control_parameters_addon Dictionary containing all control parameters.
+   * @param {Object} gui_folder The folder to which the command will be added.
+   * @param {string} name The name of the command.
+   * @param {Function} onclick User-defined function to execute the command.
+   */
   menu_add_command(control_parameters_addon, gui_folder, name, onclick) {
     control_parameters_addon['name'] = onclick;
     gui_folder.add(this.control_parameters_addon, name)
@@ -479,7 +533,10 @@ class Cloud5Piece extends HTMLElement {
 customElements.define("cloud5-piece", Cloud5Piece);
 
 /**
- * Displays a CsoundAC Score as a 3-dimensional piano roll.
+ * Displays a CsoundAC Score as a 3-dimensional piano roll. During 
+ * performance, a moving red ball indicates the current position of 
+ * the performance in the score. The user may use the trackball 
+ * to zoom in or out of the score, to drag it, or to spin it around.
  */
 class Cloud5PianoRoll extends HTMLElement {
   constructor() {
@@ -501,6 +558,13 @@ class Cloud5PianoRoll extends HTMLElement {
     let menu_button = document.getElementById("menu_item_piano_roll");
     menu_button.style.display = 'inline';
   }
+  /**
+   * Called by the browser to update the display of the Score. It is 
+   * translated to a Silencio.Score object, which is what is actually 
+   * displayed.
+   * 
+   * @param {CsoundAC.Score} score A generated CsoundAC.Score object.
+   */
   draw_csoundac_score(score) {
     this.silencio_score = new Silencio.Score();
     let i;
@@ -521,10 +585,19 @@ class Cloud5PianoRoll extends HTMLElement {
     }
     this.draw_silencio_score(this.silencio_score);
   }
+  /**
+   * A updates the WebGL display of the generated Silencio Score object.
+   * 
+   * @param {Silencio.Score} score 
+   */
   draw_silencio_score(score) {
     this.silencio_score = score;
     this.silencio_score.draw3D(this.canvas);
   }
+  /**
+   * Called by a timer during performance to update the play 
+   * position in the piano roll display.
+   */
   trackScoreTime() {
     if (non_csound(this?.cloud5_piece?.csound)) {
       return;
@@ -536,6 +609,9 @@ class Cloud5PianoRoll extends HTMLElement {
     let bound_interval_callback = interval_callback.bind(this);
     this.interval_id = setInterval(bound_interval_callback, 200);
   }
+  /**
+   * Stops the timer that is updating the play position of the score.
+   */
   stop() {
     clearInterval(this.interval_id);
   }
@@ -566,15 +642,27 @@ class Cloud5Strudel extends HTMLElement {
     let menu_button = document.getElementById("menu_item_strudel");
     menu_button.style.display = 'inline';
   }
+  /**
+   * Starts the Strudel performance loop (the Cyclist).
+   */
   start() {
     this.strudel_component.startPlaying();
 
   }
+  /**
+   * Stops the Strudel performance loop (the Cyclist).
+   */
   stop() {
     this.strudel_component.stopPlaying();
 
   }
   #strudel_code_addon = null;
+ /**
+   * Contains the text of a user-defined Strudel patch, exactly as would 
+   * normally be entered by the user in the Strudel REPL. This patch may 
+   * also import and reference modules defined by the cloud-5 system, such 
+   * as statefulpatterns.mjs or csoundac.js.
+   */
   set strudel_code_addon(code) {
     this.#strudel_code_addon = code;
     // Reconstruct the element.
@@ -638,6 +726,9 @@ class Cloud5Shader extends HTMLElement {
     this.slowdown = 1000;
   }
   #shader_parameters_addon = null;
+  /** 
+   * Several objects must be defined at the same time before creating the 
+   * shader. These objects are passed in these options. */
   set shader_parameters_addon(options) {
     this.#shader_parameters_addon = options;
     this.glsl = SwissGL(this.canvas);
@@ -651,11 +742,11 @@ class Cloud5Shader extends HTMLElement {
   get shader_parameters_addon() {
     return this.#shader_parameters_addon;
   }
+  #cloud5_piece = null;
   /**
     * Back reference to the piece, which can be used e.g. to get a reference to 
     * Csound.
     */
-  #cloud5_piece = null;
   set cloud5_piece(piece) {
     this.#cloud5_piece = piece;
   }
@@ -671,8 +762,8 @@ customElements.define("cloud5-shader", Cloud5Shader);
  * perform.
  * 
  * This class is specifically designed to simplify the use of shaders 
- * developed in or adapted from ShaderToy. Other types of shader also can be 
- * used.
+ * developed in or adapted from the ShaderToy Web site. Other types of shader 
+ * also can be used.
  */
 class Cloud5ShaderToy extends HTMLElement {
   gl = null;
@@ -714,23 +805,25 @@ class Cloud5ShaderToy extends HTMLElement {
     `;
     this.canvas = this.querySelector('#display');
   }
+  #cloud5_piece = null;
   /**
    * Back reference to the piece, which can be used e.g. to get a reference to 
    * Csound.
    */
-  #cloud5_piece = null;
   set cloud5_piece(piece) {
     this.#cloud5_piece = piece;
   }
   get cloud5_piece() {
     return this.#cloud5_piece;
   }
+  #shader_parameters_addon = null;
   /**
    * A number of parameters must be up to date at the same time before the 
    * shader program can be compiled. These are passed to this property in an 
    * object, upon which the shader is compiled and begins to run. The 
    * paramameters are:
-   * `{
+   * <pre>
+   * {
    *  fragment_shader_addon: code,    \\ Required GLSL code.
    *  vertex_shader_addon: code,      \\ Has a default value, but may be 
    *                                  \\ overridden with custom GLSL code.
@@ -742,9 +835,9 @@ class Cloud5ShaderToy extends HTMLElement {
    *                                  \\ the animation loop immediately after 
    *                                  \\ drawing each frame, e.g. for getting 
    *                                  \\ attributes or reading buffers.                
-   * }`
+   * }
+   * </pre>
    */
-  #shader_parameters_addon = null;
   set shader_parameters_addon(shader_parameters) {
     this.#shader_parameters_addon = shader_parameters;
     this.create_shader();
@@ -769,6 +862,9 @@ class Cloud5ShaderToy extends HTMLElement {
     this?.set_attributes();
     requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
   }
+  /**
+   * Called by the browser when the element is resized.
+   */
   resize() {
     this.webgl_viewport_size = [window.innerWidth, window.innerHeight];
     this.canvas.width = this.webgl_viewport_size[0] * window.devicePixelRatio;
@@ -777,6 +873,9 @@ class Cloud5ShaderToy extends HTMLElement {
     this.prior_image_sample_buffer = new Uint8ClampedArray(this.canvas.width * 4);
     console.info("resize: image_sample_buffer.length: " + this.image_sample_buffer.length);
   }
+  /**
+   * Prepares the element's canvas for use by WebGL.
+   */
   prepare_canvas() {
     // Set up for high-resolution displays.
     let devicePixelRatio_ = window.devicePixelRatio || 1
@@ -825,6 +924,9 @@ class Cloud5ShaderToy extends HTMLElement {
     this.rendering_frame = 0;
     this.midpoint = audio_texture_width / 2;
   }
+  /**
+   * Actually compiles and links the vertex shader and fragment shader.
+   */
   compile_shader() {
     let WEBGL_debug_shaders = this.gl.getExtension("WEBGL_debug_shaders");
     this.webgl_viewport_size = null;
@@ -887,8 +989,8 @@ class Cloud5ShaderToy extends HTMLElement {
 
   }
   /**
-   * Obtains all active uniforms from the compiled program.
-   * Addons can use these to control the shader.
+   * Obtains all active uniforms from the compiled GLSL shader.
+   * Addons may use these to control the shader.
    */
   get_uniforms() {
     // Obtains all active uniforms and their locations, with which visuals 
@@ -909,7 +1011,9 @@ class Cloud5ShaderToy extends HTMLElement {
 
   }
   /**
-   * Runs the shader in an endless loop of animation frames.
+   * Called by the browseer to run the shader in an endless loop of animation frames.
+   * 
+   * @param {number} milliseconds The time since the start of the loop.
    */
   render_frame(milliseconds) {
     // Here we create an AnalyserNode as soon as Csound is available.
@@ -968,6 +1072,11 @@ class Cloud5Log extends HTMLElement {
     this.console_editor.renderer.setOption("showGutter", false);
     this.console_editor.renderer.setOption("showLineNumbers", true);
   };
+  /**
+   * Displays the message at the bottom of the scrolling text area.
+   * 
+   * @param {string} message 
+   */
   log(message) {
     // Split in case the newline is in the middle of the message but 
     // not at the end?
@@ -986,6 +1095,9 @@ class Cloud5Log extends HTMLElement {
       this.message_callback_buffer = "";
     };
   }
+  /**
+   * Clears the message display.
+   */
   clear() {
     this.console_editor.setValue('');
   }
@@ -1011,7 +1123,7 @@ try {
 }
 
 /**
- * The title of the piece is always the basename of the document.
+ * The title of a piece is always the basename of the document.
  */
 document.title = document.location.pathname.replace("/", "").replace(".html", "");
 
@@ -1044,10 +1156,14 @@ function non_csound(csound_) {
 }
 
 /**
- * Replaces the order of instruments in a CsoundAC Score with a new order.
+ * Replaces the order of instruments in a Silencio Score with a new order.
  * Instrument numbers are re-ordered as if they are integers. The 
  * new_order parameter is a map, e.g. `{1:5, 3:1, 4:17}`. The map need not 
  * be complete.
+ *
+ * @param {Silencio.Score} score A generated Silencio Score.
+ * @param {Object} new_order_ A map assigning new Csound instrument numbers 
+ * (values) to old Csound instrument numbers (keys)
  */
 function arrange_silencio(score, new_order_) {
   console.info("arrange: reassigning instrument numbers...")
@@ -1073,10 +1189,14 @@ function arrange_silencio(score, new_order_) {
 }
 
 /**
- * Replaces the order of instruments in a CsoundAC Score with a new order.
- * Instrument numbers are re-ordered as if they are integers. The 
+ * Replaces the order of instruments in a generated CsoundAC Score with a new 
+ * order. Instrument numbers are re-ordered as if they are integers. The 
  * new_order parameter is a map, e.g. `{1:5, 3:1, 4:17}`. The map need not 
  * be complete.
+ *
+ * @param {CsoundAC.Score} score A generated CsoundAC Score.
+ * @param {Object} new_order_ A map assigning new Csound instrument numbers 
+ * (values) to old Csound instrument numbers (keys)
  */
 function arrange(score, new_order_) {
   console.info("arrange: reassigning instrument numbers...\n")
@@ -1101,6 +1221,15 @@ function arrange(score, new_order_) {
   console.info("arrange: finished reassigning instrument numbers.\n")
 }
 
+/**
+ * May be called to store data to the local filesystem. This is used e.g. to 
+ * save a copy of the generated Csound .csd file before starting the 
+ * performance. This can help with debugging. Note that in a browser-based 
+ * performance, the local filesystem is inside the sandbox.
+ * 
+ * @param {string} filepath 
+ * @param {string} data 
+ */
 function write_file(filepath, data) {
   try {
     // Sync, so a bad .csd file doesn't blow up Csound 
@@ -1118,6 +1247,12 @@ function write_file(filepath, data) {
 /**
  * Copies all _current_ dat.gui parameters to the system clipboard in 
  * JSON format.
+ * 
+ * @param {Object} parameters A dictionary containing the current state of all 
+ * controls; keys are control parameter names, values are control parameter 
+ * values. This can be pasted from the clipboard it source code, as a 
+ * convenient method of updating a piece with parameters that have been tweaked 
+ * during performance.
  */
 function copy_parameters(parameters) {
   const json_text = JSON.stringify(parameters, null, 4);
@@ -1125,6 +1260,10 @@ function copy_parameters(parameters) {
   console.info("Copied all control parameters to system clipboard.\n")
 }
 
+/**
+ * Called by the browser to resize arrays that are used to sample the WebGL
+ * canvas during performance.
+ */
 function resize() {
   webgl_viewport_size = [window.innerWidth, window.innerHeight];
   canvas.width = webgl_viewport_size[0] * window.devicePixelRatio;
@@ -1166,11 +1305,14 @@ async function get_buffer_sub_data_async(gl, target, buffer, srcByteOffset, dstB
 }
 
 /**
-* Converts an RGB color value to HSV. The formula is 
-* adapted from http://en.wikipedia.org/wiki/HSV_color_space.
-* Assumes r, g, and b are in [0, 255] and
-* returns h, s, and v are in [0, 1].
-*/
+ * @function rgb_to_hsv 
+ * 
+ * @description Converts an RGB color value to HSV. The formula is 
+ * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+ * 
+ * @param {Array} rgb RGB color in [0, 255]
+ * @returns {Array} An HSV color in [0, 1].
+ */
 var rgb_to_hsv = function (rgb) {
   r = rgb[0] / 255;
   g = rgb[1] / 255;
@@ -1207,11 +1349,19 @@ async function read_pixels_async(gl, x, y, w, h, format, type, sample) {
 }
 
 /**
-* Adapts https://github.com/pingec/downsample-lttb from time 
-* series data to vectors of float HSV pixels. Our data is not 
-* [[time, value], [time, value],...], but rather 
-* [[pixel index0, hsv0[2]], [pixel index1, hsv1[2]], ...].
-*/
+ * Called by cloud-5 when sampling the WebGL video canvas to 
+ * reduce the bandwidth of the data, e.g. in preparation for 
+ * translating it to musical notes.
+ * 
+ * Adapts https://github.com/pingec/downsample-lttb from time 
+ * series data to vectors of float HSV pixels. Our data is not 
+ * [[time, value], [time, value],...], but rather 
+ * [[pixel index0, hsv0[2]], [pixel index1, hsv1[2]], ...].
+ * 
+ * @param {Array} data Data from the canvas, e.g. a row of pixels.
+ * @param {Array} buckets Placeholder data.
+ * @returns {Array} The downsampled data.
+ */
 function downsample_lttb(data, buckets) {
   if (buckets >= data.length || buckets === 0) {
     return data; // Nothing to do
