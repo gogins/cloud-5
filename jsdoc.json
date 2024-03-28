@@ -1,6 +1,7 @@
 {
     "source": {
         "include": [
+            "README.md",
             "public/CsoundAudioNode.js", 
             "public/CsoundAC.js", 
             "public/csoundac.mjs",
