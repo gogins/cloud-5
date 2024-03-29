@@ -17,6 +17,8 @@
     <script src='ChordSpace.js'></script>
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
+    <script src="numeric.js"></script>
+    <script src="ParametricLindenmayer5.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="stylesheet" href="cloud-5.css">
     <script src='cloud-5.js'></script>
@@ -2274,6 +2276,8 @@
         }
         `,
             pre_draw_frame_function_addon: (function() {
+                let total_loudness_location = this.uniform_locations['total_loudness'];
+                let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
                 if (this.analyser) {
                     let spectral_tilt = 0;
                     let total_loudness = 0;
@@ -2292,10 +2296,11 @@
                     total_loudness /= 100.;
                     /// console.info(`tilt: ${spectral_tilt} loudness: ${total_loudness}`);
                     // Set the uniforms.
-                    let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
                     this.gl.uniform1f(spectral_tilt_location, spectral_tilt);
-                    let total_loudness_location = this.uniform_locations['total_loudness'];
                     this.gl.uniform1f(total_loudness_location, total_loudness);
+                } else {
+                    this.gl.uniform1f(spectral_tilt_location, 0);
+                    this.gl.uniform1f(total_loudness_location, .75);
                 }
             }).bind(cloud5_shader),
         };
