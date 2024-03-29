@@ -2,25 +2,25 @@
 <html>
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="dat.gui.js"></script>
-    <script src="jquery.js"></script>
-    <script src="sprintf.js"></script>
-    <script src="three.js"></script>
-    <script src="ace.js"></script>
-    <script src="tinycolor.js"></script>
-    <script src="CsoundAudioNode.js"></script>
-    <script src="csound_loader.js"></script>
-    <script src="CsoundAC.js"></script>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <script src='dat.gui.js'></script>
+    <script src='jquery.js'></script>
+    <script src='sprintf.js'></script>
+    <script src='three.js'></script>
+    <script src='ace.js'></script>
+    <script src='tinycolor.js'></script>
+    <script src='CsoundAudioNode.js'></script>
+    <script src='csound_loader.js'></script>
+    <script src='CsoundAC.js'></script>
+    <script src='numeric.js'></script>
     <script src='Silencio.js'></script>
-    <script>src='numeric.js'</script>
-    <script src="ParametricLindenmayer5.js"></script>
     <script src='ChordSpace.js'></script>
-    <script src="TrackballControls.js"></script>
-    <script src="strudel_embed.js"></script>
-    <link rel="stylesheet" href="w3.css">
-    <link rel="stylesheet" href="cloud-5.css">
+    <script src='ParametricLindenmayer5.js'></script>
+    <script src='TrackballControls.js'></script>
+    <script src='strudel_embed.js'></script>
+    <link rel='stylesheet' href='w3.css'>
+    <link rel='stylesheet' href='cloud-5.css'>
     <script src='cloud-5.js'></script>
 </head>
 
@@ -1880,18 +1880,19 @@
         </CsoundSynthesizer>
     </textarea>
     <script id="score_generator">
-        var generate = function () {
-            csound.message("generate()...\n");
+        let csoundMessage = console.info;
+        var generate = async function () {
+            csoundMessage("generate()...\n");
             var startTime = 0;
             let lsys = new ParametricLindenmayer.PLSystem();
-            var chord = ChordSpace.chordForName('Gm9');
+            var chord = ChordSpace.chordForName('Gm');
             chord.channel[0] = 2;
             chord.channel[1] = 3;
             chord.channel[2] = 4;
-            chord.channel[3] = 5;
-            chord.channel[4] = 6;
+            ///chord.channel[3] = 5;
+            ///chord.channel[4] = 6;
             chord.setDuration(1.01);
-            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(5, 60, 1);
+            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 60, 1);
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
@@ -1900,14 +1901,14 @@
             lsys.set_axiom('C();Note(1,4,144,1,1,1,0);');
             // The problem here is that Command(t,d,s,c,k,v,x) carries state down from the stack,
             // but Command() does not. I will try Note(t,d,s,c,k,v,x) with zero v instead of Move.
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<5)', `
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<3)', `
                   Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.00, x/2+0); 
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+1.100, k/2.00+1.90, v/2.00+0.00, x/2+0); T(-3); 
             `);
             //                  Note(t/2.10+0.00, d/2.50+0, s, c/2+1.000, k/2.00+1.10, v/2.00+0.00, x/2+0); 
 
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==5)', `
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==3)', `
                   Scale(0, 2.0);
                   Scale(4, 2.0);
                   Note(t/1.50-0.50, d/1.50+0, s, c/2+0.000, k/2.00-0.10, v/2.00+0.00, x/2+0);  
@@ -1916,7 +1917,7 @@
                   Scale(0, 0.5);
                   Scale(4, 0.5);
             `);
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration>5)', `
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration>3)', `
                   Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
                   Note(t/2.30+0.00, d/2.00+0, s, c/2+0.500, k/2.00+1.10, v/2.00+0.00, x/2+0); T(5);
             K();  Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.00, x/2+0); 
@@ -1926,12 +1927,12 @@
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
-            lsys.generate(7);
+            lsys.generate(6);
             lsys.score.findScales();
-            csound.message('lsys:' + lsys + '\n');
-            csound.message(lsys.score.getDuration().toString() + '\n');
+            csoundMessage('lsys:' + lsys + '\n');
+            csoundMessage(lsys.score.getDuration().toString() + '\n');
             lsys.score.sort();
-            lsys.score.setScale(3, 2, 0);
+            lsys.score.setScale(3, 2, 5);
             lsys.score.setScale(4, 24, 88);
             lsys.score.setScale(5, 70, 16);
             lsys.score.temper(12);
@@ -1939,7 +1940,7 @@
             lsys.conformToChords();
             //lsys.score.setDuration(9 * 60 + 5);
             console.log(lsys.score.toString());
-            csound.message('Cleaning up some annoying things in the score...');
+            csoundMessage('Cleaning up some annoying things in the score...');
             for (var i = 0; i < lsys.score.data.length; i++) {
                 var event = lsys.score.data[i];
                 // We didn't generate pan, so just randomize it.
@@ -2005,12 +2006,30 @@
             //lsys.conformToChords();
             lsys.score.setDuration(10 * 60 + 5);
             lsys.score.findScales();
-            csound.message(lsys.score.minima.toString());
-            csound.message(lsys.score.ranges.toString());
-            csound.message('Generated ' + lsys.score.data.length + ' notes.\n');
+            csoundMessage(lsys.score.minima.toString());
+            csoundMessage(lsys.score.ranges.toString());
+            csoundMessage('Generated ' + lsys.score.data.length + ' notes.\n');
             lsys.score.add(9 * 60 + 15, 1, 144, 999);
             ///lsys.score.sendToCsound(csound);
-            return lsys.score;
+            ///return lsys.score;
+            var CsoundAC = await createCsoundAC();
+            csoundac_score = new CsoundAC.Score();
+            for (let event of lsys.score.data) {
+                console.info(event.toIStatement())
+                csoundac_score.add(event.time, 
+                    event.duration, 
+                    event.status, 
+                    event.channel, 
+                    event.key, 
+                    event.velocity, 
+                    event.phase, 
+                    event.pan, 
+                    event.depth, 
+                    0, 
+                    4095);
+            }
+            this.piano_roll_overlay.draw_silencio_score(lsys.score);
+            return csoundac_score;
         }
     </script>
     <cloud5-piece></cloud5-piece>
@@ -2020,15 +2039,17 @@
     <cloud5-about>
         <div>
             <h1 style="font-size: 15px;">cloud5-example-parametric-lindenmayer</h1>
-            <h2 style="font-size: 13px">Michael Gogins<br>
-                March 2024</h2>
+            <h2 style="font-size: 13px;">Michael Gogins</h2>
+            <h3 style="font-size: 12px;">March 2024</h3>
 
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img
+            <p><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img
                     alt="Creative Commons License" style="border-width:0;" src="cc-by-nc-sa.png" /></a>
+            </p>
 
             <p>This work is licensed under a <a rel="license"
                     href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons
                     Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
+            </p>
 
             <p> The score of this piece is generated by a
                 <a href="http://algorithmicbotany.org/papers/abop/abop.pdf">Lindenmayer system</a>
@@ -2037,16 +2058,19 @@
                 <a href="https://mtosmt.org/classic/mto.05.11.3/mto.05.11.3.fiore_satyendra.pdf">Generalized Contextual
                     Group</a>
                 of Fiore and Satyendra, as implemented by me.
+            </p>
 
             <h2 style="font-size:13px">Credits</h2>
 
             <p>Code for compiling and controlling shaders is adapted from <a
                     href="https://www.shadertoy.com">ShaderToy.com</a>.
+            </p>
 
             <p>The music visualization code is adapted from <a
                     href="https://www.shadertoy.com/view/DtsyWl"><b><i>Colourful
                             smoke</i></b></a>
                 by <a href="https://www.shadertoy.com/user/motus_art">motus_art</a>.
+            </p>
 
             <p>Some of the Csound instruments are by me, others are adapted by me from
                 patches originally written by others as noted in the orchestra.
@@ -2085,11 +2109,12 @@
                         </g>
                     </svg>
                 </a>
+                </p>
         </div>
     </cloud5-about>
     <script>
         let cloud5_piece = document.querySelector('cloud5-piece');
-        let host = cloud5_piece;
+        ///let host = cloud5_piece;
         // #region Score Generator
         cloud5_piece.score_generator_function_addon = generate;
         // #endregion
@@ -2242,7 +2267,7 @@
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
         cloud5_shader.shader_parameters_addon = {
-        fragment_shader_code_addon: `#version 300 es
+            fragment_shader_code_addon: `#version 300 es
         #line 2184
         precision highp float;
         /**
@@ -2392,7 +2417,7 @@
                     spectral_tilt /= total_loudness;
                     total_loudness /= 100.;
                     /// console.info(`tilt: ${spectral_tilt} loudness: ${total_loudness}`);
-                     // Set the uniforms.
+                    // Set the uniforms.
                     this.gl.uniform1f(spectral_tilt_location, spectral_tilt);
                     this.gl.uniform1f(total_loudness_location, total_loudness);
                 } else {

@@ -1161,7 +1161,7 @@ function non_csound(csound_) {
  * new_order parameter is a map, e.g. `{1:5, 3:1, 4:17}`. The map need not 
  * be complete.
  *
- * @param {Silencio.Score} score A generated Silencio Score.
+ * @param {Silencio.Score} score A generated CsoundAC Score.
  * @param {Object} new_order_ A map assigning new Csound instrument numbers 
  * (values) to old Csound instrument numbers (keys)
  */

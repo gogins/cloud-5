@@ -914,7 +914,8 @@ if (typeof console === 'undefined') {
         // For an affine hyperplane, the reflection is:
         // Ref(v) = v - 2 {[(v . u) - c] / (u . u)} . u, where c is the distance of the
         // hyperplane from the origin.
-        let translate_to_origin = numeric.sub(origin, unit_normal_vector);
+        ///let translate_to_origin = numeric.sub(origin, unit_normal_vector);
+        let translate_to_origin = numeric.sub(this.origin(), unit_normal_vector);
         let tensor_ = numeric.tensor(unit_normal_vector, unit_normal_vector);
         let product_ = numeric.mul(tensor_, 2);
         let identity_ = numeric.identity(this.size());

@@ -64,15 +64,11 @@ parameter expressions.
 
 Example: Note(i,t,d,k,v,p) is replaced by Note(i*2,t^1.1,d-1,k+3,v*.9,p=Math.random()).
 
+Reworked to use CsoundAC.PITV.
+
 */
 
 (function () {
-
-    // All JavaScript dependencies of ParametricLindenmayer.js:
-    // var Silencio = require("Silencio");
-    // var ChordSpace = require("ChordSpace");
-    // var numeric = require("numeric");
-    // var sprintf = require("sprintf");
 
     /**
 
