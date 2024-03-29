@@ -1961,14 +1961,15 @@
             this.log("generate()...\n");
             var startTime = 0;
             let lsys = new ParametricLindenmayer.PLSystem();
-            var chord = ChordSpace.chordForName('Gm');
+            var chord = ChordSpace.chordForName('Gm7');
             chord.channel[0] = 2;
             chord.channel[1] = 3;
             chord.channel[2] = 4;
+            chord.channel[3] = 5;
             ///chord.channel[3] = 5;
             ///chord.channel[4] = 6;
-            chord.setDuration(1.01);
-            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 60, 1);
+            chord.setDuration(.9);
+            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(4, 60, 1);
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
