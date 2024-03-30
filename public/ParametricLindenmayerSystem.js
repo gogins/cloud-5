@@ -132,7 +132,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
          * on the replacement rules and the values of the actual parameters.
          * 
          * @param {PLSyste} lsystem A ParametricLindenmayerSystem instance.
-         * @param {Array} current_production The current production of the ParametricLindenmayerSystem.
+         * @param {Array<Word>} current_production The current production of the ParametricLindenmayerSystem.
          */
         rewrite(lsystem, current_production) {
             var rule = lsystem.rule_for_word(this);
@@ -160,28 +160,29 @@ Part of Silencio, an algorithmic music composition library for Csound.
         }
     };
 
-    ParametricLindenmayer.Rule = function (word_, condition_, production_) {
-        if (typeof word_ === typeof '') {
-            this.word = new ParametricLindenmayer.Word(word_);
-        } else {
-            this.word = word_.clone();
+    ParametricLindenmayer.Rule = class {
+        constructor(word_, condition_, production_) {
+            if (typeof word_ === typeof '') {
+                this.word = new ParametricLindenmayer.Word(word_);
+            } else {
+                this.word = word_.clone();
+            }
+            this.productions_for_conditions = {};
+            this.add_condition(condition_, production_);
         }
-        this.productions_for_conditions = {};
-        this.add_condition(condition_, production_);
-    };
-
-    ParametricLindenmayer.Rule.prototype.add_condition = function (condition_, production_) {
-        var production = [];
-        var words = production_.split(';');
-        for (var i = 0; i < words.length; i++) {
-            var word = words[i];
-            if (typeof word !== "undefined" && word !== null) {
-                if (word.length > 0) {
-                    production.push(new ParametricLindenmayer.Word(word));
+        add_condition(condition_, production_) {
+            var production = [];
+            var words = production_.split(';');
+            for (var i = 0; i < words.length; i++) {
+                var word = words[i];
+                if (typeof word !== "undefined" && word !== null) {
+                    if (word.length > 0) {
+                        production.push(new ParametricLindenmayer.Word(word));
+                    }
                 }
             }
+            this.productions_for_conditions[condition_] = production;
         }
-        this.productions_for_conditions[condition_] = production;
     };
 
     /** 
