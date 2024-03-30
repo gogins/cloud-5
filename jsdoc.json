@@ -8,7 +8,8 @@
             "public/statefulpatterns.mjs",
             "public/csound_loader.js",
             "public/Silencio.js",
-            "public/cloud-5.js"
+            "public/cloud-5.js",
+            "public/ParametricLindenmayerSystem.js"
         ],
         "includePattern": ".*\\.(js|mjs|jsx|html)$"
     },
@@ -25,5 +26,6 @@
     "opts": {
         "destination": "./cloud-5/jsdocs/",               
         "recurse": true                      
-    }
+    },
+    "plugins": ["plugins/markdown"]
 }

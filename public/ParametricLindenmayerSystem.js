@@ -1,6 +1,6 @@
 /*jshint nomen: true */
 /**
-PARAMETRIC LINDENMAYER SYSTEM
+ @description PARAMETRIC LINDENMAYER SYSTEM
 
 Copyright (C) 2014, 2024 by Michael Gogins
 
@@ -8,64 +8,6 @@ This software is licensed under the terms of the
 GNU Lesser General Public License
 
 Part of Silencio, an algorithmic music composition library for Csound.
-
-This parametric Lindenmayer system for generating musical scores is defined
-as follows. See http://hardlikesoftware.com/projects/lsystem/lsystem.html.
-For the original definition of this type of system, see Przemyslaw
-Prusinkiewicz and Aristid Lindenmayer, _The Algorithmic Beauty of Plants_
-(New York: Springer Verlag, 1996 [1990]), pp. 40-50.
-
-Name: JavaScript identifier.
-
-Word: Text for a JavaScript expression consisting of a name, or a JavaScript
-function call with either formal or actual parameters, terminated with a
-semicolon, associated with a Command.
-
-Production: A sequence of Words.
-
-Command: A function that modifies the state of a Turtle; may be built-in or
-user-defined. A Word that is not assigned a Command is associated with a default
-identity Command.
-
-Turtle: An abstract pen that writes a musical score by performing the Commands
-in a Production.
-
-Axiom: The initial Production of a Lindenmayer system, in which any parameters
-are actual.
-
-Rule: A triple [Word, Condition, Production] in which any parameters may be
-actual or formal, or indeed any JavaScript expression.
-
-Lindenmayer system: A set of Words, a set of associated Commands, an Axiom,
-one or more Rules, and a finite number N of Iterations. For each Word in the
-Axiom, the Axiom Word is replaced from the Rules; if the Axiom Word Name
-matches the Rule Word Name, and the Axiom Word parameters number the same as
-the Rule Word parameters, then if the Condition evaluates as true, the Rule
-Production replaces the Axiom Word after evaluating each Production Word's
-actual parameter expressions after substituting the Axiom Word's actual
-parameter values for any formal parameter names in the Production Word's actual
-parameter expressions; if as false, there is no Production; otherwise, the
-Axiom Word replaces itself. The resulting Production is taken as the Axiom for
-the next iteration. This is repeated N times. Then the final Production,
-consisting of a possibly long string of Words with only actual parameters, is
-evaluated.
-
-Evaluation: The Command of each Word in the final Production is evaluated
-using the Turtle state and the Command with actual parameters, possibly
-causing the Turtle to write a musical score.
-
-Note: The formal parameter names of the Word must be the same as the formal
-parameter names (after 'lsystem' and 'turtle') of the Word's Command (which is
-not a class member of the Word). The actual parameters of the Word may be
-values or unevaluated expressions; when the Command is called, the actual
-parameter expressions are evaluated using the actual parameter values of the
-parent Word as the values of the unevaluated parameters in the actual
-parameter expressions.
-
-Example: Note(i,t,d,k,v,p) is replaced by Note(i*2,t^1.1,d-1,k+3,v*.9,p=Math.random()).
-
-Reworked to use CsoundAC.PITV.
-
 */
 
 (function () {
@@ -95,6 +37,19 @@ Reworked to use CsoundAC.PITV.
 
     var ParametricLindenmayer = {};
 
+    /**
+     * @class
+     * @classdesc
+     * Represents the position of a "pen" that is moving about 
+     * and writing upon a Score. The state of the Turtle includes a note, 
+     * a chord, and another chord defining the modality of the Score.
+     * @param {Event} note_ The current position of the Turtle in the chord 
+     * space.
+     * @param {Chord} chord_ The current Chord to which the Turtle will bre 
+     * conformed.
+     * @param {Chord} modality_ The modality of the chord space, which 
+     * controls the effect of certain chord transormations.
+     */
     ParametricLindenmayer.Turtle = function (note_, chord_, modality_) {
         this.step = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
         this.scale = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
@@ -116,6 +71,11 @@ Reworked to use CsoundAC.PITV.
         }
     };
 
+    /**
+     * Creates a clone of this Turtle.
+     * 
+     * @returns {Turtle} A value copy of this Turtle.
+     */
     ParametricLindenmayer.Turtle.prototype.clone = function () {
         clone_ = new ParametricLindenmayer.Turtle();
         clone_.step = this.step.slice();
@@ -127,10 +87,16 @@ Reworked to use CsoundAC.PITV.
         return clone_;
     };
 
-    // Creates a Word with a name, a list of actual parameter expressions,
-    // an empty list of actual parameter values, and a Production-matching key
-    // from the text of the Word.
-
+   /**
+    * @class 
+    * @classdesc 
+    * 
+    * Creates a Word with a name, a list of actual parameter expressions,
+    * an empty list of actual parameter values, and a Production-matching key
+    * from the text of the Word. 
+    * 
+    * @param {string} text Parsed to produce the parts of this Word.
+    */
     ParametricLindenmayer.Word = function (text) {
         this.text = text;
         this.name = /s*([^(]*)/.exec(text)[1].trim();
@@ -147,6 +113,11 @@ Reworked to use CsoundAC.PITV.
         }
     };
 
+    /**
+     * Creates a clone of this Word.
+     * 
+     * @returns {Word} A deep value copy of this Word.
+     */
     ParametricLindenmayer.Word.prototype.clone = function () {
         clone_ = new ParametricLindenmayer.Word('');
         clone_.text = this.text;
@@ -156,6 +127,13 @@ Reworked to use CsoundAC.PITV.
         return clone_;
     };
 
+    /**
+     * Rewrites this Word by replacing it with a new Word or series of Words based 
+     * on the replacement rules and the values of the actual parameters.
+     * 
+     * @param {*} lsystem A ParametricLindenmayerSystem instance.
+     * @param {*} current_production The current production of the ParametricLindenmayerSystem.
+     */
     ParametricLindenmayer.Word.prototype.rewrite = function (lsystem, current_production) {
         var rule = lsystem.rule_for_word(this);
         if (typeof rule === "undefined") {
@@ -205,6 +183,70 @@ Reworked to use CsoundAC.PITV.
         this.productions_for_conditions[condition_] = production;
     };
 
+    /** 
+     * @class 
+     * @classdesc
+     *
+     * This parametric Lindenmayer system for generating musical scores is 
+     * defined as follows. See 
+     * http://hardlikesoftware.com/projects/lsystem/lsystem.html.
+     * For the original definition of this type of system, see Przemyslaw
+     * Prusinkiewicz and Aristid Lindenmayer, _The Algorithmic Beauty of 
+     * Plants_ (New York: Springer Verlag, 1996 [1990]), pp. 40-50.
+     *
+     * Name: JavaScript identifier.
+     * 
+     * Word: Text for a JavaScript expression consisting of a name, or a 
+     * JavaScript function call with either formal or actual parameters, 
+     * terminated with a semicolon, associated with a Command.
+     * 
+     * Production: A sequence of Words.
+     * 
+     * Command: A function that modifies the state of a Turtle; may be 
+     * built-in or user-defined. A Word that is not assigned a Command is 
+     * associated with a default builtin identity Command.
+     *
+     * Turtle: An abstract pen that writes a musical score by performing the 
+     * Commands in a Production.
+     * 
+     * Axiom: The initial Production of a Lindenmayer system, in which any 
+     * parameters are actual.
+     * 
+     * Rule: A triple [Word, Condition, Production] in which any parameters 
+     * may be actual or formal, or indeed any JavaScript expression.
+     * 
+     * Lindenmayer system: A set of Words, a set of associated Commands, an 
+     * Axiom, one or more Rules, and a finite number N of Iterations. For each 
+     * Word in the Axiom, the Axiom Word is replaced from the Rules; if the 
+     * Axiom Word Name matches the Rule Word Name, and the Axiom Word 
+     * parameters number the same as the Rule Word parameters, then if the 
+     * Condition evaluates as true, the Rule Production replaces the Axiom 
+     * Word after evaluating each Production Word's actual parameter 
+     * expressions after substituting the Axiom Word's actual parameter values 
+     * for any formal parameter names in the Production Word's actual 
+     * parameter expressions; if as false, there is no Production; otherwise, 
+     * the Axiom Word replaces itself. The resulting Production is taken as 
+     * the Axiom for the next iteration. This is repeated N times. Then the 
+     * final Production, consisting of a possibly long string of Words with 
+     * only actual parameters, is evaluated.
+     * 
+     * Evaluation: The Command of each Word in the final Production is 
+     * evaluated using the Turtle state and the Command with actual 
+     * parameters, possibly causing the Turtle to write a musical score.
+     *
+     * Note: The formal parameter names of the Word must be the same as the 
+     * formal parameter names (after 'lsystem' and 'turtle') of the Word's 
+     * Command (which is not a class member of the Word). The actual 
+     * parameters of the Word may be values or unevaluated expressions; when 
+     * the Command is called, the actual parameter expressions are evaluated 
+     * using the actual parameter values of the parent Word as the values of 
+     * the unevaluated parameters in the actual parameter expressions.
+     *
+     * Example: Note(i,t,d,k,v,p) is replaced by 
+     * Note(i*2,t^1.1,d-1,k+3,v*.9,p=Math.random()).
+     *    
+     * Reworked to use CsoundAC.PITV.
+     */
     ParametricLindenmayer.PLSystem = function () {
         this.commands_for_words = {};
         this.formal_parameters_for_commands = {};

@@ -18,7 +18,7 @@
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
     <script src="numeric.js"></script>
-    <script src="ParametricLindenmayer5.js"></script>
+    <script src="ParametricLindenmayerSystem.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="stylesheet" href="cloud-5.css">
     <script src='cloud-5.js'></script>
@@ -1961,15 +1961,15 @@
             this.log("generate()...\n");
             var startTime = 0;
             let lsys = new ParametricLindenmayer.PLSystem();
-            var chord = ChordSpace.chordForName('Gm7');
+            var chord = ChordSpace.chordForName('Gm');
             chord.channel[0] = 2;
             chord.channel[1] = 3;
             chord.channel[2] = 4;
-            chord.channel[3] = 5;
+            //chord.channel[3] = 5;
             ///chord.channel[3] = 5;
             ///chord.channel[4] = 6;
             chord.setDuration(.9);
-            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(4, 60, 1);
+            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 60, 1);
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
@@ -1980,7 +1980,7 @@
             // but Command() does not. I will try Note(t,d,s,c,k,v,x) with zero v instead of Move.
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<3)', `
                   Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
-                  Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.00, x/2+0); 
+                  Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/-2.00+0.00, v/2.00+0.00, x/2+0); 
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+1.100, k/2.00+1.90, v/2.00+0.00, x/2+0); T(-3); 
             `);
             //                  Note(t/2.10+0.00, d/2.50+0, s, c/2+1.000, k/2.00+1.10, v/2.00+0.00, x/2+0); 
@@ -2004,7 +2004,7 @@
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
-            lsys.generate(7);
+            lsys.generate(6);
             lsys.score.findScales();
             this.log('lsys:' + lsys + '\n');
             this.log(lsys.score.getDuration().toString() + '\n');
