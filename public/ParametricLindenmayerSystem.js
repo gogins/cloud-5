@@ -98,63 +98,63 @@ Part of Silencio, an algorithmic music composition library for Csound.
      * 
      * @param {string} text Parsed to produce the parts of this Word.
      */
-    ParametricLindenmayer.Word = function (text) {
-        this.text = text;
-        this.name = /s*([^(]*)/.exec(text)[1].trim();
-        this.actual_parameter_expressions = [];
-        var opening_parenthesis = text.indexOf('(');
-        var ending_parenthesis = text.lastIndexOf(')');
-        if (opening_parenthesis != -1 && ending_parenthesis != -1) {
-            this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(',');
+    ParametricLindenmayer.Word = class {
+        constructor(text) {
+            this.text = text;
+            this.name = /s*([^(]*)/.exec(text)[1].trim();
+            this.actual_parameter_expressions = [];
+            var opening_parenthesis = text.indexOf('(');
+            var ending_parenthesis = text.lastIndexOf(')');
+            if (opening_parenthesis != -1 && ending_parenthesis != -1) {
+                this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(',');
+            }
+            this.key = this.name + '(' + this.actual_parameter_expressions.length + ')';
+            this.actual_parameter_values = [];
+            for (var i = 0; i < this.actual_parameter_expressions.length; i++) {
+                this.actual_parameter_values.push(null);
+            }
         }
-        this.key = this.name + '(' + this.actual_parameter_expressions.length + ')';
-        this.actual_parameter_values = [];
-        for (var i = 0; i < this.actual_parameter_expressions.length; i++) {
-            this.actual_parameter_values.push(null);
+        /**
+         * Creates a clone of this Word.
+         * 
+         * @returns {Word} A deep value copy of this Word.
+         */
+        clone() {
+            clone_ = new ParametricLindenmayer.Word('');
+            clone_.text = this.text;
+            clone_.key = this.key;
+            clone_.actual_parameter_expressions = this.actual_parameter_expressions.slice();
+            clone_.actual_parameter_values = this.actual_parameter_values.slice();
+            return clone_;
         }
-    };
-
-    /**
-     * Creates a clone of this Word.
-     * 
-     * @returns {Word} A deep value copy of this Word.
-     */
-    ParametricLindenmayer.Word.prototype.clone = function () {
-        clone_ = new ParametricLindenmayer.Word('');
-        clone_.text = this.text;
-        clone_.key = this.key;
-        clone_.actual_parameter_expressions = this.actual_parameter_expressions.slice();
-        clone_.actual_parameter_values = this.actual_parameter_values.slice();
-        return clone_;
-    };
-
-    /**
-     * Rewrites this Word by replacing it with a new Word or series of Words based 
-     * on the replacement rules and the values of the actual parameters.
-     * 
-     * @param {*} lsystem A ParametricLindenmayerSystem instance.
-     * @param {*} current_production The current production of the ParametricLindenmayerSystem.
-     */
-    ParametricLindenmayer.Word.prototype.rewrite = function (lsystem, current_production) {
-        var rule = lsystem.rule_for_word(this);
-        if (typeof rule === "undefined") {
-            var rule_less = this.clone();
-            lsystem.evaluate_actual_parameter_expressions(null, rule_less);
-            current_production.push(rule_less);
-        } else {
-            var productions_for_conditions = rule.productions_for_conditions;
-            for (var condition in productions_for_conditions) {
-                if (productions_for_conditions.hasOwnProperty(condition)) {
-                    var production = productions_for_conditions[condition];
-                    if (lsystem.evaluate_condition_expression(this, condition) === true) {
-                        for (var i = 0; i < production.length; i++) {
-                            var child = production[i].clone();
-                            lsystem.evaluate_actual_parameter_expressions(this, child);
-                            current_production.push(child);
+        /**
+         * Rewrites this Word by replacing it with a new Word or series of Words based 
+         * on the replacement rules and the values of the actual parameters.
+         * 
+         * @param {PLSyste} lsystem A ParametricLindenmayerSystem instance.
+         * @param {Array} current_production The current production of the ParametricLindenmayerSystem.
+         */
+        rewrite(lsystem, current_production) {
+            var rule = lsystem.rule_for_word(this);
+            if (typeof rule === "undefined") {
+                var rule_less = this.clone();
+                lsystem.evaluate_actual_parameter_expressions(null, rule_less);
+                current_production.push(rule_less);
+            } else {
+                var productions_for_conditions = rule.productions_for_conditions;
+                for (var condition in productions_for_conditions) {
+                    if (productions_for_conditions.hasOwnProperty(condition)) {
+                        var production = productions_for_conditions[condition];
+                        if (lsystem.evaluate_condition_expression(this, condition) === true) {
+                            for (var i = 0; i < production.length; i++) {
+                                var child = production[i].clone();
+                                lsystem.evaluate_actual_parameter_expressions(this, child);
+                                current_production.push(child);
+                            }
                         }
+                    } else {
+                        console.log('Condition "false", skipping rewriting of ' + this.text + '.');
                     }
-                } else {
-                    console.log('Condition "false", skipping rewriting of ' + this.text + '.');
                 }
             }
         }
