@@ -50,53 +50,54 @@ Part of Silencio, an algorithmic music composition library for Csound.
      * @param {Chord} modality_ The modality of the chord space, which 
      * controls the effect of certain chord transormations.
      */
-    ParametricLindenmayer.Turtle = function (note_, chord_, modality_) {
-        this.step = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
-        this.scale = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-        if (typeof note_ === "undefined") {
-            this.note = new Silencio.Event();
-        } else {
-            this.note = note_;
+    ParametricLindenmayer.Turtle = class {
+        constructor(note_, chord_, modality_) {
+            this.step = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+            this.scale = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+            if (typeof note_ === "undefined") {
+                this.note = new Silencio.Event();
+            } else {
+                this.note = note_;
+            }
+            if (typeof chord_ === "undefined") {
+                this.chord = new ChordSpace.Chord();
+            } else {
+                this.chord = chord_.clone();
+            }
+            this.prior_chord = this.chord.clone();
+            if (typeof modality_ === "undefined") {
+                this.modality = new ChordSpace.Chord();
+            } else {
+                this.modality = modality_.clone();
+            }
         }
-        if (typeof chord_ === "undefined") {
-            this.chord = new ChordSpace.Chord();
-        } else {
-            this.chord = chord_.clone();
-        }
-        this.prior_chord = this.chord.clone();
-        if (typeof modality_ === "undefined") {
-            this.modality = new ChordSpace.Chord();
-        } else {
-            this.modality = modality_.clone();
+        /**
+         * Creates a clone of this Turtle.
+         * 
+         * @returns {Turtle} A value copy of this Turtle.
+         */
+        clone() {
+            clone_ = new ParametricLindenmayer.Turtle();
+            clone_.step = this.step.slice();
+            clone_.scale = this.scale.slice();
+            clone_.note = this.note.clone();
+            clone_.chord = this.chord.clone();
+            clone_.modality = this.modality.clone();
+            clone_.prior_chord = this.prior_chord.clone();
+            return clone_;
         }
     };
 
     /**
-     * Creates a clone of this Turtle.
+     * @class 
+     * @classdesc 
      * 
-     * @returns {Turtle} A value copy of this Turtle.
+     * Creates a Word with a name, a list of actual parameter expressions,
+     * an empty list of actual parameter values, and a Production-matching key
+     * from the text of the Word. 
+     * 
+     * @param {string} text Parsed to produce the parts of this Word.
      */
-    ParametricLindenmayer.Turtle.prototype.clone = function () {
-        clone_ = new ParametricLindenmayer.Turtle();
-        clone_.step = this.step.slice();
-        clone_.scale = this.scale.slice();
-        clone_.note = this.note.clone();
-        clone_.chord = this.chord.clone();
-        clone_.modality = this.modality.clone();
-        clone_.prior_chord = this.prior_chord.clone();
-        return clone_;
-    };
-
-   /**
-    * @class 
-    * @classdesc 
-    * 
-    * Creates a Word with a name, a list of actual parameter expressions,
-    * an empty list of actual parameter values, and a Production-matching key
-    * from the text of the Word. 
-    * 
-    * @param {string} text Parsed to produce the parts of this Word.
-    */
     ParametricLindenmayer.Word = function (text) {
         this.text = text;
         this.name = /s*([^(]*)/.exec(text)[1].trim();
@@ -465,7 +466,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             turtle.prior_chord = turtle.chord.clone();
             return turtle;
         });
-       this.add_command('ChordNotes()', function (lsystem, turtle) {
+        this.add_command('ChordNotes()', function (lsystem, turtle) {
             ChordSpace.insert(lsystem.score, turtle.chord, turtle.note.time);
             turtle.prior_chord = turtle.chord.clone();
             return turtle;
@@ -661,7 +662,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
         var words = production.split(';');
         return words;
     };
-    
+
     /**
      * Conforms the pitch of each event in this,
      * to the closest pitch-class in its chord.
