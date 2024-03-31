@@ -35,7 +35,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
 
     */
 
-    var ParametricLindenmayer = {};
+    let ParametricLindenmayer = {};
 
     /**
      * @class
@@ -107,14 +107,14 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.text = text;
             this.name = /s*([^(]*)/.exec(text)[1].trim();
             this.actual_parameter_expressions = [];
-            var opening_parenthesis = text.indexOf('(');
-            var ending_parenthesis = text.lastIndexOf(')');
+            let opening_parenthesis = text.indexOf('(');
+            let ending_parenthesis = text.lastIndexOf(')');
             if (opening_parenthesis != -1 && ending_parenthesis != -1) {
                 this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(',');
             }
             this.key = this.name + '(' + this.actual_parameter_expressions.length + ')';
             this.actual_parameter_values = [];
-            for (var i = 0; i < this.actual_parameter_expressions.length; i++) {
+            for (let i = 0; i < this.actual_parameter_expressions.length; i++) {
                 this.actual_parameter_values.push(null);
             }
         }
@@ -139,19 +139,19 @@ Part of Silencio, an algorithmic music composition library for Csound.
          * @param {Array<Word>} current_production The current production of the ParametricLindenmayerSystem.
          */
         rewrite(lsystem, current_production) {
-            var rule = lsystem.rule_for_word(this);
+            let rule = lsystem.rule_for_word(this);
             if (typeof rule === "undefined") {
-                var rule_less = this.clone();
+                let rule_less = this.clone();
                 lsystem.evaluate_actual_parameter_expressions(null, rule_less);
                 current_production.push(rule_less);
             } else {
-                var productions_for_conditions = rule.productions_for_conditions;
-                for (var condition in productions_for_conditions) {
+                let productions_for_conditions = rule.productions_for_conditions;
+                for (let condition in productions_for_conditions) {
                     if (productions_for_conditions.hasOwnProperty(condition)) {
-                        var production = productions_for_conditions[condition];
+                        let production = productions_for_conditions[condition];
                         if (lsystem.evaluate_condition_expression(this, condition) === true) {
-                            for (var i = 0; i < production.length; i++) {
-                                var child = production[i].clone();
+                            for (let i = 0; i < production.length; i++) {
+                                let child = production[i].clone();
                                 lsystem.evaluate_actual_parameter_expressions(this, child);
                                 current_production.push(child);
                             }
@@ -175,10 +175,10 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.add_condition(condition_, production_);
         }
         add_condition(condition_, production_) {
-            var production = [];
-            var words = production_.split(';');
-            for (var i = 0; i < words.length; i++) {
-                var word = words[i];
+            let production = [];
+            let words = production_.split(';');
+            for (let i = 0; i < words.length; i++) {
+                let word = words[i];
                 if (typeof word !== "undefined" && word !== null) {
                     if (word.length > 0) {
                         production.push(new ParametricLindenmayer.Word(word));
@@ -197,7 +197,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
 
     ParametricLindenmayer.evaluate_with_minimal_scope = function(code) {
         try {
-            var result = eval(code);
+            let result = eval(code);
             return result;
         } catch (x) {
             console.log(x);
@@ -279,7 +279,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.identity_command = function (lsystem, turtle_) {
                 return turtle_;
             };
-            var step;
+            let step;
             this.add_command('Assign(dimension, value)', function (lsystem, turtle, dimension, value) {
                 turtle.note.data[dimension] = value;
                 return turtle;
@@ -299,13 +299,13 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             this.add_command('Step()', function (lsystem, turtle) {
-                var scaled_step = numeric.mul(turtle.step, turtle.scale);
+                let scaled_step = numeric.mul(turtle.step, turtle.scale);
                 turtle.note.data = numeric.add(turtle.note.data, scaled_step);
                 return turtle;
             });
             // http://wscg.zcu.cz/wscg2004/Papers_2004_Short/N29.pdf: main rotations.
             this.add_command('Turn(from_axis, to_axis, angle)', function (lsystem, turtle, from_axis, to_axis, angle) {
-                var rotation = numeric.identity(turtle.step.length);
+                let rotation = numeric.identity(turtle.step.length);
                 rotation[from_axis][from_axis] = Math.cos(angle);
                 rotation[from_axis][to_axis] = -Math.sin(angle);
                 rotation[to_axis][from_axis] = Math.sin(angle);
@@ -342,7 +342,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 turtle.note.key = (k * turtle.scale[4]);
                 turtle.note.velocity = (v * turtle.scale[5]);
                 turtle.note.pan = (x * turtle.scale[6]);
-                var note = turtle.note.clone();
+                let note = turtle.note.clone();
                 if (turtle.chord !== null) {
                     note.chord = turtle.chord.clone();
                 }
@@ -350,7 +350,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             this.add_command('Note()', function (lsystem, turtle) {
-                var note = turtle.note.clone();
+                let note = turtle.note.clone();
                 lsystem.score.append(note);
                 return turtle;
             });
@@ -379,7 +379,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             this.add_command('J(n,m)', function (lsystem, turtle, n, m) {
-                var inversions = turtle.chord.J(n);
+                let inversions = turtle.chord.J(n);
                 if (inversions.length > m) {
                     turtle.chord = inversions[m];
                 }
@@ -396,7 +396,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Add the parameters P, I, T, and V to the current turtle state.
              */
             this.add_command('PitvMove(P, I, T, V', function (lsystem, turtle, P, I, T, V) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.P += P;
                 pitv.I += I;
                 pitv.T += T;
@@ -408,7 +408,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Assign the parameter P to the current turtle state.
              */
             this.add_command('PAssign(P)', function (lsystem, turtle, P) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.P = P;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -417,7 +417,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Add the parameter P to the current turtle state.
              */
             this.add_command('PMove(P)', function (lsystem, turtle, P) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.P += P;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -426,7 +426,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Assign the parameter I to the current turtle state.
              */
             this.add_command('IAssign(I)', function (lsystem, turtle, I) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.I = I;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -435,7 +435,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Add the parameter I to the current turtle state.
              */
             this.add_command('IMove(I)', function (lsystem, turtle, I) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.I += I;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -444,7 +444,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Assign the parameter T to the current turtle state.
              */
             this.add_command('TAssign(T)', function (lsystem, turtle, T) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.T = T;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -453,7 +453,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Add the parameter T to the current turtle state.
              */
             this.add_command('TMove(T)', function (lsystem, turtle, T) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.T += T;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -462,7 +462,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Assign the parameter V to the current turtle state.
              */
             this.add_command('VAssign(V)', function (lsystem, turtle, V) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.V = V;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -471,7 +471,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * Add the parameter V to the current turtle state.
              */
             this.add_command('VMove(V)', function (lsystem, turtle, V) {
-                var pitv = lsystem.chord_space_group.fromChord(turtle.chord);
+                let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.V += V;
                 turtle.chord = lsystem.chord_space_group.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
                 return turtle;
@@ -523,24 +523,24 @@ Part of Silencio, an algorithmic music composition library for Csound.
         }
         evaluate_actual_parameter_expressions(parent_word, child_word) {
             try {
-                var prologue = 'var iteration = ' + this.iteration + ';';
+                let prologue = 'let iteration = ' + this.iteration + ';';
                 if (parent_word !== null) {
-                    var formal_parameters = this.formal_parameters_for_commands[child_word.key];
+                    let formal_parameters = this.formal_parameters_for_commands[child_word.key];
                     if (typeof formal_parameters !== "undefined") {
-                        for (var i = 0; i < formal_parameters.length; i++) {
-                            var formal_parameter_name = formal_parameters[i];
-                            var parent_actual_parameter_value = parent_word.actual_parameter_values[i];
+                        for (let i = 0; i < formal_parameters.length; i++) {
+                            let formal_parameter_name = formal_parameters[i];
+                            let parent_actual_parameter_value = parent_word.actual_parameter_values[i];
                             if (parent_actual_parameter_value === null) {
-                                var parent_word_parameter_expression = parent_word.actual_parameter_expressions[i];
+                                let parent_word_parameter_expression = parent_word.actual_parameter_expressions[i];
                                 parent_actual_parameter_value = ParametricLindenmayer.evaluate_with_minimal_scope(parent_word_parameter_expression);
                             }
-                            var value_assignment = 'var ' + formal_parameter_name + ' = ' + parent_actual_parameter_value + ';';
+                            let value_assignment = 'let ' + formal_parameter_name + ' = ' + parent_actual_parameter_value + ';';
                             prologue += value_assignment;
                         }
                     }
                 }
-                for (var parameterIndex = 0; parameterIndex < child_word.actual_parameter_expressions.length; parameterIndex++) {
-                    var child_word_actual_parameter_expression = child_word.actual_parameter_expressions[parameterIndex];
+                for (let parameterIndex = 0; parameterIndex < child_word.actual_parameter_expressions.length; parameterIndex++) {
+                    let child_word_actual_parameter_expression = child_word.actual_parameter_expressions[parameterIndex];
                     child_word.actual_parameter_values[parameterIndex] = ParametricLindenmayer.evaluate_with_minimal_scope(prologue + child_word_actual_parameter_expression);
                 }
             } catch (err) {
@@ -550,17 +550,17 @@ Part of Silencio, an algorithmic music composition library for Csound.
         }
         evaluate_condition_expression(parent_word, condition) {
             try {
-                var prologue = 'var iteration = ' + this.iteration + ';';
-                var formal_parameters = this.formal_parameters_for_commands[parent_word.key];
+                let prologue = 'let iteration = ' + this.iteration + ';';
+                let formal_parameters = this.formal_parameters_for_commands[parent_word.key];
                 if (typeof formal_parameters !== "undefined") {
-                    for (var i = 0; i < formal_parameters.length; i++) {
-                        var formal_parameter_name = formal_parameters[i];
-                        var parent_actual_parameter_value = parent_word.actual_parameter_values[i];
+                    for (let i = 0; i < formal_parameters.length; i++) {
+                        let formal_parameter_name = formal_parameters[i];
+                        let parent_actual_parameter_value = parent_word.actual_parameter_values[i];
                         if (parent_actual_parameter_value === null) {
-                            var parent_word_actual_parameter_expression = parent_word.actual_parameter_expressions[i];
+                            let parent_word_actual_parameter_expression = parent_word.actual_parameter_expressions[i];
                             parent_actual_parameter_value = ParametricLindenmayer.evaluate_with_minimal_scope(parent_word_actual_parameter_expression);
                         }
-                        var value_assignment = 'var ' + formal_parameter_name + ' = ' + parent_actual_parameter_value + ';';
+                        let value_assignment = 'let ' + formal_parameter_name + ' = ' + parent_actual_parameter_value + ';';
                         prologue += value_assignment;
                     }
                 }
@@ -572,9 +572,9 @@ Part of Silencio, an algorithmic music composition library for Csound.
         }
         set_axiom(text) {
             this.axiom.length = 0;
-            var words = text.split(';');
-            for (var i = 0; i < words.length; i++) {
-                var word = words[i];
+            let words = text.split(';');
+            for (let i = 0; i < words.length; i++) {
+                let word = words[i];
                 if (word.length > 0) {
                     this.axiom.push(new ParametricLindenmayer.Word(word));
                 }
@@ -584,14 +584,14 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.turtle = turtle_;
         }
         add_command(word_text, command) {
-            var word = new ParametricLindenmayer.Word(word_text);
+            let word = new ParametricLindenmayer.Word(word_text);
             this.commands_for_words[word.key] = command;
-            var formal_parameters = this.parameters_from_function_declaration(word_text);
+            let formal_parameters = this.parameters_from_function_declaration(word_text);
             this.formal_parameters_for_commands[word.key] = formal_parameters;
         }
         add_rule(word_, condition, production) {
-            var word = new ParametricLindenmayer.Word(word_);
-            var rule = this.rule_for_word(word);
+            let word = new ParametricLindenmayer.Word(word_);
+            let rule = this.rule_for_word(word);
             if (typeof rule === "undefined") {
                 rule = new ParametricLindenmayer.Rule(word, condition, production);
                 this.rules_for_words[rule.word.key] = rule;
@@ -600,15 +600,15 @@ Part of Silencio, an algorithmic music composition library for Csound.
             }
         };
         command_for_word(word) {
-            var command = this.commands_for_words[word.key];
+            let command = this.commands_for_words[word.key];
             if (typeof command === "undefined") {
                 command = this.identity_command;
             }
             return command;
         }
         invoke_command(word, turtle) {
-            var actual_parameter_values = word.actual_parameter_values.slice();
-            var command = this.command_for_word(word);
+            let actual_parameter_values = word.actual_parameter_values.slice();
+            let command = this.command_for_word(word);
             actual_parameter_values.splice(0, 0, this, turtle);
             return command.apply(word, actual_parameter_values);
         }
@@ -617,20 +617,20 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 this.iterations = iterations;
             }
             try {
-                var initial_production = this.axiom;
-                var current_production = [];
-                var wordIndex;
+                let initial_production = this.axiom;
+                let current_production = [];
+                let wordIndex;
                 for (this.iteration = 0; this.iteration < this.iterations; this.iteration++) {
                     current_production.length = 0;
                     for (wordIndex = 0; wordIndex < initial_production.length; wordIndex++) {
-                        var parent = initial_production[wordIndex].clone();
+                        let parent = initial_production[wordIndex].clone();
                         parent.rewrite(this, current_production);
                     }
                     initial_production = current_production.slice();
                 }
-                var working_turtle = this.turtle.clone();
+                let working_turtle = this.turtle.clone();
                 for (wordIndex = 0; wordIndex < current_production.length; wordIndex++) {
-                    var word = current_production[wordIndex];
+                    let word = current_production[wordIndex];
                     working_turtle = this.invoke_command(word, working_turtle);
                 }
             } catch (ex) {
@@ -642,7 +642,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             return this.rules_for_words[word.key];
         }
         parameters_from_function_declaration(str) {
-            var args = /\(\s*([^)]+?)\s*\)/.exec(str);
+            let args = /\(\s*([^)]+?)\s*\)/.exec(str);
             if (args === null) {
                 return [];
             }
@@ -652,11 +652,11 @@ Part of Silencio, an algorithmic music composition library for Csound.
             return args;
         }
         function_name_from_word(word) {
-            var function_name = /function ([^(]*)/.exec(word)[1];
+            let function_name = /function ([^(]*)/.exec(word)[1];
             return function_name;
         }
         words_from_production(production) {
-            var words = production.split(';');
+            let words = production.split(';');
             return words;
         }
         /**
