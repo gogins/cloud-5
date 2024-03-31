@@ -40,13 +40,17 @@ Part of Silencio, an algorithmic music composition library for Csound.
     /**
      * @class
      * @classdesc
+     * 
      * Represents the position of a "pen" that is moving about 
      * and writing upon a Score. The state of the Turtle includes a note, 
      * a chord, and another chord defining the modality of the Score.
+     * 
      * @param {Event} note_ The current position of the Turtle in the chord 
      * space.
+     * 
      * @param {Chord} chord_ The current Chord to which the Turtle will bre 
      * conformed.
+     * 
      * @param {Chord} modality_ The modality of the chord space, which 
      * controls the effect of certain chord transormations.
      */
@@ -276,7 +280,6 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle_;
             };
             var step;
-            // Default Commands.
             this.add_command('Assign(dimension, value)', function (lsystem, turtle, dimension, value) {
                 turtle.note.data[dimension] = value;
                 return turtle;
