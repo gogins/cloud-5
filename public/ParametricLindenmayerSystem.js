@@ -34,7 +34,14 @@ Part of Silencio, an algorithmic music composition library for Csound.
     t, d, s, c, k, v, x
 
     */
-
+ 
+    let CsoundAC;
+    (async () => {
+        CsoundAC = await createCsoundAC();
+        console.info("CsoundAC 1:" + CsoundAC);
+    })();
+    console.info("CsoundAC 2:" + CsoundAC);
+   
     let ParametricLindenmayer = {};
 
     /**
