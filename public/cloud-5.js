@@ -33,6 +33,7 @@ class Cloud5Piece extends HTMLElement {
   constructor() {
     super();
     this.csound = null;
+    this.csoundac = null;
   }
 
   #csound_code_addon = null;
@@ -357,6 +358,7 @@ class Cloud5Piece extends HTMLElement {
     if (non_csound(this.csound)) {
       return;
     }
+    this.csoundac = await createCsoundAC();
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -399,6 +401,7 @@ class Cloud5Piece extends HTMLElement {
         if (strudel_view !== null) {
           console.info("strudel_view:", this.strudel_view);
           strudel_view?.setCsound(this.csound);
+          strudel_view?.setCsoundAC(this.csoundac);
           strudel_view?.startPlaying();
         }
       }
