@@ -1877,6 +1877,99 @@
           </CsScore>
         </CsoundSynthesizer>
     </textarea>
+    <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
+        #line 1881
+        precision highp float;
+        /**
+         * These are all of the standard ShaderToy inputs. If any of these are 
+         * used in this shader, they must be created and initialized in the 
+         * JavaScript code.
+         */
+        uniform vec3 iResolution;
+        // viewport resolution (in pixels)
+        uniform float iTime;
+        // shader playback time (in seconds)
+        uniform float iTimeDelta;
+        // render time (in seconds)
+        uniform int iFrame;
+        // shader playback frame
+        uniform float iChannelTime[4];
+        // channel playback time (in seconds)
+        uniform vec3 iChannelResolution[4];
+        // channel resolution (in pixels)
+        uniform vec4 iMouse;
+        // mouse pixel coords. xy: current (if MLB down), zw: click
+        uniform sampler2D iChannel0;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel1;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel2;
+        // input channel. XX = 2D/Cube
+        uniform sampler2D iChannel3;
+        // input channel. XX = 2D/Cube
+        uniform vec4 iDate;
+        // (year, month, day, time in seconds)
+        uniform float iSampleRate;
+        // sound sample rate (i.e., 44100)
+        
+        /**
+         * Theoretically, any fragment shader copied from the ShaderToy 
+         * editor can replace the body of the mainImage function below, 
+         * if all inputs actually used in the shader are defined and bound.
+         */
+
+        void mainImage(out vec4 _ufragColor, in vec2 _ufragCoord);
+        out vec4 _ushadertoy_out_color;
+        void main(){
+          (_ushadertoy_out_color = vec4(0.0, 0.0, 0.0, 0.0));
+          (_ushadertoy_out_color = vec4(1.0, 1.0, 1.0, 1.0));
+          vec4 _ucolor = vec4(0.0, 0.0, 0.0, 1.0);
+          mainImage(_ucolor, gl_FragCoord.xy);
+          if ((_ushadertoy_out_color.x < 0.0))
+          {
+            (_ucolor = vec4(1.0, 0.0, 0.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.y < 0.0))
+          {
+            (_ucolor = vec4(0.0, 1.0, 0.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.z < 0.0))
+          {
+            (_ucolor = vec4(0.0, 0.0, 1.0, 1.0));
+          }
+          if ((_ushadertoy_out_color.w < 0.0))
+          {
+            (_ucolor = vec4(1.0, 1.0, 0.0, 1.0));
+          }
+          (_ushadertoy_out_color = vec4(_ucolor.xyz, 1.0));
+        }
+        
+// BEGIN Define fragment shader. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#define WAVES 8.0
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+	vec2 uv = -1.0 + 2.0 * fragCoord.xy / iResolution.xy;
+
+	float time = iTime * 1.0;
+	
+	vec3 color = vec3(0.0);
+
+	for (float i=0.0; i<WAVES + 1.0; i++) {
+		float freq = texture(iChannel0, vec2(i / WAVES, 0.0)).x * 7.0;
+
+		vec2 p = vec2(uv);
+
+		p.x += i * 0.04 + freq * 0.03;
+		p.y += sin(p.x * 10.0 + time) * cos(p.x * 2.0) * freq * 0.2 * ((i + 1.0) / WAVES);
+		float intensity = abs(0.01 / p.y) * clamp(freq, 0.35, 2.0);
+		color += vec3(1.0 * intensity * (i / 5.0), 0.5 * intensity, 1.75 * intensity) * (3.0 / WAVES);
+	}
+
+	fragColor = vec4(color, 1.0);
+}
+
+    </script>
     <cloud5-piece></cloud5-piece>
     <cloud5-strudel></cloud5-strudel>
     <cloud5-shadertoy></cloud5-shadertoy>
@@ -2319,137 +2412,9 @@ pure(0).note()
         // #endregion
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
+        let fragment_shader = document.getElementById('draw-shader-fs').textContent;
         cloud5_shader.shader_parameters_addon = {
-            fragment_shader_code_addon: `#version 300 es
-        #line 2184
-        precision highp float;
-        /**
-         * These are all of the standard ShaderToy inputs. If any of these are 
-         * used in this shader, they must be created and initialized in the 
-         * JavaScript code.
-         */
-        uniform vec3 iResolution;
-        // viewport resolution (in pixels)
-        uniform float iTime;
-        // shader playback time (in seconds)
-        uniform float iTimeDelta;
-        // render time (in seconds)
-        uniform int iFrame;
-        // shader playback frame
-        uniform float iChannelTime[4];
-        // channel playback time (in seconds)
-        uniform vec3 iChannelResolution[4];
-        // channel resolution (in pixels)
-        uniform vec4 iMouse;
-        // mouse pixel coords. xy: current (if MLB down), zw: click
-        uniform sampler2D iChannel0;
-        // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel1;
-        // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel2;
-        // input channel. XX = 2D/Cube
-        uniform sampler2D iChannel3;
-        // input channel. XX = 2D/Cube
-        uniform vec4 iDate;
-        // (year, month, day, time in seconds)
-        uniform float iSampleRate;
-        // sound sample rate (i.e., 44100)
-        uniform float spectral_tilt;
-        uniform float total_loudness;
-      
-        /**
-         * Theoretically, any fragment shader copied from the ShaderToy 
-         * editor can replace the body of the mainImage function below, 
-         * if all inputs actually used in the shader are defined and bound.
-         */
-
-        void mainImage(out vec4 _ufragColor, in vec2 _ufragCoord);
-        out vec4 _ushadertoy_out_color;
-        void main(){
-          (_ushadertoy_out_color = vec4(0.0, 0.0, 0.0, 0.0));
-          (_ushadertoy_out_color = vec4(1.0, 1.0, 1.0, 1.0));
-          vec4 _ucolor = vec4(0.0, 0.0, 0.0, 1.0);
-          mainImage(_ucolor, gl_FragCoord.xy);
-          if ((_ushadertoy_out_color.x < 0.0))
-          {
-            (_ucolor = vec4(1.0, 0.0, 0.0, 1.0));
-          }
-          if ((_ushadertoy_out_color.y < 0.0))
-          {
-            (_ucolor = vec4(0.0, 1.0, 0.0, 1.0));
-          }
-          if ((_ushadertoy_out_color.z < 0.0))
-          {
-            (_ucolor = vec4(0.0, 0.0, 1.0, 1.0));
-          }
-          if ((_ushadertoy_out_color.w < 0.0))
-          {
-            (_ucolor = vec4(1.0, 1.0, 0.0, 1.0));
-          }
-          (_ushadertoy_out_color = vec4(_ucolor.xyz, 1.0));
-        }
-
-        // https://www.shadertoy.com/view/DtsyWl
-        // Colourful waves of smoke based upon an example on 
-        // GLSL sandbox water turbulence effect by joltz0r and 
-        // David Hoskins's implementation https://www.shadertoy.com/view/MdlXz8
-        #define TAU 6.28318530718
-        #define MAX_ITER 8
-
-        // cosine based palette, 4 vec3 params
-        // By Inigo Quilez https://iquilezles.org/articles/palettes/
-        vec3 palette( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
-        {
-            return a + b*cos( 6.28318*(c*t+d) );
-        }
-
-        // All components are in the range [0…1], including hue.
-        vec3 rgb2hsv(vec3 c)
-        {
-            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-
-            float d = q.x - min(q.w, q.y);
-            float e = 1.0e-10;
-            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-        }
-
-        // All components are in the range [0…1], including hue.
-        vec3 hsv2rgb(vec3 c)
-        {
-            vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-            vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-            return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-        }
-
-        void mainImage( out vec4 fragColor, in vec2 fragCoord )
-        {
-            float time = iTime * .095 + 23.0;
-            vec2 uv = fragCoord/iResolution.xy;;
-            vec2 p = mod(uv*TAU, TAU) - 213.0;
-            vec2 i = vec2(p);
-            float c = 1.0;
-            float inten = .005;
-            for (int n = 0; n < MAX_ITER; n++) {
-                float t = time * (1.0 - (3.5 / float(n + 1)));
-                i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-                c += 1.0 / length(vec2(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
-            }
-            c /= float(MAX_ITER);
-            c = 1.17 - pow(c, 1.4);
-            vec3 colour = vec3(pow(abs(c), 10.0));
-            colour = clamp(colour + vec3(0.095), 0.0, 1.0);
-            float palettePhase = abs(sin(uv.x * uv.y + iTime * 0.05)) + iTime * 0.1;
-            vec3 col = palette(palettePhase, vec3(0.5, 0.5, 0.5), vec3(0.5, 0.5, 0.5), vec3(2.0, 1.0, 0.0), vec3(0.50, 0.20, 0.25));
-            col *=  colour;
-            col = rgb2hsv(col);
-            col.x *= (spectral_tilt * 5.);
-            col.z *= (total_loudness * 3.);
-            col = hsv2rgb(col);
-            fragColor = vec4(col, 1.0);
-        }
-        `,
+            fragment_shader_code_addon: fragment_shader,
             set_uniforms_function_addon: (function() {
                 if (this.analyser) {
                     let spectral_tilt = 0;
@@ -2470,9 +2435,9 @@ pure(0).note()
                     /// console.info(`tilt: ${spectral_tilt} loudness: ${total_loudness}`);
                     // Set the uniforms.
                     let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
-                    this.gl.uniform1f(spectral_tilt_location, spectral_tilt);
+                    ///this.gl.uniform1f(spectral_tilt_location, spectral_tilt);
                     let total_loudness_location = this.uniform_locations['total_loudness'];
-                    this.gl.uniform1f(total_loudness_location, total_loudness);
+                    ///this.gl.uniform1f(total_loudness_location, total_loudness);
                 }
             }).bind(cloud5_shader),
         };

@@ -906,27 +906,99 @@ class Cloud5ShaderToy extends HTMLElement {
     this.canvas.addEventListener('mousemove', ((e) => {
       this.mouse_position = [e.clientX, e.clientY];
     }));
-    const audio_texture_level = 0;
-    const audio_texture_internalFormat = this.gl.R32F;
-    const audio_texture_width = 512;
-    const audio_texture_height = 2;
-    const audio_texture_border = 0;
-    const audio_texture_srcFormat = this.gl.RED;
-    const audio_texture_srcType = this.gl.FLOAT;
-    this.frequency_domain_data = new Uint8Array(audio_texture_width * 2);
-    this.time_domain_data = new Uint8Array(audio_texture_width * 2);
-    this.audio_data = new Float32Array(audio_texture_width * 2);
+    this.audio_texture_level = 0;
+    this.audio_texture_internalFormat = this.gl.R32F;
+    this.audio_texture_width = 512;
+    this.audio_texture_height = 2;
+    this.audio_texture_border = 0;
+    this.audio_texture_srcFormat = this.gl.RED;
+    this.audio_texture_srcType = this.gl.FLOAT;
+    this.frequency_domain_data = new Uint8Array(this.audio_texture_width * 2);
+    this.time_domain_data = new Uint8Array(this.audio_texture_width * 2);
+    this.audio_data = new Float32Array(this.audio_texture_width * 2);
     this.image_sample_buffer = new Uint8ClampedArray();
     this.channel0_texture_unit = 0;
     this.channel0_texture = this.gl.createTexture();
     this.channel0_texture.name = "channel0_texture";
     this.channel0_sampler = this.gl.createSampler();
-    this.channel0_sampler.name - "channel0_sampler";
+    this.channel0_sampler.name = "channel0_sampler";
     this.current_events = {};
     this.prior_events = {};
     this.rendering_frame = 0;
-    this.midpoint = audio_texture_width / 2;
+    this.midpoint = this.audio_texture_width / 2;
   }
+
+  write_audio_texture(analyser, texture_unit, texture, sampler) {
+    if (analyser != null) {
+        analyser.getByteFrequencyData(this.frequency_domain_data);
+        analyser.getByteTimeDomainData(this.time_domain_data);
+        for (let i = 0; i < this.audio_texture_width; ++i) {
+            // Map frequency domain magnitudes to [0, 1].
+            let sample = this.frequency_domain_data[i];
+            sample = sample / 255.;
+            this.audio_data[i] = sample;
+         }
+        this.audio_data_width = this.audio_texture_width * 2;
+        for (let j = 0; j < this.audio_texture_width; ++j) {
+            // Map time domain amplitudes to [-1, 1].
+            let sample = this.time_domain_data[j];
+            sample = sample / 255.;
+            this.audio_data[this.audio_texture_width + j] = sample;
+        }
+    }
+    this.gl.activeTexture(this.gl.TEXTURE0 + texture_unit);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.bindSampler(texture_unit, sampler);
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 
+      this.audio_texture_level, 
+      this.audio_texture_internalFormat, 
+      this.audio_texture_width, 
+      this.audio_texture_height, 
+      this.audio_texture_border, 
+      this.audio_texture_srcFormat,
+      this.audio_texture_srcType, 
+      this.audio_data);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_WRAP_R, this.gl.CLAMP_TO_EDGE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_COMPARE_MODE, this.gl.NONE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_COMPARE_FUNC, this.gl.LEQUAL);
+    if (false && analyser) { // For debugging.
+        let is_texture = gl.isTexture(texture);
+        let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
+        let uniform_index;
+        for (let uniform_index = 0; uniform_index < uniform_count; ++uniform_index) {
+            uniform_info = gl.getActiveUniform(shader_program, uniform_index);
+            console.log(uniform_info);
+            const location = gl.getUniformLocation(shader_program, uniform_info.name);
+            const value = gl.getUniform(shader_program, location);
+            console.log("Uniform location: " + location);
+            console.log("Uniform value: " + value);
+        }
+        const unit = gl.getUniform(shader_program, shader_program.iChannel0);
+        console.log("Sampler texture unit: " + unit);
+        console.log("Texture unit: " + texture_unit);
+        gl.activeTexture(gl.TEXTURE0 + texture_unit);
+        let texture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+        console.log("Texture binding 2D " + texture2D);
+        var debug_framebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, debug_framebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture2D, 0);
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+            console.log("These attachments don't work.");
+        }
+        // Read the contents of the debug_framebuffer (data stores the pixel data).
+        var data = new Float32Array(1024);
+        // What comes out, should be what went in.
+        gl.readPixels(0, 0, 512, 2, gl.RED, gl.FLOAT, data);
+        //console.log("\nfrequency domain: \n" + data.slice(0, 512));
+        //console.log("time domain: \n" + data.slice(512));
+        gl.deleteFramebuffer(debug_framebuffer);
+    }
+ }
+
   /**
    * Actually compiles and links the vertex shader and fragment shader.
    */
@@ -982,7 +1054,7 @@ class Cloud5ShaderToy extends HTMLElement {
     this.gl.vertexAttribPointer(this.shader_program.inPos, 2, this.gl.FLOAT, false, 0, 0);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    ///write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
+    this?.write_audio_texture(this.analyser, this.channel0_texture_unit, this.channel0_texture, this.channel0_sampler);
     window.onresize = ((event) => this.resize(event));
     this.resize();
     requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
@@ -1042,6 +1114,7 @@ class Cloud5ShaderToy extends HTMLElement {
     this.gl.uniform1f(this.shader_program.iTime, seconds);
     this.gl.uniform3f(this.shader_program.iResolution, this.canvas.width, this.canvas.height, 0);
     this.gl.uniform4f(this.shader_program.iMouse, this.mouse_position[0], this.mouse_position[1], 0, 0);
+    this?.write_audio_texture(this.analyser, this.channel0_texture_unit, this.channel0_texture, this.channel0_sampler);
     // Actually render the frame.
     this.gl.drawElements(this.gl.TRIANGLES, this.webgl_buffers.inx.len, this.gl.UNSIGNED_SHORT, 0);
     // Custom attributes may be accessed in this addon. Such attributes can be 
