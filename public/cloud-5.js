@@ -338,10 +338,33 @@ class Cloud5Piece extends HTMLElement {
       }
     });
     this.show(this.shader_overlay);
+    window.addEventListener('load', function(event) {
+      const save_button = this.gui.domElement.querySelector('span.button.save');
+      save_button.addEventListener('click', function(event) {
+        this.copy_parameters()
+      }.bind(this));
+    }.bind(this));
     window.addEventListener("unload", function (event) {
       nw_window?.close();
     });
   }
+
+/**
+ * Copies all _current_ dat.gui parameters to the system clipboard in 
+ * JSON format.
+ * 
+ * @param {Object} parameters A dictionary containing the current state of all 
+ * controls; keys are control parameter names, values are control parameter 
+ * values. This can be pasted from the clipboard it source code, as a 
+ * convenient method of updating a piece with parameters that have been tweaked 
+ * during performance.
+ */
+copy_parameters() {
+  const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
+  navigator.clipboard.writeText(json_text);
+  console.info("Copied all control parameters to system clipboard.\n")
+}
+
   /**
    * @function render
    * 
@@ -1318,22 +1341,6 @@ function write_file(filepath, data) {
     console.info("Copied generated csd to system clipboard.\n")
     console.warn(err);
   }
-}
-
-/**
- * Copies all _current_ dat.gui parameters to the system clipboard in 
- * JSON format.
- * 
- * @param {Object} parameters A dictionary containing the current state of all 
- * controls; keys are control parameter names, values are control parameter 
- * values. This can be pasted from the clipboard it source code, as a 
- * convenient method of updating a piece with parameters that have been tweaked 
- * during performance.
- */
-function copy_parameters(parameters) {
-  const json_text = JSON.stringify(parameters, null, 4);
-  navigator.clipboard.writeText(json_text);
-  console.info("Copied all control parameters to system clipboard.\n")
 }
 
 /**

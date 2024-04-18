@@ -134,7 +134,8 @@ software, select BlackHole as the audio input device.
 
 ### Installation
 
-There is no installation! Simply download the release, and unzip it.
+There is no installation! Simply download the release, and unzip it into a 
+cloud-5 directory.
 
 cloud-5 can be stored on a USB thumb drive, and will run with all functionality 
 _from_ the thumb drive. This makes it possible to carry all of your work in 
