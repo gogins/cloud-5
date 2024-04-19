@@ -1163,7 +1163,7 @@ class Cloud5Log extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `<div 
       id='console_view' 
-      class="cloud5-log-editor">`;
+      class="cloud5-log-editor no-scroll">`;
     this.message_callback_buffer = "";
     this.console_editor = ace.edit("console_view");
     this.console_editor.setShowPrintMargin(false);

@@ -3,6 +3,25 @@
 html {
   height: 100vh;
   width: 100vw;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.ace_scrollbar {
+  display: none !important;
+}
+
+.no-scroll {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* The cloud-5 custom elements share a common style, which can be overridden by lower level styles. */
@@ -41,6 +60,9 @@ html {
   opacity: 70%;
   color: rgb(255, 255, 200);
   overflow-wrap: break-word;
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 
 cloud5-log {
@@ -54,6 +76,9 @@ cloud5-log {
   height: 100vh;
   color: rgb(255, 255, 200, 67%);
   background: transparent;
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 
 cloud5-strudel,

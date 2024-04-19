@@ -58,14 +58,18 @@ with open(astro_config_mjs_filepath, "r+") as file:
       // Example: Force a broken package to skip SSR processing, if needed
       // external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
     },'''
-  replace_with = '''  vite: {
+  replace_with = '''
+// MKG patch...
+    vite: {
     ssr: {
       // Example: Force a broken package to skip SSR processing, if needed
       // external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
     },
     build: {
         sourcemap: true
-    },'''
+    },
+// MKG patch.
+  '''
   patched_text = patched_text.replace(find_this, replace_with)
   print(patched_text)
   file.seek(0)
@@ -111,7 +115,9 @@ with open(pattern_mjs_filepath, "r+") as file:
         ctx,
         haps: haps.filter(inFrame),
   '''
-  replace_with = '''Pattern.prototype.pianoroll = function (options = {}) {
+  replace_with = '''
+// MKG patch...
+  Pattern.prototype.pianoroll = function (options = {}) {
   let { cycles = 4, playhead = 0.5, overscan = 1, hideNegative = false } = options;
 
   let from = -cycles * playhead;
@@ -135,7 +141,8 @@ with open(pattern_mjs_filepath, "r+") as file:
           ...options,
           time: t,
           ctx,
-          haps: haps.filter(inFrame),
+          haps: haps.filter(inFrame), 
+// MKG patch.
 '''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
@@ -152,13 +159,23 @@ cyclist_mjs_filepath = "strudel/packages/core/cyclist.mjs";
 print(f"Patching '{cyclist_mjs_filepath}'")
 with open(cyclist_mjs_filepath, "r+") as file:
   find_this = '''      interval, // duration of each cycle
+      0.1,
+      0.1,
+      setInterval,
+      clearInterval,
     );
   }
   now() {'''
   replace_with = '''      interval, // duration of each cycle
+      0.1,
+      0.1,
+      setInterval,
+      clearInterval,
     );
+// MKG patch...
     let that = this;
     globalThis.__cyclist__ = that;
+// MKG patch.
   }
   now() {'''
   text = file.read()
@@ -166,10 +183,13 @@ with open(cyclist_mjs_filepath, "r+") as file:
   find_this = '''    this.clock.start();
     this.setStarted(true);
   }'''
-  replace_with = '''    this.clock.start();
+  replace_with = '''// MKG patch...
+    this.clock.start();
     this.setStarted(true);
     globalThis.haps_from_outputs = null;
-  }'''
+  }
+// MKG patch.
+  '''
   patched_text = patched_text.replace(find_this, replace_with);
   print(patched_text)
   file.seek(0)
@@ -184,7 +204,8 @@ print(f"Patching '{webaudio_mjs_filepath}'")
 with open(webaudio_mjs_filepath, "r+") as file:
   find_this = '''export const webaudioOutputTrigger = (t, hap, ct, cps) => superdough(hap2value(hap), t - ct, hap.duration / cps, cps);
 export const webaudioOutput = (hap, deadline, hapDuration) => superdough(hap2value(hap), deadline, hapDuration);'''
-  replace_with = '''export const webaudioOutputTrigger = (t, hap, ct, cps) => {
+  replace_with = '''// MKG patch... 
+  export const webaudioOutputTrigger = (t, hap, ct, cps) => {
   if (globalThis.haps_from_outputs) {
       globalThis.haps_from_outputs.push(hap);
   }
@@ -196,7 +217,9 @@ export const webaudioOutput = (hap, deadline, hapDuration) => {
       globalThis.haps_from_outputs.push(hap);
   }
   superdough(hap2value(hap), deadline, hapDuration);
-};'''
+};
+// MKG patch.
+'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
   print(patched_text)
