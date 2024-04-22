@@ -189,7 +189,7 @@ There are many ways to write compositions, because the capabilities of Csound,
 Strudel, and HTML5 are so vast. Start out by a making a copy of one of the 
 examples below, and edit it to suit your own purposes. 
 
-### Tutorial Pieces
+### Tutorial Examples
 
 These are pieces designed to show how to use the new architecture for cloud-5 
 based on `cloud-5.js`, a library of resuable Web components that greatly 
@@ -401,7 +401,7 @@ and make sure that the application directory for your `csound.node` pieces is th
  - Updated Csound, [csound-wasm](https://github.com/gogins/csound-wasm), 
    and Strudel to current versions.
 
- ### [v0.1](https://github.com/gogins/cloud-5/commits/v0.1)
+### [v0.1](https://github.com/gogins/cloud-5/commits/v0.1)
 
  - Improved user interface and code organization in some pieces, making them 
    more usable as templates for newer pieces.

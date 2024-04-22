@@ -41,7 +41,7 @@ html::-webkit-scrollbar {
 }
 
 .cloud5-strudel-repl {
-  position: absolute;
+  position: relative;
   top: 0px;
   width:120em;
   height:80em;
@@ -83,7 +83,7 @@ cloud5-log {
 
 cloud5-strudel,
 cloud5-about {
-  position: absolute;
+  position: relative;
   top: 0;
   left: 0;
   visibility: none;
@@ -96,6 +96,7 @@ cloud5-about {
   color: rgb(255, 255, 200, 67%);
   /* overflow-y: auto; */
   overflow-wrap: break-word;
+  z-index:1;
 }
 
 cloud5-shader, 
@@ -134,7 +135,7 @@ cloud5-piano-roll {
 
 /**
  * Stacking order for all overlays. The shader should always be at the bottom 
- * and the menu bar should always be at the too.
+ * and the menu bar should always be at the top.
  */
  cloud5-shader, cloud5-shadertoy {
   z-index: 0;
@@ -145,14 +146,14 @@ cloud5-piano-roll {
  cloud5-log {
   z-index: 20;
  }
- cloud5-strudel {
-  z-index: 30;
- }
  cloud5-about {
   z-index: 40;
  }
  cloud5-piece {
   z-index: 50;
+ }
+ cloud5-strudel {
+  z-index: 60;
  }
 /**
  * Override styles of dat.gui menu to suit our styles.

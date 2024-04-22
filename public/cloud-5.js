@@ -211,7 +211,7 @@ class Cloud5Piece extends HTMLElement {
   };
   connectedCallback() {
     this.innerHTML = `
-    <div class="w3-bar" id="main_menu" style="position:fixed;background:transparent;z-index:10000;">
+    <div class="w3-bar" id="main_menu" style="position:fixed;background:transparent;z-index:1000;">
     <ul class="menu">
         <li id="menu_item_play" title="Play piece on system audio output" class="w3-btn w3-hover-text-light-green">
             Play</li>
@@ -308,6 +308,7 @@ class Cloud5Piece extends HTMLElement {
       ///this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.toggle(this.about_overlay);
+      this.strudel_component.focus(true);
     });
     // Ensure that the dat.gui controls are children of the _Controls_ button.
     let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };
@@ -657,7 +658,7 @@ class Cloud5Strudel extends HTMLElement {
   }
   connectedCallback() {
     this.innerHTML = `
-    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl'>
+    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;ƒ:4001;'>
 
         <!--
         ${this.#strudel_code_addon}
@@ -665,6 +666,10 @@ class Cloud5Strudel extends HTMLElement {
     </strudel-repl-component>
     `;
     this.strudel_component = this.querySelector('#strudel_view');
+    this.strudel_component.addEventListener("focusout", (event) => {
+      console.log("strudel_component lost focus.");
+    });
+
     let menu_button = document.getElementById("menu_item_strudel");
     menu_button.style.display = 'inline';
   }
