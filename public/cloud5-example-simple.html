@@ -2,6 +2,9 @@
 <html>
 
 <head>
+    <meta http-equiv='cache-control' content='no-cache'>
+    <meta http-equiv='expires' content='0'>
+    <meta http-equiv='pragma' content='no-cache'>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="dat.gui.js"></script>
@@ -2023,7 +2026,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         
         csac.track
         (
-        [60*3,
+        [60*2,
         // In order for controls to work, "note" must come first!
         pure(0).note()
         // 10.184 is good.
@@ -2032,31 +2035,32 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         .slow(slider(2.5, 1, 8, .5)).fast(slider(2.75, 1, 8, .5))
         .sub(slider(3, 0, 48, 3)).add(slider(0, 12, 48, 3))
         .clip(slider(0.6, .1, 10, .1))
-        .csoundn(slider(12, 1, 17,1), 
-                 slider(8, 1, 17,1), 
-                 slider(14, 1, 17,1)).color('salmon', 'darkseagreen', 'turquoise')
+        .csoundn(slider(12, 1, 18,1), 
+                 slider(8, 1, 18,1), 
+                 slider(14, 1, 18,1)).color('salmon', 'darkseagreen', 'turquoise')
         // CsoundAC way of doing harmony:
         .acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
         .acSM(scalePattern, "<0 1 1 0 3 2>/24")
         .acSCV(scalePattern)
         ],
         [60,
-        run(slider(8,3,8,1)).n()
-         .offset(slider(5, 0, 6, 1))
-         .off(.5, x=>x.add(9))
+        run(slider(8,3,8,1))
+        .sub(slider(12, 0, 36, 1)).add(slider(0, 0, 36, 1))
+        .offset(slider(5, 0, 6, 1))
+        .off(.5, x=>x.add(9))
         .slow(slider(5.5, 1, 8, .5)).fast(slider(1, 1, 8, .5))
-        .sub(slider(0, 0, 48, 3)).add(slider(0, 0, 48, 3))
         .euclid(8, 10)
         .jux(rev)
+        .clip(slider(1, .1, 4, .1))
+        .n()
         // Strudel way of doing harmony:
         .chord("<Am9 E7b5 Am9 Dm7b5 G7b9 CM7>/2")
         .dict('ireal-ext')
         .voicing()
-        .clip(slider(1, .1, 10, .1))
-        .csoundn(slider(6, 1, 17,1), 
-                 slider(5, 1, 17,1), 
-                 slider(3, 1, 17,1)).color('powderblue', 'bisque', 'navajowhite')],
-        [60*4,
+        .csoundn(slider(6, 1, 18,1), 
+                 slider(11, 1, 18,1), 
+                 slider(3, 1, 18,1)).color('powderblue', 'bisque', 'navajowhite')],
+        [60*2,
         // In order for controls to work, "note" must come first!
         pure(0).note()
         .CircleMap(circleMapInstance, 1, slider(11.192, 1, 29))
@@ -2064,9 +2068,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         .slow(slider(1.5, 1, 8, .5)).fast(slider(3, 1, 8, .5))
         .sub(slider(9, 0, 48, 3)).add(slider(24, 0, 48, 3))
         .clip(slider(2.2, .1, 10, .1))
-        .csoundn(slider(4, 1, 17,1), 
-                 slider(6, 1, 17,1), 
-                 slider(9, 1, 17,1)).color('grey', 'lightblue', 'lightgreen')
+        .csoundn(slider(4, 1, 18,1), 
+                 slider(6, 1, 18,1), 
+                 slider(9, 1, 18,1)).color('grey', 'lightblue', 'lightgreen')
         // CsoundAC way of doing harmony:
         .acST(scalePattern, "<-1 -1 -1 -1 -1 -1 -1>/3")
         .acSM(scalePattern, "<0 1 2 3 3 2>/9")

@@ -2,6 +2,9 @@
 <html>
 
 <head>
+    <meta http-equiv='cache-control' content='no-cache'>
+    <meta http-equiv='expires' content='0'>
+    <meta http-equiv='pragma' content='no-cache'>
     <title>cloud_music_no_9</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1062,7 +1065,7 @@ instr MasterOutput uses instrument number 16
             }
             // This updates the dat.gui GUI from the parameters, which are 
             // in global scope, so used by `add_slider` etc.
-            gui.remember(parameters); 
+            gui.remember(parameters);
             var Master = gui.addFolder('Master');
             add_slider(Master, 'gk_MasterOutput_level', -50, 50);
             add_slider(Master, 'gk_overlap', 0, 20);
@@ -2930,6 +2933,13 @@ instr MasterOutput uses instrument number 16
                     strudel_view.startPlaying();
                     $("#menu_item_play").html("Stop");
                 } else {
+                    await clearInterval(interval_id);
+                    await csound.Stop();
+                    await csound.Cleanup();
+                    csound.Reset();
+                    csound_message_callback("Csound is stopping...\n");
+                    $("#menu_item_play").html("Play");
+                    strudel_view.stopPlaying();
                 }
             });
             $("#menu_item_render").click(async function (event) {

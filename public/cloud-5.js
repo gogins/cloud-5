@@ -241,7 +241,7 @@ class Cloud5Piece extends HTMLElement {
     menu_item_play.onclick = ((event) => {
       console.info("menu_item_play click...");
       this.show(this.piano_roll_overlay)
-      this.hide(this.strudel_overlay);
+      // this.hide(this.strudel_overlay);
       // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
@@ -658,7 +658,7 @@ class Cloud5Strudel extends HTMLElement {
   }
   connectedCallback() {
     this.innerHTML = `
-    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;ƒ:4001;'>
+    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;z-index:4001;'>
 
         <!--
         ${this.#strudel_code_addon}

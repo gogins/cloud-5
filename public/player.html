@@ -1,28 +1,35 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Csound Player</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js" integrity="sha512-czfWedq9cnMibaqVP2Sw5Aw1PTTabHxMuTOkYkL15cbCYiatPIbxdV0zwhfBZKNODg0zFqmbz8f7rKmd6tfR/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta http-equiv='cache-control' content='no-cache'>
+    <meta http-equiv='expires' content='0'>
+    <meta http-equiv='pragma' content='no-cache'>
+    <title>Csound Player</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js"
+        integrity="sha512-czfWedq9cnMibaqVP2Sw5Aw1PTTabHxMuTOkYkL15cbCYiatPIbxdV0zwhfBZKNODg0zFqmbz8f7rKmd6tfR/Q=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <body style="background-color:LightGrey;">
-<!-- This script loads the entire Csound library compiled for WebAssembly 
+    <!-- This script loads the entire Csound library compiled for WebAssembly 
      and based on AudioWorklet. -->
-<script src="CsoundAudioNode.js"></script>
-<!-- This script tests the environment and attempts to load Csound, if available, 
+    <script src="CsoundAudioNode.js"></script>
+    <!-- This script tests the environment and attempts to load Csound, if available, 
      from each environment, preferring native (injected) Csound as found in 
      CsoundQt oe Android, then csound.node, then Csound for WebAssembly. -->
-<script src="csoundloader.js"></script>
-<!-- Note: osc.js does not work in a browser from regular Web server, osc.min.js 
+    <script src="csoundloader.js"></script>
+    <!-- Note: osc.js does not work in a browser from regular Web server, osc.min.js 
      must be used. -->
-<script src="osc.min.js"></script>
-<script>
-// The DataGram plugin can't be used in browsers.
-const osc = new OSC()
-osc.open({ port: 51234 });
-osc.on('*', (m) => {
-  console.log('received:', m.address, m.args);
-});
+    <script src="osc.min.js"></script>
+    <script>
+        // The DataGram plugin can't be used in browsers.
+        const osc = new OSC()
+        osc.open({ port: 51234 });
+        osc.on('*', (m) => {
+            console.log('received:', m.address, m.args);
+        });
 
-var csd_text = `<CsoundSynthesizer>
+        var csd_text = `<CsoundSynthesizer>
 <CsOptions>
 -d -m195 -odac:plughw:1,0
 </CsOptions>
@@ -265,60 +272,63 @@ e
 </CsScore>
 </CsoundSynthesizer>    
 `;
-var csound_message_callback = function(message) {
-    let lines = console_editor.getSession().getLength();
-    console_editor.moveCursorTo(lines, 0);
-    console_editor.scrollToLine(lines);
-    console_editor.insert(message);      
-};
-// Csound must be invoked from an async function because the 
-// functions called herein are async but must be called with 
-// await to enforce the correct order of execution.
-var onPlayClick = async function() {
-    let messages_textarea = document.getElementById("console");
-    messages_textarea.value = "";
-    let csound_ = await get_csound(csound_message_callback);
-    if (csound_ == null) {
-        return;
-    }
-    let seconds = await csound_.GetScoreTime();
-    csound_message_callback("Score time: " + seconds + "\n");
-    if (seconds > 0) {
-        csound_message_callback("Already playing...\n");
-        return;
-    }
-    csd = csd_editor.getValue();
-    console_editor.setValue("");
-    await csound_.CompileCsdText(csd);
-    await csound_.Start();
-    await csound_.Perform();
-};
-// Csound must be invoked from an async function because the 
-// functions called herein are async but must be called with 
-// await to enforce the correct order of execution.
-var onPlayStop = async function() {
-    let csound_ = await get_csound(csound_message_callback);
-    let seconds = await csound_.GetScoreTime();
-    csound_message_callback("Score time: " + seconds + "\n");
-    if (seconds > 0) {
-        await csound_.Stop();
-        await csound_.Cleanup();
-        await csound_.Reset();
-    }
-};
-</script>
-<h2>Csound Player</h2>
-<p>
-Any self-contained Csound piece (.csd file) can be performed by pasting it into the text area below, and clicking on the <b>Play</b> button. Click on the <b>Stop</b> button to end the performance. The second text area will show Csound's runtime messages. You can edit the .csd file in the text area, but you must select it all and copy it out somewhere else in order to save it. For WebAudio, the .csd should set sr = 48000 and ksmps = 128.
-</p>
-<p>
-<input id="play" type="button" value="Play" onclick="onPlayClick()">
-<input id="stop" type="button" value="Stop" onclick="onPlayStop()">
-</p>
-<div id='csd' style="width:98vw;height:50vh;margin-top:10px;">
-</div>
-<div id='console' style="width:98vw;height:25vh;margin-top:10px;">
-</div>
+        var csound_message_callback = function (message) {
+            let lines = console_editor.getSession().getLength();
+            console_editor.moveCursorTo(lines, 0);
+            console_editor.scrollToLine(lines);
+            console_editor.insert(message);
+        };
+        // Csound must be invoked from an async function because the 
+        // functions called herein are async but must be called with 
+        // await to enforce the correct order of execution.
+        var onPlayClick = async function () {
+            let messages_textarea = document.getElementById("console");
+            messages_textarea.value = "";
+            let csound_ = await get_csound(csound_message_callback);
+            if (csound_ == null) {
+                return;
+            }
+            let seconds = await csound_.GetScoreTime();
+            csound_message_callback("Score time: " + seconds + "\n");
+            if (seconds > 0) {
+                csound_message_callback("Already playing...\n");
+                return;
+            }
+            csd = csd_editor.getValue();
+            console_editor.setValue("");
+            await csound_.CompileCsdText(csd);
+            await csound_.Start();
+            await csound_.Perform();
+        };
+        // Csound must be invoked from an async function because the 
+        // functions called herein are async but must be called with 
+        // await to enforce the correct order of execution.
+        var onPlayStop = async function () {
+            let csound_ = await get_csound(csound_message_callback);
+            let seconds = await csound_.GetScoreTime();
+            csound_message_callback("Score time: " + seconds + "\n");
+            if (seconds > 0) {
+                await csound_.Stop();
+                await csound_.Cleanup();
+                await csound_.Reset();
+            }
+        };
+    </script>
+    <h2>Csound Player</h2>
+    <p>
+        Any self-contained Csound piece (.csd file) can be performed by pasting it into the text area below, and
+        clicking on the <b>Play</b> button. Click on the <b>Stop</b> button to end the performance. The second text area
+        will show Csound's runtime messages. You can edit the .csd file in the text area, but you must select it all and
+        copy it out somewhere else in order to save it. For WebAudio, the .csd should set sr = 48000 and ksmps = 128.
+    </p>
+    <p>
+        <input id="play" type="button" value="Play" onclick="onPlayClick()">
+        <input id="stop" type="button" value="Stop" onclick="onPlayStop()">
+    </p>
+    <div id='csd' style="width:98vw;height:50vh;margin-top:10px;">
+    </div>
+    <div id='console' style="width:98vw;height:25vh;margin-top:10px;">
+    </div>
     <script>
         var csd_editor = ace.edit("csd");
         csd_editor.session.setMode("ace/mode/csound_document");
@@ -330,6 +340,5 @@ Any self-contained Csound piece (.csd file) can be performed by pasting it into 
         console_editor.setReadOnly(true);
     </script>
 </body>
+
 </html>
-
-

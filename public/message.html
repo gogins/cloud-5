@@ -1,150 +1,163 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+    <meta http-equiv='cache-control' content='no-cache'>
+    <meta http-equiv='expires' content='0'>
+    <meta http-equiv='pragma' content='no-cache'>
     <title>Message from Another Planet version 3</title>
     <style type="text/css">
-    input[type='range'] {
-        -webkit-appearance: none;
-        box-shadow: inset 0 0 5px #333;
-        background-color: gray;
-        height: 10px;
-        width: 100%;
-        vertical-align: middle;
-    }
-    input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        border: none;
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
-        box-shadow: inset 0 0 7px #234;
-        background: chartreuse;
-        margin-top: -4px;
-        border-radius: 10px;
-    }
-    table td {
-        border-width: 2px;
-        padding: 8px;
-        border-style: solid;
-        border-color: transparent;
-        color:yellow;
-        background-color: teal;
-        font-family: sans-serif
-    }
-    table th {
-        border-width: 2px;
-        padding: 8px;
-        border-style: solid;
-        border-color: transparent;
-        color:white;
-        background-color:teal;
-         font-family: sans-serif
-   }
-    textarea {
-        border-width: 2px;
-        padding: 8px;
-        border-style: solid;
-        border-color: transparent;
-        color:chartreuse;
-        background-color:black;
-        font-family: 'Courier', sans-serif
-    }
-    h1 {
-    margin: 1em 0 0.5em 0;
-    color: #343434;
-    font-weight: normal;
-    font-family: 'Ultra', sans-serif;   
-    font-size: 36px;
-    line-height: 42px;
-    text-transform: uppercase;
-    }
-    h2 {
-        margin: 1em 0 0.5em 0;
-        color: #343434;
-        font-weight: normal;
-        font-size: 30px;
-        line-height: 40px;
-        font-family: 'Orienta', sans-serif;
-    }    
+        input[type='range'] {
+            -webkit-appearance: none;
+            box-shadow: inset 0 0 5px #333;
+            background-color: gray;
+            height: 10px;
+            width: 100%;
+            vertical-align: middle;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            border: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 7px #234;
+            background: chartreuse;
+            margin-top: -4px;
+            border-radius: 10px;
+        }
+
+        table td {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: yellow;
+            background-color: teal;
+            font-family: sans-serif
+        }
+
+        table th {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: white;
+            background-color: teal;
+            font-family: sans-serif
+        }
+
+        textarea {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: chartreuse;
+            background-color: black;
+            font-family: 'Courier', sans-serif
+        }
+
+        h1 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-family: 'Ultra', sans-serif;
+            font-size: 36px;
+            line-height: 42px;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-size: 30px;
+            line-height: 40px;
+            font-family: 'Orienta', sans-serif;
+        }
+
         h3 {
-        margin: 1em 0 0.5em 0;
-        color: #343434;
-        font-weight: normal;
-        font-size:24px;
-        line-height: 30px;
-        font-family: 'Orienta', sans-serif;
-    }    
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-size: 24px;
+            line-height: 30px;
+            font-family: 'Orienta', sans-serif;
+        }
     </style>
     <script>
         function csound_message_callback(message) {
             var messages_textarea = document.getElementById("csound_console");
             var existing = messages_textarea.value;
             messages_textarea.value = existing + message;
-            messages_textarea.scrollTop = messages_textarea.scrollHeight;   
+            messages_textarea.scrollTop = messages_textarea.scrollHeight;
         };
     </script>
- </head>
+</head>
+
 <body style="background-color:CadetBlue">
     <script src="CsoundAudioNode.js"></script>
     <script src="csoundloader.js"></script>
     <h1>Message from Another Planet, version 3</h1>
     <h3>Adapted for Csound with HTML5 by Michael Gogins, from "Message from Another Planet" by Jacob Joaquin</h3>
     <form id='persist'>
-    <table>
-    <col width="2*">
-    <col width="5*">
-    <col width="100px">
-    <tr>
-    <td>
-    <label for=gk2_spread>Frequency spread factor</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=4 value=1 id=gk2_spread step=.001>
-    <td>
-    <output for=gk2_spread id=gk2_spread_output>1</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk2_bass_gain>Bass emphasis factor</label>
-    <td>
-    <input class=persistent-element type=range min=0.0001 max=1 value=.005 id=gk2_bass_gain step=.001>
-    <td>
-    <output for=gk2_bass_gain id=gk2_bass_gain_output>.005</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk_reverb_delay>Reverb delay feedback</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_reverb_delay step=.001>
-    <td>
-    <output for=gk_reverb_delay id=gk_reverb_delay_output>.89</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk_reverb_hipass>Reverb highpass cutoff (Hz)</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_reverb_hipass step=.001>
-    <td>
-    <output for=gk_reverb_hipass id=gk_reverb_hipass_output>12000</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk_master_level>Master output level (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_master_level step=.001>
-    <td>
-    <output for=gk_master_level id=gk_master_level_output>-6</output>
-    </tr>
-    </table>
+        <table>
+            <col width="2*">
+            <col width="5*">
+            <col width="100px">
+            <tr>
+                <td>
+                    <label for=gk2_spread>Frequency spread factor</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=4 value=1 id=gk2_spread step=.001>
+                <td>
+                    <output for=gk2_spread id=gk2_spread_output>1</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=gk2_bass_gain>Bass emphasis factor</label>
+                <td>
+                    <input class=persistent-element type=range min=0.0001 max=1 value=.005 id=gk2_bass_gain step=.001>
+                <td>
+                    <output for=gk2_bass_gain id=gk2_bass_gain_output>.005</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=gk_reverb_delay>Reverb delay feedback</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_reverb_delay step=.001>
+                <td>
+                    <output for=gk_reverb_delay id=gk_reverb_delay_output>.89</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=gk_reverb_hipass>Reverb highpass cutoff (Hz)</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_reverb_hipass
+                        step=.001>
+                <td>
+                    <output for=gk_reverb_hipass id=gk_reverb_hipass_output>12000</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=gk_master_level>Master output level (dB)</label>
+                <td>
+                    <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_master_level step=.001>
+                <td>
+                    <output for=gk_master_level id=gk_master_level_output>-6</output>
+            </tr>
+        </table>
+        <p>
+            <input type="button" id="play" value="Play" />
+            <input type="button" id="stop" value="Stop" />
+            <input type="button" id='save' value="Save" />
+            <input type="button" id='restore' value="Restore" />
+    </form>
     <p>
-    <input type="button" id="play" value="Play" />
-    <input type="button" id="stop" value="Stop" />
-    <input type="button" id='save' value="Save" />
-    <input type="button" id='restore' value="Restore" />
-    </form>   
-    <p>
-    <textarea id='csound_console' cols=80 rows=25>
+        <textarea id='csound_console' cols=80 rows=25>
     </textarea>
-    <textarea id='csd' cols=80 rows=25 style="visibility:hidden;">
+        <textarea id='csd' cols=80 rows=25 style="visibility:hidden;">
 <CsoundSynthesizer>
 <CsLicense>
 Message From Another Planet (v2)  (Spring 1999, Fall 2017)
@@ -249,47 +262,48 @@ i 2    0    .      500     .       16         1.00
 </CsScore>
 </CsoundSynthesizer>
 </textarea>
-<script src="jquery.js">
-</script>
-<script>    
-$(document).ready(function() {
-    $('input').on('input', async function(event) {
-        let csound_ = await get_csound(csound_message_callback);
-        var slider_value = parseFloat(event.target.value);
-        csound_.SetControlChannel(event.target.id, slider_value);
-        var output_selector = '#' + event.target.id + '_output';
-        $(output_selector).val(slider_value);
-    });
-    $('#play').on('click', async function() {
-        let csound_ = await get_csound(csound_message_callback);
-        document.getElementById("csound_console").value = "";
-        var csd = document.getElementById('csd').value;
-        await csound_.CompileCsdText(csd);
-        $('#restore').trigger('click');
-        await csound_.Start();
-        await csound_.Perform();
-    });
-    $('#stop').on('click', async function() {
-        let csound_ = await get_csound(csound_message_callback);
-        await csound_.Stop();
-        await csound_.Cleanup();
-        csound_.Reset();
-    });
-    $('#save').on('click', function() {
-        $('.persistent-element').each(function() {
-            localStorage.setItem(this.id, this.value);
-        });
-    });
-    $('#restore').on('click', async function() {
-        let csound_ = await get_csound(csound_message_callback);
-        $('.persistent-element').each(function() {
-            this.value = localStorage.getItem(this.id);
-            csound_.SetControlChannel(this.id, parseFloat(this.value));
-            var output_selector = '#' + this.id + '_output';
-            $(output_selector).val(this.value);
-        });
-    });
-});
-</script>
+        <script src="jquery.js">
+        </script>
+        <script>
+            $(document).ready(function () {
+                $('input').on('input', async function (event) {
+                    let csound_ = await get_csound(csound_message_callback);
+                    var slider_value = parseFloat(event.target.value);
+                    csound_.SetControlChannel(event.target.id, slider_value);
+                    var output_selector = '#' + event.target.id + '_output';
+                    $(output_selector).val(slider_value);
+                });
+                $('#play').on('click', async function () {
+                    let csound_ = await get_csound(csound_message_callback);
+                    document.getElementById("csound_console").value = "";
+                    var csd = document.getElementById('csd').value;
+                    await csound_.CompileCsdText(csd);
+                    $('#restore').trigger('click');
+                    await csound_.Start();
+                    await csound_.Perform();
+                });
+                $('#stop').on('click', async function () {
+                    let csound_ = await get_csound(csound_message_callback);
+                    await csound_.Stop();
+                    await csound_.Cleanup();
+                    csound_.Reset();
+                });
+                $('#save').on('click', function () {
+                    $('.persistent-element').each(function () {
+                        localStorage.setItem(this.id, this.value);
+                    });
+                });
+                $('#restore').on('click', async function () {
+                    let csound_ = await get_csound(csound_message_callback);
+                    $('.persistent-element').each(function () {
+                        this.value = localStorage.getItem(this.id);
+                        csound_.SetControlChannel(this.id, parseFloat(this.value));
+                        var output_selector = '#' + this.id + '_output';
+                        $(output_selector).val(this.value);
+                    });
+                });
+            });
+        </script>
 </body>
+
 </html>

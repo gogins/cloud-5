@@ -83,6 +83,7 @@ cloud5-log {
 
 cloud5-strudel,
 cloud5-about {
+  isolation: isolate;
   position: relative;
   top: 0;
   left: 0;
@@ -165,6 +166,11 @@ cloud5-piano-roll {
 
 .dg .c {
     background: transparent;
+}
+
+.dg.main {
+  isolation: isolate;
+  z-index: 3000;
 }
 
 .dg.main .close-button {

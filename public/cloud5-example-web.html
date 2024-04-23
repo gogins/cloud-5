@@ -2,6 +2,9 @@
 <html>
 
 <head>
+    <meta http-equiv='cache-control' content='no-cache'>
+    <meta http-equiv='expires' content='0'>
+    <meta http-equiv='pragma' content='no-cache'>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="dat.gui.js"></script>
@@ -2310,7 +2313,7 @@
             fragColor = vec4(col, 1.0);
         }
         `,
-            set_uniforms_function_addon: (function() {
+            set_uniforms_function_addon: (function () {
                 if (this.analyser) {
                     let spectral_tilt = 0;
                     let total_loudness = 0;

@@ -1,38 +1,44 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Cloud Music No. 3</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="dat.gui.js"></script>
-<script src="jquery.js"></script>
-<script src="p5.js"></script>
-<script src="sprintf.js"></script>
-<script src="three.js"></script>
-<script src="ace.js"></script>
-<script src="tinycolor.js"></script>
-<script src="CsoundAudioNode.js"></script>
-<script src="CsoundAC.js"></script>
-<link rel="stylesheet" href="w3.css">
-<link rel="icon" href="data:,">
-<style>
-.w3-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-.w3-bar {
-  z-index: 1;
-}
-</style>
+    <meta http-equiv='cache-control' content='no-cache'>
+    <meta http-equiv='expires' content='0'>
+    <meta http-equiv='pragma' content='no-cache'>
+    <title>Cloud Music No. 3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="dat.gui.js"></script>
+    <script src="jquery.js"></script>
+    <script src="p5.js"></script>
+    <script src="sprintf.js"></script>
+    <script src="three.js"></script>
+    <script src="ace.js"></script>
+    <script src="tinycolor.js"></script>
+    <script src="CsoundAudioNode.js"></script>
+    <script src="CsoundAC.js"></script>
+    <link rel="stylesheet" href="w3.css">
+    <link rel="icon" href="data:,">
+    <style>
+        .w3-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .w3-bar {
+            z-index: 1;
+        }
+    </style>
 </head>
+
 <body id="body" class="w3-medium w3-text-black" style="height:100vh;">
     <script>
         if ('caches' in window) {
-            caches.keys().then(function(names) {
-            for (let name of names)
-                caches.delete(name);
+            caches.keys().then(function (names) {
+                for (let name of names)
+                    caches.delete(name);
                 console.log(`deleted ${name} from caches.`);
             });
         }
@@ -50,8 +56,8 @@
     all events from the user interface. Most of this code requires little or 
     no change when writing a new piece.
 ------------------------------------------------------------------------->
-    <div class="w3-bar " style="position:fixed;background:transparent;">    
-        <ul class = "menu">
+    <div class="w3-bar " style="position:fixed;background:transparent;">
+        <ul class="menu">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
             <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
@@ -62,174 +68,193 @@
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
     <div id="controls_view" class="w3-container " style="position:absolute;top:70px;z-index:2;background:transparent;">
-    <form id='persist'>
-    <table>
-    <col width="2*">
-    <col width="5*">
-    <col width="100px">
-    
-    <tr>
-    <td>
-    <label for=gi_Composition_tempo>Tempo (notes/minute)</label>
-    <td>
-    <input class=persistent-element type=range min=2 max=480 value=20 id=gi_Composition_tempo step=.001>
-    <td>
-    <output for=gi_Composition_tempo id=gi_Composition_tempo_output>20</output>
-    </tr>
-    
-    <tr>
-    <td>
-    <label for=gi_Composition_density>Density of notes (minimum MIDI velocity)</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=127 value=110 id=gi_Composition_density step=.001>
-    <td>
-    <output for=gi_Composition_density id=gi_Composition_density_output>110</output>
-    </tr>
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_YiString_level>YiString level</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=2 id=gk_YiString_level step=.001>
-    <td>
-    <output for=gk_YiString_level id=gk_YiString_level_output>2</output>
-    </tr>
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=1 value=.93 id=gk_ReverbSC_feedback step=.001>
-    <td>
-    <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.93</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=20000 value=7000 id=gk_ReverbSC_frequency_cutoff step=.001>
-    <td>
-    <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>7000</output>
-    </tr>
-    <tr>
-    <td>
-    <label for=gi_ReverbSC_delay_modulation>Reverb delay modulation</label>
-    <td>
-    <input class=persistent-element type=range min=0 max=2 value=.05 id=gi_ReverbSC_delay_modulation step=.001>
-    <td>
-    <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
-    </tr>
-    
-    <tr style="height:1em;"></tr>    
-    <tr>
-    <td>
-    <label for=gk_MasterOutput_level>Master output level (dB)</label>
-    <td>
-    <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_MasterOutput_level step=.001>
-    <td>
-    <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>0</output>
-    </tr>
-    </table>
-    <p>
-    <input type="button" id='save' value="Save" class="w3-btn w3-hover-text-light-green"/>
-    <input type="button" id='restore' value="Restore" class="w3-btn w3-hover-text-light-green"/>
-    <input type="button" id='copy' value="Copy" class="w3-btn w3-hover-text-light-green"/>
-    <input type="button" id='paste' value="Paste" class="w3-btn w3-hover-text-light-green"/>
-    <input type="button" id='default' value="Defaults" class="w3-btn w3-hover-text-light-green"/>
-    </form>   
+        <form id='persist'>
+            <table>
+                <col width="2*">
+                <col width="5*">
+                <col width="100px">
+
+                <tr>
+                    <td>
+                        <label for=gi_Composition_tempo>Tempo (notes/minute)</label>
+                    <td>
+                        <input class=persistent-element type=range min=2 max=480 value=20 id=gi_Composition_tempo
+                            step=.001>
+                    <td>
+                        <output for=gi_Composition_tempo id=gi_Composition_tempo_output>20</output>
+                </tr>
+
+                <tr>
+                    <td>
+                        <label for=gi_Composition_density>Density of notes (minimum MIDI velocity)</label>
+                    <td>
+                        <input class=persistent-element type=range min=0 max=127 value=110 id=gi_Composition_density
+                            step=.001>
+                    <td>
+                        <output for=gi_Composition_density id=gi_Composition_density_output>110</output>
+                </tr>
+
+                <tr style="height:1em;"></tr>
+                <tr>
+                    <td>
+                        <label for=gk_YiString_level>YiString level</label>
+                    <td>
+                        <input class=persistent-element type=range min=-40 max=40 value=2 id=gk_YiString_level
+                            step=.001>
+                    <td>
+                        <output for=gk_YiString_level id=gk_YiString_level_output>2</output>
+                </tr>
+
+                <tr style="height:1em;"></tr>
+                <tr>
+                    <td>
+                        <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
+                    <td>
+                        <input class=persistent-element type=range min=0 max=1 value=.93 id=gk_ReverbSC_feedback
+                            step=.001>
+                    <td>
+                        <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.93</output>
+                </tr>
+                <tr>
+                    <td>
+                        <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
+                    <td>
+                        <input class=persistent-element type=range min=0 max=20000 value=7000
+                            id=gk_ReverbSC_frequency_cutoff step=.001>
+                    <td>
+                        <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>7000</output>
+                </tr>
+                <tr>
+                    <td>
+                        <label for=gi_ReverbSC_delay_modulation>Reverb delay modulation</label>
+                    <td>
+                        <input class=persistent-element type=range min=0 max=2 value=.05 id=gi_ReverbSC_delay_modulation
+                            step=.001>
+                    <td>
+                        <output for=gi_ReverbSC_delay_modulation id=gi_ReverbSC_delay_modulation_output>.05</output>
+                </tr>
+
+                <tr style="height:1em;"></tr>
+                <tr>
+                    <td>
+                        <label for=gk_MasterOutput_level>Master output level (dB)</label>
+                    <td>
+                        <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_MasterOutput_level
+                            step=.001>
+                    <td>
+                        <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>0</output>
+                </tr>
+            </table>
+            <p>
+                <input type="button" id='save' value="Save" class="w3-btn w3-hover-text-light-green" />
+                <input type="button" id='restore' value="Restore" class="w3-btn w3-hover-text-light-green" />
+                <input type="button" id='copy' value="Copy" class="w3-btn w3-hover-text-light-green" />
+                <input type="button" id='paste' value="Paste" class="w3-btn w3-hover-text-light-green" />
+                <input type="button" id='default' value="Defaults" class="w3-btn w3-hover-text-light-green" />
+        </form>
     </div>
-    <div id='console_view' style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color:black;margin-left:53px;">
+    <div id='console_view'
+        style="position:absolute;top:70px;z-index:4;width:100vw;height:90vh;background:transparent;color:black;margin-left:53px;">
     </div>
-    <div id="about_view" class="w3-container " style="position:absolute;top:70px;z-index:5;background:transparent;max-height: calc(100vh - 70px);overflow-y:auto;">
-<h1>Cloud Music No. 3</h1>
-<h3>Michael Gogins<br>
-October 2022</h3>
+    <div id="about_view" class="w3-container "
+        style="position:absolute;top:70px;z-index:5;background:transparent;max-height: calc(100vh - 70px);overflow-y:auto;">
+        <h1>Cloud Music No. 3</h1>
+        <h3>Michael Gogins<br>
+            October 2022</h3>
 
-<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License"
+                style="border-width:0;" src="https://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a>
+        <p>This work is licensed under a <a rel="license"
+                href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons
+                Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-<p>This is an online piece of electroacoustic music, rendered in your Web 
-browser using high-resolution audio. It will play indefinitely, never ending, 
-always changing. 
+        <p>This is an online piece of electroacoustic music, rendered in your Web
+            browser using high-resolution audio. It will play indefinitely, never ending,
+            always changing.
 
-<p>The notes are played by a Csound orchestra that is embedded in this Web 
-page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly 
-build of Csound</a>. This in turn includes my 
-<a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for 
-algorithmic composition, used in this piece to generate randomly selected 
-but (I hope) musically sensible chord progressions and modulations that are 
-applied to the generated notes.
+        <p>The notes are played by a Csound orchestra that is embedded in this Web
+            page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly
+                build of Csound</a>. This in turn includes my
+            <a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for
+            algorithmic composition, used in this piece to generate randomly selected
+            but (I hope) musically sensible chord progressions and modulations that are
+            applied to the generated notes.
 
-<p>The music is generated by sampling the bottom row of pixels from the moving 
-image, downsampling that row into fewer pixels, and translating those pixels 
-into musical notes from left (lowest) to right (highest). Hue is mapped to 
-instrument, saturation is mapped to duration, and value is mapped to loudness.
+        <p>The music is generated by sampling the bottom row of pixels from the moving
+            image, downsampling that row into fewer pixels, and translating those pixels
+            into musical notes from left (lowest) to right (highest). Hue is mapped to
+            instrument, saturation is mapped to duration, and value is mapped to loudness.
 
-<p>Feel free to use this piece as a template for creating new pieces of this 
-type... as long as it doesn't sound too much like this one!
+        <p>Feel free to use this piece as a template for creating new pieces of this
+            type... as long as it doesn't sound too much like this one!
 
-<p>Please report any problems you have playing this piece, or any ideas for 
-enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
-cloud-music issues</a>.
+        <p>Please report any problems you have playing this piece, or any ideas for
+            enhancements, at <a href="https://github.com/gogins/cloud-music/issues">
+                cloud-music issues</a>.
 
-<ul>
-<li>To view the source code of this piece, use your browser menu to view the 
-page source.
-<li>To inspect or debug the code of this piece as it runs, use your browser 
-menu to open the developer tools.
-</ul>
+        <ul>
+            <li>To view the source code of this piece, use your browser menu to view the
+                page source.
+            <li>To inspect or debug the code of this piece as it runs, use your browser
+                menu to open the developer tools.
+        </ul>
 
-<h2>Credits</h2>
+        <h2>Credits</h2>
 
-<p>I created this piece by adapting Xor's 
-<a href="https://www.shadertoy.com/view/dslGz8"><i>Sierpinski (155 chars)</i></a>, 
-which has an open-source license compatible with the license of this piece. 
+        <p>I created this piece by adapting Xor's
+            <a href="https://www.shadertoy.com/view/dslGz8"><i>Sierpinski (155 chars)</i></a>,
+            which has an open-source license compatible with the license of this piece.
 
-<p>My code in CsoundAC for working with chords, scales, and voice-leading 
-implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri 
-Tymoczko's work in music theory</a>.
+        <p>My code in CsoundAC for working with chords, scales, and voice-leading
+            implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri
+                Tymoczko's work in music theory</a>.
 
-<p>Code for compiling and controlling shaders is adapted from 
-<a href="https://www.shadertoy.com">ShaderToy.com</a>.
+        <p>Code for compiling and controlling shaders is adapted from
+            <a href="https://www.shadertoy.com">ShaderToy.com</a>.
 
-<p>The algorithm for downsampling the video canvas is from 
-<a href="https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf">Sveinn 
-Steinarsson's MS thesis</a> with code from 
-<a href="https://github.com/pingec/downsample-lttb">https://github.com/pingec/downsample-lttb</a>.
+        <p>The algorithm for downsampling the video canvas is from
+            <a href="https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf">Sveinn
+                Steinarsson's MS thesis</a> with code from
+            <a href="https://github.com/pingec/downsample-lttb">https://github.com/pingec/downsample-lttb</a>.
 
-<p>The Csound instrument is adapted from <a href="https://kunstmusik.com/">Steven 
-Yi</a> (YiString).
+        <p>The Csound instrument is adapted from <a href="https://kunstmusik.com/">Steven
+                Yi</a> (YiString).
 
-<p>
+        <p>
 
-<a href="http://michaelgogins.tumblr.com">
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-     width="36" height="36" viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
-<g>
-    <g>
-        <g>
-            <rect x="0.24" y="0.167" fill="#314358" width="255.52" height="256"/>
-        </g>
-    </g>
-    <g>
-        <path fill="#FFFFFF" d="M168.08,170.918c-2.969,1.416-8.647,2.648-12.881,2.754c-12.783,0.342-15.264-8.979-15.367-15.736v-49.705
+            <a href="http://michaelgogins.tumblr.com">
+                <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+                <svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="36" height="36"
+                    viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
+                    <g>
+                        <g>
+                            <g>
+                                <rect x="0.24" y="0.167" fill="#314358" width="255.52" height="256" />
+                            </g>
+                        </g>
+                        <g>
+                            <path fill="#FFFFFF"
+                                d="M168.08,170.918c-2.969,1.416-8.647,2.648-12.881,2.754c-12.783,0.342-15.264-8.979-15.367-15.736v-49.705
             h32.065V84.055h-31.954V43.382c0,0-23.008,0-23.383,0c-0.385,0-1.057,0.337-1.152,1.192c-1.368,12.448-7.192,34.296-31.416,43.032
-            v20.624h16.16v52.167c0,17.863,13.176,43.24,47.959,42.641c11.736-0.201,24.77-5.113,27.648-9.354L168.08,170.918"/>
-    </g>
-</g>
-</svg></a>
+            v20.624h16.16v52.167c0,17.863,13.176,43.24,47.959,42.641c11.736-0.201,24.77-5.113,27.648-9.354L168.08,170.918" />
+                        </g>
+                    </g>
+                </svg>
+            </a>
 
-<a href="https://github.com/gogins">
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-     width="36" height="36" viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
-        <g>
-            <path d="M128.00106,0 C57.3172926,0 0,57.3066942 0,128.00106 C0,184.555281 36.6761997,232.535542 87.534937,249.460899 C93.9320223,250.645779 96.280588,246.684165 96.280588,243.303333 C96.280588,240.251045 96.1618878,230.167899 96.106777,219.472176 C60.4967585,227.215235 52.9826207,204.369712 52.9826207,204.369712 C47.1599584,189.574598 38.770408,185.640538 38.770408,185.640538 C27.1568785,177.696113 39.6458206,177.859325 39.6458206,177.859325 C52.4993419,178.762293 59.267365,191.04987 59.267365,191.04987 C70.6837675,210.618423 89.2115753,204.961093 96.5158685,201.690482 C97.6647155,193.417512 100.981959,187.77078 104.642583,184.574357 C76.211799,181.33766 46.324819,170.362144 46.324819,121.315702 C46.324819,107.340889 51.3250588,95.9223682 59.5132437,86.9583937 C58.1842268,83.7344152 53.8029229,70.715562 60.7532354,53.0843636 C60.7532354,53.0843636 71.5019501,49.6441813 95.9626412,66.2049595 C106.172967,63.368876 117.123047,61.9465949 128.00106,61.8978432 C138.879073,61.9465949 149.837632,63.368876 160.067033,66.2049595 C184.49805,49.6441813 195.231926,53.0843636 195.231926,53.0843636 C202.199197,70.715562 197.815773,83.7344152 196.486756,86.9583937 C204.694018,95.9223682 209.660343,107.340889 209.660343,121.315702 C209.660343,170.478725 179.716133,181.303747 151.213281,184.472614 C155.80443,188.444828 159.895342,196.234518 159.895342,208.176593 C159.895342,225.303317 159.746968,239.087361 159.746968,243.303333 C159.746968,246.709601 162.05102,250.70089 168.53925,249.443941 C219.370432,232.499507 256,184.536204 256,128.00106 C256,57.3066942 198.691187,0 128.00106,0 Z M47.9405593,182.340212 C47.6586465,182.976105 46.6581745,183.166873 45.7467277,182.730227 C44.8183235,182.312656 44.2968914,181.445722 44.5978808,180.80771 C44.8734344,180.152739 45.876026,179.97045 46.8023103,180.409216 C47.7328342,180.826786 48.2627451,181.702199 47.9405593,182.340212 Z M54.2367892,187.958254 C53.6263318,188.524199 52.4329723,188.261363 51.6232682,187.366874 C50.7860088,186.474504 50.6291553,185.281144 51.2480912,184.70672 C51.8776254,184.140775 53.0349512,184.405731 53.8743302,185.298101 C54.7115892,186.201069 54.8748019,187.38595 54.2367892,187.958254 Z M58.5562413,195.146347 C57.7719732,195.691096 56.4895886,195.180261 55.6968417,194.042013 C54.9125733,192.903764 54.9125733,191.538713 55.713799,190.991845 C56.5086651,190.444977 57.7719732,190.936735 58.5753181,192.066505 C59.3574669,193.22383 59.3574669,194.58888 58.5562413,195.146347 Z M65.8613592,203.471174 C65.1597571,204.244846 63.6654083,204.03712 62.5716717,202.981538 C61.4524999,201.94927 61.1409122,200.484596 61.8446341,199.710926 C62.5547146,198.935137 64.0575422,199.15346 65.1597571,200.200564 C66.2704506,201.230712 66.6095936,202.705984 65.8613592,203.471174 Z M75.3025151,206.281542 C74.9930474,207.284134 73.553809,207.739857 72.1039724,207.313809 C70.6562556,206.875043 69.7087748,205.700761 70.0012857,204.687571 C70.302275,203.678621 71.7478721,203.20382 73.2083069,203.659543 C74.6539041,204.09619 75.6035048,205.261994 75.3025151,206.281542 Z M86.046947,207.473627 C86.0829806,208.529209 84.8535871,209.404622 83.3316829,209.4237 C81.8013,209.457614 80.563428,208.603398 80.5464708,207.564772 C80.5464708,206.498591 81.7483088,205.631657 83.2786917,205.606221 C84.8005962,205.576546 86.046947,206.424403 86.046947,207.473627 Z M96.6021471,207.069023 C96.7844366,208.099171 95.7267341,209.156872 94.215428,209.438785 C92.7295577,209.710099 91.3539086,209.074206 91.1652603,208.052538 C90.9808515,206.996955 92.0576306,205.939253 93.5413813,205.66582 C95.054807,205.402984 96.4092596,206.021919 96.6021471,207.069023 Z" fill="#161614"></path>
-        </g>
-    </svg>
-</a>
+            <a href="https://github.com/gogins">
+                <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+                <svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="36" height="36"
+                    viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
+                    <g>
+                        <path
+                            d="M128.00106,0 C57.3172926,0 0,57.3066942 0,128.00106 C0,184.555281 36.6761997,232.535542 87.534937,249.460899 C93.9320223,250.645779 96.280588,246.684165 96.280588,243.303333 C96.280588,240.251045 96.1618878,230.167899 96.106777,219.472176 C60.4967585,227.215235 52.9826207,204.369712 52.9826207,204.369712 C47.1599584,189.574598 38.770408,185.640538 38.770408,185.640538 C27.1568785,177.696113 39.6458206,177.859325 39.6458206,177.859325 C52.4993419,178.762293 59.267365,191.04987 59.267365,191.04987 C70.6837675,210.618423 89.2115753,204.961093 96.5158685,201.690482 C97.6647155,193.417512 100.981959,187.77078 104.642583,184.574357 C76.211799,181.33766 46.324819,170.362144 46.324819,121.315702 C46.324819,107.340889 51.3250588,95.9223682 59.5132437,86.9583937 C58.1842268,83.7344152 53.8029229,70.715562 60.7532354,53.0843636 C60.7532354,53.0843636 71.5019501,49.6441813 95.9626412,66.2049595 C106.172967,63.368876 117.123047,61.9465949 128.00106,61.8978432 C138.879073,61.9465949 149.837632,63.368876 160.067033,66.2049595 C184.49805,49.6441813 195.231926,53.0843636 195.231926,53.0843636 C202.199197,70.715562 197.815773,83.7344152 196.486756,86.9583937 C204.694018,95.9223682 209.660343,107.340889 209.660343,121.315702 C209.660343,170.478725 179.716133,181.303747 151.213281,184.472614 C155.80443,188.444828 159.895342,196.234518 159.895342,208.176593 C159.895342,225.303317 159.746968,239.087361 159.746968,243.303333 C159.746968,246.709601 162.05102,250.70089 168.53925,249.443941 C219.370432,232.499507 256,184.536204 256,128.00106 C256,57.3066942 198.691187,0 128.00106,0 Z M47.9405593,182.340212 C47.6586465,182.976105 46.6581745,183.166873 45.7467277,182.730227 C44.8183235,182.312656 44.2968914,181.445722 44.5978808,180.80771 C44.8734344,180.152739 45.876026,179.97045 46.8023103,180.409216 C47.7328342,180.826786 48.2627451,181.702199 47.9405593,182.340212 Z M54.2367892,187.958254 C53.6263318,188.524199 52.4329723,188.261363 51.6232682,187.366874 C50.7860088,186.474504 50.6291553,185.281144 51.2480912,184.70672 C51.8776254,184.140775 53.0349512,184.405731 53.8743302,185.298101 C54.7115892,186.201069 54.8748019,187.38595 54.2367892,187.958254 Z M58.5562413,195.146347 C57.7719732,195.691096 56.4895886,195.180261 55.6968417,194.042013 C54.9125733,192.903764 54.9125733,191.538713 55.713799,190.991845 C56.5086651,190.444977 57.7719732,190.936735 58.5753181,192.066505 C59.3574669,193.22383 59.3574669,194.58888 58.5562413,195.146347 Z M65.8613592,203.471174 C65.1597571,204.244846 63.6654083,204.03712 62.5716717,202.981538 C61.4524999,201.94927 61.1409122,200.484596 61.8446341,199.710926 C62.5547146,198.935137 64.0575422,199.15346 65.1597571,200.200564 C66.2704506,201.230712 66.6095936,202.705984 65.8613592,203.471174 Z M75.3025151,206.281542 C74.9930474,207.284134 73.553809,207.739857 72.1039724,207.313809 C70.6562556,206.875043 69.7087748,205.700761 70.0012857,204.687571 C70.302275,203.678621 71.7478721,203.20382 73.2083069,203.659543 C74.6539041,204.09619 75.6035048,205.261994 75.3025151,206.281542 Z M86.046947,207.473627 C86.0829806,208.529209 84.8535871,209.404622 83.3316829,209.4237 C81.8013,209.457614 80.563428,208.603398 80.5464708,207.564772 C80.5464708,206.498591 81.7483088,205.631657 83.2786917,205.606221 C84.8005962,205.576546 86.046947,206.424403 86.046947,207.473627 Z M96.6021471,207.069023 C96.7844366,208.099171 95.7267341,209.156872 94.215428,209.438785 C92.7295577,209.710099 91.3539086,209.074206 91.1652603,208.052538 C90.9808515,206.996955 92.0576306,205.939253 93.5413813,205.66582 C95.054807,205.402984 96.4092596,206.021919 96.6021471,207.069023 Z"
+                            fill="#161614"></path>
+                    </g>
+                </svg>
+            </a>
 
     </div>
 
@@ -403,7 +428,7 @@ endin
 </CsoundSynthesizer>
 
     </textarea>
-    
+
     <script id="draw-shader-fs" type="x-shader/x-fragment">#version 300 es
         #line 1160
         precision highp float;
@@ -497,14 +522,14 @@ void mainImage(out vec4 O, vec2 I)
             gl_Position = vec4(inPos.xy, 0.0, 1.0);
         }
     </script>
-    
-    <script> 
-        
+
+    <script>
+
         var shader_program = null;
         var analyser = null;
         // Set up for high-resolution displays.
         var devicePixelRatio_ = window.devicePixelRatio || 1
-        var canvas = document.getElementById( "display");
+        var canvas = document.getElementById("display");
         canvas.width = canvas.clientWidth * devicePixelRatio_;
         canvas.height = canvas.clientHeight * devicePixelRatio_;
         console.log("canvas.height: " + canvas.height);
@@ -537,19 +562,19 @@ void mainImage(out vec4 O, vec2 I)
         var time_domain_data = new Uint8Array(audio_texture_width * 2);
         var audio_data = new Float32Array(audio_texture_width * 2);
         var image_sample_buffer = new Uint8ClampedArray();
-        
+
         var channel0_texture_unit = 0;
         var channel0_texture = gl.createTexture();
         channel0_texture.name = "channel0_texture";
         var channel0_sampler = gl.createSampler();
         channel0_sampler.name - "channel0_sampler";
- 
+
         var current_events = new Map();
         var prior_events = current_events;
         var rendering_frame = 0;
-        
+
         function write_audio_texture(analyser, texture_unit, texture, sampler) {
-           if (analyser != null) {
+            if (analyser != null) {
                 analyser.getByteFrequencyData(frequency_domain_data);
                 analyser.getByteTimeDomainData(time_domain_data);
                 for (let i = 0; i < audio_texture_width; ++i) {
@@ -557,7 +582,7 @@ void mainImage(out vec4 O, vec2 I)
                     let sample = frequency_domain_data[i];
                     sample = sample / 255.;
                     audio_data[i] = sample;
-                 }
+                }
                 let audio_data_width = audio_texture_width * 2;
                 for (let j = 0; j < audio_texture_width; ++j) {
                     // Map time domain amplitudes to [-1, 1].
@@ -569,7 +594,7 @@ void mainImage(out vec4 O, vec2 I)
             gl.activeTexture(gl.TEXTURE0 + texture_unit);
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.bindSampler(texture_unit, sampler);
-            gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat,audio_texture_srcType, audio_data);
+            gl.texImage2D(gl.TEXTURE_2D, audio_texture_level, audio_texture_internalFormat, audio_texture_width, audio_texture_height, audio_texture_border, audio_texture_srcFormat, audio_texture_srcType, audio_data);
             gl.samplerParameteri(sampler, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
             gl.samplerParameteri(sampler, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
             gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -609,8 +634,8 @@ void mainImage(out vec4 O, vec2 I)
                 //console.log("time domain: \n" + data.slice(512));
                 gl.deleteFramebuffer(debug_framebuffer);
             }
-         }
-        
+        }
+
         (function load_scene() {
             var webgl_viewport_size;
             var webgl_buffers = {};
@@ -621,8 +646,8 @@ void mainImage(out vec4 O, vec2 I)
                 });
                 shader_program = gl.createProgram();
                 for (let i = 0; i < 2; ++i) {
-                    let shader_code = document.getElementById(i==0 ? "draw-shader-vs" : "draw-shader-fs").text;
-                    let shader_object = gl.createShader(i==0 ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER);
+                    let shader_code = document.getElementById(i == 0 ? "draw-shader-vs" : "draw-shader-fs").text;
+                    let shader_object = gl.createShader(i == 0 ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER);
                     gl.shaderSource(shader_object, shader_code);
                     gl.compileShader(shader_object);
                     let status = gl.getShaderParameter(shader_object, gl.COMPILE_STATUS);
@@ -649,22 +674,22 @@ void mainImage(out vec4 O, vec2 I)
                 shader_program.iChannel3 = gl.getUniformLocation(shader_program, "iChannel3");
                 shader_program.iSampleRate = gl.getUniformLocation(shader_program, "iSampleRate");
                 gl.useProgram(shader_program);
-               
+
                 gl.uniform1f(shader_program.iSampleRate, 48000.);
-                var pos = [ -1, -1, 
-                             1, -1, 
-                             1,  1, 
-                            -1,  1 ];
-                var inx = [ 0, 1, 2, 0, 2, 3 ];
+                var pos = [-1, -1,
+                    1, -1,
+                    1, 1,
+                -1, 1];
+                var inx = [0, 1, 2, 0, 2, 3];
                 webgl_buffers.pos = gl.createBuffer();
-                gl.bindBuffer( gl.ARRAY_BUFFER, webgl_buffers.pos );
-                gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( pos ), gl.STATIC_DRAW);
+                gl.bindBuffer(gl.ARRAY_BUFFER, webgl_buffers.pos);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);
                 webgl_buffers.inx = gl.createBuffer();
                 webgl_buffers.inx.len = inx.length;
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_buffers.inx );
-                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( inx ), gl.STATIC_DRAW);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_buffers.inx);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inx), gl.STATIC_DRAW);
                 gl.enableVertexAttribArray(shader_program.inPos);
-                gl.vertexAttribPointer(shader_program.inPos, 2, gl.FLOAT, false, 0, 0); 
+                gl.vertexAttribPointer(shader_program.inPos, 2, gl.FLOAT, false, 0, 0);
                 gl.enable(gl.DEPTH_TEST);
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
@@ -681,7 +706,7 @@ void mainImage(out vec4 O, vec2 I)
                 prior_image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
                 console.info("resize: image_sample_buffer.length: " + image_sample_buffer.length);
             }
-            
+
             function clientWaitAsync(sync, flags, interval_ms) {
                 return new Promise((resolve, reject) => {
                     function test() {
@@ -711,15 +736,15 @@ void mainImage(out vec4 O, vec2 I)
                 gl.bindBuffer(target, buffer);
                 gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
                 gl.bindBuffer(target, null);
-             }
-            
+            }
+
             /**
              * Converts an RGB color value to HSV. The formula is 
              * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
              * Assumes r, g, and b are in [0, 255] and
              * returns h, s, and v are in [0, 1].
              */
-            var rgb_to_hsv = function(rgb){
+            var rgb_to_hsv = function (rgb) {
                 r = rgb[0] / 255;
                 g = rgb[1] / 255;
                 b = rgb[2] / 255;
@@ -728,11 +753,11 @@ void mainImage(out vec4 O, vec2 I)
                 var h, s, v = max;
                 var d = max - min;
                 s = max === 0 ? 0 : d / max;
-                if (max == min){
+                if (max == min) {
                     h = 0;
                 } else {
                     // More efficient than switch?
-                    if        (max == r) {
+                    if (max == r) {
                         h = (g - b) / d + (g < b ? 6 : 0);
                     } else if (max == g) {
                         h = (b - r) / d + 2;
@@ -752,8 +777,8 @@ void mainImage(out vec4 O, vec2 I)
                 gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
                 await getBufferSubDataAsync(gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
                 gl.deleteBuffer(buffer);
-            }   
-            
+            }
+
             /**
              * Adapts https://github.com/pingec/downsample-lttb from time 
              * series data to vectors of float HSV pixels. Our data is not 
@@ -779,31 +804,31 @@ void mainImage(out vec4 O, vec2 I)
                     // Calculate point average for next bucket (containing c)
                     let avg_x = 0,
                         avg_y = 0,
-                        avg_range_start  = Math.floor( ( i + 1 ) * bucket_size ) + 1,
-                        avg_range_end    = Math.floor( ( i + 2 ) * bucket_size ) + 1;
+                        avg_range_start = Math.floor((i + 1) * bucket_size) + 1,
+                        avg_range_end = Math.floor((i + 2) * bucket_size) + 1;
                     avg_range_end = avg_range_end < data.length ? avg_range_end : data.length;
                     let avg_range_length = avg_range_end - avg_range_start;
-                    for ( ; avg_range_start<avg_range_end; avg_range_start++ ) {
-                      avg_x += data[ avg_range_start ][ 0 ] * 1; // * 1 enforces Number (value may be Date)
-                      avg_y += data[ avg_range_start ][ 1 ] * 1;
+                    for (; avg_range_start < avg_range_end; avg_range_start++) {
+                        avg_x += data[avg_range_start][0] * 1; // * 1 enforces Number (value may be Date)
+                        avg_y += data[avg_range_start][1] * 1;
                     }
                     avg_x /= avg_range_length;
                     avg_y /= avg_range_length;
                     // Get the range for this bucket
-                    let range_offs = Math.floor( (i + 0) * bucket_size ) + 1,
-                        range_to   = Math.floor( (i + 1) * bucket_size ) + 1;
+                    let range_offs = Math.floor((i + 0) * bucket_size) + 1,
+                        range_to = Math.floor((i + 1) * bucket_size) + 1;
                     // Point a
-                    let point_a_x = data[ a ][ 0 ] * 1, // enforce Number (value may be Date)
-                        point_a_y = data[ a ][ 1 ] * 1;
+                    let point_a_x = data[a][0] * 1, // enforce Number (value may be Date)
+                        point_a_y = data[a][1] * 1;
                     max_area = area = -1;
-                    for ( ; range_offs < range_to; range_offs++ ) {
+                    for (; range_offs < range_to; range_offs++) {
                         // Calculate triangle area over three buckets
-                        area = Math.abs( ( point_a_x - avg_x ) * ( data[ range_offs ][ 1 ] - point_a_y ) -
-                                    ( point_a_x - data[ range_offs ][ 0 ] ) * ( avg_y - point_a_y )
-                                  ) * 0.5;
-                        if ( area > max_area ) {
+                        area = Math.abs((point_a_x - avg_x) * (data[range_offs][1] - point_a_y) -
+                            (point_a_x - data[range_offs][0]) * (avg_y - point_a_y)
+                        ) * 0.5;
+                        if (area > max_area) {
                             max_area = area;
-                            max_area_point = data[ range_offs ];
+                            max_area_point = data[range_offs];
                             next_a = range_offs; // Next a is this b
                         }
                     }
@@ -813,7 +838,7 @@ void mainImage(out vec4 O, vec2 I)
                 sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last
                 return sampled_data; ///sampled_data;
             }
-            
+
             /**
              * Translates one row of RGBA pixels, the width of the WebGL 
              * canvas, to Csound events. 
@@ -896,7 +921,7 @@ void mainImage(out vec4 O, vec2 I)
                     let key = sampled_event[0];
                     if (playing_events.has(key) == true) {
                         let off_event = playing_events.get(key);
-                         let instrument_number = off_event[0];
+                        let instrument_number = off_event[0];
                         if (threshold > sampled_event[4]) {
                             csound.KillInstance(instrument_number, "", 4, true);
                             console.log("Turned off instrument number: " + instrument_number + ".");
@@ -910,7 +935,7 @@ void mainImage(out vec4 O, vec2 I)
                     let sampled_event = sampled_events[sampled_event_i];
                     let key = sampled_event[0];
                     if (playing_events.has(key) == false) {
-                    if (sampled_event[4] >= threshold) {
+                        if (sampled_event[4] >= threshold) {
                             playing_events.set(key, sampled_event);
                             on_events.push(sampled_event);
                         }
@@ -920,7 +945,7 @@ void mainImage(out vec4 O, vec2 I)
                 console.log(sprintf("on_events.length:      %d\n", on_events.length));
                 CsoundAC.setCorrectNegativeDurations(false);
                 // Limit number of on events, play N loudest only. Could also pick at random.
-                on_events.sort(function(a, b) {
+                on_events.sort(function (a, b) {
                     if (a[5] < b[5]) {
                         return 1;
                     }
@@ -951,12 +976,12 @@ void mainImage(out vec4 O, vec2 I)
                     if (sample_count % 29 == 0) {
                         let scales = scale.modulations(chord);
                         if (scales.size() > 1) {
-                            scale = scales.get(Math.floor(Math.random()*scales.size()));           
-                            csound_message_callback(sprintf("\nScale: %s\n\n", scale.name()));           
-                        }     
-                    }                            
+                            scale = scales.get(Math.floor(Math.random() * scales.size()));
+                            csound_message_callback(sprintf("\nScale: %s\n\n", scale.name()));
+                        }
+                    }
                     if (sample_count % 12 == 0) {
-                        let root_progression = root_progressions[Math.floor(Math.random()*root_progressions.length)];      
+                        let root_progression = root_progressions[Math.floor(Math.random() * root_progressions.length)];
                         let chord_name = chord.eOP().name();
                         if (chord_name.length == 0) {
                             chord_name = chord.eOP().toString();
@@ -982,12 +1007,12 @@ void mainImage(out vec4 O, vec2 I)
              * the GPU pipeline becomes passable.
              */
             async function sample_canvas(current_rendering_frame) {
-                 //console.info("frame_sample_to_score.");
+                //console.info("frame_sample_to_score.");
                 gi_Composition_tempo = Math.floor(parseFloat(document.getElementById("gi_Composition_tempo").value));
                 event_velocity_threshold = parseFloat(document.getElementById("gi_Composition_density").value);
                 await translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
             }
-            
+
             /**
              * The graphics rendering loop polls the current time and tempo in 
              * order to compute when to sample notes from the canvas.
@@ -1002,7 +1027,7 @@ void mainImage(out vec4 O, vec2 I)
                 gl.uniform3f(shader_program.iResolution, canvas.width, canvas.height, 0);
                 gl.uniform4f(shader_program.iMouse, mouse_position[0], mouse_position[1], 0, 0);
                 //write_audio_texture(analyser, channel0_texture_unit, channel0_texture, channel0_sampler);
-                gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);    
+                gl.drawElements(gl.TRIANGLES, webgl_buffers.inx.len, gl.UNSIGNED_SHORT, 0);
                 current_time = performance.now() / 1000;
                 if (current_time >= next_time) {
                     next_time = current_time + (60 / gi_Composition_tempo);
@@ -1010,12 +1035,12 @@ void mainImage(out vec4 O, vec2 I)
                 }
                 rendering_frame++;
                 requestAnimationFrame(render_scene);
-            }  
+            }
             create_scene();
-        })();    
-            
+        })();
+
     </script>
-    
+
     <script>
         var CsoundAC = null;
         var csound = null;
@@ -1031,7 +1056,7 @@ void mainImage(out vec4 O, vec2 I)
         console_editor.setDisplayIndentGuides(false);
         console_editor.renderer.setOption("showGutter", false);
         console_editor.renderer.setOption("showLineNumbers", true);
-        var csound_message_callback = function(message) {
+        var csound_message_callback = function (message) {
             // Split in case the newline is in the middle of the message but 
             // not at the end?
             message_callback_buffer = message_callback_buffer + message;
@@ -1045,13 +1070,13 @@ void mainImage(out vec4 O, vec2 I)
                 }
                 console_editor.moveCursorTo(lines, 0);
                 console_editor.scrollToLine(lines);
-                console_editor.insert(message_callback_buffer);      
+                console_editor.insert(message_callback_buffer);
                 message_callback_buffer = "";
             }
         };
 
-        (async function() {
-            CsoundAC = await createCsoundAC(); 
+        (async function () {
+            CsoundAC = await createCsoundAC();
             score = new CsoundAC.Score();
             scale = new CsoundAC.Scale("F major");
             prior_chord = chord;
@@ -1076,19 +1101,19 @@ void mainImage(out vec4 O, vec2 I)
             csound_message_callback(CM.information());
             csound_message_callback(CM.information_debug(-1));
         }());
-            
-        window.onload = function() {
-            $("#controls_view").css("display", "none");         
-            $("#about_view").css("display", "none");         
-            $("#console_view").css("display", "none");      
-            $("#menu_item_play").click(async function(event) {
-                console.log("menu_item_play click...");     
+
+        window.onload = function () {
+            $("#controls_view").css("display", "none");
+            $("#about_view").css("display", "none");
+            $("#console_view").css("display", "none");
+            $("#menu_item_play").click(async function (event) {
+                console.log("menu_item_play click...");
                 if (csound == null) {
                     try {
                         csound_message_callback("Trying to load CsoundAudioNode...\n");
                         var AudioContext = window.AudioContext || window.webkitAudioContext;
                         var audioContext = new AudioContext();
-                        await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function() {
+                        await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function () {
                             csound_message_callback("Creating CsoundAudioNode...\n");
                             csound = new CsoundAudioNode(audioContext, csound_message_callback);
                             csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
@@ -1097,8 +1122,8 @@ void mainImage(out vec4 O, vec2 I)
                             console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
                             csound.connect(analyser);
                             console.log("csound: " + csound);
-                        }, function(error) {
-                           csound_message_callback(error + '\n');
+                        }, function (error) {
+                            csound_message_callback(error + '\n');
                         });
                         csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
                     } catch (e) {
@@ -1130,59 +1155,59 @@ void mainImage(out vec4 O, vec2 I)
                     csound.Reset();
                     csound_message_callback("Csound is stopping...\n");
                     $("#menu_item_play").html("Play");
-               }
-             });
-            $("#menu_item_fullscreen").click(function(event) {
+                }
+            });
+            $("#menu_item_fullscreen").click(function (event) {
                 console.log("menu_item_fullscreen click...");
                 const display = document.getElementById("display");
                 if (display.requestFullscreen) {
                     display.requestFullscreen();
-                } else if (display.webkitRequestFullscreen) { 
+                } else if (display.webkitRequestFullscreen) {
                     display.webkitRequestFullscreen();
-                } else if (elem.msRequestFullscreen) { 
+                } else if (elem.msRequestFullscreen) {
                     display.msRequestFullscreen();
                 }
             });
-            $("#menu_item_controls").click(function(event) {
+            $("#menu_item_controls").click(function (event) {
                 console.log("menu_item_controls click...");
-                $("#about_view").hide();            
-                $("#console_view").hide();            
-                if ($("#controls_view").is(":visible")){
-                    $("#controls_view").hide();            
+                $("#about_view").hide();
+                $("#console_view").hide();
+                if ($("#controls_view").is(":visible")) {
+                    $("#controls_view").hide();
                 } else {
-                    $("#controls_view").show();        
+                    $("#controls_view").show();
                 }
             });
-            $("#menu_item_console").click(function(event) {
+            $("#menu_item_console").click(function (event) {
                 console.log("menu_item_console click...");
-                $("#controls_view").hide();            
-                $("#about_view").hide();            
+                $("#controls_view").hide();
+                $("#about_view").hide();
                 let v = document.getElementById("console_view");
-                if ($("#console_view").is(":visible")){
-                    $("#console_view").hide();          
+                if ($("#console_view").is(":visible")) {
+                    $("#console_view").hide();
                 } else {
-                    $("#console_view").show();    
+                    $("#console_view").show();
                     // Needed to make visible in place.
                     console_editor.resize(true);
                 }
             });
-            $("#menu_item_about").click(function(event) {
+            $("#menu_item_about").click(function (event) {
                 console.log("menu_item_about click...");
-                $("#controls_view").hide();            
-                $("#console_view").hide();            
-                if ($("#about_view").is(":visible")){
-                    $("#about_view").hide();            
+                $("#controls_view").hide();
+                $("#console_view").hide();
+                if ($("#about_view").is(":visible")) {
+                    $("#about_view").hide();
                 } else {
-                    $("#about_view").show();            
+                    $("#about_view").show();
                 }
-             });
-            $(document).keydown(function(event) {
+            });
+            $(document).keydown(function (event) {
                 console.log("document keydown...");
                 if (event.keyCode === 'F11') {
                     $("#menu_item_fullscreen").trigger("click");
                 }
             });
-            $('input').on('input', async function(event) {
+            $('input').on('input', async function (event) {
                 var slider_value = parseFloat(event.target.value);
                 if (csound) {
                     csound.SetControlChannel(event.target.id, slider_value);
@@ -1190,13 +1215,13 @@ void mainImage(out vec4 O, vec2 I)
                 var output_selector = '#' + event.target.id + '_output';
                 $(output_selector).val(slider_value);
             });
-            $('#save').on('click', function() {
-                $('.persistent-element').each(function() {
+            $('#save').on('click', function () {
+                $('.persistent-element').each(function () {
                     localStorage.setItem(this.id, this.value);
                 });
-             });
-            $('#restore').on('click', async function() {
-                $('.persistent-element').each(function() {
+            });
+            $('#restore').on('click', async function () {
+                $('.persistent-element').each(function () {
                     this.value = localStorage.getItem(this.id);
                     if (csound) {
                         csound.SetControlChannel(this.id, parseFloat(this.value));
@@ -1205,18 +1230,18 @@ void mainImage(out vec4 O, vec2 I)
                     $(output_selector).val(this.value);
                 });
             });
-            $('#copy').on('click', function() {
+            $('#copy').on('click', function () {
                 let controls_json = JSON.stringify(localStorage);
                 navigator.clipboard.writeText(controls_json);
                 csound_message_callback("Copied controls state to system clipboard.\n");
             });
-            $('#paste').on('click', async function() {
-                navigator.clipboard.readText().then(function(controls_json) {
+            $('#paste').on('click', async function () {
+                navigator.clipboard.readText().then(function (controls_json) {
                     let controls_state = JSON.parse(controls_json);
                     for (let [key, value] of Object.entries(controls_state)) {
                         console.log(key, value);
-                    }                
-                    $('.persistent-element').each(function() {
+                    }
+                    $('.persistent-element').each(function () {
                         this.value = localStorage.getItem(this.id);
                         if (csound) {
                             csound.SetControlChannel(this.id, parseFloat(this.value));
@@ -1227,9 +1252,9 @@ void mainImage(out vec4 O, vec2 I)
                     csound_message_callback("Pasted controls state from system clipboard.\n");
                 });
             });
-            $('#default').on('click', function() {
-                $('.persistent-element').each(function() {
-                   this.value = this.defaultValue;
+            $('#default').on('click', function () {
+                $('.persistent-element').each(function () {
+                    this.value = this.defaultValue;
                     if (csound) {
                         csound.SetControlChannel(this.id, parseFloat(this.value));
                     }
@@ -1241,4 +1266,5 @@ void mainImage(out vec4 O, vec2 I)
             $("#default")[0].click();
         };
     </script>
- </html>
+
+</html>
