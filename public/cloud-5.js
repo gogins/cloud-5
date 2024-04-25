@@ -232,8 +232,8 @@ class Cloud5Piece extends HTMLElement {
         <li id="menu_item_dat_gui"
             title="Show/hide performance controls; 'Save' copies all control parameters to system clipboard"
             class="w3-btn w3-left-align w3-hover-text-light-green w3-right"></li>
-    </ul>
-</div>`;
+      </ul>
+    </div>`;
     this.vu_meter_left = document.querySelector("#vu_mter_left");
     this.vu_meter_right = document.querySelector("#vu_mter_right");
     this.mini_console = document.querySelector("#mini_console");
@@ -339,9 +339,9 @@ class Cloud5Piece extends HTMLElement {
       }
     });
     this.show(this.shader_overlay);
-    window.addEventListener('load', function(event) {
+    window.addEventListener('load', function (event) {
       const save_button = this.gui.domElement.querySelector('span.button.save');
-      save_button.addEventListener('click', function(event) {
+      save_button.addEventListener('click', function (event) {
         this.copy_parameters()
       }.bind(this));
     }.bind(this));
@@ -350,21 +350,21 @@ class Cloud5Piece extends HTMLElement {
     });
   }
 
-/**
- * Copies all _current_ dat.gui parameters to the system clipboard in 
- * JSON format.
- * 
- * @param {Object} parameters A dictionary containing the current state of all 
- * controls; keys are control parameter names, values are control parameter 
- * values. This can be pasted from the clipboard it source code, as a 
- * convenient method of updating a piece with parameters that have been tweaked 
- * during performance.
- */
-copy_parameters() {
-  const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
-  navigator.clipboard.writeText(json_text);
-  console.info("Copied all control parameters to system clipboard.\n")
-}
+  /**
+   * Copies all _current_ dat.gui parameters to the system clipboard in 
+   * JSON format.
+   * 
+   * @param {Object} parameters A dictionary containing the current state of all 
+   * controls; keys are control parameter names, values are control parameter 
+   * values. This can be pasted from the clipboard it source code, as a 
+   * convenient method of updating a piece with parameters that have been tweaked 
+   * during performance.
+   */
+  copy_parameters() {
+    const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
+    navigator.clipboard.writeText(json_text);
+    console.info("Copied all control parameters to system clipboard.\n")
+  }
 
   /**
    * @function render
@@ -688,12 +688,12 @@ class Cloud5Strudel extends HTMLElement {
 
   }
   #strudel_code_addon = null;
- /**
-   * Contains the text of a user-defined Strudel patch, exactly as would 
-   * normally be entered by the user in the Strudel REPL. This patch may 
-   * also import and reference modules defined by the cloud-5 system, such 
-   * as statefulpatterns.mjs or csoundac.js.
-   */
+  /**
+    * Contains the text of a user-defined Strudel patch, exactly as would 
+    * normally be entered by the user in the Strudel REPL. This patch may 
+    * also import and reference modules defined by the cloud-5 system, such 
+    * as statefulpatterns.mjs or csoundac.js.
+    */
   set strudel_code_addon(code) {
     this.#strudel_code_addon = code;
     // Reconstruct the element.
@@ -958,33 +958,33 @@ class Cloud5ShaderToy extends HTMLElement {
 
   write_audio_texture(analyser, texture_unit, texture, sampler) {
     if (analyser != null) {
-        analyser.getByteFrequencyData(this.frequency_domain_data);
-        analyser.getByteTimeDomainData(this.time_domain_data);
-        for (let i = 0; i < this.audio_texture_width; ++i) {
-            // Map frequency domain magnitudes to [0, 1].
-            let sample = this.frequency_domain_data[i];
-            sample = sample / 255.;
-            this.audio_data[i] = sample;
-         }
-        this.audio_data_width = this.audio_texture_width * 2;
-        for (let j = 0; j < this.audio_texture_width; ++j) {
-            // Map time domain amplitudes to [-1, 1].
-            let sample = this.time_domain_data[j];
-            sample = sample / 255.;
-            this.audio_data[this.audio_texture_width + j] = sample;
-        }
+      analyser.getByteFrequencyData(this.frequency_domain_data);
+      analyser.getByteTimeDomainData(this.time_domain_data);
+      for (let i = 0; i < this.audio_texture_width; ++i) {
+        // Map frequency domain magnitudes to [0, 1].
+        let sample = this.frequency_domain_data[i];
+        sample = sample / 255.;
+        this.audio_data[i] = sample;
+      }
+      this.audio_data_width = this.audio_texture_width * 2;
+      for (let j = 0; j < this.audio_texture_width; ++j) {
+        // Map time domain amplitudes to [-1, 1].
+        let sample = this.time_domain_data[j];
+        sample = sample / 255.;
+        this.audio_data[this.audio_texture_width + j] = sample;
+      }
     }
     this.gl.activeTexture(this.gl.TEXTURE0 + texture_unit);
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
     this.gl.bindSampler(texture_unit, sampler);
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 
-      this.audio_texture_level, 
-      this.audio_texture_internalFormat, 
-      this.audio_texture_width, 
-      this.audio_texture_height, 
-      this.audio_texture_border, 
+    this.gl.texImage2D(this.gl.TEXTURE_2D,
+      this.audio_texture_level,
+      this.audio_texture_internalFormat,
+      this.audio_texture_width,
+      this.audio_texture_height,
+      this.audio_texture_border,
       this.audio_texture_srcFormat,
-      this.audio_texture_srcType, 
+      this.audio_texture_srcType,
       this.audio_data);
     this.gl.samplerParameteri(sampler, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
     this.gl.samplerParameteri(sampler, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
@@ -994,38 +994,38 @@ class Cloud5ShaderToy extends HTMLElement {
     this.gl.samplerParameteri(sampler, this.gl.TEXTURE_COMPARE_MODE, this.gl.NONE);
     this.gl.samplerParameteri(sampler, this.gl.TEXTURE_COMPARE_FUNC, this.gl.LEQUAL);
     if (false && analyser) { // For debugging.
-        let is_texture = gl.isTexture(texture);
-        let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
-        let uniform_index;
-        for (let uniform_index = 0; uniform_index < uniform_count; ++uniform_index) {
-            uniform_info = gl.getActiveUniform(shader_program, uniform_index);
-            console.log(uniform_info);
-            const location = gl.getUniformLocation(shader_program, uniform_info.name);
-            const value = gl.getUniform(shader_program, location);
-            console.log("Uniform location: " + location);
-            console.log("Uniform value: " + value);
-        }
-        const unit = gl.getUniform(shader_program, shader_program.iChannel0);
-        console.log("Sampler texture unit: " + unit);
-        console.log("Texture unit: " + texture_unit);
-        gl.activeTexture(gl.TEXTURE0 + texture_unit);
-        let texture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
-        console.log("Texture binding 2D " + texture2D);
-        var debug_framebuffer = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, debug_framebuffer);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture2D, 0);
-        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
-            console.log("These attachments don't work.");
-        }
-        // Read the contents of the debug_framebuffer (data stores the pixel data).
-        var data = new Float32Array(1024);
-        // What comes out, should be what went in.
-        gl.readPixels(0, 0, 512, 2, gl.RED, gl.FLOAT, data);
-        //console.log("\nfrequency domain: \n" + data.slice(0, 512));
-        //console.log("time domain: \n" + data.slice(512));
-        gl.deleteFramebuffer(debug_framebuffer);
+      let is_texture = gl.isTexture(texture);
+      let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
+      let uniform_index;
+      for (let uniform_index = 0; uniform_index < uniform_count; ++uniform_index) {
+        uniform_info = gl.getActiveUniform(shader_program, uniform_index);
+        console.log(uniform_info);
+        const location = gl.getUniformLocation(shader_program, uniform_info.name);
+        const value = gl.getUniform(shader_program, location);
+        console.log("Uniform location: " + location);
+        console.log("Uniform value: " + value);
+      }
+      const unit = gl.getUniform(shader_program, shader_program.iChannel0);
+      console.log("Sampler texture unit: " + unit);
+      console.log("Texture unit: " + texture_unit);
+      gl.activeTexture(gl.TEXTURE0 + texture_unit);
+      let texture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+      console.log("Texture binding 2D " + texture2D);
+      var debug_framebuffer = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, debug_framebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture2D, 0);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        console.log("These attachments don't work.");
+      }
+      // Read the contents of the debug_framebuffer (data stores the pixel data).
+      var data = new Float32Array(1024);
+      // What comes out, should be what went in.
+      gl.readPixels(0, 0, 512, 2, gl.RED, gl.FLOAT, data);
+      //console.log("\nfrequency domain: \n" + data.slice(0, 512));
+      //console.log("time domain: \n" + data.slice(512));
+      gl.deleteFramebuffer(debug_framebuffer);
     }
- }
+  }
 
   /**
    * Actually compiles and links the vertex shader and fragment shader.
