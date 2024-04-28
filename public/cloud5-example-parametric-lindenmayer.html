@@ -1964,7 +1964,7 @@
             this.log("generate()...\n");
             var startTime = 0;
             let lsys = new ParametricLindenmayer.PLSystem();
-            var chord = ChordSpace.chordForName('GM');
+            var chord = ChordSpace.chordForName('Gm');
             chord.channel[0] = 2;
             chord.channel[1] = 3;
             chord.channel[2] = 4;
@@ -2084,7 +2084,7 @@
                 }
             }
             lsys.conformToChords();
-            lsys.score.setDuration(10 * 60 + 5);
+            lsys.score.setDuration(15 * 60 + 5);
             lsys.score.findScales();
             this.log(lsys.score.minima.toString());
             this.log(lsys.score.ranges.toString());
