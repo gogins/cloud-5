@@ -1888,6 +1888,13 @@
     <cloud5-log></cloud5-log>
     <cloud5-about>
         <div>
+
+            Vastly improved. Try:
+
+            Mix percussive sounds and pads.
+            Curl on the iterations to rotate the whole thing towards the end.
+            Try putting expressions in some of the parameters.
+            
             <h1 style="font-size: 15px;">cloud5-example-parametric-lindenmayer</h1>
             <h2 style="font-size: 13px">Michael Gogins<br>
                 March 2024</h2>
@@ -1978,7 +1985,7 @@
             lsys.set_turtle(t);
             // p0_t, p1_d, p2_s, p3_c, p4_k, p5_v, p6_x
             lsys = new ParametricLindenmayer.PLSystem();
-            lsys.set_axiom('C();Note(1,1,144,1,1,1,0);');
+            lsys.set_axiom('C();Note(1,1.5,144,1,1,1,0);');
             // The problem here is that Command(t,d,s,c,k,v,x) carries state down from the stack,
             // but Command() does not. I will try Note(t,d,s,c,k,v,x) with zero v instead of Move.
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<6)', `
