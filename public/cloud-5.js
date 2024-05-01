@@ -382,6 +382,7 @@ class Cloud5Piece extends HTMLElement {
     if (non_csound(this.csound)) {
       return;
     }
+    this?.log_overlay.clear();
     this.csoundac = await createCsoundAC();
     for (const key in this.metadata) {
       const value = this.metadata[key];
@@ -400,7 +401,6 @@ class Cloud5Piece extends HTMLElement {
         csd = this.csound_code_addon.replace("</CsScore>", csound_score);
       }
     }
-    this?.log_overlay.clear();
     if (is_offline == true) {
       csd = csd.replace("-odac", "-o" + document.title + ".wav");
     }

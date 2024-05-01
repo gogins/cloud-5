@@ -31,13 +31,15 @@
     <textarea id="csd" style="display:none;">
         <CsoundSynthesizer>
           <CsOptions>
-          -d -m162 -odac
+          -d -m160 -odac -+msg_color=0
           </CsOptions>
           <CsInstruments>
           sr = 48000
           ksmps = 128
           nchnls = 2
           0dbfs = 3
+
+          ; -m (128 + 32)
           
           ; Ensure the same random stream for each rendering.
           ; rand, randh, randi, rnd(x) and birnd(x) are not affected by seed.
@@ -1894,7 +1896,7 @@
             Mix percussive sounds and pads.
             Curl on the iterations to rotate the whole thing towards the end.
             Try putting expressions in some of the parameters.
-            
+
             <h1 style="font-size: 15px;">cloud5-example-parametric-lindenmayer</h1>
             <h2 style="font-size: 13px">Michael Gogins<br>
                 March 2024</h2>
@@ -1979,7 +1981,7 @@
             ///chord.channel[3] = 5;
             ///chord.channel[4] = 6;
             chord.setDuration(.9);
-            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 60, 1);
+            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 72, 1);
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
@@ -2124,7 +2126,7 @@
         cloud5_piece.control_parameters_addon = {
             "gk_Duration_factor": 1.887587340731607,
             "gk_Iterations": 4,
-            "gk_MasterOutput_level": 14.056720098643652,
+            "gk_MasterOutput_level": 6,
             "gk_ReverbSC_wet": 0.5,
             "gk_ReverbSC_feedback": 0.9430743937525689,
             "gk_ReverbSC_delay_modulation": 0.0075,
@@ -2267,7 +2269,7 @@
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
         cloud5_shader.shader_parameters_addon = {
             fragment_shader_code_addon: `#version 300 es
-        #line 2259
+        #line 2270
         precision highp float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
