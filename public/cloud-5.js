@@ -145,6 +145,7 @@ class Cloud5Piece extends HTMLElement {
     if (message === null) {
       return;
     }
+    this.log_overlay?.log(message);
     let level_left = -100;
     let level_right = -100;
     if (non_csound(this.csound) == false) {
@@ -181,7 +182,6 @@ class Cloud5Piece extends HTMLElement {
       $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_right));
       $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
     };
-    this.log_overlay?.log(message);
   }
   /**
    * A convenience function for printing the message in the 

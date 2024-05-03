@@ -31,13 +31,15 @@
     <textarea id="csd" style="display:none;">
         <CsoundSynthesizer>
           <CsOptions>
-          -d -m162 -odac
+          -d -m160 -odac -+msg_color=0
           </CsOptions>
           <CsInstruments>
           sr = 48000
           ksmps = 128
           nchnls = 2
           0dbfs = 3
+
+          ; -m (128 + 32)
           
           ; Ensure the same random stream for each rendering.
           ; rand, randh, randi, rnd(x) and birnd(x) are not affected by seed.
@@ -48,8 +50,6 @@
           
           connect "Blower", "outleft", "ReverbSC", "inleft"
           connect "Blower", "outright", "ReverbSC", "inright"
-          connect "Bower", "outleft", "ReverbSC", "inleft"
-          connect "Bower", "outright", "ReverbSC", "inright"
           connect "Buzzer", "outleft", "ReverbSC", "inleft"
           connect "Buzzer", "outright", "ReverbSC", "inright"
           connect "Droner", "outleft", "ReverbSC", "inleft"
@@ -160,7 +160,7 @@
           i_releasing_attack = 3 / min(i_frequency, 256)
           i_releasing_release = .01
           a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
-          a_envelope transeg 0, gi_FMWaterBell_attack, 6,  1, gi_FMWaterBell_sustain, -6,  0
+          a_envelope transeg 0, gi_FMWaterBell_attack, -6,  1, gi_FMWaterBell_sustain, -6,  0
           a_declicking cossegr 0, i_releasing_attack, 1, gi_FMWaterBell_sustain - 1, 1, i_releasing_release, 0
           ;;;a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
           a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
@@ -859,64 +859,6 @@
           outleta "outright", a_out_right
           endin
             
-        
-          gk_Bower_midi_dynamic_range chnexport "gk_Bower_midi_dynamic_range", 3
-          gk_Bower_attack chnexport "gk_Bower_attack", 3
-          gk_Bower_release chnexport "gk_Bower_release", 3
-          gk_Bower_level chnexport "gk_Bower_level", 3
-          gk_Bower_pressure chnexport "gk_Bower_pressure", 3
-          gk_Bower_space_left_to_right chnexport "gk_Bower_space_left_to_right", 3
-          gk_Bower_midi_dynamic_range init 20
-          gk_Bower_attack init .125
-          gk_Bower_release init .125
-          gk_Bower_level init 0
-          gk_Bower_pressure init 0.25
-          gk_Bower_space_left_to_right init 0.75
-          gi_Bower_sine ftgen 0,0,65537,10,1
-          instr Bower
-          i_instrument = p1
-          i_time = p2
-          i_duration = p3
-          i_midi_key = p4
-          i_midi_dynamic_range = i(gk_Bower_midi_dynamic_range)
-          i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-          k_space_front_to_back = p6
-          if p7 == 0 then
-          k_space_left_to_right = gk_Bower_space_left_to_right
-          else
-          k_space_left_to_right = p7
-          endif
-          k_space_bottom_to_top = p8
-          k_space_bottom_to_top = p8
-          i_phase = p9
-          i_frequency = cpsmidinn(i_midi_key)
-          ; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-          i_level_correction = 66
-          i_normalization = ampdb(-i_level_correction) / 2
-          i_amplitude = ampdb(i_midi_velocity) * i_normalization
-          k_gain = ampdb(gk_Bower_level)
-          iattack = i(gk_Bower_attack)
-          idecay = i(gk_Bower_release)
-          isustain = p3
-          iamp = i_amplitude
-          xtratim iattack + idecay
-          kenvelope transegr 0.0, iattack / 2.0, 1.5, iamp / 2.0, iattack / 2.0, -1.5, iamp, isustain, 0.0, iamp, idecay / 2.0, 1.5, iamp / 2.0, idecay / 2.0, -1.5, 0
-          ihertz = cpsmidinn(i_midi_key)
-          kamp = kenvelope
-          kfreq = ihertz
-          kpres = 0.25
-          krat rspline 0.006,0.988,1,4
-          kvibf = 4.5
-          kvibamp = 0
-          iminfreq = i(kfreq) / 2
-          aSig wgbow kamp,kfreq,gk_Bower_pressure,krat,kvibf,kvibamp,gi_Bower_sine,iminfreq
-          a_signal = aSig * kenvelope * k_gain
-          prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-          a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-          outleta "outleft", a_out_left
-          outleta "outright", a_out_right
-          ;printks "Blower         i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(a_out_left)), dbamp(rms(a_out_right))
-          endin
             
           gk_FilteredSines_level chnexport "gk_FilteredSines_level", 3
         gi_FilteredSines_attack chnexport "gi_FilteredSines_attack", 3
@@ -1053,8 +995,8 @@
         ; fixed decay ending at zero.
         i_declick_minimum = .003
         i_attack = .001 / i_frequency + i_declick_minimum
-        i_exponent = 7
-        a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
+        i_exponent = -200
+        a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, i_exponent,  0
         ; The de-clicking envelope must have attack and release segments that damp 
         ; artifacts in the signal. The duration of these segments depends on 
         ; the behavior of the instrument, and may vary as a function of frequency.
@@ -1092,7 +1034,7 @@
         
         gi_Harpsichord_harptable ftgen 0, 0, 65537, 7, -1, 1024, 1, 1024, -1
         
-        instr 1000
+        instr Harpsichord
         i_instrument = p1
         i_time = p2
         ; Make indefinite notes last no longer than the physical decay.
@@ -1203,7 +1145,7 @@
         i_declick_minimum = .003
         i_attack = .001 / i_frequency + i_declick_minimum
         i_exponent = 3
-        a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
+        a_physical_envelope transeg 0,   i_attack, -i_exponent,  1,   i_physical_decay, -i_exponent,  0
         a_declicking_envelope cossegr 0, .006, 1, i_instrument_duration, 1,  .06, 0
         a_envelope = a_physical_envelope * a_declicking_envelope
         a_filtered_envelope tonex a_envelope, 30, 3
@@ -1307,7 +1249,7 @@
         i_declick_minimum = .003
         i_attack = .001 / i_frequency + i_declick_minimum
         i_exponent = 7
-        a_physical_envelope = aadsr ;  transeg 0,   i_attack, i_exponent,  1,   i_duration, -i_exponent,  0
+        a_physical_envelope = aadsr ;  transeg 0,   i_attack, -i_exponent,  1,   i_duration, -i_exponent,  0
         ; The de-clicking envelope must have attack and release segments that damp 
         ; artifacts in the signal. The duration of these segments depends on 
         ; the behavior of the instrument, and may vary as a function of frequency.
@@ -1386,9 +1328,9 @@
         ; resonator, there should be two envelopes. The "physical" envelope must have a 
         ; fixed decay ending at zero.
         i_declick_minimum = .001
-        i_attack = .001 / i_frequency2 + i_declick_minimum
-        i_exponent = 7
-        a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
+        i_attack = .0003 / i_frequency2 + i_declick_minimum
+        i_exponent = 40
+        a_physical_envelope transeg 0,   i_attack, -i_exponent,  1,   i_physical_decay, -i_exponent,  0
         ; The de-clicking envelope must have attack and release segments that damp 
         ; artifacts in the signal. The duration of these segments depends on 
         ; the behavior of the instrument, and may vary as a function of frequency.
@@ -1653,7 +1595,7 @@
         i_declick_minimum = .001
         i_attack = .001 / i_frequency + i_declick_minimum
         i_exponent = 7
-        a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
+        a_physical_envelope transeg 0,   i_attack, -i_exponent,  1,   i_physical_decay, -i_exponent,  0
         ; The de-clicking envelope must have attack and release segments that damp 
         ; artifacts in the signal. The duration of these segments depends on 
         ; the behavior of the instrument, and may vary as a function of frequency.
@@ -1878,7 +1820,7 @@
           
           </CsInstruments>
           <CsScore>
-          f 0 [ 7 * 60 + 45]
+          f 0 [ 10 * 60 + 45]
           </CsScore>
         </CsoundSynthesizer>
     </textarea>
@@ -1890,7 +1832,7 @@
         <div>
             <h1 style="font-size: 15px;">cloud5-example-parametric-lindenmayer</h1>
             <h2 style="font-size: 13px">Michael Gogins<br>
-                March 2024</h2>
+                May 2024</h2>
 
             <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img
                     alt="Creative Commons License" style="border-width:0;" src="cc-by-nc-sa.png" /></a>
@@ -1921,6 +1863,25 @@
                 patches originally written by others as noted in the orchestra.
 
             <p>
+
+            <h1 style="font-size:15px;">To Do</h1>
+
+            <p>Vastly improved. Try:</p>
+
+            <ul>
+                <li>Keep the duration at 10 minutes through the whole composing process (done).</li>
+                <li>Mix (perhaps rather clangy) percussive sounds with pads.</li>
+                <li>Get rid of the Bower instrument (done).</li>
+                <li>Compute pan from insno (done).</li>
+                <li>Add Harpsichord.</li>
+                <li>Add some other good percussive FM instrument.</li>
+                <li>Fix the click at the end./li>
+                <li>Curl on the iterations to rotate the whole towards the end.</li>
+                <li>Try putting expressions in some of the parameters.</li>
+                <li>If possible, do a local iteration depth.</li>
+            </ul>
+
+            <br>
 
                 <a href="http://michaelgogins.tumblr.com">
                     <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -1972,32 +1933,32 @@
             ///chord.channel[3] = 5;
             ///chord.channel[4] = 6;
             chord.setDuration(.9);
-            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 60, 1);
+            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 72, 1);
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
             // p0_t, p1_d, p2_s, p3_c, p4_k, p5_v, p6_x
             lsys = new ParametricLindenmayer.PLSystem();
-            lsys.set_axiom('C();Note(1,1,144,1,1,1,0);');
+            lsys.set_axiom('C();Note(1,1.75,144,1,1,1,0);');
             // The problem here is that Command(t,d,s,c,k,v,x) carries state down from the stack,
             // but Command() does not. I will try Note(t,d,s,c,k,v,x) with zero v instead of Move.
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<6)', `
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<5)', `
                   Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/-2.00+0.00, v/2.00+0.00, x/2+0); 
                   Note(t/2.10+1.00, d/-2.00+0, s, c/2+1.100, k/2.00+1.90, v/2.00+0.00, x/2+0); 
             `);
             //                  Note(t/2.10+0.00, d/2.50+0, s, c/2+1.000, k/2.00+1.10, v/2.00+0.00, x/2+0); 
 
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==6)', `
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==5)', `
                   Scale(0, 2.0);
                   Scale(4, 2.0);
-            T(3); Note(t/1.50-0.50, d/1.50+0, s, c/2+0.000, k/2.00-0.10, v/2.00+0.00, x/2+0); T(5);
+            T(-3); Note(t/1.50-0.50, d/1.50+0, s, c/2+0.000, k/2.00-0.10, v/2.00+0.00, x/2+0); T(5);
                   Note(t/1.50+0.00, d/2.00+0, s, c/2-1.000, k/2.20+0.80, v/2.00+0.00, x/2+0); 
                   Note(t/1.50+0.55, d/2.00+0, s, c/2+0.000, k/2.00-0.05, v/2.00+0.00, x/2+0); K(); 
                   Scale(0, 0.5);
                   Scale(4, 0.5);
             `);
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration>6)', `
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration>5)', `
                   Note(t/2.20+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.02, v/2.00+0.02, x/2+0);  
                   Note(t/2.30+0.10, d/2.00+0, s, c/2+0.500, k/2.00+1.10, v/2.00+0.00, x/2+0);
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.03, v/2.00+0.00, x/2+0); 
@@ -2007,12 +1968,12 @@
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
-            lsys.generate(8);
+            lsys.generate(this.control_parameters_addon.gk_Iterations);
             lsys.score.findScales();
             this.log('lsys:' + lsys + '\n');
             this.log(lsys.score.getDuration().toString() + '\n');
             lsys.score.sort();
-            lsys.score.setScale(3, 1, 12);
+            lsys.score.setScale(3,  1, 16);
             lsys.score.setScale(4, 24, 88);
             lsys.score.setScale(5, 70, 16);
             lsys.score.temper(12);
@@ -2023,16 +1984,16 @@
             this.log('Cleaning up some annoying things in the score...');
             for (var i = 0; i < lsys.score.data.length; i++) {
                 var event = lsys.score.data[i];
-                // We didn't generate pan, so just randomize it.
-                event.pan = 0.1 + Math.random() * .8;
+                // We didn't generate pan, so just add it.
+                event.pan = event.channel;
                 var minimum_gap = null;
                 var minimum_gap_event = null;
                 // Move too-high notes for "Harpsichord" down.
-                if (Math.floor(event.channel) === 3) {
-                    while (event.key > 77) {
-                        event.key = event.key - 12;
-                    }
-                }
+                // if (Math.floor(event.channel) === 3) {
+                //     while (event.key > 77) {
+                //         event.key = event.key - 12;
+                //     }
+                // }
                 if (true) {
                     // Close up gaps in the score.
                     for (j = i + 1; j < lsys.score.data.length - 1; j++) {
@@ -2084,17 +2045,20 @@
                 }
             }
             lsys.conformToChords();
-            lsys.score.setDuration(15 * 60 + 5);
+            lsys.score.setDuration(10 * 60 + 5);
             lsys.score.findScales();
             this.log(lsys.score.minima.toString());
             this.log(lsys.score.ranges.toString());
             this.log('Generated ' + lsys.score.data.length + ' notes.\n');
-            //lsys.score.add(9 * 60 + 15, 1, 144, 999);
+            // Rescale stereo pans from insnos to [.1, .9].
+            lsys.score.setScale(7, .1, .8);
+            //lsys.score.add(10 * 60 + 15, 1, 144, 999);
             var CsoundAC = await createCsoundAC();
             csoundac_score = new CsoundAC.Score();
             for (let event of lsys.score.data) {
                 console.info(event.toIStatement())
-                csoundac_score.add(event.time,
+                // Start actually playing only after reverb has started.
+                csoundac_score.add(event.time + 1.,
                     event.duration,
                     event.status,
                     event.channel,
@@ -2115,65 +2079,63 @@
         // #endregion
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
-            "gk_Duration_factor": 1.887587340731607,
-            "gk_Iterations": 4,
-            "gk_MasterOutput_level": 14.056720098643652,
-            "gk_ReverbSC_wet": 0.5,
-            "gk_ReverbSC_feedback": 0.9430743937525689,
-            "gk_ReverbSC_delay_modulation": 0.0075,
-            "gk_ReverbSC_frequency_cutoff": 9000,
-            "gk_Blower_level": -29.344363374781626,
-            "gk_Blower_attack": 1.5,
-            "gk_Blower_release": 2,
-            "gk_Blower_grainDensity": 245.730140787175,
-            "gk_Blower_grainDuration": 0.03750899188161545,
-            "gk_Blower_grainAmplitudeRange": 119.4532935977803,
-            "gk_Blower_grainFrequencyRange": 50.251772685232766,
-            "gk_Bower_level": -10.271297913883465,
-            "gk_Bower_pressure": 4.715856540951598,
-            "gk_Bower_rat": 0.4518548967218169,
-            "gk_Buzzer_level": -26.71359572500257,
-            "gk_Buzzer_harmonics": 1.3688212927756656,
-            "gk_Droner_level": -14.217449388552048,
-            "gk_Droner_partial1": 0.12105641763436441,
-            "gk_Droner_partial2": 0.22628712362552666,
-            "gk_Droner_partial3": 0.6406330284657281,
-            "gk_Droner_partial4": 0.11447949850991676,
-            "gk_Droner_partial5": 0,
-            "gk_FilteredSines_level": -3.6943787894358238,
-            "gk_ZakianFlute_level": -22.767444250333984,
-            "gk_FMWaterBell_level": 0.9094645976775197,
-            "gi_FMWaterBell_attack": 0.002,
-            "gi_FMWaterBell_release": 0.01,
-            "gi_FMWaterBell_exponent": 15,
-            "gi_FMWaterBell_sustain": 20,
-            "gi_FMWaterBell_sustain_level": 0.1,
-            "gk_FMWaterBell_crossfade": 0.5,
-            "gk_FMWaterBell_index": 0.5,
-            "gk_FMWaterBell_vibrato_depth": 0.05,
-            "gk_FMWaterBell_vibrato_rate": 6,
-            "gk_Guitar_level": 0,
-            "gk_Kung2_level": -10.275380189066993,
-            "gk_Kung4_level": -16.19052512588634,
-            "gk_Phaser_level": -21.452060425444458,
-            "gk_Phaser_ratio1": 2,
-            "gk_Phaser_ratio2": 3,
-            "gk_Phaser_index1": 1.0266159695817492,
-            "gk_Phaser_index2": 0.533347035248176,
-            "gk_Plucked_level": 35.10944404480526,
-            "gk_Shiner_level": -16.848217038331107,
-            "gk_Shiner_attack": 0.125,
-            "gk_Shiner_release": 0.5,
-            "gk_SeidelHarmonicOsc_level": 0,
-            "gk_Sweeper_level": -15.532833213441577,
-            "gk_Sweeper_britel": 0.22114890555955194,
-            "gk_Sweeper_briteh": 2.4309937313739596,
-            "gk_Sweeper_britels": 0.3526872880485048,
-            "gk_Sweeper_britehs": 0.7473024355153632,
-            "gk_TubularBell_level": -6.982838351659645,
-            "gk_YiString_level": 0,
-            "gk_Xing_level": 0
-        };
+    "gk_Duration_factor": 1.887587340731607,
+    "gk_Iterations": 7,
+    "gk_MasterOutput_level": 6,
+    "gk_ReverbSC_wet": 0.5,
+    "gk_ReverbSC_feedback": 0.9430743937525689,
+    "gk_ReverbSC_delay_modulation": 0.0075,
+    "gk_ReverbSC_frequency_cutoff": 9000,
+    "gk_Blower_level": -29.344363374781626,
+    "gk_Blower_attack": 1.5,
+    "gk_Blower_release": 2,
+    "gk_Blower_grainDensity": 245.730140787175,
+    "gk_Blower_grainDuration": 0.03750899188161545,
+    "gk_Blower_grainAmplitudeRange": 119.4532935977803,
+    "gk_Blower_grainFrequencyRange": 50.251772685232766,
+    "gk_Buzzer_level": -26.71359572500257,
+    "gk_Buzzer_harmonics": 1.3688212927756656,
+    "gk_Droner_level": -22.767444250333984,
+    "gk_Droner_partial1": 0.12105641763436441,
+    "gk_Droner_partial2": 0.22628712362552666,
+    "gk_Droner_partial3": 0.6406330284657281,
+    "gk_Droner_partial4": 0.11447949850991676,
+    "gk_Droner_partial5": 0,
+    "gk_FilteredSines_level": -18.163600863220637,
+    "gk_ZakianFlute_level": -22.767444250333984,
+    "gk_FMWaterBell_level": 0.9094645976775197,
+    "gi_FMWaterBell_attack": 0.002,
+    "gi_FMWaterBell_release": 0.01,
+    "gi_FMWaterBell_exponent": 15,
+    "gi_FMWaterBell_sustain": 20,
+    "gi_FMWaterBell_sustain_level": 0.1,
+    "gk_FMWaterBell_crossfade": 0.5,
+    "gk_FMWaterBell_index": 0.5,
+    "gk_FMWaterBell_vibrato_depth": 0.05,
+    "gk_FMWaterBell_vibrato_rate": 6,
+    "gk_Guitar_level": 0,
+    "gk_Harpsichord_level": -6,
+    "gk_Kung2_level": -10.275380189066993,
+    "gk_Kung4_level": -20.136676600554924,
+    "gk_Phaser_level": -21.452060425444458,
+    "gk_Phaser_ratio1": 2,
+    "gk_Phaser_ratio2": 3,
+    "gk_Phaser_index1": 1.0266159695817492,
+    "gk_Phaser_index2": 0.533347035248176,
+    "gk_Plucked_level": 27.874833007912855,
+    "gk_Shiner_level": -16.848217038331107,
+    "gk_Shiner_attack": 0.125,
+    "gk_Shiner_release": 0.5,
+    "gk_SeidelHarmOsc_level": -20.136676600554924,
+    "gk_Sweeper_level": -11.586681738772988,
+    "gk_Sweeper_britel": 0.11591819956838968,
+    "gk_Sweeper_briteh": 0.826225465008735,
+    "gk_Sweeper_britels": 0.5631487000308293,
+    "gk_Sweeper_britehs": 1.668071112938033,
+    "gk_TubularBell_level": -17.505908950775876,
+    "gk_YiString_level": 0,
+    "gk_Xing_level": 0
+};
         let Master = cloud5_piece.menu_folder_addon('Master');
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
@@ -2190,10 +2152,6 @@
         cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainDuration', 0, .5);
         cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainAmplitudeRange', 0, 400);
         cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainFrequencyRange', 0, 100);
-        var Bower = cloud5_piece.menu_folder_addon('Bower');
-        cloud5_piece.menu_slider_addon(Bower, 'gk_Bower_level', -50, 50);
-        cloud5_piece.menu_slider_addon(Bower, 'gk_Bower_pressure', 0, 5);
-        cloud5_piece.menu_slider_addon(Bower, 'gk_Bower_rat', 0, .5);
         var Buzzer = cloud5_piece.menu_folder_addon('Buzzer');
         cloud5_piece.menu_slider_addon(Buzzer, 'gk_Buzzer_level', -50, 50);
         cloud5_piece.menu_slider_addon(Buzzer, 'gk_Buzzer_harmonics', 0, 20);
@@ -2237,8 +2195,10 @@
         cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_level', -50, 50);
         cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_attack', 0, 1);
         cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_release', 0, 4);
-        var SeidelHarmonicOsc = cloud5_piece.menu_folder_addon('SeidelHarmonicOsc');
-        cloud5_piece.menu_slider_addon(SeidelHarmonicOsc, 'gk_SeidelHarmonicOsc_level', -50, 50);
+        var SeidelHarmOsc = cloud5_piece.menu_folder_addon('SeidelHarmOsc');
+        cloud5_piece.menu_slider_addon(SeidelHarmOsc, 'gk_SeidelHarmOsc_level', -50, 50);
+        var Harpsichord = cloud5_piece.menu_folder_addon('Harpsichord');
+        cloud5_piece.menu_slider_addon(Harpsichord, 'gk_Harpsichord_level', -50, 50);
         var Sweeper = cloud5_piece.menu_folder_addon('Sweeper');
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_level', -50, 50);
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britel', 0, 4);
@@ -2260,7 +2220,7 @@
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
         cloud5_shader.shader_parameters_addon = {
             fragment_shader_code_addon: `#version 300 es
-        #line 2259
+        #line 2270
         precision highp float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
