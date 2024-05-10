@@ -117,8 +117,9 @@ Part of Silencio, an algorithmic music composition library for Csound.
             let opening_parenthesis = text.indexOf('(');
             let ending_parenthesis = text.lastIndexOf(')');
             if (opening_parenthesis != -1 && ending_parenthesis != -1) {
-                this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(',');
+                 this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(/, /);
             }
+
             this.key = this.name + '(' + this.actual_parameter_expressions.length + ')';
             this.actual_parameter_values = [];
             for (let i = 0; i < this.actual_parameter_expressions.length; i++) {
@@ -204,7 +205,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
 
     ParametricLindenmayer.evaluate_with_minimal_scope = function(code) {
         try {
-            let result = eval(code);
+            let result = eval?.(code);
             return result;
         } catch (x) {
             console.log(x);
@@ -385,7 +386,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 turtle.chord = turtle.chord.Q(n, turtle.modality);
                 return turtle;
             });
-            this.add_command('J(n,m)', function (lsystem, turtle, n, m) {
+            this.add_command('J(n, m)', function (lsystem, turtle, n, m) {
                 let inversions = turtle.chord.J(n);
                 if (inversions.length > m) {
                     turtle.chord = inversions[m];
