@@ -34,14 +34,14 @@ Part of Silencio, an algorithmic music composition library for Csound.
     t, d, s, c, k, v, x
 
     */
- 
+
     let CsoundAC;
     (async () => {
         CsoundAC = await createCsoundAC();
         console.info("CsoundAC 1:" + CsoundAC);
     })();
     console.info("CsoundAC 2:" + CsoundAC);
-   
+
     let ParametricLindenmayer = {};
 
     /**
@@ -107,7 +107,12 @@ Part of Silencio, an algorithmic music composition library for Csound.
      * an empty list of actual parameter values, and a Production-matching key
      * from the text of the Word. 
      * 
-     * @param {string} text Parsed to produce the parts of this Word.
+     * @param {string} text Parsed to produce the parts of this Word. Both 
+     * formal parameters and actual parameters must be seperated by a comma 
+     * and a space (`", "`). _Actual_ parameters may contain or be expressions; 
+     * if so, no comma within such an expression may be followed by a space 
+     * (this prevents incorrect parsing into malformed parameters). Example: 
+     * `"J(2, myfunction(4,t/2,6) + p)"`.
      */
     ParametricLindenmayer.Word = class {
         constructor(text) {
@@ -117,7 +122,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             let opening_parenthesis = text.indexOf('(');
             let ending_parenthesis = text.lastIndexOf(')');
             if (opening_parenthesis != -1 && ending_parenthesis != -1) {
-                 this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(/, /);
+                this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(/, /);
             }
 
             this.key = this.name + '(' + this.actual_parameter_expressions.length + ')';
@@ -203,7 +208,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
      * @param {string} code Text of Javascript expression.
      */
 
-    ParametricLindenmayer.evaluate_with_minimal_scope = function(code) {
+    ParametricLindenmayer.evaluate_with_minimal_scope = function (code) {
         try {
             let result = eval?.(code);
             return result;

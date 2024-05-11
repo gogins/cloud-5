@@ -1902,8 +1902,8 @@
         function kustom(t_, k_) {
             let result = Math.sin(t_ * 40) * k_;
             return result;
-        }        
-        async function generator () {
+        }
+        async function generator() {
             this.log("generator()...\n");
             var startTime = 0;
             let lsys = new ParametricLindenmayer.PLSystem();
@@ -1921,7 +1921,7 @@
             lsys.set_turtle(t);
             // p0_t, p1_d, p2_s, p3_c, p4_k, p5_v, p6_x
             lsys = new ParametricLindenmayer.PLSystem();
-            lsys.set_axiom('C();Note(1, 1.75, 144, 1, 1, 1, 0);');
+            lsys.set_axiom('C();Note(1, .25, 144, 1, 1, 1, 0);');
             // The problem here is that Command(t,d,s,c,k,v,x) carries state down from the stack,
             // but Command() does not. I will try Note(t,d,s,c,k,v,x) with zero v instead of Move.
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<5)', `
@@ -1930,13 +1930,13 @@
                   Note(t/2.10+1.00, d/-2.00+0, s, c/2+1.100, k/2.00+1.90, v/2.00+0.00, x/2+0); 
             `);
             //                  Note(t/2.10+0.00, d/2.50+0, s, c/2+1.000, k/2.00+1.10, v/2.00+0.00, x/2+0); 
-                  // Note(t/1.50+0.55, d/2.00+0, s, c/2+0.000, k/2.00-0.05, v/2.00+0.00, x/2+0); K(); 
-                  //Math.pow(y, 1.05) * x) % 24.;
+            // Note(t/1.50+0.55, d/2.00+0, s, c/2+0.000, k/2.00-0.05, v/2.00+0.00, x/2+0); K(); 
+            //Math.pow(y, 1.05) * x) % 24.;
 
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==5)', `
                   Scale(0, 2.0);
                   Scale(4, 2.0);
-            T(-3); Note(t/1.50-0.50, d/1.50+0, s, c/2+0.000, k/2.00-0.10, v/2.00+0.00, x/2+0); T(5);
+            T(-4); Note(t/1.50-0.50, d/1.50+0, s, c/2+0.000, k/2.00-0.10, v/2.00+0.00, x/2+0); T(5);
                   Note(t/1.50+0.00, d/2.00+0, s, c/2-1.000, k/2.20+0.80, v/2.00+0.00, x/2+0); 
                   Note(t/1.50+0.55, d/2.00+0, s, c/2+0.000, kustom(t,k), v/2.00+0.00, x/2+0); K(); 
                   Scale(0, 0.5);
@@ -2029,7 +2029,7 @@
                 }
             }
             lsys.conformToChords();
-            lsys.score.setDuration(9 * 60 + 5);
+            lsys.score.setDuration(6 * 60 + 5);
             lsys.score.findScales();
             this.log(lsys.score.minima.toString());
             this.log(lsys.score.ranges.toString());
@@ -2108,17 +2108,16 @@
                 <li>Mix (perhaps rather clangy) percussive sounds with pads.</li>
                 <li>Get rid of the Bower instrument (done).</li>
                 <li>Compute pan from insno (done).</li>
-                <li>Add Harpsichord.</li>
-                <li>Add some other good percussive FM instrument.</li>
-                <li>Fix the click at the end./li>
+                <li>Add Harpsichord (done).</li>
+                <li>Add some other good percussive FM instrument (done).</li>
+                <li>Fix the click at the end (done)./li>
                 <li>Curl on the iterations to rotate the whole towards the end.</li>
-                <li>Try putting expressions in some of the parameters. <i>That 
-                    works, but only if the expression contains no commas, as 
-                    the Lindemayer system is parsing function parameters 
-                    separated by commas. Workaround: ', ' for parameters, 
-                    ',' for commas required within parameters. Should be a 
-                    less fussy way.
-                </i></li>
+                <li>Try putting expressions in some of the parameters. <i>That
+                        works, but only if the expression contains no commas, as
+                        the Lindemayer system is parsing function parameters
+                        separated by commas. Workaround: ', ' for parameters,
+                        ',' for commas within parameters.
+                    </i></li>
                 <li>If possible, do a local iteration depth.</li>
             </ul>
 
@@ -2170,10 +2169,10 @@
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
             "gk_Duration_factor": 1.887587340731607,
-            "gk_Iterations": 7,
+            "gk_Iterations": 8,
             "gk_MasterOutput_level": -2.383888203863542,
             "gk_ReverbSC_wet": 0.5,
-            "gk_ReverbSC_feedback": 0.9430743937525689,
+            "gk_ReverbSC_feedback": 0.8707357172215372,
             "gk_ReverbSC_delay_modulation": 0.0075,
             "gk_ReverbSC_frequency_cutoff": 9000,
             "gk_Blower_level": -29.344363374781626,
@@ -2185,7 +2184,7 @@
             "gk_Blower_grainFrequencyRange": 50.251772685232766,
             "gk_Buzzer_level": 0.2466091245376134,
             "gk_Buzzer_harmonics": 1.3688212927756656,
-            "gk_Droner_level": -22.767444250333984,
+            "gk_Droner_level": -29.34648581997534,
             "gk_Droner_partial1": 0.12105641763436441,
             "gk_Droner_partial2": 0.22628712362552666,
             "gk_Droner_partial3": 0.6406330284657281,
@@ -2193,7 +2192,7 @@
             "gk_Droner_partial5": 0,
             "gk_FilteredSines_level": -18.163600863220637,
             "gk_FMModerate_level": -34,
-            "gi_FMModerate_exponent": -9,
+            "gi_FMModerate_exponent": -99.50678175092477,
             "gk_ZakianFlute_level": -22.767444250333984,
             "gk_FMWaterBell_level": 0.9094645976775197,
             "gi_FMWaterBell_attack": 0.002,
