@@ -395,7 +395,7 @@ and make sure that the application directory for your `csound.node` pieces is th
 
 ## Release Notes
 
-### [v1.0](xxx)
+### [v1.0beta](https://github.com/gogins/cloud-5/releases/tag/v1-beta)
 
  - Added cloud-5.js, cloud-5.css, example pieces, and my paper on using 
    cloud-5. These greatly simplify writing cloud music pieces.
