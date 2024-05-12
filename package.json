@@ -4,7 +4,7 @@
     "setup": "git submodule update --init --recursive --remote && cd strudel && git stash && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
     "jsdoc": "jsdoc -c jsdoc.json",
-    "package": "zip -r cloud-5.zip . -x '*.git*/*' '*strudel*/*' '*node_modules*/*'",
+    "package": "zip -r cloud-5.zip . -x '*.git*/*' '*attic*/*' '*tests*/*' '*strudel*/*' '*node_modules*/*'",
     "build": "pnpm run build-strudel && vite build && cp -rf strudel/website/dist/* . && rm CNAME && pandoc -s cloud-5.css --ascii=true README.md -o index.html && python3 patch-dist.py && pnpm run jsdoc && pnpm run package",
     "local": "python3 -m http.server"
   },
