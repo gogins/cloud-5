@@ -1,4 +1,3 @@
-# cloud-music
 <p>
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" 
 style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
@@ -17,7 +16,7 @@ not be animated visuals along with the music. The listener may or may not be
 able to control and/or customize the piece -- perhaps quite a bit, amounting 
 to a new piece, co-composed with me.
 
-For more information on most of these pieces, open the piece anbd view its 
+For more information on most of these pieces, open the piece and view its 
 <i><b>About</b></i> tab, or use the browser's inspector to view the underlying 
 code.
 
