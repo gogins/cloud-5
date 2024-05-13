@@ -38,8 +38,11 @@ index_filepath = "index.html"
 print(f"Patching '{index_filepath}'")
 with open(index_filepath, "r+") as input_file:
   find_this = '''</style>
-</head>'''
+  <link rel="stylesheet" href="readme.css" />
+</head>
+'''
   replace_with = '''</style>
+  <link rel="stylesheet" href="readme.css" />
   <link rel="shortcut icon" type="image/png" href="./favicon-16x16.png">
 </head>'''
   text = input_file.read()
