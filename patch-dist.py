@@ -6,7 +6,7 @@ import os
 import os.path
 
 index_html_filepath = "strudel/website/dist/index.html"
-strudel_repl_html_filepath = "cloud-5/strudel_repl.html"
+strudel_repl_html_filepath = "strudel_repl.html"
 print(f"Patching '{index_html_filepath}'")
 with open(index_html_filepath, "r+") as input_file:
   find_this = '="/'
@@ -30,8 +30,23 @@ with open(index_html_filepath, "r+") as input_file:
   print(patched_text)
   with open(strudel_repl_html_filepath, "w") as output_file:
       output_file.write(patched_text)
-      
-  
+
+'''
+Give the site the right favicon. This must be done in the HTML <head>.
+'''
+index_filepath = "index.html"
+print(f"Patching '{index_filepath}'")
+with open(index_filepath, "r+") as input_file:
+  find_this = '''</style>
+</head>'''
+  replace_with = '''</style>
+  <link rel="shortcut icon" type="image/png" href="./favicon-16x16.png">
+</head>'''
+  text = input_file.read()
+  patched_text = text.replace(find_this, replace_with)
+with open(index_filepath, "w") as output_file:
+  output_file.write(patched_text)
+
   
 
 

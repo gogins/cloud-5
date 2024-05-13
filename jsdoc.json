@@ -2,14 +2,14 @@
     "source": {
         "include": [
             "README.md",
-            "public/CsoundAudioNode.js", 
-            "public/CsoundAC.js", 
-            "public/csoundac.mjs",
-            "public/statefulpatterns.mjs",
-            "public/csound_loader.js",
-            "public/Silencio.js",
-            "public/cloud-5.js",
-            "public/ParametricLindenmayerSystem.js"
+            "CsoundAudioNode.js", 
+            "CsoundAC.js", 
+            "csoundac.mjs",
+            "statefulpatterns.mjs",
+            "csound_loader.js",
+            "Silencio.js",
+            "cloud-5.js",
+            "ParametricLindenmayerSystem.js"
         ],
         "includePattern": ".*\\.(js|mjs|jsx|html)$"
     },
@@ -24,7 +24,7 @@
     },
     "recurseDepth": 3,                        
     "opts": {
-        "destination": "./cloud-5/jsdocs/",               
+        "destination": "./jsdocs/",               
         "recurse": true                      
     },
     "plugins": ["plugins/markdown"]
