@@ -1921,13 +1921,13 @@
             lsys.set_turtle(t);
             // p0_t, p1_d, p2_s, p3_c, p4_k, p5_v, p6_x
             lsys = new ParametricLindenmayer.PLSystem();
-            lsys.set_axiom('C();Note(1, .25, 144, 1, 1, 1, 0);');
+            lsys.set_axiom('C();Note(1, 1.5, 144, 1, 1, 1, 0);');
             // The problem here is that Command(t,d,s,c,k,v,x) carries state down from the stack,
             // but Command() does not. I will try Note(t,d,s,c,k,v,x) with zero v instead of Move.
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<5)', `
-                  Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
+                  Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+(t % 6), v/2.00+0.02, x/2+0);  
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/-2.00+0.00, v/2.00+0.00, x/2+0); 
-                  Note(t/2.10+1.00, d/-2.00+0, s, c/2+1.100, k/2.00+1.90, v/2.00+0.00, x/2+0); 
+                  Note(t/2.10+1.00, d/-2.00+0, s, c/2+1.100, k/2.00+1.90, v/2.00+3.00, x/2+0); 
             `);
             //                  Note(t/2.10+0.00, d/2.50+0, s, c/2+1.000, k/2.00+1.10, v/2.00+0.00, x/2+0); 
             // Note(t/1.50+0.55, d/2.00+0, s, c/2+0.000, k/2.00-0.05, v/2.00+0.00, x/2+0); K(); 
@@ -1944,7 +1944,7 @@
             `);
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration>5)', `
                   Note(t/2.20+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.02, v/2.00+0.02, x/2+0);  
-                  Note(t/2.30+0.10, d/2.00+0, s, c/2+0.500, k/2.00+1.10, v/2.00+0.00, x/2+0);
+                  Note(t/2.30+0.10, d/2.00+0, s, c/2+0.500, k/2.00+1.10, v/2.00+2.00, x/2+0);
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.03, v/2.00+0.00, x/2+0); 
                   Note(t/2.10+1.00, d/2.00+0, s, c/2+1.150, k/2.00+0.90, v/2.00+0.00, x/2+0); 
             `);
