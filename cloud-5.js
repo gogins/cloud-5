@@ -308,7 +308,7 @@ class Cloud5Piece extends HTMLElement {
       ///this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.toggle(this.about_overlay);
-      this.strudel_component.focus(true);
+      this.strudel_component?.focus(true);
     });
     // Ensure that the dat.gui controls are children of the _Controls_ button.
     let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };

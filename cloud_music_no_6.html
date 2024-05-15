@@ -90,7 +90,7 @@
   .legato(.9)
   .iter(2)
   .note()
-  .csoundm("6 9").stack(
+  .csoundm("6 9").color("blue green").stack(
 "0,2,[7 6]"
   .add("<0 1 2 3 4 5 [7 8] 9>")
   .transpose("<0 1 -1 1>/8.5")
@@ -99,10 +99,10 @@
   .transpose("<54 30>/7")
   .legato(.9)
   .note()
-  .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
-  .csoundm("10 11"))
+  .csoundm("10 11").color("red pink"))
+  .pianoroll({labels:1,fillActive:0,cycles:32,playhead:.9})  
   .slow(2)
-  
+
     -->
     </strudel-repl-component>
 

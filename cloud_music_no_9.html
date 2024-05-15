@@ -183,36 +183,38 @@
 
         <!--
         
-    const csac = await import('../csoundac.mjs');
-    csac.diagnostic_level(csac.INFORMATION);
+const csac = await import('../csoundac.mjs');
+    csac.diagnostic_level(csac.ERROR);
     
     stack("0,3,[11 6]"
       .add("<0 1 2 [3 4] 5 7 8>")
       .transpose("<0 1 2 1>/8")
       .slow(2)
       .degradeBy(.125)
-      .transpose("48 36")
+      .transpose("48 36")      
+      .tune("ji_12c")
+      .add(24)
       .legato(.95)
       .iter(2)
-      //.tune("ji_12c")
       .add(24)
       .note()
-      .csoundn("<1 2 8 10>"),
+      .csoundn("<1 2 8 10>").color("bisque beige ivory floralwhite"),
     "0,4,[7 6]"
       .sub("<0 1 2 3 4 5 [7 8] 9>")
       .transpose("<0 1 -1 1>/3")
       .iter(4)
       .slow(7)
       .transpose("<48 36>/7")
-      .legato(.95)
-      //.tune("ji_12c")
+      .tune("ji_12c")
       .add(24)
+      .legato(.95)
+      .transpose(48)
       .slow(4)
       .note()
-      .csoundn("<2 3 6>"))
-      .pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})
-         
-        -->
+      .csoundn("<2 3 6>").color("aqua turquoise lightblue"))
+      .pianoroll({labels:1,cycles:32,playhead:.9})
+
+      -->
 
     </strudel-repl-component>
 
