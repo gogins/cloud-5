@@ -49,15 +49,19 @@ up navigation on the Web site, and to build sourcemaps.
 astro_config_mjs_filepath = "strudel/website/astro.config.mjs";
 print(f"Patching '{astro_config_mjs_filepath}'")
 with open(astro_config_mjs_filepath, "r+") as file:
-  find_this =    '''globPatterns: ['**/*.{js,css,html'''
-  replace_with = '''globPatterns: ['**/*.{js,css'''
+  find_this =    '''      workbox: {
+        globPatterns: ['**/*.{js,css,html'''
+  replace_with = '''      // MKG patch...
+      workbox: {
+        globPatterns: ['**/*.{js,css'''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
   find_this = '''  vite: {
     ssr: {
       // Example: Force a broken package to skip SSR processing, if needed
       // external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
-    },'''
+    },
+  },'''
   replace_with = '''
 // MKG patch...
     vite: {
@@ -66,8 +70,9 @@ with open(astro_config_mjs_filepath, "r+") as file:
       // external: ['fraction.js'], // https://github.com/infusion/Fraction.js/issues/51
     },
     build: {
-        sourcemap: true
+        sourcemap: true,
     },
+  },
 // MKG patch.
   '''
   patched_text = patched_text.replace(find_this, replace_with)
