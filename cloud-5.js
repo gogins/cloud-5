@@ -265,12 +265,12 @@ class Cloud5Piece extends HTMLElement {
     let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
     menu_item_fullscreen.onclick = ((event) => {
       console.info("menu_item_fullscreen click...");
-      if (this.piano_roll_overlay.requestFullscreen) {
-        this.piano_roll_overlay.requestFullscreen();
-      } else if (this.piano_roll_overlay.webkitRequestFullscreen) {
-        this.piano_roll_overlay.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        this.piano_roll_overlay.msRequestFullscreen();
+      if (this.#shader_overlay?.canvas?.requestFullscreen) {
+        this.shader_overlay.canvas.requestFullscreen();
+      } else if (this.#shader_overlay?.canvas?.webkitRequestFullscreen) {
+        this.shader_overlay.canvas.webkitRequestFullscreen();
+      } else if (this.#shader_overlay?.canvas?.msRequestFullscreen) {
+        this.shader_overlay.canvas.msRequestFullscreen();
       };
     });
     let menu_item_strudel = document.querySelector('#menu_item_strudel');
@@ -445,7 +445,7 @@ class Cloud5Piece extends HTMLElement {
     await this.csound.Stop();
     await this.csound.Cleanup();
     this.csound.Reset();
-    strudel_view?.stopPlaying();
+    this.strudel_view?.stopPlaying();
     this.csound_message_callback("Csound has stopped.\n");
   };
   /**
