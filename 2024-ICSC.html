@@ -90,6 +90,7 @@
           connect "ReverbSC", "outright", "MasterOutput", "inright"
           
           alwayson "ReverbSC"
+          alwayson "MasterOutputOff"
           alwayson "MasterOutput"
           
           gk_Duration_factor init 4.5
@@ -1810,69 +1811,92 @@
         prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
         endin
         
+        gk_ReverbSC_feedback chnexport "gk_ReverbSC_feedback", 3
+        gk_ReverbSC_wet chnexport "gk_ReverbSC_wet", 3
+        gi_ReverbSC_delay_modulation chnexport "gi_ReverbSC_delay_modulation", 3
+        gk_ReverbSC_frequency_cutoff chnexport "gk_ReverbSC_frequency_cutoff", 3
         
+        gk_ReverbSC_feedback init 0.875
+        gk_ReverbSC_wet init 0.5
+        gi_ReverbSC_delay_modulation init 0.0075
+        gk_ReverbSC_frequency_cutoff init 15000
+        
+        instr ReverbSC
+        gk_ReverbSC_dry = 1.0 - gk_ReverbSC_wet
+        aleftin init 0
+        arightin init 0
+        aleftout init 0
+        arightout init 0
+        aleftin inleta "inleft"
+        arightin inleta "inright"
+        aleftout, arightout reverbsc aleftin, arightin, gk_ReverbSC_feedback, gk_ReverbSC_frequency_cutoff, sr, gi_ReverbSC_delay_modulation
+        aleftoutmix = aleftin * gk_ReverbSC_dry + aleftout * gk_ReverbSC_wet
+        arightoutmix = arightin * gk_ReverbSC_dry + arightout * gk_ReverbSC_wet
+        outleta "outleft", aleftoutmix
+        outleta "outright", arightoutmix
+        prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+        endin
+    
+        gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
+        gk_Performance_seconds chnexport "gk_Performance_seconds", 3 ; 0
+        gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
+        
+        gk_MasterOutput_level init 0
+        gk_Performance_seconds init 30
+        gS_MasterOutput_filename init "2024-ICSC.wav"
+    
+        chn_k "gk_MasterOutput_output_level_left", 3
+        chn_k "gk_MasterOutput_output_level_right", 3
+        gk_record init 0
 
-          gk_ReverbSC_feedback chnexport "gk_ReverbSC_feedback", 3
-          gk_ReverbSC_wet chnexport "gk_ReverbSC_wet", 3
-          gi_ReverbSC_delay_modulation chnexport "gi_ReverbSC_delay_modulation", 3
-          gk_ReverbSC_frequency_cutoff chnexport "gk_ReverbSC_frequency_cutoff", 3
-          
-          gk_ReverbSC_feedback init 0.875
-          gk_ReverbSC_wet init 0.5
-          gi_ReverbSC_delay_modulation init 0.0075
-          gk_ReverbSC_frequency_cutoff init 15000
-          
-          instr ReverbSC
-          gk_ReverbSC_dry = 1.0 - gk_ReverbSC_wet
-          aleftin init 0
-          arightin init 0
-          aleftout init 0
-          arightout init 0
-          aleftin inleta "inleft"
-          arightin inleta "inright"
-          aleftout, arightout reverbsc aleftin, arightin, gk_ReverbSC_feedback, gk_ReverbSC_frequency_cutoff, sr, gi_ReverbSC_delay_modulation
-          aleftoutmix = aleftin * gk_ReverbSC_dry + aleftout * gk_ReverbSC_wet
-          arightoutmix = arightin * gk_ReverbSC_dry + arightout * gk_ReverbSC_wet
-          outleta "outleft", aleftoutmix
-          outleta "outright", arightoutmix
-          prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-          endin
-      
-          gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
-          gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
-          
-          gk_MasterOutput_level init 0
-          gS_MasterOutput_filename init ""
+        instr MasterOutputOff
+        i_MasterOutput_insno nstrnum "MasterOutput"
+        k_triggered init 0
+        if gk_Performance_seconds > 0 && k_triggered == 0 then
+        k_time times
+        if k_time >= gk_Performance_seconds then
+        turnoff2 i_MasterOutput_insno, 0, 1
+        k_triggered = 1
+        printks "Turning off insno: %d  gk_Performance_seconds: %9.4f  k_time: %9.4f...\n", 1, i_MasterOutput_insno, gk_Performance_seconds, k_time
+        endif
+        endif
+        endin
+    
+        instr MasterOutput
+        aleft inleta "inleft"
+        aright inleta "inright"
+        k_gain = ampdb(gk_MasterOutput_level)
+        printks2 "Master gain: %f\n", k_gain
+        iamp init 1
+        aleft butterlp aleft, 18000
+        aright butterlp aright, 18000
+        a_out_left = aleft * k_gain
+        a_out_right = aright * k_gain
+        i_duration = p3
+
+        ; We need a toggle for recording/pausing.
+    
+        gk_record chnget "gk_record"
         
-          chn_k "gk_MasterOutput_output_level_left", 3
-          chn_k "gk_MasterOutput_output_level_right", 3
+        if gk_record == 1 then 
+        prints sprintf("Recording to output filename: %s\n", gS_MasterOutput_filename)
+        fout gS_MasterOutput_filename, 19, a_out_left, a_out_right
+        else 
+        prints "Not recording.\n"
+        endif
         
-          instr MasterOutput
-          aleft inleta "inleft"
-          aright inleta "inright"
-          k_gain = ampdb(gk_MasterOutput_level)
-          printks2 "Master gain: %f\n", k_gain
-          iamp init 1
-          aleft butterlp aleft, 18000
-          aright butterlp aright, 18000
-          a_out_left = aleft * k_gain
-          a_out_right = aright * k_gain
-          outs a_out_left, a_out_right
-          ; We want something that will play on my phone.
-          i_amplitude_adjustment = ampdbfs(-3) / 32767
-          i_filename_length strlen gS_MasterOutput_filename
-          ;if i_filename_length > 0 then
-          ;prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
-          ;fout gS_MasterOutput_filename, 18, a_out_left * i_amplitude_adjustment, a_out_right * i_amplitude_adjustment
-          ;endif
-          prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-          gk_MasterOutput_output_level_left = dbfsamp(rms(a_out_left))
-          gk_MasterOutput_output_level_right = dbfsamp(rms(a_out_right))
-          chnset gk_MasterOutput_output_level_left, "gk_MasterOutput_output_level_left"
-          chnset gk_MasterOutput_output_level_right, "gk_MasterOutput_output_level_right"
-          ;;; printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
-          endin
-          
+        prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+        gk_MasterOutput_output_level_left = dbfsamp(rms(a_out_left))
+        gk_MasterOutput_output_level_right = dbfsamp(rms(a_out_right))
+        chnset gk_MasterOutput_output_level_left, "gk_MasterOutput_output_level_left"
+        chnset gk_MasterOutput_output_level_right, "gk_MasterOutput_output_level_right"
+        printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
+        // Use a fade-in, fade-out envelope.
+        // kres cossegr ia, idur1, ib [, idur2] [, ic] [...], irel, iz
+        k_envelope linsegr 0, 6, 1, 1000000000, 1, 6, 0
+        outs a_out_left * k_envelope, a_out_right * k_envelope
+        endin
+
           </CsInstruments>
           <CsScore>
           f 0 [ 3 * 60 + 45]
@@ -2141,6 +2165,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             "GraphicsHue": 0.3907101017367177,
             "GraphicsValue": 0.12763333675881205,
             "gk_Duration_factor": 0.8682696259761612,
+            "gk_Performance_seconds": -1,
             "gk_Iterations": 4,
             "gk_MasterOutput_level": 2.882540335011818,
             "gk_ReverbSC_wet": 0.5,
@@ -2209,6 +2234,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1.);
         let Master = cloud5_piece.menu_folder_addon('Master');
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
+        cloud5_piece.menu_slider_addon(Master, "gk_Performance_seconds", -1., 600.);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
         cloud5_piece.menu_slider_addon(Master, 'gk_Duration_factor', 0., 5.);
         cloud5_piece.menu_slider_addon(Master, 'gk_ReverbSC_feedback', 0., 1.);
@@ -2524,7 +2550,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         cloud5_piece.about_overlay = cloud5_about;
         // #endregion
         /**
-         * Enable the user to control compositional parameters using keys only 
+         * Enable the user to control compositional parameters using keys only, 
          * especially when in full screen mode.
          * */
         const composition_keys_handler = function(event) {
@@ -2534,6 +2560,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 let sign = 1;
                 if (event.shiftKey) {
                     sign = -1;
+                }
+                if (event.metaKey) {
+                    sign *= 10;
                 }
                 if        (event.code === 'KeyN') {
                     let step = (200 - 0) / coarseness;

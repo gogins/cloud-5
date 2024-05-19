@@ -2495,7 +2495,7 @@
                 // But see https://mimetype.io/audio/vnd.wav.
                 let mime_type = "audio/wav";
                 let file_data = await csound.GetFileData(soundfile_name);
-                console.log(`Offering download of "${soundfile_name}", with ${file_data.length} bytes...`);
+                console.info(`Offering download of "${soundfile_name}", with ${file_data.length} bytes...`);
                 var a = document.createElement('a');
                 a.download = soundfile_name;
                 a.href = URL.createObjectURL(new Blob([file_data], { type: mime_type }));

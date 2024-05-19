@@ -217,6 +217,7 @@ class Cloud5Piece extends HTMLElement {
             Play</li>
         <li id="menu_item_render" title="Render piece to soundfile" class="w3-btn w3-hover-text-light-green">Render
         </li>
+        <li id="menu_item_record" title="Record live audio to soundfile" class="w3-btn w3-hover-text-light-green">Record</li>
         <li id="menu_item_stop" title="Stop performance" class="w3-btn w3-hover-text-light-green">Stop</li>
         <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
         <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green" style="display:none;">Strudel</li>
@@ -256,6 +257,22 @@ class Cloud5Piece extends HTMLElement {
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
       (() => this.render(true))();
+    });
+    let menu_item_record = document.querySelector('#menu_item_record');
+    menu_item_record.onclick = ((event) => {
+      this.log("menu_item_record click...\n");
+      // Start recording if not already recording, 
+      // stop recording if already recording.
+      if (menu_item_record.innerText == "Record") {
+        this.csound.SetControlChannel("gk_record", 1);
+        menu_item_record.innerText = "Pause";
+        this.log("Csound has started recording...\n");
+      } else {
+        this.csound.SetControlChannel("gk_record", 0);
+        menu_item_record.innerText = "Record";
+        this.log("Csound has stopped recording.\n");
+        let soundefile_url = url_for_soundfile(this.csound);
+      }
     });
     let menu_item_stop = document.querySelector('#menu_item_stop');
     menu_item_stop.onclick = ((event) => {
@@ -351,15 +368,15 @@ class Cloud5Piece extends HTMLElement {
   }
 
   /**
-   * Copies all _current_ dat.gui parameters to the system clipboard in 
-   * JSON format.
-   * 
-   * @param {Object} parameters A dictionary containing the current state of all 
-   * controls; keys are control parameter names, values are control parameter 
-   * values. This can be pasted from the clipboard it source code, as a 
-   * convenient method of updating a piece with parameters that have been tweaked 
-   * during performance.
-   */
+    * Copies all _current_ dat.gui parameters to the system clipboard in 
+    * JSON format.
+    * 
+    * @param {Object} parameters A dictionary containing the current state of all 
+    * controls; keys are control parameter names, values are control parameter 
+    * values. This can be pasted from the clipboard it source code, as a 
+    * convenient method of updating a piece with parameters that have been tweaked 
+    * during performance.
+    */
   copy_parameters() {
     const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
     navigator.clipboard.writeText(json_text);
@@ -417,7 +434,7 @@ class Cloud5Piece extends HTMLElement {
     await this.csound.Start();
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.
-    this.send_parameters(this.control_parameters_addon);
+    this.send_parameters(this.control_parameters_addon);    
     this.csound_message_callback("Csound has started...\n");
     if (is_offline == false) {
       await this.csound.Perform();
@@ -492,6 +509,7 @@ class Cloud5Piece extends HTMLElement {
    */
   send_parameters(parameters) {
     if (non_csound(this.csound) == false) {
+      this.csound.Message("Sending initial state of control perameters to Csound...\n")
       for (const [name, value] of Object.entries(parameters)) {
         this.csound.Message(name + ": " + value + "\n");
         this.csound.SetControlChannel(name, parseFloat(value));
@@ -1503,5 +1521,35 @@ function downsample_lttb(data, buckets) {
   sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last
   return sampled_data; ///sampled_data;
 }
+
+/**
+  * Creates a URL for a soundfile recorded by this piece.
+  * All such files exist by default in the Emscripten MEMFS filesystem 
+  * at '/'.
+  */
+async function url_for_soundfile(csound) {
+  try {
+    let soundfile_name = document.title + ".wav";
+    // But see https://mimetype.io/audio/vnd.wav.
+    let mime_type = "audio/wav";
+    let file_data = await csound.GetFileData(soundfile_name);
+    console.info(`Offering download of "${soundfile_name}", with ${file_data.length} bytes...`);
+    var a = document.createElement('a');
+    a.download = soundfile_name;
+    a.href = URL.createObjectURL(new Blob([file_data], { type: mime_type }));
+    // We hide the download link and automatically click it.
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }, 2000);
+    // 
+  } catch (x) {
+    console.log(x);
+  }
+}
+
 
 
