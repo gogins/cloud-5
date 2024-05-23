@@ -2165,9 +2165,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     </cloud5-about>
     <script>
         let cloud5_piece = document.querySelector('cloud5-piece');
-        let host = cloud5_piece;
         // #region Csound Code
-        cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
+        cloud5_piece.csound_code_addon = document.querySelector('#csd').textContent;
         // #endregion
         // #region Strudel
         cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');

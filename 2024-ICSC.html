@@ -2159,13 +2159,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
             "NoteTempo": 54.46511149933203,
-            "NoteDensity": 96.57846058986743,
+            "VelocityThreshold": 96.57846058986743,
             "NoteDurationFactor": 2.9729729729729732,
             "GraphicsTempo": 0.020398725721919638,
             "GraphicsHue": 0.3907101017367177,
             "GraphicsValue": 0.12763333675881205,
             "gk_Duration_factor": 0.8682696259761612,
-            "gk_Performance_seconds": 120,
+            "gk_Performance_seconds": 600,
             "gk_Iterations": 4,
             "gk_MasterOutput_level": 2.882540335011818,
             "gk_ReverbSC_wet": 0.5,
@@ -2226,14 +2226,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         };
 
         let Composition = cloud5_piece.menu_folder_addon('Composition');
-        cloud5_piece.menu_slider_addon(Composition, "gk_Performance_seconds", -1., 600.);
+        cloud5_piece.menu_slider_addon(Composition, "gk_Performance_seconds", -1., 1200.);
         cloud5_piece.menu_slider_addon(Composition, "NoteTempo", 0, 200);
-        cloud5_piece.menu_slider_addon(Composition, "NoteDensity", 5, 200);
+        cloud5_piece.menu_slider_addon(Composition, "VelocityThreshold", 5, 200);
         cloud5_piece.menu_slider_addon(Composition, "NoteDurationFactor", 0., 5.);
         cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25);
         cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1.);
-        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., .25);
-        let Master = cloud5_piece.menu_folder_addon('Master');
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1.);
+        let Master = cloud5_piece.menu_folder_addon('Master');.2
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
         cloud5_piece.menu_slider_addon(Master, 'gk_Duration_factor', 0., 5.);
@@ -2340,7 +2340,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         cloud5_shader.event_tag = 0;
         // cloud5_shader.root_progressions = [2, 3, -4, 5, -1, 3];
         // Maybe try a list of lists?
-        cloud5_shader.root_progressions = [5, 4, 3, 2, -1];
+        cloud5_shader.root_progressions = [-3, 2, 1, 5];
         cloud5_shader.translate_sample_to_csound_events = async function translate_sample_to_csound_events(maximum_events, threshold, parent_rendering_frame) {
             if (this.cloud5_piece.csound) {
             } else {
@@ -2351,7 +2351,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 this.CsoundAC = await createCsoundAC();
                 this.score = new this.CsoundAC.Score();
                 this.scale = new this.CsoundAC.Scale('F major');
-                this.chord = this.scale.chord(1, 5, 3);
+                this.chord = this.scale.chord(1, 4, 3);
             }
             if (this.cloud5_piece.csound.GetScoreTime() <= 0) {
                 return;
@@ -2388,14 +2388,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
                 let hsv = downsampled_pixels[downsampled_pixel_i][2];
                 let instrument_number = 1 + (hsv[0] * this.instrument_count);
-                // The instrument number must have a unique fractional tag.
                 let time = 0;
-                let duration = (.25 + (60 / this.cloud5_piece.control_parameters_addon.NoteTempo * hsv[1] * 2)) * this.cloud5_piece.control_parameters_addon.NoteDurationFactor;
+                // Maybe arpeggiate off NoteTempo.
+                // Better yet, canons at intervals and rhythms.
+                // let duration = (.25 + (60 / this.cloud5_piece.control_parameters_addon.NoteTempo * hsv[1] * 2)) * this.cloud5_piece.control_parameters_addon.NoteDurationFactor;
+                let duration = (.25 + this.cloud5_piece.control_parameters_addon.NoteDurationFactor);
+                // The instrument number must have a unique fractional tag.
                 let midi_key = Math.floor(this.midi_key_begin + downsampled_pixel_i);
                 //instrument_number = 4;
                 let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
                 instrument_number = parseFloat(insno);
-                let midi_velocity = hsv[2] * 128;
+                let midi_velocity = 77.;//hsv[2] * 128;
                 let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
                 this.sampled_events.push(event_for_pixel);
             }
@@ -2407,7 +2410,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 if (this.playing_events.has(key) == true) {
                     let off_event = this.playing_events.get(key);
                     let instrument_number = off_event[0];
-                    if (threshold > sampled_event[4]) {
+                    if (sampled_event[4] < threshold) {
                         this.cloud5_piece.csound.KillInstance(instrument_number, "", 4, true);
                         console.info("Turned off instrument number: " + instrument_number + ".");
                         this.playing_events.delete(key);
@@ -2459,7 +2462,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             }
             if (this.score.size() > 0) {
                 if (this.sample_count % 4 == 0) {
-                    if (this.sample_count % 24 == 0) {
+                    if (this.sample_count % 12 == 0) {
                         let scales = this.scale.modulations(this.chord);
                         if (scales.size() > 1) {
                             this.scale = scales.get(Math.floor(Math.random() * scales.size()));
@@ -2471,8 +2474,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                     if (chord_name.length == 0) {
                         chord_name = this.chord.eOP().toString();
                     }
-                    this.cloud5_piece.log(sprintf("\nChord: %s\n\n", chord_name));
+                    this.cloud5_piece.log(sprintf("\nChord: %s => ", chord_name));
                     this.chord = this.scale.transpose_degrees(this.chord, root_progression, 3)
+                    chord_name = this.chord.eOP().name();
+                    if (chord_name.length == 0) {
+                        chord_name = this.chord.eOP().toString();
+                    }
+                    this.cloud5_piece.log(sprintf("%s\n\n", chord_name));
                 }
                 this.CsoundAC.apply(this.score, this.chord, 0, 1000000, true);
                 let score_text = this.score.getCsoundScore(12., true);
@@ -2493,10 +2501,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             //console.info("frame_sample_to_score.");
             let parameters = this.cloud5_piece.control_parameters_addon;
             let gi_Composition_tempo = Math.floor(parseFloat(parameters.NoteTempo));
-            let event_velocity_threshold = parseFloat(parameters.NoteDensity);
+            let event_velocity_threshold = parseFloat(parameters.VelocityThreshold);
             await this.translate_sample_to_csound_events(16, event_velocity_threshold, current_rendering_frame);
         }.bind(cloud5_shader);
-        // They are then in scope of the addon.
         let fragment_shader = document.getElementById('draw-shader-fs').textContent;
         cloud5_shader.shader_parameters_addon = {
             fragment_shader_code_addon: fragment_shader,
