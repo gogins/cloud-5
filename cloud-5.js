@@ -1462,7 +1462,8 @@ async function read_pixels_async(gl, x, y, w, h, format, type, sample) {
  * Adapts https://github.com/pingec/downsample-lttb from time 
  * series data to vectors of float HSV pixels. Our data is not 
  * [[time, value], [time, value],...], but rather 
- * [[pixel index0, hsv0[2]], [pixel index1, hsv1[2]], ...].
+ * [[column, value, [h,s,v]],...]. The algorithm uses 
+ * column and value, but [h,s,v] go along for the ride.
  * 
  * @param {Array} data Data from the canvas, e.g. a row of pixels.
  * @param {Array} buckets Placeholder data.
@@ -1515,7 +1516,9 @@ function downsample_lttb(data, buckets) {
         next_a = range_offs; // Next a is this b
       }
     }
-    sampled_data[sampled_data_index++] = max_area_point; // Pick this point from the bucket
+    // Pick this point from the bucket; it is the point with the maximum
+    // area by value, but that point actually includes [h,s,v].
+    sampled_data[sampled_data_index++] = max_area_point; 
     a = next_a; // This a is the next a (chosen b)
   }
   sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last

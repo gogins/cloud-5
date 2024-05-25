@@ -2158,12 +2158,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         // #endregion
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
-            "NoteTempo": 54.46511149933203,
-            "VelocityThreshold": 96.57846058986743,
-            "NoteDurationFactor": 2.9729729729729732,
-            "GraphicsTempo": 0.020398725721919638,
-            "GraphicsHue": 0.3907101017367177,
-            "GraphicsValue": 0.12763333675881205,
+            "NoteTempo": 151.78791615289765,
+            "VelocityThreshold": 92.72194821208384,
+            "NoteDurationFactor": 0.21064529387587339,
+            "GraphicsTempo": 0.01382038635429511,
+            "GraphicsHue": 0.5748047677764078,
+            "GraphicsValue": 0.035552815454171806,
             "gk_Duration_factor": 0.8682696259761612,
             "gk_Performance_seconds": 600,
             "gk_Iterations": 4,
@@ -2233,7 +2233,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25);
         cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1.);
         cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1.);
-        let Master = cloud5_piece.menu_folder_addon('Master');.2
+        let Master = cloud5_piece.menu_folder_addon('Master'); .2
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
         cloud5_piece.menu_slider_addon(Master, 'gk_Duration_factor', 0., 5.);
@@ -2365,6 +2365,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             let type = this.gl.UNSIGNED_BYTE;
             read_pixels_async(this.gl, x, y, width, height, format, type, this.image_sample_buffer);
             // Translate the sample format from byte RGBA to float HSV.
+            // The the raw bytes in the buffer are transformed to [[sample index, value, hsv],...].
             let hsv_image_sample = [];
             for (let byte_i = 0; byte_i < this.image_sample_buffer.length; byte_i = byte_i + 4) {
                 let rgb = this.image_sample_buffer.slice(byte_i, byte_i + 3);
@@ -2372,6 +2373,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 hsv_image_sample.push([hsv_image_sample.length + 1, hsv[2], hsv]);
             }
             // Downsample the HSV samples.
+            // hsv_image_sample is [[column, value, [h,s,v]]],...]; 
+            // downsampled_pixels is the error-minimizing piecewise 
+            // approimation of the sample with N buckets in the 
+            // same layout, thus only a subset of the columns.
             let downsampled_pixels = downsample_lttb(hsv_image_sample, this.midi_key_range);
             this.sampled_events.length = 0;
             this.on_events.length = 0;
@@ -2383,7 +2388,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             // 1 is p2 time always 0.
             // 2 is p3 duration (either hsv[1] or -1, must be 0 for off
             //   events).
-            // 3 is p4 MIDI key (downsampled pixel).
+            // 3 is p4 MIDI key (bucket index).
             // 4 is p5 MIDI velocity (hsv[2]).
             for (let downsampled_pixel_i = 0; downsampled_pixel_i < downsampled_pixels.length; downsampled_pixel_i++) {
                 let hsv = downsampled_pixels[downsampled_pixel_i][2];
@@ -2398,7 +2403,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 //instrument_number = 4;
                 let insno = sprintf("%d.%d", Math.floor(instrument_number), midi_key);
                 instrument_number = parseFloat(insno);
-                let midi_velocity = 77.;//hsv[2] * 128;
+                let midi_velocity = hsv[2] * 128;
                 let event_for_pixel = [instrument_number, time, duration, midi_key, midi_velocity];
                 this.sampled_events.push(event_for_pixel);
             }
@@ -2562,7 +2567,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
          * Enable the user to control compositional parameters using keys only, 
          * especially when in full screen mode.
          * */
-        const composition_keys_handler = function(event) {
+        const composition_keys_handler = function (event) {
             console.info(event);
             const coarseness = 100;
             if (event.ctrlKey && event.altKey) {
@@ -2573,7 +2578,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 if (event.metaKey) {
                     sign *= 10;
                 }
-                if        (event.code === 'KeyN') {
+                if (event.code === 'KeyN') {
                     let step = (200 - 0) / coarseness;
                     this.control_parameters_addon.NoteTempo += (step * sign);
                 } else if (event.code === 'KeyD') {
@@ -2591,11 +2596,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 } else if (event.code === 'KeyV') {
                     let step = (1 - 0) / coarseness;
                     this.control_parameters_addon.GraphicsValue += (step * sign);
-                }  
+                }
             }
         };
         document.addEventListener("keydown", composition_keys_handler.bind(cloud5_piece));
-     </script>
+    </script>
 </body>
 
 </html>
