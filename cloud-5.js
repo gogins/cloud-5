@@ -380,7 +380,8 @@ class Cloud5Piece extends HTMLElement {
   copy_parameters() {
     const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
     navigator.clipboard.writeText(json_text);
-    console.info("Copied all control parameters to system clipboard.\n")
+    /// console.info("Copied all control parameters to system clipboard.\n")
+    this?.csound.Message("Copied all control parameters to system clipboard.\n")
   }
 
   /**
