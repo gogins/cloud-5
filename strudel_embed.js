@@ -91,6 +91,9 @@ class StrudelReplComponent extends HTMLElement {
   setCsoundAC(csoundac_) {
     this.i_frame.contentWindow.__csoundac__ = csoundac_;
   }
+  setParameters(parameters_) {
+    this.i_frame.contentWindow.__parameters__ = parameters_;
+  }
 }
 
 customElements.define('strudel-repl-component', StrudelReplComponent);

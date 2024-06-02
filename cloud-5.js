@@ -678,7 +678,6 @@ class Cloud5Strudel extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
     <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;z-index:4001;'>
-
         <!--
         ${this.#strudel_code_addon}
         -->
@@ -1553,6 +1552,35 @@ async function url_for_soundfile(csound) {
   } catch (x) {
     console.log(x);
   }
+}
+
+/**
+ * Generates a new copy of the Score that is in canon to the original, at the 
+ * specified delay in seconds and transposition in semitones (which may be 
+ * fractional). If a Scale is supplied, the new Score is conformed to that 
+ * Scale.
+ * @param {CsoundAC.Score} Score or fragment of score. 
+ * @param {number} delay in seconds.
+ * @param {number} transposition in semitones.
+ * @param {CsoundAC.Scale} csoundac_scale if supplied, the new voice will 
+ * be conformed to this scale.
+ * @returns a modified {Score}
+ */
+function canon(csoundac_score, delay, transposition, csoundac_scale) {
+  let new_score = new CsoundAC.Score();
+  // Append both an event and that event in canon to the new Score.
+  for (let event of csoundac_score) {
+    new_score.append(event);
+    let new_time = event.time + dellay;
+    event.time = new_time;
+    let new_key = event.key + transposition;
+    event.key = new_key;
+    new_score.append(event);
+  }
+  if (csoundac_scale) {
+    CsoundAC.apply(new_score, csound_scale, 0, 1000000, true);
+  }
+  return new_score;
 }
 
 

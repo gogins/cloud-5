@@ -34,6 +34,10 @@ let csound = globalThis.__csound__;
  * Global instance of CsoundAC.
  */
 let csoundac = globalThis.__csoundac__;
+/**
+ * Global reference to the cloud-5 parameters addon.
+ */
+let parameters = globalThis.__parameters__;
 
 let audioContext = new AudioContext();
 
@@ -1285,6 +1289,26 @@ export class PitvPatterns extends StatefulPatterns {
        return hap;
    }
 }
+
+/**
+ * Assigns the value of the Pattern of this to a cloud-5 control parameter.
+ * Enables controlling external JavaScript code in the browser using  
+ * Strudel Patterns.
+ */
+export class ParameterPatterns extends StatefulPatterns {
+    constructor(name_) {
+        super();
+        this.registerPatterns();
+        this.name = name_;
+    }
+    control(is_onset, value_, hap) {
+        // Assign on every query, or only at onsets?
+        parameters[this.name] = value_;
+        return hap;
+    }
+}
+
+
 
 
 
