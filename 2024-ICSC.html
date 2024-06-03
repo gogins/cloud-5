@@ -2488,6 +2488,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                     this.cloud5_piece.log(sprintf("%s\n\n", chord_name));
                 }
                 this.CsoundAC.apply(this.score, this.chord, 0, 1000000, true);
+                this.score = canon(this.CsoundAC, this.score, 1, 5, this.scale);
                 let score_text = this.score.getCsoundScore(12., true);
                 this.cloud5_piece.csound.ReadScore(score_text);
             }

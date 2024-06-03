@@ -1566,19 +1566,20 @@ async function url_for_soundfile(csound) {
  * be conformed to this scale.
  * @returns a modified {Score}
  */
-function canon(csoundac_score, delay, transposition, csoundac_scale) {
+function canon(CsoundAC, csoundac_score, delay, transposition, csoundac_scale) {
   let new_score = new CsoundAC.Score();
   // Append both an event and that event in canon to the new Score.
-  for (let event of csoundac_score) {
-    new_score.append(event);
-    let new_time = event.time + dellay;
-    event.time = new_time;
-    let new_key = event.key + transposition;
-    event.key = new_key;
-    new_score.append(event);
+  for (let i = 0; i < csoundac_score.size(); ++i) {
+    let event = csoundac_score.get(i);
+    new_score.append_event(event);
+    let new_time = event.getTime() + delay;
+    event.setTime(new_time);
+    let new_key = event.getKey() + transposition;
+    event.setKey(new_key);
+    new_score.append_event(event);
   }
   if (csoundac_scale) {
-    CsoundAC.apply(new_score, csound_scale, 0, 1000000, true);
+    CsoundAC.apply(new_score, csoundac_scale, 0, 1000000, true);
   }
   return new_score;
 }
