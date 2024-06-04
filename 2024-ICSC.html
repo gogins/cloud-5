@@ -2164,6 +2164,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
             "GraphicsTempo": 0.24234484175914509,
             "GraphicsHue": 0.2722975750102754,
             "GraphicsValue": 0.035552815454171806,
+            "CanonDelay": 0,
+            "CanonTranspose": 0,
             "gk_Duration_factor": 0.8682696259761612,
             "gk_Performance_seconds": 600,
             "gk_Iterations": 4,
@@ -2233,6 +2235,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25);
         cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1.);
         cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1.);
+        cloud5_piece.menu_slider_addon(Composition, "CanonDelay", 0., 5., .001);
+        cloud5_piece.menu_slider_addon(Composition, "CanonTranspose", -12., 12., 1);
         let Master = cloud5_piece.menu_folder_addon('Master'); .2
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
@@ -2487,11 +2491,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                     }
                     this.cloud5_piece.log(sprintf("%s\n\n", chord_name));
                 }
-                this.CsoundAC.apply(this.score, this.chord, 0, 1000000, true);
-                this.cloud5_piece.log("Current: " + this.score.getCsoundScore(12., true) + "\n")
-                this.score = canon(this.CsoundAC, this.score, 1, 5, this.scale);
-                let score_text = this.score.getCsoundScore(12., true);
-                this.cloud5_piece.log("Canon:  " + this.score.getCsoundScore(12., true) + "\n\n")
+                let score_text;
+                if (this.cloud5_piece.control_parameters_addon.CanonDelay > 0) {
+                    this.cloud5_piece.log("Current: " + this.score.getCsoundScore(12., true) + "\n")
+                    this.score = canon(this.CsoundAC, this.score, this.cloud5_piece.control_parameters_addon.CanonDelay, this.cloud5_piece.control_parameters_addon.CanonTranspose, this.scale);
+                    this.CsoundAC.apply(this.score, this.chord, 0, 1000000, true);
+                    score_text = this.score.getCsoundScore(12., true);
+                    this.cloud5_piece.log("Canon:  " + score_text + "\n\n")
+                } else {
+                    this.CsoundAC.apply(this.score, this.chord, 0, 1000000, true);
+                    score_text = this.score.getCsoundScore(12., true);
+                }
                 this.cloud5_piece.csound.ReadScore(score_text);
             }
             this.sample_count++;
