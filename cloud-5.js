@@ -435,7 +435,7 @@ class Cloud5Piece extends HTMLElement {
     await this.csound.Start();
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.
-    this.send_parameters(this.control_parameters_addon);    
+    this.send_parameters(this.control_parameters_addon);
     this.csound_message_callback("Csound has started...\n");
     if (is_offline == false) {
       await this.csound.Perform();
@@ -538,11 +538,15 @@ class Cloud5Piece extends HTMLElement {
    * @param {number} maximum The maximum value of the slider.
    * @param {number} step An optional value for the granularity of values.
    */
-  menu_slider_addon(gui_folder, token, minimum, maximum, step) {
+  menu_slider_addon(gui_folder, token, minimum, maximum, step, name_) {
     const on_parameter_change = ((value) => {
       this.gk_update(token, value);
     });
-    gui_folder.add(this.control_parameters_addon, token, minimum, maximum, step).listen().onChange(on_parameter_change);
+    if (name_) {
+      gui_folder.add(this.control_parameters_addon, token, minimum, maximum, step).name(name_).listen().onChange(on_parameter_change);
+    } else {
+      gui_folder.add(this.control_parameters_addon, token, minimum, maximum, step).listen().onChange(on_parameter_change);
+    }
     // Remembers parameter values. Required for the 'Revert' button to 
     // work, and to be able to save/restore new presets.
     this.gui.remember(this.control_parameters_addon);
@@ -1518,7 +1522,7 @@ function downsample_lttb(data, buckets) {
     }
     // Pick this point from the bucket; it is the point with the maximum
     // area by value, but that point actually includes [h,s,v].
-    sampled_data[sampled_data_index++] = max_area_point; 
+    sampled_data[sampled_data_index++] = max_area_point;
     a = next_a; // This a is the next a (chosen b)
   }
   sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last

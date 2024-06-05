@@ -2228,15 +2228,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         };
 
         let Composition = cloud5_piece.menu_folder_addon('Composition');
-        cloud5_piece.menu_slider_addon(Composition, "gk_Performance_seconds", -1., 1200.);
-        cloud5_piece.menu_slider_addon(Composition, "NoteTempo", 0, 200);
-        cloud5_piece.menu_slider_addon(Composition, "VelocityThreshold", 5, 200);
-        cloud5_piece.menu_slider_addon(Composition, "NoteDurationFactor", 0., 5.);
-        cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25);
-        cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1.);
-        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1.);
-        cloud5_piece.menu_slider_addon(Composition, "CanonDelay", 0., 5., .001);
-        cloud5_piece.menu_slider_addon(Composition, "CanonTranspose", -12., 12., 1);
+        cloud5_piece.menu_slider_addon(Composition, "gk_Performance_seconds", -1., 1200., .0001, "Duration");
+        cloud5_piece.menu_slider_addon(Composition, "NoteTempo", 0, 200, .0001, "Music tempo");
+        cloud5_piece.menu_slider_addon(Composition, "VelocityThreshold", 5, 200, .0001, "Velocity cutoff");
+        cloud5_piece.menu_slider_addon(Composition, "NoteDurationFactor", 0., 5., .0001, "Note duration factor");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25, .0001, "Visual tempo");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1., .0001, "Hue");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1., .0001, "Brightness");
+        cloud5_piece.menu_slider_addon(Composition, "CanonDelay", 0., 5., .001, "Canon delay");
+        cloud5_piece.menu_slider_addon(Composition, "CanonTranspose", -12., 12., 1, "Canon interval");
         let Master = cloud5_piece.menu_folder_addon('Master'); .2
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
