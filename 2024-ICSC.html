@@ -2229,14 +2229,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
 
         let Composition = cloud5_piece.menu_folder_addon('Composition');
         cloud5_piece.menu_slider_addon(Composition, "gk_Performance_seconds", -1., 1200., .0001, "Duration");
-        cloud5_piece.menu_slider_addon(Composition, "NoteTempo", 0, 200, .0001, "Music tempo");
-        cloud5_piece.menu_slider_addon(Composition, "VelocityThreshold", 5, 200, .0001, "Velocity cutoff");
-        cloud5_piece.menu_slider_addon(Composition, "NoteDurationFactor", 0., 5., .0001, "Note duration factor");
-        cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25, .0001, "Visual tempo");
-        cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1., .0001, "Hue");
-        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1., .0001, "Brightness");
-        cloud5_piece.menu_slider_addon(Composition, "CanonDelay", 0., 5., .001, "Canon delay");
-        cloud5_piece.menu_slider_addon(Composition, "CanonTranspose", -12., 12., 1, "Canon interval");
+        cloud5_piece.menu_slider_addon(Composition, "NoteTempo", 0, 200, .0001, "Music tempo [Ctl-Alt-T]");
+        cloud5_piece.menu_slider_addon(Composition, "VelocityThreshold", 5, 200, .0001, "Velocity cutoff [Ctl-Alt-C]");
+        cloud5_piece.menu_slider_addon(Composition, "NoteDurationFactor", 0., 5., .0001, "Note duration factor [Ctl-Alt-F]");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25, .0001, "Visual tempo [Ctl-Alt-V]");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1., .0001, "Hue [Ctl-Alt-H]");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1., .0001, "Brightness [Ctl-Alt-B]");
+        cloud5_piece.menu_slider_addon(Composition, "CanonDelay", 0., 5., .001, "Canon delay [Ctl-Alt-D]");
+        cloud5_piece.menu_slider_addon(Composition, "CanonTranspose", -12., 12., 1, "Canon interval [Ctl-Alt-I]");
         let Master = cloud5_piece.menu_folder_addon('Master'); .2
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
@@ -2314,6 +2314,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         cloud5_piece.menu_slider_addon(YiString, 'gk_YiString_level', -50, 50);
         var Xing = cloud5_piece.menu_folder_addon('Xing');
         cloud5_piece.menu_slider_addon(Xing, 'gk_Xing_level', -50, 50);
+        // Override default width of controls.
+        cloud5_piece.gui.domElement.style.width="500px";
         // #endregion
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
@@ -2579,7 +2581,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         /**
          * Enable the user to control compositional parameters using keys only, 
          * especially when in full screen mode.
-         * */
+        cloud5_piece.menu_slider_addon(Composition, "gk_Performance_seconds", -1., 1200., .0001, "Duration");
+        cloud5_piece.menu_slider_addon(Composition, "NoteTempo", 0, 200, .0001, "Music tempo [Ctl-Alt-T]");
+        cloud5_piece.menu_slider_addon(Composition, "VelocityThreshold", 5, 200, .0001, "Velocity cutoff [Ctl-Alt-C]");
+        cloud5_piece.menu_slider_addon(Composition, "NoteDurationFactor", 0., 5., .0001, "Note duration factor [Ctl-Alt-F]");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsTempo", .0, .25, .0001, "Visual tempo [Ctl-Alt-V]");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsHue", 0., 1., .0001, "Hue [Ctl-Alt-H]");
+        cloud5_piece.menu_slider_addon(Composition, "GraphicsValue", 0., 1., .0001, "Brightness [Ctl-Alt-B]");
+        cloud5_piece.menu_slider_addon(Composition, "CanonDelay", 0., 5., .001, "Canon delay [Ctl-Alt-D]");
+        cloud5_piece.menu_slider_addon(Composition, "CanonTranspose", -12., 12., 1, "Canon interval [Ctl-Alt-I]");
+         */
         const composition_keys_handler = function (event) {
             console.info(event);
             const coarseness = 100;
@@ -2591,24 +2602,33 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
                 if (event.metaKey) {
                     sign *= 10;
                 }
-                if (event.code === 'KeyN') {
+                if        (event.code === 'KeyT') {
                     let step = (200 - 0) / coarseness;
                     this.control_parameters_addon.NoteTempo += (step * sign);
-                } else if (event.code === 'KeyD') {
-                    let step = (200 - 5) / coarseness;
-                    this.control_parameters_addon.NoteDuration += (step * sign);
+                } else if (event.code === 'KeyC') {
+                    let step = (127 - 5) / coarseness;
+                    this.control_parameters_addon.VelocityThreshold += (step * sign);
                 } else if (event.code === 'KeyF') {
                     let step = (5 - 0) / coarseness;
                     this.control_parameters_addon.NoteDurationFactor += (step * sign);
-                } else if (event.code === 'KeyG') {
+                } else if (event.code === 'KeyV') {
                     let step = (.25 - 0) / coarseness;
                     this.control_parameters_addon.GraphicsTempo += (step * sign);
                 } else if (event.code === 'KeyH') {
                     let step = (1 - 0) / coarseness;
                     this.control_parameters_addon.GraphicsHue += (step * sign);
-                } else if (event.code === 'KeyV') {
+                } else if (event.code === 'KeyB') {
                     let step = (1 - 0) / coarseness;
                     this.control_parameters_addon.GraphicsValue += (step * sign);
+                } else if (event.code === 'KeyD') {
+                    let step = (5 - 0) / coarseness;
+                    this.control_parameters_addon.CanonDelay += (step * sign);
+                } else if (event.code === 'KeyI') {
+                    let step = (12 - 0) / coarseness;
+                    this.control_parameters_addon.CanonTranspose += (step * sign);
+                } else if (event.code === 'KeyT') {
+                    let step = (100 - 0) / coarseness;
+                    this.control_parameters_addon.NoteTempo += (step * sign);
                 }
             }
         };
