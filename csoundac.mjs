@@ -1295,7 +1295,7 @@ export class PitvPatterns extends StatefulPatterns {
  * Enables controlling external JavaScript code in the browser using  
  * Strudel Patterns.
  */
-export class ParameterPatterns extends StatefulPatterns {
+export class Cloud5 extends StatefulPatterns {
     constructor(name_) {
         super();
         this.registerPatterns();
@@ -1303,7 +1303,7 @@ export class ParameterPatterns extends StatefulPatterns {
     }
     control(is_onset, value_, hap) {
         // Assign on every query, or only at onsets?
-        parameters[this.name] = value_;
+        globalThis.__parameters__[this.name] = value_;
         return hap;
     }
 }

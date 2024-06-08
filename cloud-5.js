@@ -444,6 +444,7 @@ class Cloud5Piece extends HTMLElement {
           console.info("strudel_view:", this.strudel_view);
           strudel_view?.setCsound(this.csound);
           strudel_view?.setCsoundAC(this.csoundac);
+          strudel_view?.setParameters(this.control_parameters_addon);
           strudel_view?.startPlaying();
         }
       }
@@ -723,6 +724,19 @@ class Cloud5Strudel extends HTMLElement {
   }
   get strudel_code_addon() {
     return this.#strudel_code_addon;
+  }
+  #control_parameters_addon = null;
+  /**
+    * Gets or sets optional control parameters.
+    */
+  set control_parameters_addon(parameters_) {
+    this.#control_parameters_addon = parameters_;
+    globalThis.parameters = parameters_;
+    // Reconstruct the element.
+    this.connectedCallback();
+  }
+  get control_parameters_addon() {
+    return this.#control_parameters_addon;
   }
 }
 customElements.define("cloud5-strudel", Cloud5Strudel);
