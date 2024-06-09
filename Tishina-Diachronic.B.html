@@ -11,6 +11,7 @@
         <script src="TrackballControls.js"></script>
         <script src="ParametricLindenmayer3.js"></script>
         <script src='tinycolor.js'></script>
+        <script src='numeric.js'></script>
         <style>
             ::-webkit-scrollbar
             {
@@ -112,25 +113,25 @@ alwayson "MasterOutput"
 
 gk_overlap init .25
 
-#include "silencio/patches/FM_Clang_Controls.inc"
-#include "silencio/patches/PianoNotePianoteq.inc"
-#include "silencio/patches/Harpsichord.inc"
-#include "silencio/patches/YiString.inc"
-#include "silencio/patches/FM_Clang.inc"
-#include "silencio/patches/Bower.inc"
-#include "silencio/patches/Droner.inc"
-#include "silencio/patches/Sweeper.inc"
-#include "silencio/patches/Blower.inc"
-#include "silencio/patches/Buzzer.inc"
-#include "silencio/patches/Phaser.inc"
-#include "silencio/patches/Shiner.inc"
-#include "silencio/patches/FM_Clang_Preset.inc"
-#include "silencio/patches/PianoOutPianoteq.inc"
-#include "silencio/patches/SolinaChorus.inc"
-#include "silencio/patches/ReverbSC.inc"
-#include "silencio/patches/Reverberator.inc"
-#include "silencio/patches/ParametricEQ.inc"
-#include "silencio/patches/MasterOutput.inc"
+#include "patches/FM_Clang_Controls.inc"
+#include "patches/PianoNotePianoteq.inc"
+#include "patches/Harpsichord.inc"
+#include "patches/YiString.inc"
+#include "patches/FM_Clang.inc"
+#include "patches/Bower.inc"
+#include "patches/Droner.inc"
+#include "patches/Sweeper.inc"
+#include "patches/Blower.inc"
+#include "patches/Buzzer.inc"
+#include "patches/Phaser.inc"
+#include "patches/Shiner.inc"
+#include "patches/FM_Clang_Preset.inc"
+#include "patches/PianoOutPianoteq.inc"
+#include "patches/SolinaChorus.inc"
+#include "patches/ReverbSC.inc"
+#include "patches/Reverberator.inc"
+#include "patches/ParametricEQ.inc"
+#include "patches/MasterOutput.inc"
 
 instr Controls
     gk_Bower_level chnget "gk_Bower_level"
@@ -185,7 +186,7 @@ endin
     <script>
         try {
         window.onerror = function (text, url, line) {
-          csound.message(text + '\n' + url + '\n' + line + '\n');
+        csound?.message(text + '\n' + url + '\n' + line + '\n');
           console.trace();
         }
         var title = 'Diachronic';
@@ -380,7 +381,7 @@ endin
             gk_FM_Clang_preset: 1,
             gk_FM_Clang_level: 0,
             Play: function() {
-                Silencio.saveDatGuiJson(gui);
+                //Silencio.saveDatGuiJson(gui);
                 csound.stop();
                 csound.setMessageCallback(csoundMessage);
                 csound.compileOrc(document.getElementById('orc').value);
@@ -400,12 +401,12 @@ endin
                 nwgui.Window.get().showDevTools();
             },
             Stop: function() {
-                Silencio.saveDatGuiJson(gui);
+                //Silencio.saveDatGuiJson(gui);
                 csound.stop();
             },
             Close: function() {
                 csound.stop();
-                Silencio.saveDatGuiJson(gui);
+                //Silencio.saveDatGuiJson(gui);
                 nw_window.close();
             }
         };
@@ -638,12 +639,13 @@ endin
             add_slider(YiString, 'gk_YiString_chorus_send', 0, 1);
             add_slider(YiString, 'gk_YiString_level', -60, 60);
             gui.domElement.style.opacity="0.5";
-            gui.revert();
+            // Crashes:
+            // gui.revert();
         }
         function gk_update(name, value) {
           var numberValue = parseFloat(value);
-          csound.setControlChannel(name, numberValue);
-          csound.message(name + ': ' + numberValue + '\n');
+          csound?.setControlChannel(name, numberValue);
+          csound?.message(name + ': ' + numberValue + '\n');
         }
         function add_slider(gui_folder, token, minimum, maximum) {
             var on_parameter_change = function(value) {

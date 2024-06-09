@@ -2,15 +2,15 @@
 <html>
     <head>
         <title>Shell</title>
-        <script type="text/javascript" src="silencio/js/dat.gui.js"></script>
-        <script type="text/javascript" src="silencio/js/jquery.js"></script>
-        <script type="text/javascript" src="silencio/js/Silencio.js"></script>
-        <script type="text/javascript" src="silencio/js/ChordSpace.js"></script>
-        <script type="text/javascript" src="silencio/js/sprintf.js"></script>
-        <script type="text/javascript" src="silencio/js/three.js"></script>
-        <script type="text/javascript" src="silencio/js/TrackballControls.js"></script>
-        <script type="text/javascript" src="silencio/js/ParametricLindenmayer2.js"></script>
-        <script type='text/javascript' src='silencio/js/tinycolor.js'></script>
+        <script type="text/javascript" src="dat.gui.js"></script>
+        <script type="text/javascript" src="jquery.js"></script>
+        <script type="text/javascript" src="Silencio.js"></script>
+        <script type="text/javascript" src="ChordSpace.js"></script>
+        <script type="text/javascript" src="sprintf.js"></script>
+        <script type="text/javascript" src="three.js"></script>
+        <script type="text/javascript" src="TrackballControls.js"></script>
+        <script type="text/javascript" src="ParametricLindenmayer2.js"></script>
+        <script type='text/javascript' src='tinycolor.js'></script>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
@@ -74,6 +74,10 @@ ksmps = 100
 nchnls = 2
 0dbfs = 1500000
 
+gi_Pianoteq vst3init "/Library/Audio/Plug-Ins/VST3/Pianoteq 8.vst3", "Pianoteq 8", 1
+vst3info gi_Pianoteq
+
+
 connect "FM_Clang", "outleft", "ReverbLeft", "inleft"
 connect "FM_Clang", "outright", "ReverbRight", "inright"
 connect "Blower", "outleft", "ReverbLeft", "inleft"
@@ -88,10 +92,10 @@ connect "Harpsichord", "outleft", "Reverb2Left", "inleft"
 connect "Harpsichord", "outright", "Reverb2Right", "inright"
 connect "Phaser", "outleft", "ReverbLeft", "inleft"
 connect "Phaser", "outright", "ReverbRight", "inright"
-connect "PianoOut", "outleft", "MasterOutput", "inleft"
-connect "PianoOut", "outright", "MasterOutput", "inright"
-connect "PianoOut", "outleft", "Reverb2Left", "inleft"
-connect "PianoOut", "outright", "Reverb2Right", "inright"
+connect "PianoOutPianoteq", "outleft", "MasterOutput", "inleft"
+connect "PianoOutPianoteq", "outright", "MasterOutput", "inright"
+connect "PianoOutPianoteq", "outleft", "Reverb2Left", "inleft"
+connect "PianoOutPianoteq", "outright", "Reverb2Right", "inright"
 connect "Sweeper", "outleft", "ReverbLeft", "inleft"
 connect "Sweeper", "outright", "ReverbRight", "inright"
 connect "Shiner", "outleft", "ReverbLeft", "inleft"
@@ -109,7 +113,7 @@ connect "Reverb2Right", "outright", "MasterOutput", "inright"
 
 alwayson "FM_Clang_controls"
 alwayson "Controls"
-alwayson "PianoOut"
+alwayson "PianoOutPianoteq"
 alwayson "SolinaChorus"
 alwayson "ReverbLeft"
 alwayson "ReverbRight"
@@ -166,8 +170,10 @@ gk_FM_Clang_NseBW chnget "NseBW"
 gk_FM_Clang_NseFllw chnget "NseFllw"
 endin
 
-;#include "patches/PianoNoteFluidsynth.inc"
-#include "silencio/patches/PianoNotePianoteq.inc"
+instr PianoNoteVst3
+i_note_id vst3note gi_Pianoteq, 0, p4, p5, p3
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
 
 gk_Harpsichord_level init .25
 gk_Harpsichord_pick init .75
@@ -812,8 +818,15 @@ $SET_PRESET(13'1.9'0 '0 '24 '1 '2.29'1.00 '23.25 '-4 '1 '1.5 '16 '1 '151 '0.0178
 prints "FM_Clang_pr i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f\n", p1, p2, p3, p4, p5, p7
 endin
 
-;#include "patches/OutFluidsynth.inc"
-#include "silencio/patches/PianoOutPianoteq.inc"
+instr PianoOutPianoteq
+a_in_left init 0
+a_in_right init 0
+a_out_left, a_out_right vst3audio gi_Pianoteq, a_in_left, a_in_right
+k_gain = ampdb(10)
+outleta "outleft", a_out_left * 1000 * k_gain
+outleta "outright", a_out_right * 1000 * k_gain
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
 
 /**
  * Solina Chorus, based on Solina String Ensemble Chorus Module
@@ -1028,10 +1041,10 @@ endin
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration!=4)', '     Note(t/2+.1,  d/2+0, s, c/2+.003, k/2+0, v/2+0.2, x/2+0);K();Note(t/2.45+0,  d/2+0, s, c/2+0, k/1.92+1.05, v/2+0, x/2+0);Note(t/2+1, d/2+0, s, c/2+0, k/2+0.1, v/2+0, x/2+0);T(5);Note(t/2+1, d/2+0, s, c/2+1.1, k/2+.7,    v/2+0.0, x/2+0);Q(3);');
             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==4)', 'Q(1);Note(t/2+.5,  d/2+0, s, c/2-.02,  k/2+0.1, v/2+0, x/2+0);K();Note(t/2.4+0,  d/2+0, s, c/2+0, k/1.98+1.10, v/2+0.1, x/2+0);Note(t/2+1, d/2+0, s, c/2+0, k/2+0,   v/2+0, x/2+0);T(5);Note(t/2+1, d/2+0, s, c/2+1,   k/2+.9,    v/2+0.1, x/2+0);Q(3);');
             var chord = ChordSpace.chordForName('CM');
-            console.log(chord.information());
+            /// console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
-            lsys.generate(4);
+            lsys.generate(5);
             lsys.score.findScales();
             csound.message('lsys:' + lsys + '\n');
             csound.message(lsys.score.getDuration().toString() + '\n');
@@ -1186,7 +1199,7 @@ endin
             gk_Phaser_index1: 1,
             gk_Phaser_index2: .0125,
             gk_Phaser_level: 0.5,
-            gk_Piano_level: 0.5,
+            gk_Piano_level: 0,
             gk_Shiner_level: 0.5,
             gk_Sweeper_britel: 0,
             gk_Sweeper_briteh: 2.9,
@@ -1246,7 +1259,7 @@ endin
         "gk_Reverb2_Feedback": 0.8519096975720566,
         "gk_MasterOutput_level": 16.32429797719947,
         "gk_FM_Clang_preset": 9,
-        "gk_FM_Clang_level": 6,
+        "gk_FM_Clang_level": -28,
         "gk_Blower_grainDensity": 0.15,
         "gk_Blower_grainDuration": 0.2,
         "gk_Blower_grainAmplitudeRange": 0.1,
@@ -1271,7 +1284,7 @@ endin
         "gk_Phaser_index1": 1,
         "gk_Phaser_index2": 0.30603060306030627,
         "gk_Phaser_level": 0.125,
-        "gk_Piano_level": -19,
+        "gk_Piano_level": 0,
         "gk_Shiner_level": 3.2043204320432395,
         "gk_Sweeper_britel": 1.2452729986356939,
         "gk_Sweeper_briteh": 0.5860108228873854,
@@ -1464,7 +1477,7 @@ endin
             add_slider(YiString, 'gk_YiString_reverb_send', 0, 1);
             add_slider(YiString, 'gk_YiString_chorus_send', 0, 1);
                 add_slider(YiString, 'gk_YiString_level', -60, 60);
-            gui.revert();
+            // gui.revert();
         }
         function gk_update(name, value) {
           var numberValue = parseFloat(value);

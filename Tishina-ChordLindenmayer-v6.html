@@ -3210,6 +3210,12 @@ vst3info gi_Valhalla
             if (message === null) {
                 return;
             }
+            if (csound === null) {
+                return;
+            }
+            if (typeof csound == 'undefined') {
+                return;
+            }
             let level_left = -100;
             let level_right = -100;
             if (non_csound(csound) == false) {
