@@ -9,7 +9,7 @@
         <script src="sprintf.js"></script>
         <script src="three.js"></script>
         <script src="TrackballControls.js"></script>
-        <script src="ParametricLindenmayer3.js"></script>
+        <script src="ParametricLindenmayer5.js"></script>
         <script src='tinycolor.js'></script>
         <script src='numeric.js'></script>
         <style>
@@ -68,6 +68,9 @@ ksmps = 100
 nchnls = 2
 0dbfs = 100
 
+gi_Pianoteq vst3init "/Library/Audio/Plug-Ins/VST3/Pianoteq 8.vst3", "Pianoteq 8", 1
+vst3info gi_Pianoteq
+
 connect "Blower", "outleft", "ReverbSC", "inleft"
 connect "Blower", "outright", "ReverbSC", "inright"
 connect "Bower", "outleft", "ReverbSC", "inleft"
@@ -114,7 +117,12 @@ alwayson "MasterOutput"
 gk_overlap init .25
 
 #include "patches/FM_Clang_Controls.inc"
-#include "patches/PianoNotePianoteq.inc"
+//#include "patches/PianoNotePianoteq.inc"
+instr PianoNoteVst3
+i_note_id vst3note gi_Pianoteq, 0, p4, p5, p3
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
 #include "patches/Harpsichord.inc"
 #include "patches/YiString.inc"
 #include "patches/FM_Clang.inc"
@@ -126,7 +134,18 @@ gk_overlap init .25
 #include "patches/Phaser.inc"
 #include "patches/Shiner.inc"
 #include "patches/FM_Clang_Preset.inc"
-#include "patches/PianoOutPianoteq.inc"
+//#include "patches/PianoOutPianoteq.inc"
+instr PianoOutPianoteq
+a_in_left init 0
+a_in_right init 0
+a_out_left, a_out_right vst3audio gi_Pianoteq, a_in_left, a_in_right
+k_gain = ampdb(10)
+outleta "outleft", a_out_left * 1000 * k_gain
+outleta "outright", a_out_right * 1000 * k_gain
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+
 #include "patches/SolinaChorus.inc"
 #include "patches/ReverbSC.inc"
 #include "patches/Reverberator.inc"
@@ -205,7 +224,7 @@ endin
             chord.channel[3] = 5;
             chord.channel[4] = 6;
             chord.setDuration(1.01);
-            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(5, 60, 1);
+            lsys.chord_space_group = ChordSpace.createChordSpaceGroup(3, 60, 1);
             console.log(chord.information());
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
