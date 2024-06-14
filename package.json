@@ -1,30 +1,26 @@
 {
-  "scripts": {
-    "clean-modules": "find . -name \"node_modules\" -type d -exec rm -r {} +;",
-    "setup": "git submodule update --init --recursive --remote && cd strudel && git stash && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
-    "build-strudel": "python3 patch-strudel.py && cd strudel && pnpm run setup && pnpm run build",
-    "jsdoc": "jsdoc -c jsdoc.json",
-    "package": "rm cloud-5.zip && zip -r cloud-5.zip . -x '*chunks*/*' '*.git*/*' '*attic*/*' '*tests*/*' '*strudel*/*' '*node_modules*/*'",
-    "build": "pnpm run build-strudel && vite build && cp -rf strudel/website/dist/* . && rm CNAME && pandoc --css readme.css -s --metadata title='cloud-music' --ascii=true README.md -o index.html && python3 patch-dist.py && pnpm run jsdoc && rm favicon.ico && pnpm run package",
-    "local": "python3 -m http.server"
+  "main": "Tishina-Black_Mountain.7d.html",
+  "name": "Tishina-Black_Mountain.7d",
+  "description": "HTML5 with Csound",
+  "version": "0.1.0",
+  "keywords": [ "Csound", "node-webkit" ],
+  "nodejs": true,
+  "window": {
+    "title": "Tishina-Black_Mountain.7d",
+    "icon": "link.png",
+    "toolbar": true,
+    "frame": true,
+    "maximized": true,
+    "position": "mouse",
+    "fullscreen": true
   },
-  "dependencies": {
-    "ace-builds": "^1.24.2",
-    "acorn": "^8.10.0",
-    "dat.gui": "^0.7.9",
-    "dependency-tree": "^9.0.0",
-    "jquery": "^3.7.1",
-    "jsdoc": "^4.0.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "sprintf-js": "^1.1.3",
-    "three": "^0.147.0",
-    "three-trackballcontrols": "^0.9.0",
-    "tinycolor": "^0.0.1",
-    "vite": "^4.4.9"
+  "webkit": {
+    "plugin": true
   },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^3.1.0",
-    "rollup-plugin-visualizer": "^5.9.2"
+  "chromium-args": {
+    "--enable-logging": true,
+    "--context-mixed": true,
+    "--v=1": 1,
+    "--device-scale-factor": 4
   }
 }

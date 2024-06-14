@@ -177,7 +177,7 @@
                 lindenmayer.setIterationCount(this.parameters.gk_Iterations);
                 let rescale = new CsoundAC.Rescale();
                 rescale.setRescale(0, true, false, 1., 0.);
-                rescale.setRescale(3, true, true, 1., 8.);
+                rescale.setRescale(3, true, true, 1., 9.);
                 rescale.setRescale(4, true, false, 18., 72.);
                 rescale.setRescale(5, true, true, 60., 12.);
                 rescale.addChild(lindenmayer);
@@ -877,6 +877,7 @@
                 "gk_Phaser_ratio2": 3,
                 "gk_Phaser_index1": 1.0266159695817492,
                 "gk_Phaser_index2": 0.533347035248176,
+                "gk_PianoOutPianoteq_level": 6,
                 "gk_Plucked_level": 35.10944404480526,
                 "gk_Shiner_level": -16.848217038331107,
                 "gk_Shiner_attack": 0.125,
@@ -964,6 +965,8 @@
             add_slider(Phaser, 'gk_Phaser_ratio2', 0, 5);
             add_slider(Phaser, 'gk_Phaser_index1', 0, 15);
             add_slider(Phaser, 'gk_Phaser_index2', 0, 15);
+            var Piano = gui.addFolder('Piano');
+            add_slider(Piano, 'gk_PianoOutPianoteq_level', -50, 50);
             var Plucked = gui.addFolder('Plucked');
             add_slider(Plucked, 'gk_Plucked_level', -50, 50);
             var Shiner = gui.addFolder('Shiner');
@@ -1088,6 +1091,8 @@
   connect "Kung4", "outright", "Shimmer", "inright"
   connect "Plucked", "outleft", "Shimmer", "inleft"
   connect "Plucked", "outright", "Shimmer", "inright"
+  connect "PianoOutPianoteq", "outleft", "Shimmer", "inleft"
+  connect "PianoOutPianoteq", "outright", "Shimmer", "inright"
   connect "SeidelHarmOsc", "outleft", "Shimmer", "inleft"
   connect "SeidelHarmOsc", "outright", "Shimmer", "inright"
   connect "TubularBell", "outleft", "Shimmer", "inleft"
@@ -1104,6 +1109,7 @@
   
   alwayson "VcvOut"
   alwayson "Shimmer"
+  alwayson "PianoOutPianoteq"
   alwayson "MasterOutput"
   
   gk_Duration_factor init 4.5
@@ -1629,6 +1635,31 @@ outleta "outleft", a_out_left
 outleta "outright", a_out_right
 ;printks "Blower         i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, p1, p2, p3, p4, p5, p7, active(p1), dbamp(rms(a_out_left)), dbamp(rms(a_out_right))
 endin
+
+; giPianoteq vstinit "/home/mkg/pianoteq_linux_v630/Pianoteq\ 6/amd64/Pianoteq\ 6.so", 1
+gi_Pianoteq vst3init "/Library/Audio/Plug-Ins/VST3/Pianoteq 8.vst3", "Pianoteq 8", 1
+vst3info gi_Pianoteq
+instr PianoteqNote
+i_instrument = p1
+i_time = p2
+i_duration = p3
+i_midikey = p4 - 12
+i_midivelocity = p5
+i_phase = p6
+i_pan = p7
+i_depth = p8
+i_height = p9
+i_pitchclassset = p10
+i_homogeneity = p11
+i_pitchclass = i_midikey % 12
+i_hertz cpsmidinn i_midikey
+i_amplitude = ampdb(i_midivelocity)
+ichannel = 0
+; vstnote giPianoteq, ichannel, i_midikey, i_midivelocity, i_duration
+i_note_id vst3note  gi_Pianoteq, 0, p4, p5, p3
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
   
   gk_ZakianFlute_midi_dynamic_range chnexport "gk_ZakianFlute_midi_dynamic_range", 3 ;  20
   gk_ZakianFlute_level chnexport "gk_ZakianFlute_level", 3 ;  0
@@ -1873,30 +1904,6 @@ endin
   outleta "outright", a_out_right
   endin
     
-  ; giPianoteq vstinit "/home/mkg/pianoteq_linux_v630/Pianoteq\ 6/amd64/Pianoteq\ 6.so", 1
-  giPianoteq vst3init "/Library/Audio/Plug-Ins/VST3/Pianoteq 8.vst3", "Pianoteq 8", 1
-  vst3info giPianoteq
-  instr PianoteqNote
-  i_instrument = p1
-  i_time = p2
-  i_duration = p3
-  i_midikey = p4 - 12
-  i_midivelocity = p5
-  i_phase = p6
-  i_pan = p7
-  i_depth = p8
-  i_height = p9
-  i_pitchclassset = p10
-  i_homogeneity = p11
-  i_pitchclass = i_midikey % 12
-  i_hertz cpsmidinn i_midikey
-  i_amplitude = ampdb(i_midivelocity)
-  ichannel = 0
-  ; vstnote giPianoteq, ichannel, i_midikey, i_midivelocity, i_duration
-  i_note_id vst3note  giPianoteq, 0, p4, p5, p3
-  prints "PIanoteqNote   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p7, active(p1)
-  endin
-
   gk_Bower_midi_dynamic_range chnexport "gk_Bower_midi_dynamic_range", 3
   gk_Bower_attack chnexport "gk_Bower_attack", 3
   gk_Bower_release chnexport "gk_Bower_release", 3
@@ -2987,6 +2994,61 @@ vst3info gi_Valhalla
   outleta "outright", aoutright
   prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
   endin
+
+  // This must be initialized in the orc header before any #includes.
+
+// gi_Pianoteq vst3init "/home/mkg/Pianoteq\ 7/x86-64bit/Pianoteq\ 7.so", 0
+// vst3info gi_Pianoteq 
+
+gk_PianoOutPianoteq_level chnexport "gk_PianoOutPianoteq_level", 3 ;  0
+gi_PianoOutPianoteq_print chnexport "gi_PianoOutPianoteq_print", 3 ;  1
+gk_PianoOutPianoteq_front_to_back chnexport "gk_PianoOutPianoteq_front_to_back", 3 ;  0
+gk_PianoOutPianoteq_left_to_right chnexport "gk_PianoOutPianoteq_left_to_right", 3 ;  0.5
+gk_PianoOutPianoteq_bottom_to_top chnexport "gk_PianoOutPianoteq_bottom_to_top", 3 ;  0
+
+gk_PianoOutPianoteq_level init 0
+gk_PianoOutPianoteq_front_to_back init 0
+gk_PianoOutPianoteq_left_to_right init 0.5
+gk_PianoOutPianoteq_bottom_to_top init 0
+
+instr PianoOutPianoteq
+; i_result vst3progset gi_Pianoteq, 3
+; Sustain off.
+;vst3paramset gi_Pianoteq, 6, 1
+; Reverb switch off.
+; vst3paramset gi_Pianoteq, 93, 0
+k_gain = ampdb(gk_PianoOutPianoteq_level)
+i_overall_amps = 87
+i_normalization = ampdb(-i_overall_amps) * 2
+i_amplitude = ampdb(80) * i_normalization
+if gi_PianoOutPianoteq_print == 1 then
+  vst3info gi_PianoOutPianoteq_print
+endif
+i_instrument = p1
+i_time = p2
+i_duration = p3
+i_midi_key = p4
+i_midi_velocity = p5
+ainleft init 0
+ainright init 0
+
+aoutleft, aoutright vst3audio gi_Pianoteq, ainleft, ainright
+a_signal = aoutleft + aoutright
+a_signal *= k_gain
+a_signal *= i_amplitude
+a_out_left, a_out_right pan2 a_signal, gk_PianoOutPianoteq_left_to_right
+; printks "vst3audio:      %9.4f   %9.4f\n", 0.5, aoutleft, aoutright
+
+kx = gk_PianoOutPianoteq_front_to_back
+ky = gk_PianoOutPianoteq_left_to_right
+kz = gk_PianoOutPianoteq_bottom_to_top
+
+a_out_left, a_out_right pan2 a_signal, ky
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
   
   gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
   gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
