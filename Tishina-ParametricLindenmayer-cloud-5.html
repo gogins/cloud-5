@@ -1922,26 +1922,34 @@
             // p0_t, p1_d, p2_s, p3_c, p4_k, p5_v, p6_x
             lsys = new ParametricLindenmayer.PLSystem();
             ///lsys.set_axiom('C();Note(0, 2, 144, 1, 1, 1, 0);');
-            lsys.set_axiom('C();Push();Note(0, 1, 144, 1, 1, 1, 0);Pop();Push();Note(100, 1, 144, 2, 15, 1, 0);Note(102, 1, 144, 2, -15, 1, 0);Pop();');
+            // lsys.set_axiom(`C();
+            //                                   Note(  0, 2.5, 144,  1,   0, 1, 0);
+            //     Scale(0,    .5);Scale(4,-1.5);Note(150, 2.5, 144,  1, -19, 1, 0);
+            //     Scale(0,  .375);Scale(4, 2.0);Note(100, 2.5, 144,  1,  15, 1, 0);
+            // `);
+            lsys.set_axiom(`C();
+                                              Note(-50, 2.5, 144,  1,  30, 1, 0);
+                Scale(0,  .5  );Scale(4, 1.5);Note( 40, 2.5, 144,  1,   0, 1, 0);Scale(0,   1);Scale(4, 1);
+                Scale(0,  .375);Scale(4, 2.0);Note(160, 2.5, 144,  1,  60, 1, 0);
+            `);
             // The problem here is that Command(t,d,s,c,k,v,x) carries state down from the stack,
             // but Command() does not. I will try Note(t,d,s,c,k,v,x) with zero v instead of Move.
-            // Try 3 of these at different offsets/scales/skews. Call them A, B, C.
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<2)', `
+             lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration<3)', `
                    Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
-                   Note(t/2.00+0.00, d/2.00+0, s, c/2+0.100, k/2.00+0.10, v/2.00+0.02, x/2+0);  
-                   Note(t/2.00+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.01, v/2.00+0.00, x/2+0); 
+                   Note(t/2.00+0.00, d/2.00+0, s, c/2+0.100, k/2.00+0.00, v/2.00+0.02, x/2+0);  
+                   Note(t/2.00+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.00, x/2+0); 
                    Note(t/2.00+1.00, d/2.00+0, s, c/2+1.000, k/2.00+1.00, v/2.00+0.00, x/2+0); 
             `);
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==2)', `
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration==3)', `
             T(-4); Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0); T(5);  
                    Note(t/2.00-0.00, d/2.00+0, s, c/2+0.000, k/2.00+1.01, v/2.00+0.02, x/2+0);  
                    Note(t/2.00+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.00, x/2+0); 
                    Note(t/2.00+1.00, d/2.00+0, s, c/2+1.000, k/2.00+1.00, v/2.00+0.00, x/2+0); K();  
              `);
-            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration>2)', `
-            T(-1); Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
-                   Note(t/2.00+0.01, d/2.00+0, s, c/2-1.000, k/2.00+1.00, v/2.00+0.02, x/2+0);  
-                   Note(t/2.00+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.00, x/2+0); 
+            lsys.add_rule('Note(t, d, s, c, k, v, x);', '(iteration>3)', `
+                   Note(t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.02, x/2+0);  
+                   Note(t/2.00+0.00, d/2.00+0, s, c/2-1.000, k/2.00+1.00, v/2.00+0.02, x/2+0);  
+            T(-1); Note(t/2.00+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.00, v/2.00+0.00, x/2+0); 
                    Note(t/2.00+1.00, d/2.00+0, s, c/2+1.000, k/2.00+1.00, v/2.00+0.00, x/2+0); 
             `);
 
@@ -1949,12 +1957,13 @@
             var t = new ParametricLindenmayer.Turtle(new Silencio.Event(), chord, chord);
             lsys.set_turtle(t);
             ///lsys.generate(this.control_parameters_addon.gk_Iterations);
-            lsys.generate(6);
+            lsys.generate(7);
             lsys.score.findScales();
             this.log('lsys:' + lsys + '\n');
             this.log(lsys.score.getDuration().toString() + '\n');
             lsys.score.sort();
             lsys.score.setScale(3, 1, 16);
+            //lsys.score.setScale(3, 1, 0);
             lsys.score.setScale(4, 24, 88);
             lsys.score.setScale(5, 70, 16);
             lsys.score.temper(12);
@@ -2026,7 +2035,7 @@
                 }
             }
             lsys.conformToChords();
-            lsys.score.setDuration(6 * 60 + 5);
+            lsys.score.setDuration(7 * 60 + 5);
             lsys.score.findScales();
             this.log(lsys.score.minima.toString());
             this.log(lsys.score.ranges.toString());
