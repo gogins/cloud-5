@@ -1,12 +1,12 @@
 {
-  "main": "Tishina-Black_Mountain.7d.html",
-  "name": "Tishina-Black_Mountain.7d",
+  "main": "Tishina.html",
+  "name": "Tishina",
   "description": "HTML5 with Csound",
   "version": "0.1.0",
   "keywords": [ "Csound", "node-webkit" ],
   "nodejs": true,
   "window": {
-    "title": "Tishina-Black_Mountain.7d",
+    "title": "Tishina",
     "icon": "link.png",
     "toolbar": true,
     "frame": true,

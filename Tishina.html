@@ -2144,9 +2144,9 @@
     <cloud5-log></cloud5-log>
     <cloud5-about>
         <div>
-            <h1 style="font-size: 15px;">cloud5-example-parametric-lindenmayer</h1>
+            <h1 style="font-size: 15px;">Tishina</h1>
             <h2 style="font-size: 13px">Michael Gogins<br>
-                May 2024</h2>
+                June 2024</h2>
 
             <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img
                     alt="Creative Commons License" style="border-width:0;" src="cc-by-nc-sa.png" /></a>
@@ -2175,8 +2175,6 @@
 
             <p>Some of the Csound instruments are by me, others are adapted by me from
                 patches originally written by others as noted in the orchestra.
-
-            <p>
 
             <br>
 
@@ -2285,6 +2283,15 @@
             "gk_YiString_level": 0,
             "gk_Xing_level": 0
         };
+        /**
+         * The instruments in this piece are:
+         * PianoteqNote uses instrument number 1
+         * FMWaterBell uses instrument number 2
+         * Droner uses instrument number 3
+         * SeidelHarmOsc uses instrument number 4
+         * Blower uses instrument number 5
+         * Sweeper uses instrument number 6
+         */
         let Master = cloud5_piece.menu_folder_addon('Master');
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
@@ -2293,32 +2300,9 @@
         cloud5_piece.menu_slider_addon(Master, 'gk_ReverbSC_wet', 0., 1.);
         cloud5_piece.menu_slider_addon(Master, 'gk_ReverbSC_delay_modulation', 0., 1.);
         cloud5_piece.menu_slider_addon(Master, 'gk_ReverbSC_frequency_cutoff', 0., 20000.);
-        var Blower = cloud5_piece.menu_folder_addon('Blower');
-        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_level', -50, 50);
-        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_attack', 0, 2);
-        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_release', 0, 4);
-        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainDensity', 0, 400);
-        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainDuration', 0, .5);
-        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainAmplitudeRange', 0, 400);
-        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainFrequencyRange', 0, 100);
-        var Buzzer = cloud5_piece.menu_folder_addon('Buzzer');
-        cloud5_piece.menu_slider_addon(Buzzer, 'gk_Buzzer_level', -50, 50);
-        cloud5_piece.menu_slider_addon(Buzzer, 'gk_Buzzer_harmonics', 0, 20);
-        var Droner = cloud5_piece.menu_folder_addon('Droner');
-        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_level', -50, 50);
-        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial1', 0, 1);
-        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial2', 0, 1);
-        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial3', 0, 1);
-        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial4', 0, 1);
-        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial5', 0, 1);
-        var FilteredSines = cloud5_piece.menu_folder_addon('Filtered Sines');
-        cloud5_piece.menu_slider_addon(FilteredSines, 'gk_FilteredSines_level', -50, 50);
-        var Flute = cloud5_piece.menu_folder_addon('Zakian Flute');
-        cloud5_piece.menu_slider_addon(Flute, 'gk_ZakianFlute_level', -50, 50);
-        var FMModerate = cloud5_piece.menu_folder_addon('FMModerate');
-        cloud5_piece.menu_slider_addon(FMModerate, 'gk_FMModerate_level', -50, 50);
-        cloud5_piece.menu_slider_addon(FMModerate, 'gi_FMModerate_exponent', -200, 200);
-        var FMWaterBell = cloud5_piece.menu_folder_addon('FMWaterBell');
+        var Piano = cloud5_piece.menu_folder_addon('1 Piano');
+        cloud5_piece.menu_slider_addon(Piano, 'gk_PianoOutPianoteq_level', -50, 50);
+        var FMWaterBell = cloud5_piece.menu_folder_addon('2 FMWaterBell');
         cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_level', -50, 50);
         cloud5_piece.menu_slider_addon(FMWaterBell, 'gi_FMWaterBell_attack', 0, .1);
         cloud5_piece.menu_slider_addon(FMWaterBell, 'gi_FMWaterBell_release', 0, .1);
@@ -2329,43 +2313,30 @@
         cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_index', 0, 15);
         cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_vibrato_depth', 0, 10);
         cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_vibrato_rate', 0, 10);
-        var Guitar = cloud5_piece.menu_folder_addon('Guitar');
-        cloud5_piece.menu_slider_addon(Guitar, 'gk_Guitar_level', -50, 50);
-        var Kung2 = cloud5_piece.menu_folder_addon('Kung2');
-        cloud5_piece.menu_slider_addon(Kung2, 'gk_Kung2_level', -50, 50);
-        var Kung4 = cloud5_piece.menu_folder_addon('Kung4');
-        cloud5_piece.menu_slider_addon(Kung4, 'gk_Kung4_level', -50, 50);
-        var Phaser = cloud5_piece.menu_folder_addon('Phaser');
-        cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_level', -50, 50);
-        cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_ratio1', 0, 5);
-        cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_ratio2', 0, 5);
-        cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_index1', 0, 15);
-        cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_index2', 0, 15);
-        var Piano = cloud5_piece.menu_folder_addon('Piano');
-        cloud5_piece.menu_slider_addon(Piano, 'gk_PianoOutPianoteq_level', -50, 50);
-        var Plucked = cloud5_piece.menu_folder_addon('Plucked');
-        cloud5_piece.menu_slider_addon(Plucked, 'gk_Plucked_level', -50, 50);
-        var Shiner = cloud5_piece.menu_folder_addon('Shiner');
-        cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_level', -50, 50);
-        cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_attack', 0, 1);
-        cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_release', 0, 4);
-        var SeidelHarmOsc = cloud5_piece.menu_folder_addon('SeidelHarmOsc');
+        var Droner = cloud5_piece.menu_folder_addon('3 Droner');
+        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_level', -50, 50);
+        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial1', 0, 1);
+        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial2', 0, 1);
+        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial3', 0, 1);
+        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial4', 0, 1);
+        cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial5', 0, 1);
+        var SeidelHarmOsc = cloud5_piece.menu_folder_addon('4 SeidelHarmOsc');
         cloud5_piece.menu_slider_addon(SeidelHarmOsc, 'gk_SeidelHarmOsc_level', -50, 50);
-        var Harpsichord = cloud5_piece.menu_folder_addon('Harpsichord');
-        cloud5_piece.menu_slider_addon(Harpsichord, 'gk_Harpsichord_level', -50, 50);
-        var Sweeper = cloud5_piece.menu_folder_addon('Sweeper');
+        var Blower = cloud5_piece.menu_folder_addon('5 Blower');
+        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_level', -50, 50);
+        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_attack', 0, 2);
+        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_release', 0, 4);
+        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainDensity', 0, 400);
+        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainDuration', 0, .5);
+        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainAmplitudeRange', 0, 400);
+        cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainFrequencyRange', 0, 100);
+        var Sweeper = cloud5_piece.menu_folder_addon('6 Sweeper');
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_level', -50, 50);
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britel', 0, 4);
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_briteh', 0, 4);
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britels', 0, 4);
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britehs', 0, 4);
-        var TubularBell = cloud5_piece.menu_folder_addon('TubularBell');
-        cloud5_piece.menu_slider_addon(TubularBell, 'gk_TubularBell_level', -50, 50);
-        var YiString = cloud5_piece.menu_folder_addon('YiString');
-        cloud5_piece.menu_slider_addon(YiString, 'gk_YiString_level', -50, 50);
-        var Xing = cloud5_piece.menu_folder_addon('Xing');
-        cloud5_piece.menu_slider_addon(Xing, 'gk_Xing_level', -50, 50);
-        //#endregion
+          //#endregion
         // #region Piano Roll
         let cloud5_piano_roll = document.querySelector('cloud5-piano-roll');
         cloud5_piece.piano_roll_overlay = cloud5_piano_roll;
