@@ -561,18 +561,18 @@ endin
 gk_Sweeper_midi_dynamic_range chnexport "gk_Sweeper_midi_dynamic_range", 3 ;  127
 gk_Sweeper_attack chnexport "gk_Sweeper_attack", 3 ;  .125
 gk_Sweeper_release chnexport "gk_Sweeper_release", 3 ;  .25
-gk_Sweeper_britel chnexport "gk_Sweeper_britel", 3 ;  0.1
-gk_Sweeper_briteh chnexport "gk_Sweeper_briteh", 3 ;  2.9
-gk_Sweeper_britels chnexport "gk_Sweeper_britels", 3 ;  2
-gk_Sweeper_britehs chnexport "gk_Sweeper_britehs", 3 ;  1
+gk_Sweeper_range_min chnexport "gk_Sweeper_range_min", 3 ;  0.1
+gk_Sweeper_range_max chnexport "gk_Sweeper_range_max", 3 ;  2.9
+gk_Sweeper_rate_min chnexport "gk_Sweeper_rate_min", 3 ;  2
+gk_Sweeper_rate_max chnexport "gk_Sweeper_rate_max", 3 ;  1
 gk_Sweeper_level chnexport "gk_Sweeper_level", 3 ;  0
 gk_Sweeper_midi_dynamic_range init 20
 gk_Sweeper_attack init 1
-gk_Sweeper_release init 1
-gk_Sweeper_britel init .01
-gk_Sweeper_briteh init 5
-gk_Sweeper_britels init .5
-gk_Sweeper_britehs init 1.75
+gk_Sweeper_release init 2
+gk_Sweeper_range_min init .01
+gk_Sweeper_range_max init 5
+gk_Sweeper_rate_min init .5
+gk_Sweeper_rate_max init 1.75
 gk_Sweeper_level init 0
 gk_Sweeper_space_left_to_right chnexport "gk_Sweeper_space_left_to_right", 3
 gk_Sweeper_space_left_to_right init .5
@@ -614,7 +614,7 @@ ktonemoddep jspline 0.01,0.05,0.2
 ktonemodrte jspline 6,0.1,0.2
 ktone poscil3 ktonemoddep, ktonemodrte, gi_Sweeper_sine
 ; kres rspline krangeMin, krangeMax, kcpsMin, kcpsMax
-kbrite rspline gk_Sweeper_britel, gk_Sweeper_briteh, gk_Sweeper_britels, gk_Sweeper_britehs
+kbrite rspline gk_Sweeper_range_min, gk_Sweeper_range_max, gk_Sweeper_rate_min, gk_Sweeper_rate_max
 ibasfreq init icps
 ioctcnt init 3
 iphs init 0
@@ -848,7 +848,7 @@ endin
 
 </CsInstruments>
 <CsScore>
-f 0 [ (9 * 60) + 45]
+f 0 [ (9 * 60) + 10]
 </CsScore>
 </CsoundSynthesizer>
     </textarea>
@@ -1094,7 +1094,7 @@ f 0 [ (9 * 60) + 45]
             "gk_Droner_partial3": 0.16709485150549788,
             "gk_Droner_partial4": 0.1342102558832597,
             "gk_Droner_partial5": 0.6406330284657281,
-            "gk_FilteredSines_level": -5,
+            "gk_FilteredSines_level": -8,
             "gk_FMModerate_level": 0.2466091245376134,
             "gi_FMModerate_exponent": -65,
             "gk_ZakianFlute_level": -5.667454526770115,
@@ -1123,11 +1123,11 @@ f 0 [ (9 * 60) + 45]
             "gk_Shiner_attack": 0.125,
             "gk_Shiner_release": 0.5,
             "gk_SeidelHarmOsc_level": -9.613606001438704,
-            "gk_Sweeper_level": -25.39821190011304,
-            "gk_Sweeper_britel": 0.11591819956838968,
-            "gk_Sweeper_briteh": 1.431302024457918,
-            "gk_Sweeper_britels": 0.9051484945021067,
-            "gk_Sweeper_britehs": 2.0626862604048917,
+            "gk_Sweeper_level": -30,
+            "gk_Sweeper_range_min": 0,
+            "gk_Sweeper_range_max": 2.5,
+            "gk_Sweeper_rate_min": .25,
+            "gk_Sweeper_rate_max": 2,
             "gk_TubularBell_level": -17.505908950775876,
             "gk_YiString_level": 0,
             "gk_Xing_level": 0
@@ -1172,10 +1172,10 @@ f 0 [ (9 * 60) + 45]
         cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainFrequencyRange', 0, 100);
         var Sweeper = cloud5_piece.menu_folder_addon('6 Sweeper');
         cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_level', -50, 50);
-        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britel', 0, 4);
-        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_briteh', 0, 4);
-        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britels', 0, 4);
-        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britehs', 0, 4);
+        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_range_min', 0, 4);
+        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_range_max', 0, 4);
+        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_rate_min', 0, 4);
+        cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_rate_max', 0, 4);
         var FilteredSines = cloud5_piece.menu_folder_addon('7 Filtered Sines');
         cloud5_piece.menu_slider_addon(FilteredSines, 'gk_FilteredSines_level', -50, 50);
         //#endregion
