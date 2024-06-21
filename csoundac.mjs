@@ -1291,9 +1291,16 @@ export class PitvPatterns extends StatefulPatterns {
 }
 
 /**
- * Assigns the value of the Pattern of this to a cloud-5 control parameter.
- * Enables controlling external JavaScript code in the browser using  
- * Strudel Patterns.
+ * Assigns the value of the Pattern of this to a cloud-5 control parameter 
+ * addon. Enables controlling external JavaScript code in the browser using  
+ * Strudel Patterns. The following example controls the hue of a GLSL shader, 
+ * and the hue in turn is sampled to determine the orchestration of the music 
+ * generated from the shader:
+ * 
+ * const csac = await import('../csoundac.mjs');
+ * let hue = new csac.Cloud5('GraphicsHue');
+ * pure(0)
+ *   .control(hue, "<.1 .8>".slow(8))
  */
 export class Cloud5 extends StatefulPatterns {
     constructor(name_) {

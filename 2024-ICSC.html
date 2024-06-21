@@ -2162,9 +2162,9 @@ cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');
 cloud5_piece.strudel_overlay.strudel_code_addon = `
 const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.INFORMATION);
-let hue = new csac.Cloud5('Hue');
+let hue = new csac.Cloud5('GraphicsHue');
 pure(0)
-  .control(hue, ".1 .8")
+  .control(hue, "<.1 .8>".slow(8))
     `;
         // #endregion
         // #region Controls 
