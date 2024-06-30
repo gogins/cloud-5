@@ -280,14 +280,31 @@ class Cloud5Piece extends HTMLElement {
       this.stop();
     });
     let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
-    menu_item_fullscreen.onclick = ((event) => {
+    menu_item_fullscreen.onclick = (async (event) => {
       console.info("menu_item_fullscreen click...");
       if (this.#shader_overlay?.canvas?.requestFullscreen) {
-        this.shader_overlay.canvas.requestFullscreen();
-      } else if (this.#shader_overlay?.canvas?.webkitRequestFullscreen) {
-        this.shader_overlay.canvas.webkitRequestFullscreen();
-      } else if (this.#shader_overlay?.canvas?.msRequestFullscreen) {
-        this.shader_overlay.canvas.msRequestFullscreen();
+        try {
+          const secondary_screen = (await getScreenDetails()).screens.find(
+            (screen) => screen.isExtended,
+          );
+          // Show the shader canvas fullscreen in an IFrame on the secondary 
+          // screen; if there is no secondary screen show the shader canvas 
+          // fullscreen in the default mode.
+          if (secondary_screen) {
+            let granted = false;
+            try {
+              const { state } = await navigator.permissions.query({ name: 'window-management' });
+              granted = state === 'granted';
+            } catch {
+              // Nothing.
+            }
+            await this.#shader_overlay.canvas.requestFullscreen(secondary_screen);
+          } else {
+            await this.#shader_overlay.canvas.requestFullscreen();
+          }
+        } catch (ex) {
+          console.error(ex);
+        };
       };
     });
     let menu_item_strudel = document.querySelector('#menu_item_strudel');
@@ -1601,6 +1618,7 @@ function canon(CsoundAC, csoundac_score, delay, transposition, csoundac_scale) {
   }
   return new_score;
 }
+
 
 
 
