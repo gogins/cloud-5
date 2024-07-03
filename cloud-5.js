@@ -35,7 +35,6 @@ class Cloud5Piece extends HTMLElement {
     this.csound = null;
     this.csoundac = null;
   }
-
   #csound_code_addon = null;
   /**
     * May be assigned the text of a Csound .csd patch. If so, the Csound 
@@ -52,8 +51,8 @@ class Cloud5Piece extends HTMLElement {
   * May be assigned an instance of a cloud5-shader overlay. If so, 
   * the GLSL shader will run at all times, and will normally create the 
   * background for other overlays. The shader overlay may call 
-  * an addon function either to visualize the audio of the performance, 
-  * or to sample the video canvas to generate notes for performance by 
+  * addon functions either to visualize the audio of the performance, 
+  * and/or to sample the video canvas to generate notes for performance by 
   * Csound.
   */
   set shader_overlay(shader) {
@@ -65,6 +64,24 @@ class Cloud5Piece extends HTMLElement {
   get shader_overlay() {
     return this.#shader_overlay;
   }
+  /**
+   * May be assigned the URL of a Web page to implement HTML-based controls 
+   * for the performance. This is normally used only if there is a secondary 
+   * display to use for these controls, so that the primary display can become 
+   * fullscreen. The resulting Web page can obtain a reference to this piece 
+   * from its `window.opener`, which is the window that opens the HTML 
+   * controls window, and the opener can be used to control all aspects of the 
+   * piece.
+   * 
+   * For this to work the HTML controls and the piece must have the same 
+   * origin.
+   */
+  html_controls_url_addon = null;
+  /**
+   * Stores a reference to the HTML controls window; this reference will be 
+   * used to close the HTML controls window upon leaving fullscreen.
+   */
+  #html_controls_window = null;
   #control_parameters_addon = null;
   /**
     * May be assigned a JavaScript object consisting of Csound control 
@@ -285,14 +302,14 @@ class Cloud5Piece extends HTMLElement {
       if (this.#shader_overlay?.canvas?.requestFullscreen) {
         let new_window = null;
         try {
+          // First make the shader canvas fullscreen in the primary window.
           await this.#shader_overlay.canvas.requestFullscreen();
+          // Then try to make the HTML controls, if available, fullscreen 
+          // in the secondary window.
           const secondary_screen = (await getScreenDetails()).screens.find(
             (screen) => screen.isExtended,
           );
-          // Show the shader canvas fullscreen on the secondary 
-          // screen; if there is no secondary screen, show the shader canvas 
-          // fullscreen in the default mode.
-          if (secondary_screen) {
+          if (secondary_screen && this?.html_controls_url_addon) {
             let granted = false;
             try {
               const { state } = await navigator.permissions.query({ name: 'window-management' });
@@ -300,11 +317,21 @@ class Cloud5Piece extends HTMLElement {
             } catch {
               // Nothing.
             }
-            const url = window.location.origin + "/2024-ICSC-Controller.html"
+            const url = window.location.origin + this?.html_controls_url_addon;
             const window_features = `top=${secondary_screen.availTop}, left=${secondary_screen.availLeft}, width=${secondary_screen.availWidth}, height=${secondary_screen.availHeight}`;
-            new_window = window.open(url, 'HTMLControls', window_features);
-            await new_window.requestFullscreen(secondary_screen);
-          } 
+            this.#html_controls_window = window.open(url, 'HTMLControls', window_features);
+            if (this.#html_controls_window) {
+              // These will pile up and that would be a problem... if users 
+              // repeatedly toggled fullscreen.
+              window.addEventListener("fullscreenchange", (event) => {
+                if (document.fullscreenElement) {
+                } else {
+                  this.#html_controls_window.close();
+                }
+              });
+              await this.#html_controls_window.requestFullscreen(secondary_screen);
+            }
+          };
         } catch (ex) {
           console.error(ex);
         };

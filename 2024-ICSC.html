@@ -27,7 +27,6 @@
 
 <body class="w3-medium w3-text-sand cloud5-body">
 
-
     <textarea id="csd" style="display:none;">
         <CsoundSynthesizer>
           <CsOptions>
@@ -2070,7 +2069,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
 
     </script>
     <cloud5-piece></cloud5-piece>
-    <cloud5-strudel></cloud5-strudel>
     <cloud5-shadertoy></cloud5-shadertoy>
     <cloud5-log></cloud5-log>
     <cloud5-about>
@@ -2165,14 +2163,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
         // #endregion
         // #region Strudel
-        cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');
-        cloud5_piece.strudel_overlay.strudel_code_addon = `
-const csac = await import('../csoundac.mjs');
-csac.diagnostic_level(csac.INFORMATION);
-let hue = new csac.Cloud5('GraphicsHue');
-pure(0)
-  .control(hue, "<.1 .8>".slow(8))
-    `;
         // #endregion
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
@@ -2334,8 +2324,7 @@ pure(0)
         cloud5_piece.menu_slider_addon(Xing, 'gk_Xing_level', -50, 50);
         // Override default width of controls.
         cloud5_piece.gui.domElement.style.width = "500px";
-        cloud5_piece.strudel_overlay.control_parameters_addon = cloud5_piece.control_parameters_addon;
-
+        cloud5_piece.html_controls_url_addon = "/2024-ICSC-controller.html";
         // #endregion
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
