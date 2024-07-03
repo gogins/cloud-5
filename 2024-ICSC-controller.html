@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Controls for 2024-ICSS</title>
+    <style type="text/css">
+        input[type='range'] {
+            -webkit-appearance: none;
+            box-shadow: inset 0 0 5px #333;
+            background-color: gray;
+            height: 10px;
+            width: 100%;
+            vertical-align: middle;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            border: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 7px #234;
+            background: chartreuse;
+            margin-top: -4px;
+            border-radius: 10px;
+        }
+
+        table td {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: yellow;
+            background-color: teal;
+            font-family: sans-serif
+        }
+
+        table th {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: white;
+            background-color: teal;
+            font-family: sans-serif
+        }
+
+        textarea {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: chartreuse;
+            background-color: black;
+            font-family: 'Courier', sans-serif
+        }
+
+        h1 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-family: 'Ultra', sans-serif;
+            font-size: 36px;
+            line-height: 42px;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-size: 30px;
+            line-height: 40px;
+            font-family: 'Orienta', sans-serif;
+        }
+
+        h3 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-size: 24px;
+            line-height: 30px;
+            font-family: 'Orienta', sans-serif;
+        }
+    </style>
+    <script>
+        function csound_message_callback(message) {
+            var messages_textarea = document.getElementById("csound_console");
+            var existing = messages_textarea.value;
+            messages_textarea.value = existing + message;
+            messages_textarea.scrollTop = messages_textarea.scrollHeight;
+        };
+    </script>
+</head>
+
+<body style="background-color:CadetBlue">
+    <script src="jquery.js"></script>
+    <h1>Controls for 2024-ICSC</h1>
+    <form id='persist'>
+        <table>
+            <col width="2*">
+            <col width="5*">
+            <col width="100px">
+            <tr>
+                <td>
+                    <label for=gk_Performance_seconds>Duration</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=12000 value=360 id=gk_Performance_seconds
+                        step=.001>
+                <td>
+                    <output for=gk_Performance_seconds id=gk_Performance_seconds_output>1</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=NoteTempo>Music tempo</label>
+                <td>
+                    <input class=persistent-element type=range min=0.0001 max=1 value=.005 id=NoteTempo step=.001>
+                <td>
+                    <output for=NoteTempo id=NoteTempo_output>.005</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=VelocityThreshold>Velocity cutoff</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=1 value=.89 id=VelocityThreshold step=.001>
+                <td>
+                    <output for=VelocityThreshold id=VelocityThreshold_output>.89</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=NoteDurationFactor>Note duration factor</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=20000 value=12000 id=NoteDurationFactor
+                        step=.001>
+                <td>
+                    <output for=NoteDurationFactor id=NoteDurationFactor_output>12000</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=GraphicsTempo>Visual tempo</label>
+                <td>
+                    <input class=persistent-element type=range min=-40 max=40 value=-6 id=GraphicsTempo step=.001>
+                <td>
+                    <output for=GraphicsTempo id=GraphicsTempo_output>-6</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=GraphicsHue>Hue</label>
+                <td>
+                    <input class=persistent-element type=range min=-40 max=40 value=-6 id=GraphicsHue step=.001>
+                <td>
+                    <output for=GraphicsHue id=GraphicsHue_output>-6</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=GraphicsValue>Brightness</label>
+                <td>
+                    <input class=persistent-element type=range min=-40 max=40 value=-6 id=GraphicsValue step=.001>
+                <td>
+                    <output for=GraphicsValue id=GraphicsValue_output>-6</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=CanonDelay>Canon Delay</label>
+                <td>
+                    <input class=persistent-element type=range min=-40 max=40 value=-6 id=CanonDelay step=.001>
+                <td>
+                    <output for=CanonDelay id=CanonDelay_output>-6</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=CanonTranspose>Canon interval</label>
+                <td>
+                    <input class=persistent-element type=range min=-40 max=40 value=-6 id=CanonTranspose step=.001>
+                <td>
+                    <output for=CanonTranspose id=CanonTranspose_output>-6</output>
+            </tr>
+
+        </table>
+        <p>
+    </form>
+    <p>
+
+        <script>
+            $(document).ready(function () {
+                $('input').on('input', async function (event) {
+                    //let csound_ = await get_csound(csound_message_callback);
+                    var slider_value = parseFloat(event.target.value);
+                    //csound_.SetControlChannel(event.target.id, slider_value);
+                    var output_selector = '#' + event.target.id + '_output';
+                    $(output_selector).val(slider_value);
+                });
+            });
+        </script>
+</body>
+
+</html>
