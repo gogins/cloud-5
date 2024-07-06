@@ -26,6 +26,25 @@
  */
 
 /**
+ * Holds refernces to windows that must be closed on exit.
+ */
+globalThis.windows_to_close = [];
+
+/**
+ * Close all secondary windows on exit.
+ */
+window.addEventListener("beforeunload", (event) => {
+  for (let window_to_close of globalThis.windows_to_close()) {
+    try {
+      window_to_close.close()
+    } catch(ex) {
+      console.warn(ex);
+    }
+   }
+   globalThis.windows_to_close = [];
+});
+
+/**
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
  * objects of other cloud-5 elements to the `_overlay` properties. 
  */
@@ -81,7 +100,7 @@ class Cloud5Piece extends HTMLElement {
    * Stores a reference to the HTML controls window; this reference will be 
    * used to close the HTML controls window upon leaving fullscreen.
    */
-  #html_controls_window = null;
+  html_controls_window = null;
   #control_parameters_addon = null;
   /**
     * May be assigned a JavaScript object consisting of Csound control 
@@ -310,26 +329,48 @@ class Cloud5Piece extends HTMLElement {
             (screen) => screen.isExtended,
           );
           if (secondary_screen && this?.html_controls_url_addon) {
-            let granted = false;
+            let permissions_granted = 0;
             try {
               const { state } = await navigator.permissions.query({ name: 'window-management' });
-              granted = state === 'granted';
+              if (state === 'granted') {
+                permissions_granted += 1;
+              }
             } catch {
               // Nothing.
             }
+            try {
+              const { state } = await navigator.permissions.query({ name: 'window-management' });
+              if (state === 'granted') {
+                permissions_granted += 1;
+              }
+            } catch {
+              // Nothing.
+            }
+            if (permissions_granted < 2) {
+              alert("Enable window management and pop-up permissions!");
+            }
             const url = window.location.origin + this?.html_controls_url_addon;
             const window_features = `top=${secondary_screen.availTop}, left=${secondary_screen.availLeft}, width=${secondary_screen.availWidth}, height=${secondary_screen.availHeight}`;
-            this.#html_controls_window = window.open(url, 'HTMLControls', window_features);
-            if (this.#html_controls_window) {
+            this.html_controls_window = window.open(url, 'HTMLControls', window_features);
+            // let cloned_gui = await this.html_controls_window.document.importNode(this.gui.domElement, true);
+            // let bodie = this.html_controls_window.document.getElementById('bodie');
+            // bodie.appendChild(cloned_gui);      
+            globalThis.windows_to_close.push(this.html_controls_window);
+            if (this.html_controls_window) {
               // These will pile up and that would be a problem... if users 
               // repeatedly toggled fullscreen.
               window.addEventListener("fullscreenchange", (event) => {
                 if (document.fullscreenElement) {
                 } else {
-                  this.#html_controls_window.close();
+                  this.html_controls_window.close();
+                  (value) => {
+                    globalThis.windows_to_close = globalThis.windows_to_close.filter(function (ele) {
+                      return ele != value;
+                    });
+                  }
                 }
               });
-              await this.#html_controls_window.requestFullscreen(secondary_screen);
+              await this.html_controls_window.requestFullscreen(secondary_screen);
             }
           };
         } catch (ex) {
@@ -1425,9 +1466,12 @@ function write_file(filepath, data) {
       console.error(err);
     });
   } catch (err) {
-    navigator.clipboard.writeText(data);
-    console.info("Copied generated csd to system clipboard.\n")
-    console.warn(err);
+    try {
+      navigator.clipboard.writeText(data);
+      console.info("Copied generated csd to system clipboard.\n")
+    } catch (err1) {
+      console.warn(err1);
+    }
   }
 }
 

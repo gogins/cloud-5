@@ -13,7 +13,7 @@
         }
 
         input[type=range]::-webkit-slider-thumb {
-             border: none;
+            border: none;
             height: 16px;
             width: 16px;
             border-radius: 50%;
@@ -91,7 +91,8 @@
     </script>
 </head>
 
-<body style="background-color:CadetBlue">
+<body id='bodie' style="background-color:CadetBlue">
+    <H1>Controls</H1>
     <script src="jquery.js"></script>
     <h1>Controls for 2024-ICSC</h1>
     <form id='persist'>
@@ -128,8 +129,7 @@
                 <td>
                     <label for=NoteDurationFactor>Note duration factor</label>
                 <td>
-                    <input class=persistent-element type=range min=0 max=5 value=1 id=NoteDurationFactor
-                        step=.001>
+                    <input class=persistent-element type=range min=0 max=5 value=1 id=NoteDurationFactor step=.001>
                 <td>
                     <output for=NoteDurationFactor id=NoteDurationFactor_output>1</output>
             </tr>
@@ -169,7 +169,7 @@
                 <td>
                     <label for=CanonTranspose>Canon interval</label>
                 <td>
-                    <input class=persistent-element type=range min=0 max=6 value=5 id=CanonTranspose step=.001>
+                    <input class=persistent-element type=range min=0 max=6 value=5 id=CanonTranspose step=1>
                 <td>
                     <output for=CanonTranspose id=CanonTranspose_output>5</output>
             </tr>
@@ -179,17 +179,19 @@
     </form>
     <p>
 
-        <script>
-            $(document).ready(function () {
-                let cloud5_piece = window.opener.document.querySelector('cloud5-piece')
-                $('input').on('input', async function (event) {
-                    var slider_value = parseFloat(event.target.value);
-                    cloud5_piece.control_parameters_addon[event.target.id] = slider_value;
-                    var output_selector = '#' + event.target.id + '_output';
-                    $(output_selector).val(slider_value);
-                });
+    <script>
+        $(document).ready(function () {
+            let cloud5_piece = window.opener.document.querySelector('cloud5-piece')
+            $('input').on('input', async function (event) {
+                var slider_value = parseFloat(event.target.value);
+                cloud5_piece.control_parameters_addon[event.target.id] = slider_value;
+                var output_selector = '#' + event.target.id + '_output';
+                $(output_selector).val(slider_value);
+                cloud5_piece.gk_update(event.target.id, slider_value);
             });
-        </script>
+        });
+        // Initialize values.
+    </script>
 </body>
 
 </html>
