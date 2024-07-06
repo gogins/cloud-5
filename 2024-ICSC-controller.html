@@ -92,7 +92,6 @@
 </head>
 
 <body id='bodie' style="background-color:CadetBlue">
-    <H1>Controls</H1>
     <script src="jquery.js"></script>
     <h1>Controls for 2024-ICSC</h1>
     <form id='persist'>
@@ -187,10 +186,21 @@
                 cloud5_piece.control_parameters_addon[event.target.id] = slider_value;
                 var output_selector = '#' + event.target.id + '_output';
                 $(output_selector).val(slider_value);
+                // Propagate changed values to primary display.
                 cloud5_piece.gk_update(event.target.id, slider_value);
             });
+            // Initialize input values.
+            for (const [name, value] of Object.entries(cloud5_piece.control_parameters_addon)) {
+                try {
+                    console.log(`"Initialize ${name}: ${value}`)
+                     $('#' + name).val(value);
+                     var output_selector = '#' + name + '_output';
+                    $(output_selector).val(value);
+                 } catch (err) {
+                    console.error(err);
+                }
+            }    
         });
-        // Initialize values.
     </script>
 </body>
 
