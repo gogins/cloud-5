@@ -37,11 +37,11 @@ window.addEventListener("beforeunload", (event) => {
   for (let window_to_close of globalThis.windows_to_close()) {
     try {
       window_to_close.close()
-    } catch(ex) {
+    } catch (ex) {
       console.warn(ex);
     }
-   }
-   globalThis.windows_to_close = [];
+  }
+  globalThis.windows_to_close = [];
 });
 
 /**
@@ -318,64 +318,51 @@ class Cloud5Piece extends HTMLElement {
     let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
     menu_item_fullscreen.onclick = (async (event) => {
       console.info("menu_item_fullscreen click...");
-      if (this.#shader_overlay?.canvas?.requestFullscreen) {
-        let new_window = null;
-        try {
-          // First make the shader canvas fullscreen in the primary window.
+      try {
+        if (this.#shader_overlay?.canvas?.requestFullscreen) {
+          let new_window = null;
+          // Make the shader canvas fullscreen in the primary window.
           await this.#shader_overlay.canvas.requestFullscreen();
-          // Then try to make the HTML controls, if available, fullscreen 
+          // Try to make the HTML controls, if available, fullscreen 
           // in the secondary window.
           const secondary_screen = (await getScreenDetails()).screens.find(
             (screen) => screen.isExtended,
           );
           if (secondary_screen && this?.html_controls_url_addon) {
-            let permissions_granted = 0;
-            try {
-              const { state } = await navigator.permissions.query({ name: 'window-management' });
-              if (state === 'granted') {
-                permissions_granted += 1;
-              }
-            } catch {
-              // Nothing.
+            let permissions_granted = false;
+            const { state } = await navigator.permissions.query({ name: 'window-management' });
+            if (state === 'granted') {
+              permissions_granted = true;
             }
-            try {
-              const { state } = await navigator.permissions.query({ name: 'window-management' });
-              if (state === 'granted') {
-                permissions_granted += 1;
-              }
-            } catch {
-              // Nothing.
-            }
-            if (permissions_granted < 2) {
-              alert("Enable window management and pop-up permissions!");
-            }
-            const url = window.location.origin + this?.html_controls_url_addon;
-            const window_features = `top=${secondary_screen.availTop}, left=${secondary_screen.availLeft}, width=${secondary_screen.availWidth}, height=${secondary_screen.availHeight}`;
-            this.html_controls_window = window.open(url, 'HTMLControls', window_features);
-            // let cloned_gui = await this.html_controls_window.document.importNode(this.gui.domElement, true);
-            // let bodie = this.html_controls_window.document.getElementById('bodie');
-            // bodie.appendChild(cloned_gui);      
-            globalThis.windows_to_close.push(this.html_controls_window);
-            if (this.html_controls_window) {
-              // These will pile up and that would be a problem... if users 
-              // repeatedly toggled fullscreen.
-              window.addEventListener("fullscreenchange", (event) => {
-                if (document.fullscreenElement) {
-                } else {
-                  this.html_controls_window.close();
-                  (value) => {
-                    globalThis.windows_to_close = globalThis.windows_to_close.filter(function (ele) {
-                      return ele != value;
-                    });
-                  }
+          }
+          const url = window.location.origin + this?.html_controls_url_addon;
+          const window_features = `top=${secondary_screen.availTop}, left=${secondary_screen.availLeft}, width=${secondary_screen.availWidth}, height=${secondary_screen.availHeight}`;
+          let opened_window = window.open(url, 'HTMLControls', window_features);
+          if (!opened_window || opened_window.closed || typeof opened_window.closed == 'undefined') {
+            alert("Your browser is blocking popups. Please allow popups and redirects in the browser settings for this Web site.")
+            return;
+          } else {
+            this.html_controls_window = opened_window;
+          }
+          globalThis.windows_to_close.push(this.html_controls_window);
+          if (this.html_controls_window) {
+            // These will pile up and that would be a problem... if users 
+            // repeatedly toggled fullscreen.
+            window.addEventListener("fullscreenchange", (event) => {
+              if (document.fullscreenElement) {
+              } else {
+                this.html_controls_window.close();
+                (value) => {
+                  globalThis.windows_to_close = globalThis.windows_to_close.filter(function (ele) {
+                    return ele != value;
+                  });
                 }
-              });
-              await this.html_controls_window.requestFullscreen(secondary_screen);
-            }
-          };
-        } catch (ex) {
-          console.error(ex);
-        };
+              }
+            });
+          }
+        }
+      } catch (ex) {
+         alert(ex.message + "\nIn the browser's 'Site permissions' for this Web site, set 'Pop-ups and redirects' to 'Allow' and 'Window management' to 'Allow'.");
       };
     });
     let menu_item_strudel = document.querySelector('#menu_item_strudel');
