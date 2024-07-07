@@ -362,7 +362,7 @@ class Cloud5Piece extends HTMLElement {
           }
         }
       } catch (ex) {
-         alert(ex.message + "\nIn the browser's 'Site permissions' for this Web site, set 'Pop-ups and redirects' to 'Allow' and 'Window management' to 'Allow'.");
+        alert(ex.message + "\nIn the browser's 'Site permissions' for this Web site, set 'Pop-ups and redirects' to 'Allow' and 'Window management' to 'Allow'.");
       };
     });
     let menu_item_strudel = document.querySelector('#menu_item_strudel');
@@ -1651,28 +1651,33 @@ async function url_for_soundfile(csound) {
 }
 
 /**
- * Generates a new copy of the Score that is in canon to the original, at the 
+ * Generates a new copy(s) of the Score in canon to the original, at the 
  * specified delay in seconds and transposition in semitones (which may be 
  * fractional). If a Scale is supplied, the new Score is conformed to that 
  * Scale.
  * @param {CsoundAC.Score} Score or fragment of score. 
  * @param {number} delay in seconds.
  * @param {number} transposition in semitones.
+ * @param {number} layers.
  * @param {CsoundAC.Scale} csoundac_scale if supplied, the new voice will 
  * be conformed to this scale.
  * @returns a modified {Score}
  */
-function canon(CsoundAC, csoundac_score, delay, transposition, csoundac_scale) {
+function canon(CsoundAC, csoundac_score, delay, transposition, layers, csoundac_scale) {
   let new_score = new CsoundAC.Score();
   // Append both an event and that event in canon to the new Score.
-  for (let i = 0; i < csoundac_score.size(); ++i) {
-    let event = csoundac_score.get(i);
-    new_score.append_event(event);
-    let new_time = event.getTime() + delay;
-    event.setTime(new_time);
-    let new_key = event.getKey() + transposition;
-    event.setKey(new_key);
-    new_score.append_event(event);
+  for (let layer = 1; layer <= layers; ++layer) {
+    for (let i = 0; i < csoundac_score.size(); ++i) {
+      let event = csoundac_score.get(i);
+      if (layer == 1) {
+        new_score.append_event(event);
+      }
+      let new_time = event.getTime() + (delay * layer);
+      event.setTime(new_time);
+      let new_key = event.getKey() + (transposition * layer);
+      event.setKey(new_key);
+      new_score.append_event(event);
+    }
   }
   if (csoundac_scale) {
     CsoundAC.apply(new_score, csoundac_scale, 0, 1000000, true);
