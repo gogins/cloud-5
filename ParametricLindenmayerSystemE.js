@@ -300,7 +300,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             };
             let step;
             this.add_command('Assign(dimension, value)', function (lsystem, turtle, dimension, value) {
-                turtle.note.data[dimension] = value;
+                turtle.note[dimension] = value;
                 return turtle;
             });
             this.add_command('Scale(dimension, value)', function (lsystem, turtle, dimension, value) {
@@ -308,7 +308,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             this.add_command('Move(dimension, value)', function (lsystem, turtle, dimension, value) {
-                turtle.note.data[dimension] += value;
+                turtle.note[dimension] += value;
                 return turtle;
             });
             this.add_command('Steps(s)', function (lsystem, turtle, s) {
@@ -334,33 +334,33 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             this.add_command('Assign(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
-                turtle.note.time = (t * turtle.scale[0]);
-                turtle.note.duration = (d * turtle.scale[1]);
-                turtle.note.status = (s * turtle.scale[3]);
-                turtle.note.channel = (c * turtle.scale[3]);
-                turtle.note.key = (k * turtle.scale[4]);
-                turtle.note.velocity = (v * turtle.scale[5]);
-                turtle.note.pan = (x * turtle.scale[6]);
+                turtle.note.setTime(t * turtle.scale[0]);
+                turtle.note.setDuration(d * turtle.scale[1]);
+                turtle.note.setStatus(s * turtle.scale[2]);
+                turtle.note.setInstrument(c * turtle.scale[3]);
+                turtle.note.setKey(k * turtle.scale[4]);
+                turtle.note.setVelocity(v * turtle.scale[5]);
+                turtle.note.setPan(x * turtle.scale[6]);
                 return turtle;
             });
             this.add_command('Move(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
-                turtle.note.time += (t * turtle.scale[0]);
-                turtle.note.duration += (d * turtle.scale[1]);
-                turtle.note.status += (s * turtle.scale[3]);
-                turtle.note.channel += (c * turtle.scale[3]);
-                turtle.note.key += (k * turtle.scale[4]);
-                turtle.note.velocity += (v * turtle.scale[5]);
-                turtle.note.pan += (x * turtle.scale[6]);
+                turtle.note.setTime(turtle.note.getTime() + (t * turtle.scale[0]));
+                turtle.note.setDuration(turtle.note.getDuration() + (d * turtle.scale[1]));
+                turtle.note.setStatus(turtle.note.getStatus() + (s * turtle.scale[2]));
+                turtle.note.setInstrument(turtle.note.getInstrument() + (c * turtle.scale[3]));
+                turtle.note.setKey(turtle.note.getKey() + (k * turtle.scale[4]));
+                turtle.note.setVelocity(turtle.note.getVelocity() + (v * turtle.scale[5]));
+                turtle.note.setPan(turtle.note.getPan() + (x * turtle.scale[6]));
                 return turtle;
             });
             this.add_command('Note(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
-                turtle.note.time = (t * turtle.scale[0]);
-                turtle.note.duration = (d * turtle.scale[1]);
-                turtle.note.status = (s * turtle.scale[3]);
-                turtle.note.channel = (c * turtle.scale[3]);
-                turtle.note.key = (k * turtle.scale[4]);
-                turtle.note.velocity = (v * turtle.scale[5]);
-                turtle.note.pan = (x * turtle.scale[6]);
+                turtle.note.setTime(t * turtle.scale[0]);
+                turtle.note.setDuration(d * turtle.scale[1]);
+                turtle.note.setStatus(s * turtle.scale[2]);
+                turtle.note.setInstrument(c * turtle.scale[3]);
+                turtle.note.setKey(k * turtle.scale[4]);
+                turtle.note.setVelocity(v * turtle.scale[5]);
+                turtle.note.setPan(x * turtle.scale[6]);
                 let note = turtle.note.clone();
                 if (turtle.chord !== null) {
                     note.chord = turtle.chord.clone();
@@ -501,12 +501,12 @@ Part of Silencio, an algorithmic music composition library for Csound.
              */
             this.add_command('ChordNotesDuration(D)', function (lsystem, turtle, D) {
                 turtle.chord.setDuration(D);
-                ChordSpace.insert(lsystem.score, turtle.chord, turtle.note.time);
+                CsoundAC.insert(lsystem.score, turtle.chord, turtle.note.getTime());
                 turtle.prior_chord = turtle.chord.clone();
                 return turtle;
             });
             this.add_command('ChordNotes()', function (lsystem, turtle) {
-                ChordSpace.insert(lsystem.score, turtle.chord, turtle.note.time);
+                CsoundAC.insert(lsystem.score, turtle.chord, turtle.note.getTime());
                 turtle.prior_chord = turtle.chord.clone();
                 return turtle;
             });
@@ -516,11 +516,11 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * the previous chord. The voiceleading is done between the prior and
              * current state of the turtle.chord, so may not perform as expected
              * unless operations are successive in time. Please note, the
-             * chordSpaceGroup of the LSystem must first have been initialized.
+             * PITV of the LSystem must first have been initialized.
              */
             this.add_command('ChordNotesVoiceleading()', function (lsystem, turtle) {
-                turtle.chord = ChordSpace.voiceleadingClosestRange(turtle.prior_chord, turtle.chord, lsystem.pitv.range, true);
-                ChordSpace.insert(lsystem.score, turtle.chord, turtle.note.time);
+                turtle.chord = CsoundAC.voiceleadingClosestRange(turtle.prior_chord, turtle.chord, lsystem.pitv.range, true);
+                CsoundAC.insert(lsystem.score, turtle.chord, turtle.note.getTime());
                 turtle.prior_chord = turtle.chord.clone();
                 return turtle;
             });
@@ -529,7 +529,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
              * the current turtle state's chord.
              */
             this.add_command('Chord()', function (lsystem, turtle) {
-                ChordSpace.insert(lsystem.score, turtle.chord, turtle.note.time);
+                CsoundAC.insert(lsystem.score, turtle.chord, turtle.note.getTime());
                 turtle.prior_chord = turtle.chord.clone();
                 return turtle;
             });
