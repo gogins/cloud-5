@@ -330,7 +330,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.add_command('Assign(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
                 turtle.note.time = (t * turtle.scale[0]);
                 turtle.note.duration = (d * turtle.scale[1]);
-                turtle.note.status = (s * turtle.scale[3]);
+                turtle.note.status = (s * turtle.scale[2]);
                 turtle.note.channel = (c * turtle.scale[3]);
                 turtle.note.key = (k * turtle.scale[4]);
                 turtle.note.velocity = (v * turtle.scale[5]);
@@ -340,7 +340,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.add_command('Move(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
                 turtle.note.time += (t * turtle.scale[0]);
                 turtle.note.duration += (d * turtle.scale[1]);
-                turtle.note.status += (s * turtle.scale[3]);
+                turtle.note.status += (s * turtle.scale[2]);
                 turtle.note.channel += (c * turtle.scale[3]);
                 turtle.note.key += (k * turtle.scale[4]);
                 turtle.note.velocity += (v * turtle.scale[5]);
@@ -350,7 +350,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.add_command('Note(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
                 turtle.note.time = (t * turtle.scale[0]);
                 turtle.note.duration = (d * turtle.scale[1]);
-                turtle.note.status = (s * turtle.scale[3]);
+                turtle.note.status = (s * turtle.scale[2]);
                 turtle.note.channel = (c * turtle.scale[3]);
                 turtle.note.key = (k * turtle.scale[4]);
                 turtle.note.velocity = (v * turtle.scale[5]);
