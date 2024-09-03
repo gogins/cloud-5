@@ -2089,7 +2089,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         // Master stacatto/legato.
         .clip(slider(2.3, .1, 10, .1))
         .pan(perlin)
-        .pianoroll({labels:1,cycles:16,playhead:.9})  
+        .pianoroll({labels:1,fold:0,scaleauto:1,minMidi:10,maxMidi:100,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})      
     </textarea>
     <cloud5-piece></cloud5-piece>
     <cloud5-strudel></cloud5-strudel>
