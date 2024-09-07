@@ -32,6 +32,10 @@ code.
  - [Cloud Music No. 9](cloud_music_no_9.html).
  - [Cloud Music No. 14](cloud_music_no_14.html). This one has a button so the 
    user can record a performance and download the resulting soundfile.
+ - [2024-ICSC](2024-ICSC.html), prepared for the 2024 International Csound 
+   Conference in Vienna. This is the same as Cloud Music No. 14, except that 
+   the "Full screen" menu item moves compositional controls onto a 
+   second monitor for unobscured visuals.
  - [Cancycle](cancycle.html). Set up to enable live coding.
 
 # [cloud-5](https://github.com/gogins/cloud-5)
