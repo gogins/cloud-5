@@ -185,9 +185,9 @@ class Cloud5Piece extends HTMLElement {
     let level_left = -100;
     let level_right = -100;
     if (non_csound(this.csound) == false) {
-      let score_time = await this.csound.GetScoreTime();
-      level_left = await this.csound.GetControlChannel("gk_MasterOutput_output_level_left");
-      level_right = await this.csound.GetControlChannel("gk_MasterOutput_output_level_right");
+      let score_time = await this.csound.getScoreTime();
+      level_left = await this.csound.getControlChannel("gk_MasterOutput_output_level_left");
+      level_right = await this.csound.getControlChannel("gk_MasterOutput_output_level_right");
       let delta = score_time;
       // calculate (and subtract) whole days
       let days = Math.floor(delta / 86400);
@@ -300,11 +300,11 @@ class Cloud5Piece extends HTMLElement {
       // Start recording if not already recording, 
       // stop recording if already recording.
       if (menu_item_record.innerText == "Record") {
-        this.csound.SetControlChannel("gk_record", 1);
+        this.csound?.setControlChannel("gk_record", 1);
         menu_item_record.innerText = "Pause";
         this.log("Csound has started recording...\n");
       } else {
-        this.csound.SetControlChannel("gk_record", 0);
+        this.csound?.setControlChannel("gk_record", 0);
         menu_item_record.innerText = "Record";
         this.log("Csound has stopped recording.\n");
         let soundefile_url = url_for_soundfile(this.csound);
@@ -443,20 +443,20 @@ class Cloud5Piece extends HTMLElement {
   }
 
   /**
-    * Copies all _current_ dat.gui parameters to the system clipboard in 
-    * JSON format.
-    * 
-    * @param {Object} parameters A dictionary containing the current state of all 
-    * controls; keys are control parameter names, values are control parameter 
-    * values. This can be pasted from the clipboard it source code, as a 
-    * convenient method of updating a piece with parameters that have been tweaked 
-    * during performance.
+    * Copies all _current_ dat.gui parameters and all presets to the system 
+    * clipboard in JSON format. Only parameter names and values are copied, 
+    * not the state of the user interface. This text can always be used as the 
+    * value of the `control_parameters_addon` field.
     */
   copy_parameters() {
-    const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
+    const save_object = this.gui.getSaveObject();
+    delete save_object.closed;
+    delete save_object.folders;
+    const json_text = JSON.stringify(save_object, null, 4);
+    /// const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
     navigator.clipboard.writeText(json_text);
-    /// console.info("Copied all control parameters to system clipboard.\n")
-    this?.csound.Message("Copied all control parameters to system clipboard.\n")
+    /// console.info("Copied _current_ control parameters to system clipboard.\n")
+    this?.csound_message_callback("Copied _current_ control parameters to system clipboard.\n")
   }
 
   /**
@@ -502,18 +502,20 @@ class Cloud5Piece extends HTMLElement {
     const csd_filename = document.title + '-generated.csd';
     write_file(csd_filename, csd);
     try {
-      let result = await this.csound.CompileCsdText(csd);
+      let result = await this.csound.compileCsdText(csd);
       this.csound_message_callback("CompileCsdText returned: " + result + "\n");
     } catch (e) {
       alert(e);
     }
-    await this.csound.Start();
+    await this.csound.start();
+    this.csound_message_callback("Csound has started...\n");
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.
     this.send_parameters(this.control_parameters_addon);
-    this.csound_message_callback("Csound has started...\n");
     if (is_offline == false) {
-      await this.csound.Perform();
+      if (!(this?.csound.getNode)) {
+        this.csound.perform();
+      }
       if (typeof strudel_view !== 'undefined') {
         if (strudel_view !== null) {
           console.info("strudel_view:", this.strudel_view);
@@ -536,9 +538,9 @@ class Cloud5Piece extends HTMLElement {
    */
   stop = async function () {
     this.piano_roll_overlay?.stop();
-    await this.csound.Stop();
-    await this.csound.Cleanup();
-    this.csound.Reset();
+    await this.csound.stop();
+    await this.csound.cleanup();
+    this.csound.reset();
     this.strudel_view?.stopPlaying();
     this.csound_message_callback("Csound has stopped.\n");
   };
@@ -577,6 +579,16 @@ class Cloud5Piece extends HTMLElement {
       }
     }
   }
+
+  get_default_preset() {
+    if (this.#control_parameters_addon.hasOwnProperty('preset')) {
+      const preset_name = this.#control_parameters_addon.preset;
+      const preset = this.#control_parameters_addon.remembered[preset_name][0];
+      return preset;
+    } else {
+      return this.#control_parameters_addon;
+    }
+  }
   /**
    * Sends a dictionary of parameters to Csound at the start of performance. 
    * The keys are the literal Csound control channel names, and the values are 
@@ -586,11 +598,19 @@ class Cloud5Piece extends HTMLElement {
    */
   send_parameters(parameters) {
     if (non_csound(this.csound) == false) {
-      this.csound.Message("Sending initial state of control perameters to Csound...\n")
-      for (const [name, value] of Object.entries(parameters)) {
-        this.csound.Message(name + ": " + value + "\n");
-        this.csound.SetControlChannel(name, parseFloat(value));
-      }
+      // let sender = async function () {
+      //   while (true)
+      //     if (this.csound.getScoreTime() > 0) {
+            this.csound_message_callback("Sending initial state of control perameters to Csound...\n")
+            for (const [name, value] of Object.entries(parameters)) {
+              this.csound_message_callback(name + ": " + value + "\n");
+              this.csound?.setControlChannel(name, parseFloat(value));
+            }
+      //       return;
+      //     }
+      // };
+      // sender.bind(this);
+      // sender();
     }
   }
   /**
@@ -639,7 +659,7 @@ class Cloud5Piece extends HTMLElement {
     const numberValue = parseFloat(value);
     console.info("gk_update: name: " + name + " value: " + numberValue);
     if (non_csound(this.csound) == false) {
-      this.csound.SetControlChannel(name, numberValue);
+      this.csound?.setControlChannel(name, numberValue);
     }
   }
   /**
@@ -1157,7 +1177,7 @@ class Cloud5ShaderToy extends HTMLElement {
       }
       this.gl.attachShader(this.shader_program, shader_object);
       this.gl.linkProgram(this.shader_program);
-      console.info("translated shader:" + WEBGL_debug_shaders.getTranslatedShaderSource(shader_object));
+      let translated_shader = WEBGL_debug_shaders.getTranslatedShaderSource(shader_object);
     }
     status = this.gl.getProgramParameter(this.shader_program, this.gl.LINK_STATUS);
     if (!status) {
@@ -1229,16 +1249,22 @@ class Cloud5ShaderToy extends HTMLElement {
    * 
    * @param {number} milliseconds The time since the start of the loop.
    */
-  render_frame(milliseconds) {
+  async render_frame(milliseconds) {
     // Here we create an AnalyserNode as soon as Csound is available.
     if (this.analyser) {
     } else {
       let csound = this?.cloud5_piece?.csound;
       if (csound) {
-        this.analyser = new AnalyserNode(csound.context);
+        var node;
+        if (typeof csound.getNode == 'undefined') {
+          node = csound;
+        } else {
+          node = await csound.getNode()
+        }
+        this.analyser = new AnalyserNode(node.context);
         this.analyser.fftSize = 2048;
         console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
-        csound.connect(this.analyser);
+        node.connect(this.analyser);
       }
     }
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
