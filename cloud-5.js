@@ -117,9 +117,21 @@ class Cloud5Piece extends HTMLElement {
     *
     * The Csound orchestra should define matching control channels. Such 
     * parameters may also be used to control other processes.
+    *   saveAs: function saveAs(presetName) {
+    if (!this.load.remembered) {
+      this.load.remembered = {};
+      this.load.remembered[DEFAULT_DEFAULT_PRESET_NAME] = getCurrentPreset(this, true);
+    }
+    this.load.remembered[presetName] = getCurrentPreset(this);
+    this.preset = presetName;
+    addPresetOption(this, presetName, true);
+    this.saveToLocalStorageIfPossible();
+  },
+
     */
   set control_parameters_addon(parameters) {
     this.#control_parameters_addon = parameters;
+    this.create_dat_gui_menu(parameters);
   }
   get control_parameters_addon() {
     return this.#control_parameters_addon;
@@ -403,10 +415,7 @@ class Cloud5Piece extends HTMLElement {
       this.strudel_component?.focus(true);
     });
     // Ensure that the dat.gui controls are children of the _Controls_ button.
-    let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };
-    this.gui = new dat.GUI(dat_gui_parameters);
-    let dat_gui = document.getElementById('menu_item_dat_gui');
-    dat_gui.appendChild(this.gui.domElement);
+    this.create_dat_gui_menu();
     document.onkeydown = ((e) => {
       let e_char = String.fromCharCode(e.keyCode || e.charCode);
       if (e.ctrlKey === true) {
@@ -580,6 +589,43 @@ class Cloud5Piece extends HTMLElement {
     }
   }
 
+  create_dat_gui_menu(parameters) {
+    let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };
+    if (parameters) {
+      dat_gui_parameters = Object.assign(parameters, dat_gui_parameters);
+    }
+    this.gui = new dat.GUI(dat_gui_parameters);
+    // let add_preset = function(preset_name, preset_parameters) {
+    //   if (!this.load.remembered) {
+    //     this.load.remembered = {};
+    //   }
+    //   this.load.remembered[preset_name] = preset_parameters;
+    //   this.preset = preset_name;
+    //   this.addPresetOption(this, preset_name, true);
+    //   this.saveToLocalStorageIfPossible();
+    // }
+    // add_preset.bind(this.gui);
+    if (parameters) {
+      if (parameters.remembered) {
+        // Note: parameters.remembered is not a collection!
+        for (let preset_name of Object.keys(parameters.remembered)) {
+          this.gui.addPreset(preset_name, parameters.remembered[preset_name]);
+        }
+      } else {
+        this.gui.addPreset('Default', parameters);
+      }
+      let dat_gui = document.getElementById('menu_item_dat_gui');
+      // The following assumes that there is only ever one child node of the 
+      // menu item.
+      if (dat_gui.children.length == 0) {
+        dat_gui.appendChild(this.gui.domElement);
+      } else {
+        // Replaces the existing dat.gui root node with the new one.
+        dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+      }
+    }
+  }
+
   get_default_preset() {
     if (this.#control_parameters_addon.hasOwnProperty('preset')) {
       const preset_name = this.#control_parameters_addon.preset;
@@ -601,12 +647,12 @@ class Cloud5Piece extends HTMLElement {
       // let sender = async function () {
       //   while (true)
       //     if (this.csound.getScoreTime() > 0) {
-            this.csound_message_callback("Sending initial state of control perameters to Csound...\n")
-            for (const [name, value] of Object.entries(parameters)) {
-              this.csound_message_callback(name + ": " + value + "\n");
-              this.csound?.setControlChannel(name, parseFloat(value));
-            }
-      //       return;
+      this.csound_message_callback("Sending initial state of control perameters to Csound...\n")
+      for (const [name, value] of Object.entries(parameters)) {
+        this.csound_message_callback(name + ": " + value + "\n");
+        this.csound?.setControlChannel(name, parseFloat(value));
+      }
+      //       return;s
       //     }
       // };
       // sender.bind(this);
@@ -639,14 +685,14 @@ class Cloud5Piece extends HTMLElement {
       this.gk_update(token, value);
     });
     if (name_) {
-      gui_folder.add(this.control_parameters_addon, token, minimum, maximum, step).name(name_).listen().onChange(on_parameter_change);
+      gui_folder.add(this.get_default_preset(), token, minimum, maximum, step).name(name_).listen().onChange(on_parameter_change);
     } else {
-      gui_folder.add(this.control_parameters_addon, token, minimum, maximum, step).listen().onChange(on_parameter_change);
+      gui_folder.add(this.get_default_preset(), token, minimum, maximum, step).listen().onChange(on_parameter_change);
     }
     // Remembers parameter values. Required for the 'Revert' button to 
     // work, and to be able to save/restore new presets.
     this.gui.remember(this.control_parameters_addon);
-  }
+  };
   /**
    * Called by the browser when the user updates the value of a control in the 
    * Controls menu, and sends the update to the Csound control channel with 
@@ -661,7 +707,7 @@ class Cloud5Piece extends HTMLElement {
     if (non_csound(this.csound) == false) {
       this.csound?.setControlChannel(name, numberValue);
     }
-  }
+  };
   /**
    * Adds a user-defined onclick handler function to the Controls menu of the 
    * piece.
