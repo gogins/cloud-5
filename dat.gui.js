@@ -1,6 +1,6 @@
 /**
  * dat-gui JavaScript Controller Library
- * http://code.google.com/p/dat-gui
+ * https://github.com/dataarts/dat.gui
  *
  * Copyright 2011 Data Arts Team, Google Creative Lab
  *
@@ -187,7 +187,7 @@
       return obj === false || obj === true;
     },
     isFunction: function isFunction(obj) {
-      return Object.prototype.toString.call(obj) === '[object Function]';
+      return obj instanceof Function;
     }
   };
 
@@ -1945,17 +1945,6 @@
   dom.bind(window, 'keydown', GUI._keydownHandler, false);
   Common.extend(GUI.prototype,
     {
-      // BEGIN MKG
-      addPreset: function addPreset(preset_name, preset_parameters) {
-        if (!this.load.remembered) {
-          this.load.remembered = {};
-        }
-        this.load.remembered[preset_name] = preset_parameters;
-        this.load.preset = preset_name;
-        addPresetOption(this, preset_name, true);
-        this.saveToLocalStorageIfPossible();
-      },
-      // END MKG
       add: function add(object, property) {
         return _add(this, object, property, {
           factoryArgs: Array.prototype.slice.call(arguments, 2)
@@ -2117,12 +2106,16 @@
         markPresetModified(this, false);
         this.saveToLocalStorageIfPossible();
       },
-      saveAs: function saveAs(presetName) {
+      saveAs: function saveAs(presetName, presetParameters) {
         if (!this.load.remembered) {
           this.load.remembered = {};
           this.load.remembered[DEFAULT_DEFAULT_PRESET_NAME] = getCurrentPreset(this, true);
         }
-        this.load.remembered[presetName] = getCurrentPreset(this);
+        if (presetParameters) {
+          this.load.remembered[presetName] = presetParameters;
+        } else {
+          this.load.remembered[presetName] = getCurrentPreset(this);
+        }
         this.preset = presetName;
         addPresetOption(this, presetName, true);
         this.saveToLocalStorageIfPossible();

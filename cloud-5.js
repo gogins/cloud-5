@@ -592,38 +592,26 @@ class Cloud5Piece extends HTMLElement {
   create_dat_gui_menu(parameters) {
     let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };
     if (parameters) {
-      dat_gui_parameters = Object.assign(parameters, dat_gui_parameters);
+      dat_gui_parameters = Object.assign(this.get_default_preset(), dat_gui_parameters);
     }
     this.gui = new dat.GUI(dat_gui_parameters);
-    // let add_preset = function(preset_name, preset_parameters) {
-    //   if (!this.load.remembered) {
-    //     this.load.remembered = {};
-    //   }
-    //   this.load.remembered[preset_name] = preset_parameters;
-    //   this.preset = preset_name;
-    //   this.addPresetOption(this, preset_name, true);
-    //   this.saveToLocalStorageIfPossible();
-    // }
-    // add_preset.bind(this.gui);
-    if (parameters) {
-      if (parameters.remembered) {
-        // Note: parameters.remembered is not a collection!
-        for (let preset_name of Object.keys(parameters.remembered)) {
-          this.gui.addPreset(preset_name, parameters.remembered[preset_name]);
-        }
-      } else {
-        this.gui.addPreset('Default', parameters);
-      }
-      let dat_gui = document.getElementById('menu_item_dat_gui');
-      // The following assumes that there is only ever one child node of the 
-      // menu item.
-      if (dat_gui.children.length == 0) {
-        dat_gui.appendChild(this.gui.domElement);
-      } else {
-        // Replaces the existing dat.gui root node with the new one.
-        dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
-      }
+    let dat_gui = document.getElementById('menu_item_dat_gui');
+    // The following assumes that there is only ever one child node of the 
+    // menu item.
+    if (dat_gui.children.length == 0) {
+      dat_gui.appendChild(this.gui.domElement);
+    } else {
+      // Replaces the existing dat.gui root node with the new one.
+      dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
     }
+    // Add all non-default parameters.
+    // if (parameters) {
+    //   if (parameters.remembered) {
+    //     for (let preset_name of Object.keys(parameters.remembered)) {
+    //       this.gui.saveAs(preset_name, parameters.remembered[preset_name]);
+    //     }
+    //   }
+    // }
   }
 
   get_default_preset() {
