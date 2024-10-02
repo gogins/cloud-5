@@ -22,6 +22,9 @@
  * do, see csound_threaded.hpp in the Csound GitHub repository, and of course 
  * the Csound API Reference. The semantics of all functions are virtually 
  * identical and the signatures are as equivalent as I could make them.
+ * 
+ * To conform with CsoundObj, method names in camel case are now primary, 
+ * method names in initial caps defer to them.
  */
 class CsoundAudioNode extends AudioWorkletNode {
     resolveCleanup(result) {
@@ -138,7 +141,7 @@ class CsoundAudioNode extends AudioWorkletNode {
     // function that is needed here and that has a different name, it should 
     // get an alias or an implementation here.
 
-    async Cleanup() {
+    async cleanup() {
         // this.message_callback("[" + window.performance.now() + " Cleanup.]\n");
         let promise = new Promise((resolve, reject) => {
             // Not exactly intuitive!
@@ -149,33 +152,14 @@ class CsoundAudioNode extends AudioWorkletNode {
         // this.message_callback("[" + window.performance.now() + " Cleanup resolved with: " + result + ".]\n");
         return result;
     };
-    async cleanup() {
-       // this.message_callback("[" + window.performance.now() + " Cleanup.]\n");
-        let promise = new Promise((resolve, reject) => {
-            // Not exactly intuitive!
-            this.resolveCleanup = resolve;
-            this.port.postMessage(["Cleanup"]);
-        });
-        let result = await promise;
-        // this.message_callback("[" + window.performance.now() + " Cleanup resolved with: " + result + ".]\n");
-        return result;
+    async Cleanup() {
+        await this.cleanup();
     };
-    CompileCsd(filename) {
+    async compileCsd(filename) {
         this.port.postMessage(["CompileCsd", filename]);
     };
-    compileCsd(filename) {
-        this.compileCsd(filename);
-    };
-    async CompileCsdText(csd) {
-        // this.message_callback("[" + window.performance.now() + " CompileCsdText.]\n");
-        let promise = new Promise((resolve, reject) => {
-            // Not exactly intuitive!
-            this.resolveCompileCsdText = resolve;
-            this.port.postMessage(["CompileCsdText", csd]);
-        });
-        let result = await promise;
-        // this.message_callback("[" + window.performance.now() + " CompileCsdText resolved with: " + result + ".]\n");
-        return result;
+    async CompileCsd(filename) {
+        await this.compileCsd(filename);
     };
     async compileCsdText(csd) {
         // this.message_callback("[" + window.performance.now() + " CompileCsdText.]\n");
@@ -188,16 +172,8 @@ class CsoundAudioNode extends AudioWorkletNode {
         // this.message_callback("[" + window.performance.now() + " CompileCsdText resolved with: " + result + ".]\n");
         return result;
     };
-    async CompileOrc(orc) {
-        // this.message_callback("[" + window.performance.now() + " CompileOrc.]\n");
-        let promise = new Promise((resolve, reject) => {
-            // Not exactly intuitive!
-            this.resolveCompileOrc = resolve;
-            this.port.postMessage(["CompileOrc", orc]);
-        });
-        let result = await promise;
-        // this.message_callback("[" + window.performance.now() + " CompileOrc resolved with: " + result + ".]\n");
-        return result;
+    async CompileCsdText(csd) {
+        return this.compileCsdText(csd);
     };
     async compileOrc(orc) {
         // this.message_callback("[" + window.performance.now() + " CompileOrc.]\n");
@@ -210,31 +186,34 @@ class CsoundAudioNode extends AudioWorkletNode {
         // this.message_callback("[" + window.performance.now() + " CompileOrc resolved with: " + result + ".]\n");
         return result;
     };
-    Destroy() {
-        this.port.postMessage(["Destroy"]);
+    async CompileOrc(orc) {
+        return await this.compileOrc(orc);
     };
     destroy() {
-        this.Destroy();
+        this.port.postMessage(["Destroy"]);
     };
-    EvalCode(code) {
-        this.port.postMessage(["EvalCode", code]);
+    Destroy() {
+        this.destroy();
     };
     evalCode(code) {
-        this.EvalCode(code);
+        this.port.postMessage(["EvalCode", code]);
     };
-    Get0dBFS() {
-        this.port.postMessage(["Get0dBFS"]);
+    EvalCode(code) {
+        this.evalCode(code);
     };
     get0dBFS() {
-        this.Get0dBFS();
+        this.port.postMessage(["Get0dBFS"]);
+    };
+    Get0dBFS() {
+        this.get0dBFS();
     }
-    GetAPIVersion() {
+    getAPIVersion() {
         this.port.postMessage(["GetAPIVersion"]);
     };
-    getAPIVersion() {
-        this.GetAPIVersion();
+    GetAPIVersion() {
+        this.getAPIVersion();
     };
-    async GetControlChannel(name) {
+    async getControlChannel(name) {
         // this.message_callback("[" + window.performance.now() + " GetControlChannel.]\n");
         let promise = new Promise((resolve, reject) => {
             // Not exactly intuitive!
@@ -245,10 +224,10 @@ class CsoundAudioNode extends AudioWorkletNode {
         // this.message_callback("[" + window.performance.now() + " GetControlChannel resolved with: " + result + ".]\n");
         return result;    
     };
-    async getControlChannel(name) {
-        this.GetControlChannel(name);
+    async GetControlChannel(name) {
+        return this.getControlChannel(name);
     };
-    async GetFileData(filename) {
+    async getFileData(filename) {
         // this.message_callback("[" + window.performance.now() + " GetControlChannel.]\n");
         let promise = new Promise((resolve, reject) => {
             // Not exactly intuitive!
@@ -259,58 +238,58 @@ class CsoundAudioNode extends AudioWorkletNode {
         // this.message_callback("[" + window.performance.now() + " GetControlChannel resolved with: " + result + ".]\n");
         return result;    
     };
-    async getFileData(name) {
-        this.GetFileData(name);
-    };
-    GetCurrentTimeSamples() {
-        this.port.postMessage(["GetCurrentTimeSamples"]);
+    async GetFileData(name) {
+        return this.getFileData(name);
     };
     getCurrentTimeSamples() {
-        this.GetCurrentTimeSamples();
+        this.port.postMessage(["GetCurrentTimeSamples"]);
     };
-    GetEnv(name) {
-        this.port.postMessage(["GetEnv", name]);
+    GetCurrentTimeSamples() {
+        this.getCurrentTimeSamples();
     };
     getEnv(name) {
-        this.GetEnv();
+        this.port.postMessage(["GetEnv", name]);
     };
-    GetInputName() {
-        this.port.postMessage(["GetInputName"]);
+    GetEnv(name) {
+        this.getEnv();
     };
     getInputName() {
-        this.GetInputName();
+        this.port.postMessage(["GetInputName"]);
     };
-    GetKsmps() {
-        this.port.postMessage(["GetKsmps"]);
+    GetInputName() {
+        this.getInputName();
     };
     getKsmps() {
-        this.GetKsmps();
+        this.port.postMessage(["GetKsmps"]);
     };
-    GetNchnls() {
-        this.port.postMessage(["GetNchnls"]);
+    GetKsmps() {
+        this.getKsmps();
     };
     getNchnls() {
-        this.GetNchnls();
+        this.port.postMessage(["GetNchnls"]);
     };
-    GetNchnlsInput() {
-        this.port.postMessage(["GetNchnlsInput"]);
+    GetNchnls() {
+        this.getNchnls();
     };
     getNchnlsInput() {
-        this.GetNchnlsInput();
+        this.port.postMessage(["GetNchnlsInput"]);
     };
-    GetOutputName() {
-        this.port.postMessage(["GetOutputName"]);
+    GetNchnlsInput() {
+        this.getNchnlsInput();
     };
     getOutputName() {
-        this.GetOutputName();
+        this.port.postMessage(["GetOutputName"]);
     };
-    GetScoreOffsetSeconds() {
-        this.port.postMessage(["GetScoreOffsetSeconds"]);
+    GetOutputName() {
+        this.getOutputName();
     };
     getScoreOffsetSeconds() {
+        this.port.postMessage(["GetScoreOffsetSeconds"]);
+    };
+    GetScoreOffsetSeconds() {
         this.GetScoreOffsetSeconds();
     };
-    async GetScoreTime() {
+    async getScoreTime() {
         // this.message_callback("[" + window.performance.now() + " GetScoreTime.]\n");
         let promise = new Promise((resolve, reject) => {
             // Not exactly intuitive!
@@ -321,34 +300,34 @@ class CsoundAudioNode extends AudioWorkletNode {
         // this.message_callback("[" + window.performance.now() + " GetScoreTime resolved with: " + result + ".]\n");
         return result;
     };
-    async getScoreTime() {
-        this.GetScoreTime();
-    };
-    GetSr() {
-        this.port.postMessage(["GetSr"]);
+    async GetScoreTime() {
+        return await this.getScoreTime();
     };
     getSr() {
-        this.GetSr();
+        this.port.postMessage(["GetSr"]);
     };
-    GetStringChannel(name) {
-        this.port.postMessage(["GetStringChannel", name]);
+    GetSr() {
+        this.getSr();
     };
     getStringChannel(name) {
-        this.GetStringChannel();
+        this.port.postMessage(["GetStringChannel", name]);
     };
-    GetVersion() {
-        this.port.postMessage(["GetVersion"]);
+    GetStringChannel(name) {
+        this.getStringChannel();
     };
     getVersion() {
-        this.GetVersion();
+        this.port.postMessage(["GetVersion"]);
     };
-    InputMessage(text) {
-        this.port.postMessage(["InputMessage", text]);
+    GetVersion() {
+        this.getVersion();
     };
     inputMessage(text) {
-        this.InputMessage(text);
+        this.port.postMessage(["InputMessage", text]);
     };
-    async IsPlaying() {
+    InputMessage(text) {
+        this.inputMessage(text);
+    };
+    async isPlaying() {
         // this.message_callback("[" + window.performance.now() + " IsPlaying.]\n");
         let promise = new Promise((resolve, reject) => {
             // Not exactly intuitive!
@@ -359,66 +338,55 @@ class CsoundAudioNode extends AudioWorkletNode {
         // this.message_callback("[" + window.performance.now() + " IsPlaying resolved with: " + result + ".]\n");
         return result;
     };
-    isPlaying() {
-        this.IsPlaying();
-    };
-    IsScorePending() {
-        this.port.postMessage(["IsScorePending"]);
+    async IsPlaying() {
+        return await this.isPlaying();
     };
     isScorePending() {
-        this.IsScorePending();
+        this.port.postMessage(["IsScorePending"]);
     };
-    KillInstance(p1, insname, mode, release) {
-        this.port.postMessage(["KillInstance", p1, insname, mode, release]);
+    IsScorePending() {
+        this.isScorePending();
     };
     killInstance(p1, insname, mode, release) {
-        this.KillInstance(p1, insname, mode, release);
+        this.port.postMessage(["KillInstance", p1, insname, mode, release]);
     };
-    Message(text) {
-        this.port.postMessage(["Message", text]);
+    KillInstance(p1, insname, mode, release) {
+        this.killInstance(p1, insname, mode, release);
     };
     message(text) {
-        this.Message(text);
+        this.port.postMessage(["Message", text]);
     };
-    Perform() {
+    Message(text) {
+        this.message(text);
+    };
+    perform() {
         // this.message_callback("[" + window.performance.now() + " Perform.]\n");
         this.port.postMessage(["Perform"]);
     };
-    perform() {
-        this.Perform();
+    Perform() {
+        this.perform();
     };
     /**
      * Because AudioWorklet messages are asynchronous, a sequence 
      * of method calls cannot be guaranteed to execute in proper order. 
      * Hence, this helper.
      */
-    PerformCsd(options, csd) {
+    performCsd(options, csd) {
         this.port.postMessage(["PerformCsd", options, csd]);
     }
-    performCsd(options, csd) {
-        this.PerformCsd(options, csd);
+    PerformCsd(options, csd) {
+        this.performCsd(options, csd);
     };
     /**
      * Because AudioWorklet messages are asynchronous, a sequence 
      * of method calls cannot be guaranteed to execute in proper order. 
      * Hence, this helper.
      */
-    PerformOrc(options, orc, sco) {
+    performOrc(options, orc, sco) {
         this.port.postMessage(["PerformOrc", options, orc, sco]);
     };
-    performOrc(options, orc, sco) {
-        this.PerformOrc(options, orc, sco);
-    };
-    async ReadScore(score) {
-        // this.message_callback("[" + window.performance.now() + " ReadScore.]\n");
-        let promise = new Promise((resolve, reject) => {
-            // Not exactly intuitive!
-            this.resolveReadScore = resolve;
-            this.port.postMessage(["ReadScore", score]);
-        });
-        let result = await promise;
-        // this.message_callback("[" + window.performance.now() + " ReadScore resolved with: " + result + ".]\n");
-        return result;
+    PerformOrc(options, orc, sco) {
+        this.performOrc(options, orc, sco);
     };
     async readScore(score) {
         // this.message_callback("[" + window.performance.now() + " ReadScore.]\n");
@@ -430,17 +398,10 @@ class CsoundAudioNode extends AudioWorkletNode {
         let result = await promise;
         // this.message_callback("[" + window.performance.now() + " ReadScore resolved with: " + result + ".]\n");
         return result;
-    }
-    async Reset() {
-        // this.message_callback("[" + window.performance.now() + " Reset.]\n");
-        let promise = new Promise((resolve, reject) => {
-            // Not exactly intuitive!
-            this.resolveReset = resolve;
-            this.port.postMessage(["Reset"]);
-        });
-        await promise;
-        // this.message_callback("[" + window.performance.now() + " Reset resolved.]\n");
     };
+    async ReadScore(score) {
+        return await this.readScore(score);
+    }
     async reset() {
         // this.message_callback("[" + window.performance.now() + " Reset.]\n");
         let promise = new Promise((resolve, reject) => {
@@ -451,23 +412,41 @@ class CsoundAudioNode extends AudioWorkletNode {
         await promise;
         // this.message_callback("[" + window.performance.now() + " Reset resolved.]\n");
     };
-    RewindScore() {
+    Reset() {
+        this.reset();
+    };
+    rewindScore() {
         this.port.postMessage(["RewindScore"]);
     };
-    SetControlChannel(name, value) {
+    RewindScore() {
+        this.rewindScore();
+    };
+    setControlChannel(name, value) {
         this.port.postMessage(["SetControlChannel", name, value]);
     };
-    SetGlobalEnv(name, value) {
+    SetControlChannel(name, value) {
+        this.setControlChannel(name, value);
+    };
+    setGlobalEnv(name, value) {
         this.port.postMessage(["SetGlobalEnv", name, value]);
     };
-    SetInput(name) {
+    SetGlobalEnv(name, value) {
+        this.setGlobalEnv(name, value);
+    };
+    setInput(name) {
         this.input = name;
         this.port.postMessage(["SetInput", name]);
     };
-    SetMessageCallback(message_callback_) {
+    SetInput(name) {
+        this.setInput(name);
+    };
+    setMessageCallback(message_callback_) {
         this.message_callback = message_callback_;
-    }
-    SetOption(option) {
+    };
+    SetMessageCallback(message_callback_) {
+        this.setMessageCallback(message_callback_);
+    };
+    setOption(option) {
         if (option.startsWith("-odac")) {
             this.output = option.substr(2);
         }
@@ -476,18 +455,30 @@ class CsoundAudioNode extends AudioWorkletNode {
         }
         this.port.postMessage(["SetOption", option]);
     };
-    SetOutput(name, type, format) {
+    SetOption(option) {
+        this.setOption(option);
+    };
+    setOutput(name, type, format) {
         this.output = name;
         this.port.postMessage(["SetOutput", name, type, format]);
+    };
+    SetOutput(name, type, format) {
+        this.setOutput(name, type, format);
     };
     SetScoreOffsetSeconds(seconds) {
         this.port.postMessage(["SetScoreOffsetSeconds", seconds]);
     };
-    SetScorePending(is_pending) {
+    setScorePending(is_pending) {
         this.port.postMessage(["SetScorePending", is_pending]);
     };
-    SetStringChannel(name, value) {
+    SetScorePending(is_pending) {
+        this.setScorePending(is_pending);
+    };
+    setStringChannel(name, value) {
         this.port.postMessage(["SetStringChannel", name, value]);
+    };
+    SetStringChannel(name, value) {
+        this.setStringChannel(name, value);
     };
     /**
      * Starts the Csound performance with or without any connection to the 
@@ -495,7 +486,7 @@ class CsoundAudioNode extends AudioWorkletNode {
      * usual manner for constructing Web Audio graphs, either before, or 
      * after, calling StartNode.
      */
-    StartNode() {
+    startNode() {
         // this.message_callback("[" + window.performance.now() + " StartNode.]\n");
         try {
             this.port.postMessage(["Start"]);
@@ -515,7 +506,7 @@ class CsoundAudioNode extends AudioWorkletNode {
      * Audio graph is up here in the upper half, wiring within Csound is down 
      * in the lower half.
      */
-    async Start() {
+    async start() {
         // this.message_callback("[" + window.performance.now() + " Start.]\n");
         try {
             let device_list = await navigator.mediaDevices.enumerateDevices();
@@ -570,24 +561,8 @@ class CsoundAudioNode extends AudioWorkletNode {
             this.message_callback(e);
         }
     }
-    async start() {
-        this.Start();
-    };
-    async Stop() {
-        this.message_callback("[" + window.performance.now() + " Stop.]\n");
-        let promise = new Promise((resolve, reject) => {
-            // Not exactly intuitive!
-            this.resolveStop = resolve;
-            this.port.postMessage(["Stop"]);
-            if (this.userMediaAudioInputNode !== null) {
-                ///this.userMediaAudioInputNode.stop();
-                this.userMediaAudioInputNode.disconnect(this);
-            }
-            this.disconnect();
-            this.reset_();
-        });
-        await promise;
-        this.message_callback("[" + window.performance.now() + " Stop resolved.]\n");
+    async Start() {
+        await this.start();
     };
     async stop() {
         this.message_callback("[" + window.performance.now() + " Stop.]\n");
@@ -605,23 +580,26 @@ class CsoundAudioNode extends AudioWorkletNode {
         await promise;
         this.message_callback("[" + window.performance.now() + " Stop resolved.]\n");
     };
-    TableGet(number, index) {
-        this.port.postMessage(["TableGet", number, index]);
+    async Stop() {
+        await this.stop();
     };
     tableGet(number, index) {
-        this.TableGet(number, index);
+        this.port.postMessage(["TableGet", number, index]);
     };
-    TableLength(number) {
-        this.port.postMessage(["TableLength", number]);
+    TableGet(number, index) {
+        this.tableGet(number, index);
     };
     tableLength(number) {
-        this.TableLength(number);
+        this.port.postMessage(["TableLength", number]);
     };
-    TableSet(number, index, value) {
+    TableLength(number) {
+        this.tableLength(number);
+    };
+    tableSet(number, index, value) {
         this.port.postMessage(["TableSet", index, value]);
     };   
-    tableSet(number, index, value) {
-        this.TableSet(number, index, value);
+    TableSet(number, index, value) {
+        this.tableSet(number, index, value);
     };
 }
 
