@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.30)
 project(cloud-5)
 include(ExternalProject)
 
+find_program(PNPM_EXECUTABLE pnpm)
+if(NOT PNPM_EXECUTABLE)
+    message(FATAL_ERROR "pnpm not found. Please install pnpm.")
+endif()
+
 # Builds CsoundAudioNode and CsoundAC, and copies the targets to the cloud-5 
 # root directory.
 ExternalProject_Add(csound-wasm
@@ -11,7 +16,7 @@ ExternalProject_Add(csound-wasm
     BUILD_ALWAYS FALSE
     CONFIGURE_COMMAND ""
     BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash build-prerequisites-wasm.sh && bash build-wasm.sh"
-    INSTALL_COMMAND "bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
+    INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
 )
 
 # Builds the Release version of csound.node in the cloud-5 root directory.
@@ -25,6 +30,10 @@ ExternalProject_Add(csound-node
     INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node/build/Release/csound.node ${CMAKE_SOURCE_DIR}/"
 )
 
-# TODO: The Strudel build step.
-
+# TODO: The Strudel build step `pnpm run build`
+add_custom_target(strudel
+    COMMAND ${PNPM_EXECUTABLE} run build
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Building Strudel project with pnpm"
+)
 
