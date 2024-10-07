@@ -7,33 +7,62 @@ if(NOT PNPM_EXECUTABLE)
     message(FATAL_ERROR "pnpm not found. Please install pnpm.")
 endif()
 
+
 # Builds CsoundAudioNode and CsoundAC, and copies the targets to the cloud-5 
 # root directory.
-ExternalProject_Add(csound-wasm
-    GIT_REPOSITORY https://github.com/gogins/csound-wasm.git
-    GIT_TAG main 
-    BUILD_IN_SOURCE TRUE
-    BUILD_ALWAYS FALSE
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash build-prerequisites-wasm.sh && bash build-wasm.sh"
-    INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
-)
+# ExternalProject_Add(csound-wasm
+#     GIT_REPOSITORY https://github.com/gogins/csound-wasm.git
+#     GIT_TAG main 
+#     GIT_SHALLOW 1
+#     UPDATE_DISCONNECTED 1
+#     BUILD_IN_SOURCE TRUE
+#     BUILD_ALWAYS FALSE
+#     CONFIGURE_COMMAND ""
+#     BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash build-prerequisites-wasm.sh && bash build-wasm.sh"
+#     INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
+# )
+
+# Finds if the repository needs to be updated _before_ running the external 
+# project.
+add_custom_target(csound-node-updated 
+    VERBATIM
+    COMMENT "Finding if csound-node sources are outdated..."
+    COMMAND git fetch --dry-run 2> csound-node-updated.txt
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node
+    )
 
 # Builds the Release version of csound.node in the cloud-5 root directory.
 ExternalProject_Add(csound-node
     GIT_REPOSITORY https://github.com/gogins/csound-extended-node.git
     GIT_TAG main 
+    GIT_SHALLOW 1
+    UPDATE_DISCONNECTED 0
     BUILD_IN_SOURCE TRUE
-    BUILD_ALWAYS FALSE
+    BUILD_ALWAYS 0
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node && node-gyp rebuild"
+    # It seems simpler to check for need to rebuild in the build script iself.
+    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node && bash ../../build-outdated-csound-node.sh"
     INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node/build/Release/csound.node ${CMAKE_SOURCE_DIR}/"
-)
+    )
 
-# TODO: The Strudel build step `pnpm run build`
+add_dependencies(csound-node csound-node-updated)
+
+# Patches and builds Strudel in the cloud-5 root directory.
+# Note: pnpm manages updating from upstream, patching, 
+# and building Strudel.
 add_custom_target(strudel
+    COMMENT "Building Strudel project with pnpm"
     COMMAND ${PNPM_EXECUTABLE} run build
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Building Strudel project with pnpm"
-)
+    )
+
+# Builds the Visual Studio Code version of the computer music playpen 
+# extension and installs it in the cloud-5 root directory.
+add_custom_target(vscode-playpen
+    COMMENT "Building vscode-playpen"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dependencies/csound-ac/vscode-playpen
+    COMMAND ${PNPM_EXECUTABLE} install -g @vscode/vsce
+    COMMAND vsce package
+    COMMAND cp playpen*.vsix ${CMAKE_SOURCE_DIR}
+    )
 
