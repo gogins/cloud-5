@@ -7,20 +7,30 @@ if(NOT PNPM_EXECUTABLE)
     message(FATAL_ERROR "pnpm not found. Please install pnpm.")
 endif()
 
+# Finds if the repository needs to be updated _before_ running the external 
+# project.
+add_custom_target(csound-wasm-updated 
+    VERBATIM
+    COMMENT "Finding if csound-wasm sources are outdated..."
+    COMMAND git fetch --dry-run --verbose 2> csound-wasm-updated.txt
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm
+    )
 
 # Builds CsoundAudioNode and CsoundAC, and copies the targets to the cloud-5 
 # root directory.
-# ExternalProject_Add(csound-wasm
-#     GIT_REPOSITORY https://github.com/gogins/csound-wasm.git
-#     GIT_TAG main 
-#     GIT_SHALLOW 1
-#     UPDATE_DISCONNECTED 1
-#     BUILD_IN_SOURCE TRUE
-#     BUILD_ALWAYS FALSE
-#     CONFIGURE_COMMAND ""
-#     BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash build-prerequisites-wasm.sh && bash build-wasm.sh"
-#     INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
-# )
+ExternalProject_Add(csound-wasm
+    GIT_REPOSITORY https://github.com/gogins/csound-wasm.git
+    GIT_TAG main 
+    GIT_SHALLOW 1
+    UPDATE_DISCONNECTED 0
+    BUILD_IN_SOURCE TRUE
+    BUILD_ALWAYS 0
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash ../../build-outdated-csound-wasm.sh"
+    INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
+)
+
+add_dependencies(csound-wasm csound-wasm-updated)
 
 # Finds if the repository needs to be updated _before_ running the external 
 # project.
