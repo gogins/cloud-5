@@ -65,6 +65,8 @@ add_custom_target(strudel
     COMMAND ${PNPM_EXECUTABLE} run build
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
+    
+add_dependencies(strudel csound-wasm)
 
 # Builds the Visual Studio Code version of the computer music playpen 
 # extension and installs it in the cloud-5 root directory.
