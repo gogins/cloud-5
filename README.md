@@ -329,19 +329,17 @@ Strudel use rather than npm. On macOS (I don't know about other platforms),
 you may need to specifically install node@18.
 
 To initialize the local repository, obtain dependencies, build a static Web 
-site, and run it locally, execute the following commands:
+site, and run it locally, execute the following commands in the root directory:
 
 ```
-pnpm install
-pnpm run setup
-pnpm run build
-pnpm run local
+cmake .
+make
 ```
 These commands will patch Strudel with my addons; build everything; make a 
 distributable copy of the cloud-5 Web site in the repository's root directory, 
 with all resources statically served; and run a local Web site, which is 
-source level debuggable, in that directory. Examine `package.json` for 
-details. 
+source level debuggable, in that directory. Examine `CMakeLists.txt` and 
+`package.json` for details. 
 
 This may fail due to failure to build `canvas.node` (not actually used here). 
 If that happens, execute `cd cloud-5/strudel/packages/canvas` and 
@@ -355,6 +353,17 @@ open a working Web site with playable pieces!
 
 It may be necessary to clear the browser cache and application site data to 
 see updated pieces.
+
+The `csound-wasm` and `csound-node` targets will rebuild if the upstream Git 
+sources are newer than the local sources.
+
+```
+export REBUILD="True"
+make
+```
+
+To rebuild from scratch if the sources are up to date, e.g. to create an updated
+package containing your own updated pieces, execute:
 
 _**NOTE WELL**_: The `gogins.github.io` repository is maintained using 
 `pnpm run deploy` in _this_ `cloud-5` repository. _DO NOT_ delete any files 

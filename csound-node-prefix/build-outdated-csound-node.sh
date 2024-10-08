@@ -1,5 +1,5 @@
 pwd
-if [ ! -s csound-node-updated.txt ]; then 
+if [[ ! -s csound-node-updated.txt && ! -n "$REBUILD" ]]; then 
     echo "csound-node sources are up to date.";
     exit 0; 
 else 

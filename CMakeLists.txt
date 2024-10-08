@@ -12,7 +12,7 @@ endif()
 add_custom_target(csound-wasm-updated 
     VERBATIM
     COMMENT "Finding if csound-wasm sources are outdated..."
-    COMMAND git fetch --dry-run --verbose 2> csound-wasm-updated.txt
+    COMMAND git fetch --dry-run 2> csound-wasm-updated.txt
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm
     )
 
@@ -24,7 +24,7 @@ ExternalProject_Add(csound-wasm
     GIT_SHALLOW 1
     UPDATE_DISCONNECTED 0
     BUILD_IN_SOURCE TRUE
-    BUILD_ALWAYS 0
+    BUILD_ALWAYS 0 
     CONFIGURE_COMMAND ""
     BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash ../../build-outdated-csound-wasm.sh"
     INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
