@@ -61,11 +61,13 @@ add_dependencies(csound-node csound-node-updated)
 # Note: pnpm manages updating from upstream, patching, 
 # and building Strudel.
 add_custom_target(strudel
+    ALL
     COMMENT "Building Strudel project with pnpm"
+    COMMAND ${PNPM_EXECUTABLE} install
     COMMAND ${PNPM_EXECUTABLE} run build
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
-    
+
 add_dependencies(strudel csound-wasm)
 
 # Builds the Visual Studio Code version of the computer music playpen 
