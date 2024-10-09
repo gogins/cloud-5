@@ -51,8 +51,8 @@ ExternalProject_Add(csound-node
     BUILD_ALWAYS 0
     CONFIGURE_COMMAND ""
     # It seems simpler to check for need to rebuild in the build script iself.
-    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node && bash ../../build-outdated-csound-node.sh"
-    INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node/build/Release/csound.node ${CMAKE_SOURCE_DIR}/"
+    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-node-prefix/src/csound-node && bash ../../build-outdated-csound-node.sh ${CMAKE_SOURCE_DIR}"
+    INSTALL_COMMAND ""
     )
 
 add_dependencies(csound-node csound-node-updated)
