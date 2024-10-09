@@ -5,7 +5,7 @@ echo "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}"
 function rebuild () {
     bash build-prerequisites-wasm.sh;
     bash build-wasm.sh;
-    bash cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/
+    bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
 }
 
 if [[ ! -f dist-wasm/CsoundAudioProcessor.js ]]
