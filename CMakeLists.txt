@@ -63,6 +63,7 @@ add_dependencies(csound-node csound-node-updated)
 add_custom_target(strudel
     ALL
     COMMENT "Building Strudel project with pnpm"
+    COMMAND bash -c "git submodule update --init --recursive"
     COMMAND ${PNPM_EXECUTABLE} install
     COMMAND ${PNPM_EXECUTABLE} run build
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
