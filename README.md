@@ -335,14 +335,17 @@ site, and run it locally, execute the following commands in the root directory:
 cmake .
 make
 ```
-These commands will patch Strudel with my addons; build everything; make a 
+These commands will patch Strudel with my addons; build everything; and make a 
 distributable copy of the cloud-5 Web site in the repository's root directory, 
-with all resources statically served; and run a local Web site, which is 
-source level debuggable, in that directory. Examine `CMakeLists.txt` and 
+with all resources statically served. Examine `CMakeLists.txt` and 
 `package.json` for details. 
 
-This may fail due to failure to build `canvas.node` (not actually used here). 
-If that happens, execute `cd cloud-5/strudel/packages/canvas` and 
+To test your build, run a local Web server and browse a piece such as 
+[cloud_music_no_9](http://localhost:8000/cloud_music_no_9.html), which uses 
+many facilities of the system.
+
+THe build may fail due to failure to build `canvas.node` (not actually used 
+here). If that happens, execute `cd cloud-5/strudel/packages/canvas` and 
 `node-gyp rebuild`, and try again from `pnpm run build`.
 
 Before updating Strudel from GitHub, make a branch to contain the updates if 
@@ -355,15 +358,13 @@ It may be necessary to clear the browser cache and application site data to
 see updated pieces.
 
 The `csound-wasm` and `csound-node` targets will rebuild if the upstream Git 
-sources are newer than the local sources.
+sources are newer than the local sources, or if the targets of the build are 
+missing.
 
 ```
 export REBUILD="True"
 make
 ```
-
-To rebuild from scratch if the sources are up to date, e.g. to create an updated
-package containing your own updated pieces, execute:
 
 _**NOTE WELL**_: The `gogins.github.io` repository is maintained using 
 `pnpm run deploy` in _this_ `cloud-5` repository. _DO NOT_ delete any files 
