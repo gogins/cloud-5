@@ -26,9 +26,9 @@ ExternalProject_Add(csound-wasm
     BUILD_IN_SOURCE TRUE
     BUILD_ALWAYS 0 
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash ../../build-outdated-csound-wasm.sh"
-    INSTALL_COMMAND bash -c "cp ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm/dist-wasm/Csound*.js ${CMAKE_SOURCE_DIR}/"
-)
+    BUILD_COMMAND bash -c "cd ${CMAKE_SOURCE_DIR}/csound-wasm-prefix/src/csound-wasm && bash ../../build-outdated-csound-wasm.sh ${CMAKE_SOURCE_DIR}"
+    INSTALL_COMMAND ""
+    )
 
 add_dependencies(csound-wasm csound-wasm-updated)
 
