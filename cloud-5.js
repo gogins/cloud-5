@@ -543,14 +543,14 @@ class Cloud5Piece extends HTMLElement {
     this?.csound_message_callback("Csound is playing...\n");
   }
   /**
-   * Stops Csound and Strudel from performing.
+   * Stops both Csound and Strudel from performing.
    */
   stop = async function () {
     this.piano_roll_overlay?.stop();
     await this.csound.stop();
     await this.csound.cleanup();
     this.csound.reset();
-    this.strudel_view?.stopPlaying();
+    this.strudel_overlay?.stop();
     this.csound_message_callback("Csound has stopped.\n");
   };
   /**
