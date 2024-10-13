@@ -104,35 +104,13 @@ an alternative to regular patterns (which still work).
 pattern_mjs_filepath = "strudel/packages/draw/pianoroll.mjs";
 print(f"Patching '{pattern_mjs_filepath}'")
 with open(pattern_mjs_filepath, "r+") as file:
-  find_this = '''Pattern.prototype.pianoroll = function (options = {}) {
-  let { cycles = 4, playhead = 0.5, overscan = 1, hideNegative = false } = options;
-
-  let from = -cycles * playhead;
-  let to = cycles * (1 - playhead);
-
-  this.draw(
-    (ctx, haps, t) => {
-      const inFrame = (event) =>
-        (!hideNegative || event.whole.begin >= 0) && event.whole.begin <= t + to && event.endClipped >= t + from;
+  find_this = '''    (haps, time) => {
       pianoroll({
-        ...options,
-        time: t,
-        ctx,
-        haps: haps.filter(inFrame),
   '''
-  replace_with = '''
-// MKG patch...
-  Pattern.prototype.pianoroll = function (options = {}) {
-  let { cycles = 4, playhead = 0.5, overscan = 1, hideNegative = false } = options;
-
-  let from = -cycles * playhead;
-  let to = cycles * (1 - playhead);
-
-  this.draw(
-    (ctx, haps, t) => {
-      const inFrame = (event) =>
-        (!hideNegative || event.whole.begin >= 0) && event.whole.begin <= t + to && event.endClipped >= t + from;
+  replace_with = '''    (haps, time) => {
+      // BEGIN MKG PATCH
       // Usually haps is much much larger than haps_from_outputs.
+      /*
       if (globalThis.haps_from_outputs) {
       } else {
         globalThis.haps_from_outputs = [];
@@ -142,12 +120,9 @@ with open(pattern_mjs_filepath, "r+") as file:
         haps = globalThis.haps_from_outputs.filter(inFrame);
         globalThis.haps_from_outputs = haps;
       }
+      */
+      // END MKG PATCH
       pianoroll({
-          ...options,
-          time: t,
-          ctx,
-          haps: haps.filter(inFrame), 
-// MKG patch.
 '''
   text = file.read()
   patched_text = text.replace(find_this, replace_with)
