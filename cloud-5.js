@@ -441,10 +441,10 @@ class Cloud5Piece extends HTMLElement {
     });
     this.show(this.shader_overlay);
     window.addEventListener('load', function (event) {
-      const save_button = this.gui.domElement.querySelector('span.button.save');
-      save_button.addEventListener('click', function (event) {
+      let save_button = this.gui.domElement.querySelector('span.button.save');
+      save_button.onclick = function (event) {
         this.copy_parameters()
-      }.bind(this));
+      }.bind(this);
     }.bind(this));
     window.addEventListener("unload", function (event) {
       nw_window?.close();
@@ -452,20 +452,21 @@ class Cloud5Piece extends HTMLElement {
   }
 
   /**
-    * Copies all _current_ dat.gui parameters and all presets to the system 
-    * clipboard in JSON format. Only parameter names and values are copied, 
-    * not the state of the user interface. This text can always be used as the 
-    * value of the `control_parameters_addon` field.
+    * Copies all _current_ dat.gui parameters to the system clipboard in 
+    * JSON format.
+    * 
+    * @param {Object} parameters A dictionary containing the current state of all 
+    * controls; keys are control parameter names, values are control parameter 
+    * values. This can be pasted from the clipboard into source code, as a 
+    * convenient method of updating a piece with parameters that have been tweaked 
+    * during performance.
     */
   copy_parameters() {
-    const save_object = this.gui.getSaveObject();
-    delete save_object.closed;
-    delete save_object.folders;
-    const json_text = JSON.stringify(save_object, null, 4);
-    /// const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
+    const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
     navigator.clipboard.writeText(json_text);
-    /// console.info("Copied _current_ control parameters to system clipboard.\n")
-    this?.csound_message_callback("Copied _current_ control parameters to system clipboard.\n")
+    if (this.csound) {
+      this.csound.Message("Copied all control parameters to system clipboard.\n");
+    }
   }
 
   /**
@@ -924,7 +925,8 @@ class Cloud5Shader extends HTMLElement {
   #shader_parameters_addon = null;
   /** 
    * Several objects must be defined at the same time before creating the 
-   * shader. These objects are passed in these options. */
+   * shader. These objects are passed in these options. 
+   */
   set shader_parameters_addon(options) {
     this.#shader_parameters_addon = options;
     this.glsl = SwissGL(this.canvas);
