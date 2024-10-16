@@ -462,7 +462,9 @@ class Cloud5Piece extends HTMLElement {
     * during performance.
     */
   copy_parameters() {
-    const json_text = JSON.stringify(this?.control_parameters_addon, null, 4);
+    let copied_parameters = JSON.parse(JSON.stringify(this?.control_parameters_addon))
+    delete copied_parameters?.load;
+    const json_text = JSON.stringify(copied_parameters, null, 4);
     navigator.clipboard.writeText(json_text);
     if (this.csound) {
       this.csound.Message("Copied all control parameters to system clipboard.\n");
@@ -605,14 +607,6 @@ class Cloud5Piece extends HTMLElement {
       // Replaces the existing dat.gui root node with the new one.
       dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
     }
-    // Add all non-default parameters.
-    // if (parameters) {
-    //   if (parameters.remembered) {
-    //     for (let preset_name of Object.keys(parameters.remembered)) {
-    //       this.gui.saveAs(preset_name, parameters.remembered[preset_name]);
-    //     }
-    //   }
-    // }
   }
 
   get_default_preset() {
@@ -633,19 +627,11 @@ class Cloud5Piece extends HTMLElement {
    */
   send_parameters(parameters) {
     if (non_csound(this.csound) == false) {
-      // let sender = async function () {
-      //   while (true)
-      //     if (this.csound.getScoreTime() > 0) {
       this.csound_message_callback("Sending initial state of control perameters to Csound...\n")
       for (const [name, value] of Object.entries(parameters)) {
         this.csound_message_callback(name + ": " + value + "\n");
         this.csound?.setControlChannel(name, parseFloat(value));
       }
-      //       return;s
-      //     }
-      // };
-      // sender.bind(this);
-      // sender();
     }
   }
   /**
