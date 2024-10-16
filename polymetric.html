@@ -91,9 +91,7 @@
           
           alwayson "ReverbSC"
           alwayson "MasterOutput"
-          
-          gk_Duration_factor init 4.5
-          
+                    
           prealloc 1, 50
           prealloc 2, 50
           prealloc 3, 50
@@ -2057,9 +2055,7 @@ n("63").cpm(120*63/64),
     // #endregion
     // #region Controls 
     cloud5_piece.control_parameters_addon = {
-      "gk_Iterations": 5,
       "gk_MasterOutput_level": -12,
-      "gk_Duration_factor": 0.47369502671598845,
       "gk_ReverbSC_feedback": 0.9299219071105631,
       "gk_ReverbSC_wet": 0.14734895191122072,
       "gk_ReverbSC_delay_modulation": 0.0075,
@@ -2118,8 +2114,6 @@ n("63").cpm(120*63/64),
     };
     let Master = cloud5_piece.menu_folder_addon('Master');
     cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
-    cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 9., 1.);
-    cloud5_piece.menu_slider_addon(Master, 'gk_Duration_factor', 0., 5.);
     cloud5_piece.menu_slider_addon(Master, 'gk_ReverbSC_feedback', 0., 1.);
     cloud5_piece.menu_slider_addon(Master, 'gk_ReverbSC_wet', 0., 1.);
     cloud5_piece.menu_slider_addon(Master, 'gk_ReverbSC_delay_modulation', 0., 1.);
