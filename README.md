@@ -37,6 +37,7 @@ code.
    the "Full screen" menu item moves compositional controls onto a 
    second monitor for unobscured visuals.
  - [Cancycle](cancycle.html). Set up to enable live coding.
+ - [Polymetric](polymetric.html). 
 
 # [cloud-5](https://github.com/gogins/cloud-5)
 
@@ -359,12 +360,9 @@ see updated pieces.
 
 The `csound-wasm` and `csound-node` targets will rebuild if the upstream Git 
 sources are newer than the local sources, or if the targets of the build are 
-missing.
-
-```
-export REBUILD="True"
-make
-```
+missing. If you still have problems with one of these targets, completely 
+delete the problematic external project source directory, e.g. 
+`rm -rf csound-wasm-prefix/src`, delete `CMakeCache.txt`, and rebuild.
 
 _**NOTE WELL**_: The `gogins.github.io` repository is maintained using 
 `pnpm run deploy` in _this_ `cloud-5` repository. _DO NOT_ delete any files 
