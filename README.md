@@ -345,7 +345,7 @@ To test your build, run a local Web server and browse a piece such as
 [cloud_music_no_9](http://localhost:8000/cloud_music_no_9.html), which uses 
 many facilities of the system.
 
-THe build may fail due to failure to build `canvas.node` (not actually used 
+The build may fail due to failure to build `canvas.node` (not actually used 
 here). If that happens, execute `cd cloud-5/strudel/packages/canvas` and 
 `node-gyp rebuild`, and try again from `pnpm run build`.
 
@@ -404,7 +404,7 @@ and make sure that the application directory for your `csound.node` pieces is th
 
  - Edited README.md for clearer build instructions.
 
- - Added non-chord tones to `csound::Scale` when conforming notes to the 
+ - Added non-chord tones to `csound::Scale` when conforming notes to a  
    Chord of the Scale.
  
 - Added [Polymetric](polymetric.html) piece.
