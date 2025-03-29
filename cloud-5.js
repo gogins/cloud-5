@@ -524,6 +524,13 @@ class Cloud5Piece extends HTMLElement {
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.
     this.send_parameters(this.control_parameters_addon);
+    // Also save the generated .csd file again, this time with current control 
+    // parameter values.
+    const csd_filename_parameters = document.title + '-generated-parameters.csd';
+    // Replace all values defined in global control channel init statements with the 
+    // values defined in the control parameters addon.
+    csd = this.update_parameters_in_csd(csd, this.control_parameters_addon);
+    write_file(csd_filename_parameters, csd);
     if (is_offline == false) {
       if (!(this?.csound.getNode)) {
         this.csound.perform();
@@ -634,6 +641,41 @@ class Cloud5Piece extends HTMLElement {
       }
     }
   }
+  /**
+   * Replaces global variables initialized in global scope, that is, not 
+   * within instr definitions, with values defined in the parameters addon
+   * (from ChatGPT).
+   */
+  update_parameters_in_csd(csdText, parameters) {
+    let inInstrBlock = false;
+    let lines = csdText.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        // Detect entering/exiting an instr block
+        if (/^instr\b/i.test(line)) {
+            inInstrBlock = true;
+        } else if (/^endin\b/i.test(line)) {
+            inInstrBlock = false;
+        }
+        // Only modify lines outside instr blocks.
+        if (!inInstrBlock) {
+          // If the line contains " init " we may update it.
+          let parts = line.split(' ');
+          if (parts[1] === "init") {
+          let parameter = parts[0]
+          if (parameter in parameters) {
+            let new_value = parameters[parameter];
+            // If the first token is one of our parameters, we will give it a 
+            // new value, and append the original line as a comment.
+            let new_line = `${parameter} init ${new_value} ; Updated from: ${line}`
+            lines[i] = new_line;
+          }
+        }
+      }
+    }
+    return lines.join("\n");
+}
+
   /**
    * Adds a new folder to the Controls menu of the piece.
    * 
