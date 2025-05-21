@@ -186,3 +186,35 @@ input {
     font: 1em/1.25em Verdana, sans-serif;
     background: transparent;
 }
+
+#global-curated-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #222;
+  display: flex;
+  gap: 0.5em;
+  padding: 3em;
+  z-index: 2147483647;
+  font-family: sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+#global-curated-menu button {
+  background: #0cf;
+  border: none;
+  color: black;
+  padding: 0.4em 0.8em;
+  border-radius: 0.4em;
+  cursor: pointer;
+  font-size: 0.95em;
+}
+
+#global-curated-menu button:hover {
+  background: #0af;
+}
+
+body {
+  padding-top: 10em; /* Prevent composition UI from overlapping new menu */
+}
