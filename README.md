@@ -6,7 +6,8 @@ style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.p
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 
-## Computer music in the cloud by [Michael Gogins](https://michaelgogins.tumblr.com)
+## [Michael Gogins](https://michaelgogins.tumblr.com)
+## Computer Music in the Cloud
 
 This is computer music that is hosted online, but actually rendered in Web 
 browsers. The pieces are not soundfiles and they are not streamed. Each piece 
@@ -19,6 +20,8 @@ to a new piece, co-composed with me.
 For more information on most of these pieces, open the piece and view its 
 <i><b>About</b></i> tab, or use the browser's inspector to view the underlying 
 code.
+
+## Selected Pieces
 
  - [Scrims](scrims.html), a JavaScript piece that samples an animated WebGL 
    hopalong fractal to obtain notes that are then harmonized using CsoundAC's 

@@ -187,13 +187,14 @@ input {
     background: transparent;
 }
 
+
 #global-curated-menu {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  background: #222;
-  display: flex;
+  background: transparent;
+  display: block;
   gap: 0.5em;
   padding: 3em;
   z-index: 2147483647;
@@ -202,7 +203,7 @@ input {
 }
 
 #global-curated-menu button {
-  background: #0cf;
+  background: transparent;
   border: none;
   color: black;
   padding: 0.4em 0.8em;
