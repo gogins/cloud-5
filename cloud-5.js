@@ -260,8 +260,8 @@ class Cloud5Piece extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
     <div class="w3-bar" id="main_menu" style="position:fixed;background:transparent;z-index:1000;">
-    <ul class="menu">
-        <li id="menu_item_play" title="Play piece on system audio output" class="w3-btn w3-hover-text-light-green">
+    <ul class="menu" id="main_menu_list">
+        <li id="menu_item_play" title="Play piece on audio output" class="w3-btn w3-hover-text-light-green">
             Play</li>
         <li id="menu_item_render" title="Render piece to soundfile" class="w3-btn w3-hover-text-light-green">Render
         </li>

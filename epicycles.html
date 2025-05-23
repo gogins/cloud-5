@@ -13,6 +13,7 @@
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
 <script src="strudel_embed.js"></script>
+<script defer src="global-menu.js"></script>
 <link rel="stylesheet" href="w3.css">
 <link rel="icon" href="data:,">
 <style>
@@ -50,8 +51,8 @@
     Non-infrastructure code, the code that makes a piece, can be found between 
     the lines marked >>>>>>>> and <<<<<<<<< below.
     ------------------------------------------------------------------------->
-    <div class="w3-bar " style="position:fixed;background:transparent;">    
-        <ul class = "menu">
+    <div class="w3-bar" id="main_menu" style="position:fixed;background:transparent;">    
+        <ul class = "menu" id="main_menu_list">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
             <li id="menu_item_tidal" class="w3-btn w3-hover-text-light-green">Strudel</li>
