@@ -18,6 +18,7 @@
     <script src="csound_loader.js"></script>
     <script src="CsoundAC.js"></script>
     <script src="strudel_embed.js"></script>
+    <script defer src="global-menu.js"></script>
     <link rel="stylesheet" href="w3.css">
     <style>
         .w3-container {
@@ -2725,7 +2726,7 @@ instr MasterOutput uses instrument number 16
          dat.gui controls to work. -->
 
     <div class="w3-bar " id="main_menu" style="position:fixed;background:transparent;z-index:100;">
-        <ul class="menu">
+        <ul class="menu" id="main_menu_list">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <!-- <li id="menu_item_render" class="w3-btn w3-hover-text-light-green">Render</li> -->
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>

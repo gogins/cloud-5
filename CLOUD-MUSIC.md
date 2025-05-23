@@ -89,5 +89,4 @@ indifferent, bad, or even broken), examples, tests, and so on.
 <li><a href="polymetric.html">polymetric.html</a></li>
 <li><a href="scrims.html">scrims.html</a></li>
 <li><a href="trichord_space.cloud5.html">trichord_space.cloud5.html</a></li>
-<li><a href="vite_index.html">vite_index.html</a></li>
 </ul>

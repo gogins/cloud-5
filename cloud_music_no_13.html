@@ -28,6 +28,7 @@
     <script src='Silencio.js'></script>
     <script src='ChordSpace.js'></script>
     <script src="TrackballControls.js"></script>
+    <script defer src="global-menu.js"></script>
     <link rel="stylesheet" href="w3.css">
     <style>
         .w3-container {
@@ -2448,7 +2449,7 @@
        dat.gui controls to work. -->
 
     <div class="w3-bar " id="main_menu" style="position:fixed;background:transparent;z-index:100;">
-        <ul class="menu">
+        <ul class="menu" id="main_menu_list">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <!-- <li id="menu_item_render" class="w3-btn w3-hover-text-light-green">Render</li> -->
             <li id="menu_item_stop" class="w3-btn w3-hover-text-light-green">Stop</li>
