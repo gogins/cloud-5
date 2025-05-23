@@ -19,27 +19,6 @@ For more information on most of these pieces, open the piece and view its
 <i><b>About</b></i> tab, or use the browser's inspector to view the underlying 
 code.
 
-## Selected Pieces
-
- - [Scrims](scrims.html), a JavaScript piece that samples an animated WebGL 
-   hopalong fractal to obtain notes that are then harmonized using CsoundAC's 
-   chord space operations.
- - [Cloud Music No. 1](cloud_music_no_1.html).
- - [Cloud Music No. 2](cloud_music_no_2.html).
- - [Cloud Music No. 3](cloud_music_no_3.html).
- - [Cloud Music No. 4](cloud_music_no_4.html).
- - [Cloud Music No. 6](cloud_music_no_6.html).
- - [Cloud Music No. 8](cloud_music_no_8.html).
- - [Cloud Music No. 9](cloud_music_no_9.html).
- - [Cloud Music No. 14](cloud_music_no_14.html). This one has a button so the 
-   user can record a performance and download the resulting soundfile.
- - [2024-ICSC](2024-ICSC.html), prepared for the 2024 International Csound 
-   Conference in Vienna. This is the same as Cloud Music No. 14, except that 
-   the "Full screen" menu item moves compositional controls onto a 
-   second monitor for unobscured visuals.
- - [Cancycle](cancycle.html). Set up to enable live coding.
- - [Polymetric](polymetric.html). 
-
 ## The cloud-5 System
 
 The cloud-music pieces are (mostly) implemented using my cloud-5 system for 

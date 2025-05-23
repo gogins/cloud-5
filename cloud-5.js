@@ -258,6 +258,7 @@ class Cloud5Piece extends HTMLElement {
     "genre": null,
   };
   connectedCallback() {
+    const filename = document.location.pathname.split("/").pop()
     this.innerHTML = `
     <div class="w3-bar" id="main_menu" style="position:fixed;background:transparent;z-index:1000;">
     <ul class="menu" id="main_menu_list">
@@ -274,7 +275,7 @@ class Cloud5Piece extends HTMLElement {
         <li id="menu_item_log" title="Show/hide message log" class="w3-btn w3-hover-text-light-green">Log
         </li>
         <li id="menu_item_about" title="Show/hide information about this piece"
-            class="w3-btn w3-hover-text-light-green">About</li>
+            class="w3-btn w3-hover-text-light-green">About ${filename}</li>
         <li id="mini_console" class="w3-btn w3-text-green w3-hover-text-light-green"></li>
         <li id="vu_meter_left" class="w3-btn w3-hover-text-light-green"></li>
         <li id="vu_meter_right" class="w3-btn w3-hover-text-light-green"></li>
