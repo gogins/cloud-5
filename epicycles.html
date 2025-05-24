@@ -3117,7 +3117,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#tidal_view").is(":visible")){
                     $("#tidal_view").hide();            
                 } else {
-                    $("#tidal_view").show();        
+                    $("#tidal_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let strudel_view = document.getElementById('tidal_view');
+                    strudel_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    strudel_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
             });
             $("#menu_item_controls").click(function(event) {
@@ -3140,7 +3146,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#console_view").is(":visible")){
                     $("#console_view").hide();          
                 } else {
-                    $("#console_view").show();    
+                    $("#console_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let console_view = document.getElementById('console_view');
+                    console_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    console_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                     // Needed to make visible in place.
                     console_editor.resize(true);
                 }
@@ -3153,7 +3165,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#about_view").is(":visible")){
                     $("#about_view").hide();            
                 } else {
-                    $("#about_view").show();            
+                   $("#about_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let about_view = document.getElementById('about_view');
+                    about_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from about view height.
+                    about_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
              });
             $(document).keydown(function(event) {

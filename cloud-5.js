@@ -398,6 +398,9 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_log = document.querySelector('#menu_item_log');
     menu_item_log.onclick = ((event) => {
+      const menu_bottom = document.getElementById('main_menu').getBoundingClientRect().bottom;
+      this.log_overlay.style.position='absolute';
+      this.log_overlay.style.top = `${menu_bottom}px`;
       console.info("menu_item_log click...");
       //this.show(this.piano_roll_overlay)
       //this.hide(this.strudel_overlay);
@@ -565,14 +568,22 @@ class Cloud5Piece extends HTMLElement {
     this.csound_message_callback("Csound has stopped.\n");
   };
   /**
-   * Helper function to show custom element overlays.
+   * Helper function to show custom element overlays. Resizes overlay 
+   * if required to fit layout.
    * 
    * @param {Object} overlay 
    */
   show(overlay) {
     if (overlay) {
       overlay.style.display = 'block';
-    }
+      const menu_bar = document.getElementById('main_menu');
+      const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+      overlay.style.top = `${menu_bar_bottom}px`;
+      // Back out menu bar height from console view height.
+      overlay.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
+      // Needed to make visible in place.
+      ///console_editor.resize(true);
+   }
   }
   /**
    * Helper function to hide custom element overlays.

@@ -2564,11 +2564,16 @@
                 $("#about_view").hide();
                 $("#strudel_view").hide();
                 //$("#score_view").hide();
-                let v = document.getElementById("console_view");
                 if ($("#console_view").is(":visible")) {
                     $("#console_view").hide();
                 } else {
                     $("#console_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let console_view = document.getElementById('console_view');
+                    console_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    console_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                     // Needed to make visible in place.
                     console_editor.resize(true);
                 }
@@ -2581,6 +2586,14 @@
                     $("#about_view").hide();
                 } else {
                     $("#about_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let about_view = document.getElementById('about_view');
+                    about_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from about view height.
+                    about_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
+                    // Needed to make visible in place.
+                    ///about_view.resize(true);
                 }
             });
             $(document).keydown(function (event) {

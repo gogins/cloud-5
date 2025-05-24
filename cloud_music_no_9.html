@@ -72,7 +72,7 @@
     <div id="about_view" class="w3-container"
         style="font-size:11px;position:absolute;top:40px;margin:20px;z-index:5;background:transparent;color:rgb(255, 255, 200, 67%);max-height: calc(100vh - 70px);overflow-y:auto;">
 
-        <h1 style="font-size: 15px;">Strudel Template</h1>
+        <h1 style="font-size: 15px;">Cloud Music No. 9</h1>
         <h2 style="font-size: 13px">Michael Gogins<br>
             December 2023</h2>
 
@@ -3001,6 +3001,12 @@ instr MasterOutput uses instrument number 16
                     $("#strudel_view").hide();
                 } else {
                     $("#strudel_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let strudel_view = document.getElementById('strudel_view');
+                    strudel_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    strudel_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
             });
             $("#menu_item_console").click(function (event) {
@@ -3012,6 +3018,12 @@ instr MasterOutput uses instrument number 16
                     $("#console_view").hide();
                 } else {
                     $("#console_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let console_view = document.getElementById('console_view');
+                    console_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    console_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                     // Needed to make visible in place.
                     console_editor.resize(true);
                 }
@@ -3023,7 +3035,13 @@ instr MasterOutput uses instrument number 16
                 if ($("#about_view").is(":visible")) {
                     $("#about_view").hide();
                 } else {
-                    $("#about_view").show();
+                     $("#about_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let about_view = document.getElementById('about_view');
+                    about_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from about view height.
+                    about_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
             });
             $(document).keydown(function (event) {
