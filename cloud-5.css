@@ -1,8 +1,12 @@
 /* A cloud-5 piece always fills the viewport and only the viewport. */
 
-html {
-  height: 100vh;
+html, body {
+  margin: 0;
+  padding: 0;
   width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
@@ -26,9 +30,21 @@ html::-webkit-scrollbar {
 
 /* The cloud-5 custom elements share a common style, which can be overridden by lower level styles. */
 
+.cloud5-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;  
+}
+
 .cloud5-body {
+  margin: 0;
+  padding: 0;
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
   background-color:black;
 }
 
@@ -41,7 +57,7 @@ html::-webkit-scrollbar {
 }
 
 .cloud5-strudel-repl {
-  position: relative;
+  position: fixed;
   top: 0px;
   width:120em;
   height:80em;
@@ -66,12 +82,13 @@ html::-webkit-scrollbar {
 }
 
 cloud5-log {
-  position: absolute;
+  position: fixed;
   top: 0px;
   left: 0px;
   visibility: none;
   display: block;
-  padding: 80px;
+  padding: 20px;
+  padding-left: 60px;
   width: 100vw;
   height: 100vh;
   color: rgb(255, 255, 200, 67%);
@@ -84,10 +101,9 @@ cloud5-log {
 cloud5-strudel,
 cloud5-about {
   isolation: isolate;
-  position: relative;
+  position: fixed;
   top: 0;
   left: 0;
-  visibility: none;
   display: none;
   padding: 80px;
   width: 100vw;
@@ -102,10 +118,9 @@ cloud5-about {
 
 cloud5-shader, 
 cloud5-shadertoy {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  visibility: none;
   display: none;
   margin: 0;
   width: 100vw;
@@ -119,7 +134,7 @@ cloud5-shadertoy {
 }
 
 cloud5-piano-roll {
-  position: absolute;
+  position: fixed;
   top: 0px;
   left: 0px;
   visibility: none;

@@ -16,7 +16,7 @@ function injectGlobalMenuList() {
 
     // Create the global_menu_list element
     const globalMenuList = document.createElement('ul');
-    globalMenuList.className = 'menu';
+    globalMenuList.className = 'menu cloud5-main-menu';
     globalMenuList.id = 'global_menu_list';
 
     // Add the menu items
