@@ -369,7 +369,7 @@ and make sure that the application directory for your `csound.node` pieces is th
 
 ## Release Notes
 
-### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1)
+### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1.1)
 
  - Made a clearer distinction between the Web site serving showcase for 
  cloud-music pieces, and the README.md for the cloud-5 system.
