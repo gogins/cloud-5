@@ -10,7 +10,8 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License<
 
 The cloud-5 system is a toolkit and library designed for creating computer 
 music that is hosted on Web servers and that runs and plays in a user's computer 
-or device. For examples of such music, see <a href="index.html">cloud-music</a>.
+or device. For examples of such music, see 
+<a href="https://cloud-music.html">cloud-music</a>.
 
 The cloud-5 system is based on <a href="https://github.com/gogins/csound-wasm">, 
 my own WebAssembly builds of Csound and CsoundAC</a>. Some pieces may use 
@@ -367,6 +368,15 @@ and make sure that the application directory for your `csound.node` pieces is th
 `cloud-5` directory, which includes necessary resources.
 
 ## Release Notes
+
+### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1)
+
+ - Made a clearer distinction between the Web site serving showcase for 
+ cloud-music pieces, and the README.md for the cloud-5 system.
+
+ - Added a global menu with a curated list of better pieces.
+
+ - Improved layouts to deal with presence/absence of global menu.
 
 ### [v1](https://github.com/gogins/cloud-5/releases/tag/v1-beta)
 
