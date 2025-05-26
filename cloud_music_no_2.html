@@ -1243,6 +1243,13 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                 if ($("#controls_view").is(":visible")) {
                     $("#controls_view").hide();
                 } else {
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let controls_view = document.getElementById('controls_view');
+                    controls_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    controls_view.style.height= `calc(${controls_view.style.height} - ${menu_bar_bottom}px)`;
+                    // Needed to make visible in place.
                     $("#controls_view").show();
                 }
             });

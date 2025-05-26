@@ -67,7 +67,7 @@
     
 <!-- BEGIN define "Strudel" overlay. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 
-    <strudel-repl-component id="tidal_view" class="w3-container" style="position:absolute;left:70px;top:140px;z-index:1;"> 
+    <strudel-repl-component id="tidal_view" class="w3-container" style="scale:0.75;z-index:1;"> 
     
     <!--
     
@@ -3123,7 +3123,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     let strudel_view = document.getElementById('tidal_view');
                     strudel_view.style.top = `${menu_bar_bottom}px`;
                     // Back out menu bar height from console view height.
-                    strudel_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
+                    const computed_height = window.getComputedStyle(document.body).height;
+                    strudel_view.style.height= `calc(${computed_height} - ${menu_bar_bottom}px)`;
                 }
             });
             $("#menu_item_controls").click(function(event) {
@@ -3134,8 +3135,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#controls_view").is(":visible")){
                     $("#controls_view").hide();            
                 } else {
-                    $("#controls_view").show();        
-                }
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let controls_view = document.getElementById('controls_view');
+                    controls_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    controls_view.style.height= `calc(${controls_view.style.height} - ${menu_bar_bottom}px)`;
+                    // Needed to make visible in place.
+                    $("#controls_view").show();
+                 }
             });
             $("#menu_item_console").click(function(event) {
                 console.log("menu_item_console click...");
