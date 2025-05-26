@@ -17,6 +17,7 @@
     <script src="CsoundAudioNode.js"></script>
     <script src="CsoundAC.js"></script>
     <script src="strudel_embed.js"></script>
+    <script defer src="global-menu.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="icon" href="data:,">
     <style>
@@ -56,14 +57,14 @@ patched_text = text.replace(find_this, replace_with)
     Non-infrastructure code, the code that makes a piece, can be found between 
     the lines marked >>>>>>>> and <<<<<<<<< below.
     ------------------------------------------------------------------------->
-    <div class="w3-bar " style="position:fixed;background:transparent;">
-        <ul class="menu">
+    <div class="w3-bar" id="main_menu" style="position:fixed;background:transparent;">
+        <ul class="menu" id="main_menu_list">
             <li id="menu_item_play" class="w3-btn w3-hover-text-light-green">Play</li>
             <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
             <li id="menu_item_tidal" class="w3-btn w3-hover-text-light-green">Strudel</li>
             <li id="menu_item_controls" class="w3-btn w3-hover-text-light-green">Controls</li>
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
-            <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About Cancyle</li>
+            <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About Cancycle</li>
             <li id="mini_console" class="w3-btn w3-text-light-green"></li>
         </ul>
     </div>
@@ -3231,7 +3232,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#tidal_view").is(":visible")){
                     $("#tidal_view").hide();            
                 } else {
-                    $("#tidal_view").show();        
+                    $("#tidal_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let tidal_view = document.getElementById('tidal_view');
+                    tidal_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    tidal_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
             });
             $("#menu_item_controls").click(function(event) {
@@ -3242,7 +3249,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#controls_view").is(":visible")){
                     $("#controls_view").hide();            
                 } else {
-                    $("#controls_view").show();        
+                    $("#controls_view").show();            
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let controls_view = document.getElementById('controls_view');
+                    controls_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    controls_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
             });
             $("#menu_item_console").click(function(event) {
@@ -3254,7 +3267,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#console_view").is(":visible")){
                     $("#console_view").hide();          
                 } else {
-                    $("#console_view").show();    
+                    $("#console_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let console_view = document.getElementById('console_view');
+                    console_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from console view height.
+                    console_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                     // Needed to make visible in place.
                     console_editor.resize(true);
                 }
@@ -3267,7 +3286,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 if ($("#about_view").is(":visible")){
                     $("#about_view").hide();            
                 } else {
-                    $("#about_view").show();            
+                   $("#about_view").show();
+                    const menu_bar = document.getElementById('main_menu');
+                    const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+                    let about_view = document.getElementById('about_view');
+                    about_view.style.top = `${menu_bar_bottom}px`;
+                    // Back out menu bar height from about view height.
+                    about_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
+                    // Needed to make visible in place.
+                    ///about_view.resize(true);
                 }
              });
             $(document).keydown(function(event) {

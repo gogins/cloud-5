@@ -13,7 +13,6 @@
 <script src="CsoundAudioNode.js"></script>
 <script src="CsoundAC.js"></script>
 <script src="strudel_embed.js"></script>
-<script defer src="global-menu.js"></script>
 <link rel="stylesheet" href="w3.css">
 <link rel="icon" href="data:,">
 <style>
@@ -117,7 +116,7 @@ pure(0)
 .note()
 .fast(3)
 .legato(3)
-.pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
+//.pianoroll({labels:1,fillActive:1,cycles:32,playhead:.9})  
 .csoundn("<5 6>/4")
 // Levels and other controls for Csound instruments. 
 // Levels are initially more or less balanced.
@@ -150,7 +149,7 @@ pure(0)
 .gk_ReverbSC_feedback(slider(0.84, 0, 1))
 //.gain("<.03 .1@2 .2@3 .3@2 .02@2>/6".mul(3))
 .gk_MasterOutput_level(slider(0.493, 0, 1).sub(.5).mul(100))
-.pianoroll({fillActive:1,minMidi:0,maxMidi:127,cycles:16,playhead:.75})
+.pianoroll({labels:1,fold:0,scaleauto:0,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})  
 
 -->
     
