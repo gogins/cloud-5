@@ -335,10 +335,13 @@ missing. If you still have problems with one of these targets, completely
 delete the problematic external project source directory, e.g. 
 `rm -rf csound-wasm-prefix/src`, delete `CMakeCache.txt`, and rebuild.
 
-_**NOTE WELL**_: The `gogins.github.io` repository is maintained using 
-`pnpm run deploy` in _this_ `cloud-5` repository. _DO NOT_ delete any files 
-from `gogins.github.io`, although pieces may be added there. In other words, 
-`gogins.github.io` can be the same as, or a superset of, `cloud-5`.
+_**NOTE WELL**_: The `gogins.github.io` repository is maintained by hand.
+ _DO NOT_ delete any files from `gogins.github.io`, although pieces may be 
+ added there. In other words, `gogins.github.io` can be a superset of 
+ `cloud-5`. Unzip the cloud-5.zip file in this build, into the 
+ `gogins.github.io` directory, add all files thus updated (`git add .`), 
+ commit, and push. The same procedure can be used to update other GitHub pages 
+ repositories.
 
 ## Running in NW.js
 
