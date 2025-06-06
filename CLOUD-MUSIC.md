@@ -60,6 +60,7 @@ indifferent, bad, or even broken), examples, tests, and so on.
 <li><a href="cloud_music_no_7.html">cloud_music_no_7.html</a></li>
 <li><a href="cloud_music_no_8.html">cloud_music_no_8.html</a></li>
 <li><a href="cloud_music_no_9.html">cloud_music_no_9.html</a></li>
+<li><a href="droner.html">droner.html</a></li>
 <li><a href="epicycles.html">epicycles.html</a></li>
 <li><a href="index.html">index.html</a></li>
 <li><a href="message.html">message.html</a></li>
