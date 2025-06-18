@@ -2075,7 +2075,30 @@ const csac = await import('../csoundac.mjs');
 // csac.diagnostic_level(csac.INFORMATION);
 
 let scale = csac.Scale('C_major');
-let scalePattern = new csac.ScalePatterns(scale, 4);
+
+// let scala = \`C major scale in just intonation
+// 7
+// 1/1
+// 9/8
+// 5/4
+// 4/3
+// 3/2
+// 5/3
+// 15/8
+// 2/1
+// \`;
+// scale.from_scala('test', scala);
+// midi_key = std::log2(ratio) * 12.0
+
+scale.setPitch(0, 0);
+scale.setPitch(1, Math.log2(9 / 8) * 12);
+scale.setPitch(2, Math.log2(5 / 4) * 12);
+scale.setPitch(3, Math.log2(4 / 3) * 12);
+scale.setPitch(4, Math.log2(3 / 2) * 12);
+scale.setPitch(5, Math.log2(5 / 3) * 12);
+scale.setPitch(6, Math.log2(15 / 8) * 12);
+
+let scalePattern = new csac.ScalePatterns(scale, 5);
 
 // "polyrhythms"
 
@@ -2145,15 +2168,14 @@ note("61").cpm(120*61/64),
 note("62").cpm(120*62/64),
 note("63").cpm(120*63/64),
 )
-.slow(3)
+.slow(20)
 .csoundn("<1 2 4>").color("red green blue")
-.acSS(scalePattern, "<1 2 5 1 6 7>")
+.acSS(scalePattern, "<1 2 5 1 6 7>/9")
 ///.acSM(scalePattern, "<0 1 1 0 3 2>/24")
 .acSCV(scalePattern)
 .transpose("24")
 .pan("<.1 .5 .8 .3 .7 .25>")
 .gain(.7)
-.slow(20)
 .pianoroll({labels:1,fold:0,scaleauto:1,minMidi:0,maxMidi:127,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
         `;
     // #endregion
@@ -2313,7 +2335,7 @@ note("63").cpm(120*63/64),
     let cloud5_shader = document.querySelector('cloud5-shadertoy');
     cloud5_shader.shader_parameters_addon = {
       fragment_shader_code_addon: `#version 300 es
-        #line 2184
+        #line 2316
         precision highp float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
