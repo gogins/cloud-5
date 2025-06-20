@@ -2090,15 +2090,23 @@ let scale = csac.Scale('C_major');
 // scale.from_scala('test', scala);
 // midi_key = std::log2(ratio) * 12.0
 
-scale.setPitch(0, 0);
-scale.setPitch(1, Math.log2(9 / 8) * 12);
-scale.setPitch(2, Math.log2(5 / 4) * 12);
-scale.setPitch(3, Math.log2(4 / 3) * 12);
-scale.setPitch(4, Math.log2(3 / 2) * 12);
-scale.setPitch(5, Math.log2(5 / 3) * 12);
-scale.setPitch(6, Math.log2(15 / 8) * 12);
+// scale.setPitch(0, 0);
+// scale.setPitch(1, Math.log2(9 / 8) * 12);
+// scale.setPitch(2, Math.log2(5 / 4) * 12);
+// scale.setPitch(3, Math.log2(4 / 3) * 12);
+// scale.setPitch(4, Math.log2(3 / 2) * 12);
+// scale.setPitch(5, Math.log2(5 / 3) * 12);
+// scale.setPitch(6, Math.log2(15 / 8) * 12);
 
-let scalePattern = new csac.ScalePatterns(scale, 5);
+scale.set_ratio(0, 1, 1);
+scale.set_ratio(1, 9, 8);
+scale.set_ratio(2, 5, 4);
+scale.set_ratio(3, 4, 3);
+scale.set_ratio(4, 3, 2);
+scale.set_ratio(5, 5, 3);
+scale.set_ratio(6, 15, 8);
+
+let scalePattern = new csac.ScalePatterns(scale, 3);
 
 // "polyrhythms"
 
@@ -2168,9 +2176,9 @@ note("61").cpm(120*61/64),
 note("62").cpm(120*62/64),
 note("63").cpm(120*63/64),
 )
-.slow(20)
+.slow(30)
 .csoundn("<1 2 4>").color("red green blue")
-.acSS(scalePattern, "<1 2 5 1 6 7>/9")
+.acSS(scalePattern, "<1 2 5 1 6 7>/29")
 ///.acSM(scalePattern, "<0 1 1 0 3 2>/24")
 .acSCV(scalePattern)
 .transpose("24")

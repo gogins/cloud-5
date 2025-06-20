@@ -223,6 +223,41 @@ export function hsvToRgb(h,s,v) {
 let csoundn_counter = 0;
 
 /**
+ * @function velmap
+ * 
+ * @description A Pattern that increases or decreases the loudness of notes as 
+ * a function of pitch ('velocity map'). The function can be concave, linear, 
+ * or convex.
+ *
+ * Adjust MIDI velocity based on key number with tunable scale and curvature.
+ *
+ * @param {number} key - MIDI note number (0 to 127).
+ * @param {number} baseVelocity - Base velocity to adjust (0 to 127).
+ * @param {number} scale - Strength of adjustment. 0 = no change, 1 = full range. Default is 1.
+ * @param {number} curve - Curve exponent. 1 = linear, <1 = concave, >1 = convex. Default is 1.
+ * @returns {number} Adjusted velocity (1 to 127).
+ */
+function adjustedVelocityAdvanced(key, baseVelocity, scale = 1, curve = 1) {
+    // Clamp inputs.
+    key = Math.max(0, Math.min(127, key));
+    baseVelocity = Math.max(0, Math.min(127, baseVelocity));
+    // Define useful MIDI pitch range (typically piano keys).
+    const minKey = 21;  // A0
+    const maxKey = 108; // C8
+    // Normalize key to range 0 (high) to 1 (low).
+    const t = 1 - (key - minKey) / (maxKey - minKey);
+    const shaped = Math.pow(t, curve); // Apply curvature
+    // Apply scale from 1.0 ± scale (e.g., if scale = 0.5 → range 0.5–1.5)
+    const factor = 1 + scale * (shaped - 0.5) * 2;
+    const velocity = Math.round(baseVelocity * factor);
+    return Math.max(1, Math.min(127, velocity));
+}
+
+export const velmap = register('velmap', (base_velocity, scale, curve, pat) => {
+
+});
+
+/**
  * @function csoundn
  * 
  * @description A Pattern that sends notes to Csound for rendering with MIDI 
