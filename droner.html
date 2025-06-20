@@ -1994,14 +1994,24 @@
         implementation of Tidal Cycles, which is accessed from a REPL embedded
         in this piece -- use the Strudel button to view the Strudel code. The user can
         edit the Strudel code that generates the score, and click on the update button
-        to hear it. Thanks to Felix Roos for helpful hints along the way. Strudel
-        ends its notes to Csound for synthesis.
+        to hear it. Thanks to Felix Roos for helpful hints along the way. In this 
+        piece, Strudel sends its notes to Csound for synthesis.
+
+        <p>The Strudel patch for this piece is adapted from an uncredited 
+        <i><polyrhythms</i> example in the <a href="https://strudel.cc/">
+          online Strudel REPL</a>. The polyrhythmic cycling pattern is then filtered 
+          through a just intonation scale that, in turn, cycles through a chord 
+          progression that is out of phase with the polyrhythmic pattern. Thus, 
+          the piece can play more or less indefinitely without exactly repeating.
 
       <p>The notes are played by a Csound orchestra that is embedded in this Web
         page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly
-          build of Csound</a>. This in turn includes my
+          build of Csound</a>, which also includes my
         <a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for
-        algorithmic composition.
+        algorithmic composition. The reverb is based on one contributed by Sean Costello 
+        as a Csound instrument. The use of a very small amount of modulation on the 
+        delay lines of this reverb creates a varying, shimmering sound that hints 
+        at internal melodies.
 
       <p>The synthesized audio is then sampled (using a WebAudio Analyzer) to generate
         a visualization of the music.
@@ -2011,10 +2021,6 @@
         one!
 
       <h2 style="font-size:13px">Credits</h2>
-
-      <p>The Strudel patch for this piece is adapted from an uncredited 
-        <i><polyrhythms</i> example in the <a href="https://strudel.cc/">
-          online Strudel REPL</a>.
 
       <p>Code for compiling and controlling shaders is adapted from <a
           href="https://www.shadertoy.com">ShaderToy.com</a>.
@@ -2074,30 +2080,8 @@
 const csac = await import('../csoundac.mjs');
 // csac.diagnostic_level(csac.INFORMATION);
 
+// Just intonation on concert C, from a Scala file.
 let scale = csac.Scale('C_major');
-
-// let scala = \`C major scale in just intonation
-// 7
-// 1/1
-// 9/8
-// 5/4
-// 4/3
-// 3/2
-// 5/3
-// 15/8
-// 2/1
-// \`;
-// scale.from_scala('test', scala);
-// midi_key = std::log2(ratio) * 12.0
-
-// scale.setPitch(0, 0);
-// scale.setPitch(1, Math.log2(9 / 8) * 12);
-// scale.setPitch(2, Math.log2(5 / 4) * 12);
-// scale.setPitch(3, Math.log2(4 / 3) * 12);
-// scale.setPitch(4, Math.log2(3 / 2) * 12);
-// scale.setPitch(5, Math.log2(5 / 3) * 12);
-// scale.setPitch(6, Math.log2(15 / 8) * 12);
-
 scale.set_ratio(0, 1, 1);
 scale.set_ratio(1, 9, 8);
 scale.set_ratio(2, 5, 4);
@@ -2105,10 +2089,9 @@ scale.set_ratio(3, 4, 3);
 scale.set_ratio(4, 3, 2);
 scale.set_ratio(5, 5, 3);
 scale.set_ratio(6, 15, 8);
+let scalePattern = new csac.ScalePatterns(scale, 2);
 
-let scalePattern = new csac.ScalePatterns(scale, 3);
-
-// "polyrhythms"
+// From the "polyrhythms" example.
 
 stack(
 note("0").cpm(120*0/64),
@@ -2176,12 +2159,12 @@ note("61").cpm(120*61/64),
 note("62").cpm(120*62/64),
 note("63").cpm(120*63/64),
 )
-.slow(30)
+.slow(40)
 .csoundn("<1 2 4>").color("red green blue")
-.acSS(scalePattern, "<1 2 5 1 6 7>/29")
+.acSS(scalePattern, "<1 2 7 1 11 5 7>/11")
 ///.acSM(scalePattern, "<0 1 1 0 3 2>/24")
 .acSCV(scalePattern)
-.transpose("24")
+.transpose("20")
 .pan("<.1 .5 .8 .3 .7 .25>")
 .gain(.7)
 .pianoroll({labels:1,fold:0,scaleauto:1,minMidi:0,maxMidi:127,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
@@ -2190,19 +2173,19 @@ note("63").cpm(120*63/64),
     // #region Controls 
     cloud5_piece.control_parameters_addon = {
     "gk_MasterOutput_level": -37.237977805178794,
-    "gk_Reverberator_feedback": 0.6274147143444307,
+    "gk_Reverberator_feedback": 0.6405672009864365,
     "gk_Reverberator_wet": 1,
-    "gk_Reverberator_delay_modulation": 2.065351418002466,
+    "gk_Reverberator_delay_modulation": 0.2,
     "gk_Reverberator_frequency_cutoff": 12286.50703935875,
     "gk_Droner_level": 7.486383722125169,
     "gk_Droner_partial1": 0.055,
-    "gk_Droner_partial2": 0.397,
-    "gk_Droner_partial3": 0.456,
-    "gk_Droner_partial4": 0.11447949850991676,
-    "gk_Droner_partial5": 0.259,
-    "gk_Droner_partial6": 0.496,
-    "gk_Droner_partial7": 0,
-    "gk_Droner_partial8": 0.075,
+    "gk_Droner_partial2": 0.154,
+    "gk_Droner_partial3": 0.20700000000000002,
+    "gk_Droner_partial4": 0.049,
+    "gk_Droner_partial5": 0.114,
+    "gk_Droner_partial6": 0.082,
+    "gk_Droner_partial7": 0.259,
+    "gk_Droner_partial8": 0.647,
     "gk_Droner_partial9": 0,
     "gk_Droner_partial10": 0,
     "gk_Blower_level": -29.344363374781626,
