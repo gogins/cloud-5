@@ -2077,56 +2077,140 @@
     // #region Strudel
     cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');
     cloud5_piece.strudel_overlay.strudel_code_addon = `
-   const csac = await import('../csoundac.mjs');
-    csac.diagnostic_level(csac.INFORMATION);
-    
-    stack("0,3,[11 6]"
-      .add("<0 1 2 [3 4] 5 7 8>")
-      .transpose("<0 1 2 1>/8")
-      .slow(2)
-      .degradeBy(.125)
-      .transpose("48 36")
-      //.legato(.95)
-      .iter(2)
-      .tune("ji_12c")
-      .add(24)
-      .note()
-      .csoundn("<1 2 8 10>").color("aquamarine blue cadetblue aqua")
-      .gain(.7),
-    "0,4,[7 6]"
-      .sub("<0 1 2 3 4 5 [7 8] 9>")
-      .transpose("<0 1 -1 1>/3")
-      .iter(4)
-      .slow(7)
-      .transpose("<48 36>/7")
-      .add(24)
-      .slow(.4)
-      .tune("ji_12c")
-      .note()
-      .csoundn("<2 3 6>").color("red coral pink")
-      .gain(.7) 
-      )
-      .pianoroll({labels:1,fold:0,scaleauto:1,minMidi:10,maxMidi:100,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})    
-     `;
+
+    const csac = await import('../csoundac.mjs');
+csac.diagnostic_level(csac.NEVER);
+
+let scale = csac.Scale('D_major');
+let scalePattern = new csac.ScalePatterns(scale, 5);
+
+let circle_map_counter = 0;
+/**
+ * Classes based on StatefulPatterns can be used to define stateful Patterns.
+ *
+ * This particular stateful class is instrumented with debug information to 
+ * prove whether or not evaluations are triggered when they should be, e.g. 
+ * cps of 1 should evaluate once per second, cps of 2 should evaluate twice 
+ * per second, and so on; also, there should be exactly 1 call to CircleMap
+ * for every note triggered by the Pattern.
+ */
+class CircleMapPattern extends csac.StatefulPatterns {
+    constructor(omega = 1/3, kappa = 1) {
+        super();
+        this.registerPatterns();
+        this.theta1 = 0;
+        this.theta = 0;
+        this.omega = omega;
+        this.kappa = kappa;
+        this.midi_key = 36;
+        this.bass = 36;
+        this.range = 48;
+    }
+    /**
+     * Patternify the omega parameter of the circle map.
+     */
+    CircleMap(is_onset, kappa, omega, hap) {
+         if (is_onset === true) {
+            this.kappa = kappa;
+            this.omega = omega;
+            this.theta1 = this.theta + this.omega + (this.kappa / (2 * Math.PI)) * Math.sin(this.theta * 2 * Math.PI);
+            this.theta = this.theta1 % 1;
+            // Theta represents the phase of an instantaneous frequency that 
+            // can be negative, but we only care about its position on the 
+            // circle.
+            this.midi_key = Math.round((Math.abs(this.theta) * this.range) + this.bass);
+            circle_map_counter = circle_map_counter + 1;
+        }
+        hap.value.note = this.midi_key;
+        return hap;
+    }
+}
+
+let circleMapInstance = new CircleMapPattern();
+
+csac.track
+(
+[60*3,
+// In order for controls to work, note must come first!
+pure(0).note()
+// 10.184 is good.
+.CircleMap(circleMapInstance, 1, slider(10.184, 1, 29))
+.echoWith(4, slider(0, 0, 4, .25), (p,n) => p.add(4*n))
+    .slow(slider(2.5, 1, 8, .5)).fast(slider(3.5, 1, 8, .5))
+.sub(slider(3, 0, 48, 3)).add(slider(0, 12, 48, 3))
+.clip(slider(0.6, .1, 10, .1))
+.csoundn(slider(1, 1, 17,1), 
+         slider(3, 1, 17,1), 
+         slider(6, 1, 17,1)).color("red green blue")
+// CsoundAC way of doing harmony:
+.acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
+.acSM(scalePattern, "<0 1 1 0 3 2>/24")
+.acSCV(scalePattern)
+],
+[60,
+run(slider(8,3,8,1)).n()
+ .offset(slider(5, 0, 6, 1))
+ .off(.5, x=>x.add(9))
+.slow(slider(2, 1, 8, .5)).fast(slider(3, 1, 8, .5))
+.sub(slider(6, 0, 48, 3)).add(slider(0, 0, 48, 3))
+.euclid(8, 10)
+.jux(rev)
+// Strudel way of doing harmony:
+.chord("<Am9 E7b5 Am9 Dm7b5 G7b9 CM7>/2")
+.dict('ireal-ext')
+.voicing()
+.clip(slider(1, .1, 10, .1))
+.csoundn(slider(6, 1, 17,1), 
+         slider(5, 1, 17,1), 
+         slider(11, 1, 17,1)).color("coral chartreuse cornflowerblue")],
+[60*4,
+// In order for controls to work, note must come first!
+pure(0).note()
+.CircleMap(circleMapInstance, 1, slider(15.308, 1, 29))
+.echoWith(5, slider(1.25, 0, 4, .25), (p,n) => p.add(5*n))
+.slow(slider(1.5, 1, 8, .5)).fast(slider(1, 1, 8, .5))
+.sub(slider(9, 0, 48, 3)).add(slider(0, 0, 48, 3))
+.clip(slider(2.2, .1, 10, .1))
+.csoundn(slider(9, 1, 17,1), 
+         slider(14, 1, 17,1), 
+         slider(7, 1, 17,1)).color("orange orangered olive")
+// CsoundAC way of doing harmony:
+.acST(scalePattern, "<-1 -1 -1 -1 -1 -1 -1>/3")
+.acSM(scalePattern, "<0 1 2 3 3 2>/9")
+.acSCV(scalePattern)
+],
+)
+// Master tempo.
+.slow(slider(1, 1, 8, .25)).fast(slider(1, 1, 8, .25))
+// Master bass.
+.sub(slider(12, 0, 48, 1)).add(slider(0, 12, 48, 1))
+// Master stacatto/legato.
+.clip(slider(2.3, .1, 10, .1))
+.pan(perlin)
+
+.pianoroll({labels:1,fold:0,scaleauto:1,minMidi:10,maxMidi:100,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
+
+
+`;
     // #endregion
     // #region Controls 
     cloud5_piece.control_parameters_addon = {
-    "gk_MasterOutput_level": -37.237977805178794,
-    "gk_Reverberator_feedback": 0.6405672009864365,
+    "gk_MasterOutput_level": -42.498201623676906,
+    "gk_Reverberator_feedback": 0.8642482786969479,
     "gk_Reverberator_wet": 1,
-    "gk_Reverberator_delay_modulation": 0.2,
+    "gk_Reverberator_delay_modulation": 0.33,
     "gk_Reverberator_frequency_cutoff": 12286.50703935875,
-    "gk_Droner_level": 7.486383722125169,
-    "gk_Droner_partial1": 0.055,
-    "gk_Droner_partial2": 0.154,
-    "gk_Droner_partial3": 0.20700000000000002,
-    "gk_Droner_partial4": 0.049,
-    "gk_Droner_partial5": 0.114,
-    "gk_Droner_partial6": 0.082,
-    "gk_Droner_partial7": 0.259,
+    "gk_Droner_level": -8.298222176549174,
+    "gk_Droner_partial1": 0.739,
+    "gk_Droner_partial2": 0.595,
+    "gk_Droner_partial3": 0.121,
+    "gk_Droner_partial4": 0,
+    "gk_Droner_partial5": 0.897,
+    "gk_Droner_partial6": 0,
+    "gk_Droner_partial7": 0.364,
     "gk_Droner_partial8": 0.647,
-    "gk_Droner_partial9": 0,
-    "gk_Droner_partial10": 0,
+    "gk_Droner_partial9": 0.233,
+    "gk_Droner_partial10": 0.259,
     "gk_Blower_level": -29.344363374781626,
     "gk_Blower_attack": 1.5,
     "gk_Blower_release": 2,
@@ -2140,7 +2224,7 @@
     "gk_Buzzer_level": -26.71359572500257,
     "gk_Buzzer_harmonics": 1.3688212927756656,
     "gk_FilteredSines_level": 31,
-    "gk_ZakianFlute_level": -22.767444250333984,
+    "gk_ZakianFlute_level": 25.901757270578557,
     "gk_FMWaterBell_level": 41.67694204685574,
     "gi_FMWaterBell_attack": 0.002,
     "gi_FMWaterBell_release": 0.01,
@@ -2163,8 +2247,8 @@
     "gk_Shiner_level": -16.848217038331107,
     "gk_Shiner_attack": 0.125,
     "gk_Shiner_release": 0.5,
-    "gk_SeidelHarmonicOsc_level": 0,
-    "gk_Sweeper_level": 31.81257706535142,
+    "gk_SeidelHarmonicOsc_level": 33.794060219915735,
+    "gk_Sweeper_level": 28.532524920357616,
     "gk_Sweeper_britel": 0.14222587606618026,
     "gk_Sweeper_briteh": 1.0893022299866406,
     "gk_Sweeper_britels": 1.6417634364402425,
