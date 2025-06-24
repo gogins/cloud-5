@@ -2078,7 +2078,7 @@
     cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');
     cloud5_piece.strudel_overlay.strudel_code_addon = `
 
-    const csac = await import('../csoundac.mjs');
+const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.NEVER);
 
 let scale = csac.Scale('D_major');
@@ -2141,7 +2141,18 @@ pure(0).note()
 .clip(slider(0.6, .1, 10, .1))
 .csoundn(slider(1, 1, 17,1), 
          slider(3, 1, 17,1), 
-         slider(6, 1, 17,1)).color("red green blue")
+         slider(6, 1, 17,1))
+.velocity(({ midinote }) => {
+  const minPitch = 0;   // lowest expected pitch
+  const maxPitch = 127;   // highest expected pitch
+  const maxVel = 127;
+  const minVel = 40;
+  const pitchRange = maxPitch - minPitch;
+  const normalized = (maxPitch - midinote) / pitchRange; // 1 for low notes, 0 for high
+  const curved = Math.pow(normalized, 0.5); // concave curve (sqrt-like)
+  const velocity = minVel + curved * (maxVel - minVel);
+  return Math.round(Math.max(minVel, Math.min(maxVel, velocity)));
+}).color("red green blue")
 // CsoundAC way of doing harmony:
 .acST(scalePattern, "<2 -1 3 -1 -1 -1 5>/3")
 .acSM(scalePattern, "<0 1 1 0 3 2>/24")
@@ -2149,8 +2160,8 @@ pure(0).note()
 ],
 [60,
 run(slider(8,3,8,1)).n()
- .offset(slider(5, 0, 6, 1))
- .off(.5, x=>x.add(9))
+.offset(slider(5, 0, 6, 1))
+.off(.5, x=>x.add(9))
 .slow(slider(2, 1, 8, .5)).fast(slider(3, 1, 8, .5))
 .sub(slider(6, 0, 48, 3)).add(slider(0, 0, 48, 3))
 .euclid(8, 10)
@@ -2162,7 +2173,20 @@ run(slider(8,3,8,1)).n()
 .clip(slider(1, .1, 10, .1))
 .csoundn(slider(6, 1, 17,1), 
          slider(5, 1, 17,1), 
-         slider(11, 1, 17,1)).color("coral chartreuse cornflowerblue")],
+         slider(11, 1, 17,1))
+         .color("coral chartreuse cornflowerblue")
+.velocity(({ midinote }) => {
+  const minPitch = 0;   // lowest expected pitch
+  const maxPitch = 127;   // highest expected pitch
+  const maxVel = 127;
+  const minVel = 40;
+  const pitchRange = maxPitch - minPitch;
+  const normalized = (maxPitch - midinote) / pitchRange; // 1 for low notes, 0 for high
+  const curved = Math.pow(normalized, 0.5); // concave curve (sqrt-like)
+  const velocity = minVel + curved * (maxVel - minVel);
+  return Math.round(Math.max(minVel, Math.min(maxVel, velocity)));
+})
+],
 [60*4,
 // In order for controls to work, note must come first!
 pure(0).note()
@@ -2173,7 +2197,19 @@ pure(0).note()
 .clip(slider(2.2, .1, 10, .1))
 .csoundn(slider(9, 1, 17,1), 
          slider(14, 1, 17,1), 
-         slider(7, 1, 17,1)).color("orange orangered olive")
+         slider(7, 1, 17,1))
+.velocity(({ midinote }) => {
+  const minPitch = 0;   // lowest expected pitch
+  const maxPitch = 127;   // highest expected pitch
+  const maxVel = 127;
+  const minVel = 40;
+  const pitchRange = maxPitch - minPitch;
+  const normalized = (maxPitch - midinote) / pitchRange; // 1 for low notes, 0 for high
+  const curved = Math.pow(normalized, 0.5); // concave curve (sqrt-like)
+  const velocity = minVel + curved * (maxVel - minVel);
+  return Math.round(Math.max(minVel, Math.min(maxVel, velocity)));
+})
+.color("orange orangered olive")
 // CsoundAC way of doing harmony:
 .acST(scalePattern, "<-1 -1 -1 -1 -1 -1 -1>/3")
 .acSM(scalePattern, "<0 1 2 3 3 2>/9")
@@ -2187,10 +2223,7 @@ pure(0).note()
 // Master stacatto/legato.
 .clip(slider(2.3, .1, 10, .1))
 .pan(perlin)
-
 .pianoroll({labels:1,fold:0,scaleauto:1,minMidi:10,maxMidi:100,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
-
-
 `;
     // #endregion
     // #region Controls 

@@ -1818,25 +1818,29 @@
         gk_Reverberator_delay_modulation init 0.0075
         gk_Reverberator_frequency_cutoff init 15000
 
-        instr Reverberator
+        ;; Allowing swapping original reverb with reverbsc.
+
+        ;; Adapting Sean's original implementation:
+        
+        instr Reverberator 
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         ; Authors: Sean Costello and J. Lato
         ; Adapted by Michael Gogins
-        ; p4 = gain of reverb. Adjust empirically
+        ; p4 = gain of reverb in [0, 1]. Adjust empirically
         ; for desired reverb time. .6 gives
         ; a good small "live" room sound, .8
         ; a small hall, .9 a large hall,
         ; .99 an enormous stone cavern.
 
         ; p5 = amount of random pitch modulation
-        ; for the delay lines. 1 is the "normal"
+        ; for the delay lines in [0, 10]. 1 is the "normal"
         ; amount, but this may be too high for
         ; held pitches such as piano tones.
         ; Adjust to taste.
 
         ; p6 = cutoff frequency of lowpass filters
         ; in feedback loops of delay lines,
-        ; in Hz. Lower cutoff frequencies results
+        ; in Hz [0, sr /2]. Lower cutoff frequencies results
         ; in a sound with more high-frequency
         ; damping.
 
@@ -1857,6 +1861,7 @@
         ktone = gk_Reverberator_frequency_cutoff 
         ain1 inleta "inleft"
         ain2 inleta "inright"
+        // Sean's reverb assumed mono input; hence collapse the stereo inputs.
         asignal = (ain1 + ain2) * 0.5
         afilt1 init 0
         afilt2 init 0
@@ -1866,7 +1871,6 @@
         afilt6 init 0
         afilt7 init 0
         afilt8 init 0
-        ; TODO: should sr always be 44100 here?
         idel1 = (2473.000/sr)
         idel2 = (2767.000/sr)
         idel3 = (3217.000/sr)
@@ -1920,15 +1924,41 @@
         ; sound system.
         aout1 = (afilt1 + afilt3 + afilt5 + afilt7)
         aout2 = (afilt2 + afilt4 + afilt6 + afilt8)
-        ; To the master output.
+        ; To the master output. The dry signal is the stereo inputs.
         aoutleft = ain1 * kdry + aout1 * kwet
         aoutright = ain2 * kdry + aout2 * kwet
         outleta "outleft", aoutleft
         outleta "outright", aoutright
         prints  "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
         printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), k(aoutleft), k(aoutright)
-        endin      
-          
+        endin   
+        
+          ;; Using reverbsc:
+
+          instr Reverberatorx
+          gk_Reverberator_dry = 1.0 - gk_Reverberator_wet
+          aleftin init 0
+          arightin init 0
+          aleftout init 0
+          arightout init 0
+          aleftin inleta "inleft"
+          arightin inleta "inright"
+          gi_Reverberator_delay_modulation = i(gk_Reverberator_delay_modulation)
+          ; kfblvl in [0, 1]
+          ; kfco in [0, sr/2]
+          ; ipitchm in [0, 10]
+          // Sean's reverb assumed mono input; hence collapse stereo inputs.
+          asignal = (aleftin + arightin) * .5
+          ; aoutL, aoutR reverbsc ainL, ainR, kfblvl, kfco[, israte[, ipitchm[, iskip]]] 
+          aleftout, arightout reverbsc asignal, asignal, gk_Reverberator_feedback, gk_Reverberator_frequency_cutoff, sr, gi_Reverberator_delay_modulation
+          // But the dry signal is the stereo input.
+          aleftoutmix = aleftin * gk_Reverberator_dry + aleftout * gk_Reverberator_wet
+          arightoutmix = arightin * gk_Reverberator_dry + arightout * gk_Reverberator_wet
+          outleta "outleft", aleftoutmix
+          outleta "outright", arightoutmix
+          prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+          endin
+  
           gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
           gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
           
@@ -1963,12 +1993,12 @@
           chnset gk_MasterOutput_output_level_right, "gk_MasterOutput_output_level_right"
           ;;; printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
           endin
-          
+
           </CsInstruments>
           <CsScore>
           </CsScore>
         </CsoundSynthesizer>
-    </textarea>
+  </textarea>
   <cloud5-piece></cloud5-piece>
   <cloud5-strudel style="top:8%;transform: scale(1.3);"></cloud5-strudel>
   <cloud5-shadertoy style="top:0px;"></cloud5-shadertoy>
@@ -2172,22 +2202,22 @@ note("63").cpm(120*63/64),
     // #endregion
     // #region Controls 
     cloud5_piece.control_parameters_addon = {
-    "gk_MasterOutput_level": -42.498201623676906,
-    "gk_Reverberator_feedback": 0.8642482786969479,
+    "gk_MasterOutput_level": -28.686671462336864,
+    "gk_Reverberator_feedback": 0.7984790874524715,
     "gk_Reverberator_wet": 1,
-    "gk_Reverberator_delay_modulation": 0.33,
-    "gk_Reverberator_frequency_cutoff": 12286.50703935875,
+    "gk_Reverberator_delay_modulation": 8.182098448258143,
+    "gk_Reverberator_frequency_cutoff": 17811.11910389477,
     "gk_Droner_level": -8.298222176549174,
-    "gk_Droner_partial1": 0.739,
-    "gk_Droner_partial2": 0.595,
-    "gk_Droner_partial3": 0.121,
-    "gk_Droner_partial4": 0,
-    "gk_Droner_partial5": 0.897,
-    "gk_Droner_partial6": 0,
+    "gk_Droner_partial1": 0.417,
+    "gk_Droner_partial2": 0.47600000000000003,
+    "gk_Droner_partial3": 0.213,
+    "gk_Droner_partial4": 0.601,
+    "gk_Droner_partial5": 0,
+    "gk_Droner_partial6": 0.088,
     "gk_Droner_partial7": 0.364,
-    "gk_Droner_partial8": 0.647,
-    "gk_Droner_partial9": 0.233,
-    "gk_Droner_partial10": 0.259,
+    "gk_Droner_partial8": 0,
+    "gk_Droner_partial9": 0,
+    "gk_Droner_partial10": 0,
     "gk_Blower_level": -29.344363374781626,
     "gk_Blower_attack": 1.5,
     "gk_Blower_release": 2,
