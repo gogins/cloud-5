@@ -1933,10 +1933,10 @@
         printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), k(aoutleft), k(aoutright)
         endin   
         
-          ;; Using reverbsc:
+        ;; Using reverbsc:
 
-          instr Reverberatorx
-          gk_Reverberator_dry = 1.0 - gk_Reverberator_wet
+        instr Reverberatorx
+          gk_Reverberator_dry = 1. - gk_Reverberator_wet
           aleftin init 0
           arightin init 0
           aleftout init 0
@@ -1948,9 +1948,10 @@
           ; kfco in [0, sr/2]
           ; ipitchm in [0, 10]
           // Sean's reverb assumed mono input; hence collapse stereo inputs.
-          asignal = (aleftin + arightin) * .5
+          asignal_l = (aleftin + arightin) * .5
+          asignal_r = asignal_l
           ; aoutL, aoutR reverbsc ainL, ainR, kfblvl, kfco[, israte[, ipitchm[, iskip]]] 
-          aleftout, arightout reverbsc asignal, asignal, gk_Reverberator_feedback, gk_Reverberator_frequency_cutoff, sr, gi_Reverberator_delay_modulation
+          aleftout, arightout reverbsc asignal_l, asignal_r, gk_Reverberator_feedback, gk_Reverberator_frequency_cutoff, sr, gi_Reverberator_delay_modulation
           // But the dry signal is the stereo input.
           aleftoutmix = aleftin * gk_Reverberator_dry + aleftout * gk_Reverberator_wet
           arightoutmix = arightin * gk_Reverberator_dry + arightout * gk_Reverberator_wet
@@ -2005,9 +2006,9 @@
   <cloud5-log></cloud5-log>
   <cloud5-about>
     <div>
-      <h1 style="font-size: 15px;">Polymetric</h1>
+      <h1 style="font-size: 15px;">Droner</h1>
       <h2 style="font-size: 13px">Michael Gogins<br>
-        March 2024</h2>
+        June 2025</h2>
 
       <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License"
           style="border-width:0;" src="cc-by-nc-sa.png" /></a>
@@ -2028,7 +2029,7 @@
         piece, Strudel sends its notes to Csound for synthesis.
 
         <p>The Strudel patch for this piece is adapted from an uncredited 
-        <i><polyrhythms</i> example in the <a href="https://strudel.cc/">
+        <i>polyrhythms</i> example in the <a href="https://strudel.cc/">
           online Strudel REPL</a>. The polyrhythmic cycling pattern is then filtered 
           through a just intonation scale that, in turn, cycles through a chord 
           progression that is out of phase with the polyrhythmic pattern. Thus, 
@@ -2110,7 +2111,7 @@
 const csac = await import('../csoundac.mjs');
 // csac.diagnostic_level(csac.INFORMATION);
 
-// Just intonation on concert C, from a Scala file.
+// Just intonation for concert C, ratios from Scala.
 let scale = csac.Scale('C_major');
 scale.set_ratio(0, 1, 1);
 scale.set_ratio(1, 9, 8);
@@ -2121,100 +2122,43 @@ scale.set_ratio(5, 5, 3);
 scale.set_ratio(6, 15, 8);
 let scalePattern = new csac.ScalePatterns(scale, 2);
 
-// From the "polyrhythms" example.
+// Adapting the "polyrhythms" example.
+
+function scale_velocity_by_key(pitch, baseCpm = 120, concavity = 1.2) {
+    const minVel = 30;
+    const maxVel = 127;
+    const scaled = Math.pow(1 - (pitch / 127), concavity);
+    const velocity = minVel + scaled * (maxVel - minVel);
+    return note(pitch).cpm(baseCpm * pitch / 64).velocity(velocity);
+}
 
 stack(
-note("0").cpm(120*0/64),
-note("1").cpm(120*1/64),
-note("2").cpm(120*2/64),
-note("3").cpm(120*3/64),
-note("4").cpm(120*4/64),
-note("5").cpm(120*5/64),
-note("6").cpm(120*6/64),
-note("7").cpm(120*7/64),
-note("8").cpm(120*8/64),
-note("9").cpm(120*9/64),
-note("10").cpm(120*10/64),
-note("11").cpm(120*11/64),
-note("12").cpm(120*12/64),
-note("13").cpm(120*13/64),
-note("14").cpm(120*14/64),
-note("15").cpm(120*15/64),
-note("16").cpm(120*16/64),
-note("17").cpm(120*17/64),
-note("18").cpm(120*18/64),
-note("19").cpm(120*19/64),
-note("20").cpm(120*20/64),
-note("21").cpm(120*21/64),
-note("22").cpm(120*22/64),
-note("23").cpm(120*23/64),
-note("24").cpm(120*24/64),
-note("25").cpm(120*25/64),
-note("26").cpm(120*26/64),
-note("27").cpm(120*27/64),
-note("28").cpm(120*28/64),
-note("29").cpm(120*29/64),
-note("30").cpm(120*30/64),
-note("31").cpm(120*31/64),
-note("32").cpm(120*32/64),
-note("33").cpm(120*33/64),
-note("34").cpm(120*34/64),
-note("35").cpm(120*35/64),
-note("36").cpm(120*36/64),
-note("37").cpm(120*37/64),
-note("38").cpm(120*38/64),
-note("39").cpm(120*39/64),
-note("40").cpm(120*40/64),
-note("41").cpm(120*41/64),
-note("42").cpm(120*42/64),
-note("43").cpm(120*43/64),
-note("44").cpm(120*44/64),
-note("45").cpm(120*45/64),
-note("46").cpm(120*46/64),
-note("47").cpm(120*47/64),
-note("48").cpm(120*48/64),
-note("49").cpm(120*49/64),
-note("50").cpm(120*50/64),
-note("51").cpm(120*51/64),
-note("52").cpm(120*52/64),
-note("53").cpm(120*53/64),
-note("54").cpm(120*54/64),
-note("55").cpm(120*55/64),
-note("56").cpm(120*56/64),
-note("57").cpm(120*57/64),
-note("58").cpm(120*58/64),
-note("59").cpm(120*59/64),
-note("60").cpm(120*60/64),
-note("61").cpm(120*61/64),
-note("62").cpm(120*62/64),
-note("63").cpm(120*63/64),
+  ...Array.from({ length: 64 }, (_, i) => scale_velocity_by_key(i))
 )
-.slow(40)
-.csoundn("<1 2 4>").color("red green blue")
+.slow(120)
+.csoundn("<1 4>").color("red green")
 .acSS(scalePattern, "<1 2 7 1 11 5 7>/11")
-///.acSM(scalePattern, "<0 1 1 0 3 2>/24")
 .acSCV(scalePattern)
 .transpose("20")
 .pan("<.1 .5 .8 .3 .7 .25>")
 .gain(.7)
-.pianoroll({labels:1,fold:0,scaleauto:1,minMidi:0,maxMidi:127,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
-        `;
+.pianoroll({labels:1,fold:0,scaleauto:1,minMidi:0,maxMidi:127,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})        `;
     // #endregion
     // #region Controls 
     cloud5_piece.control_parameters_addon = {
-    "gk_MasterOutput_level": -28.686671462336864,
-    "gk_Reverberator_feedback": 0.7984790874524715,
+    "gk_MasterOutput_level": -33.94820676189498,
+    "gk_Reverberator_feedback": 0.7919021683280238,
     "gk_Reverberator_wet": 1,
-    "gk_Reverberator_delay_modulation": 8.182098448258143,
-    "gk_Reverberator_frequency_cutoff": 17811.11910389477,
+    "gk_Reverberator_delay_modulation": 1.4078717500770732,
+    "gk_Reverberator_frequency_cutoff": 6100,
     "gk_Droner_level": -8.298222176549174,
     "gk_Droner_partial1": 0.417,
     "gk_Droner_partial2": 0.47600000000000003,
     "gk_Droner_partial3": 0.213,
     "gk_Droner_partial4": 0.601,
-    "gk_Droner_partial5": 0,
-    "gk_Droner_partial6": 0.088,
-    "gk_Droner_partial7": 0.364,
+    "gk_Droner_partial5": 0.187,
+    "gk_Droner_partial6": 0.042,
+    "gk_Droner_partial7": 0.101,
     "gk_Droner_partial8": 0,
     "gk_Droner_partial9": 0,
     "gk_Droner_partial10": 0,
@@ -2231,7 +2175,7 @@ note("63").cpm(120*63/64),
     "gk_Buzzer_level": -26.71359572500257,
     "gk_Buzzer_harmonics": 1.3688212927756656,
     "gk_FilteredSines_level": 31,
-    "gk_ZakianFlute_level": 25.901757270578557,
+    "gk_ZakianFlute_level": -8.298222176549174,
     "gk_FMWaterBell_level": 41.67694204685574,
     "gi_FMWaterBell_attack": 0.002,
     "gi_FMWaterBell_release": 0.01,
@@ -2245,7 +2189,7 @@ note("63").cpm(120*63/64),
     "gk_Guitar_level": 0,
     "gk_Kung2_level": 3.534730785039045,
     "gk_Kung4_level": -16.19052512588634,
-    "gk_Phaser_level": -21.452060425444458,
+    "gk_Phaser_level": -32.63282293700544,
     "gk_Phaser_ratio1": 2,
     "gk_Phaser_ratio2": 3,
     "gk_Phaser_index1": 1.0266159695817492,
@@ -2255,11 +2199,11 @@ note("63").cpm(120*63/64),
     "gk_Shiner_attack": 0.125,
     "gk_Shiner_release": 0.5,
     "gk_SeidelHarmonicOsc_level": 33.794060219915735,
-    "gk_Sweeper_level": 28.532524920357616,
+    "gk_Sweeper_level": 13.405610934128042,
     "gk_Sweeper_britel": 0.14222587606618026,
-    "gk_Sweeper_briteh": 1.0893022299866406,
-    "gk_Sweeper_britels": 1.6417634364402425,
-    "gk_Sweeper_britehs": 1.4576097009557085,
+    "gk_Sweeper_briteh": 2.2994553488850067,
+    "gk_Sweeper_britels": 0.37899496454629533,
+    "gk_Sweeper_britehs": 2.2468399958894256,
     "gk_TubularBell_level": -6.982838351659645,
     "gk_YiString_level": 0,
     "gk_Xing_level": 0,
@@ -2289,68 +2233,12 @@ note("63").cpm(120*63/64),
     cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial8', 0., 1., .001);
     cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial9', 0., 1., .001);
     cloud5_piece.menu_slider_addon(Droner, 'gk_Droner_partial10', 0., 1., .001);
-    var Blower = cloud5_piece.menu_folder_addon('Blower');
-    cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_level', -50, 50);
-    cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_attack', 0, 2);
-    cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_release', 0, 4);
-    cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainDensity', 0, 400);
-    cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainDuration', 0, .5);
-    cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainAmplitudeRange', 0, 400);
-    cloud5_piece.menu_slider_addon(Blower, 'gk_Blower_grainFrequencyRange', 0, 100);
-    var Bower = cloud5_piece.menu_folder_addon('Bower');
-    cloud5_piece.menu_slider_addon(Bower, 'gk_Bower_level', -50, 50);
-    cloud5_piece.menu_slider_addon(Bower, 'gk_Bower_pressure', 0, 5);
-    cloud5_piece.menu_slider_addon(Bower, 'gk_Bower_rat', 0, .5);
-    var Buzzer = cloud5_piece.menu_folder_addon('Buzzer');
-    cloud5_piece.menu_slider_addon(Buzzer, 'gk_Buzzer_level', -50, 50);
-    cloud5_piece.menu_slider_addon(Buzzer, 'gk_Buzzer_harmonics', 0, 20);
-    var FilteredSines = cloud5_piece.menu_folder_addon('Filtered Sines');
-    cloud5_piece.menu_slider_addon(FilteredSines, 'gk_FilteredSines_level', -50, 50);
-    var Flute = cloud5_piece.menu_folder_addon('Zakian Flute');
-    cloud5_piece.menu_slider_addon(Flute, 'gk_ZakianFlute_level', -50, 50);
-    var FMWaterBell = cloud5_piece.menu_folder_addon('FMWaterBell');
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_level', -50, 50);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gi_FMWaterBell_attack', 0, .1);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gi_FMWaterBell_release', 0, .1);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gi_FMWaterBell_exponent', -30, 30);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gi_FMWaterBell_sustain', 0, 20);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gi_FMWaterBell_sustain_level', 0, 1);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_crossfade', 0, 1);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_index', 0, 15);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_vibrato_depth', 0, 10);
-    cloud5_piece.menu_slider_addon(FMWaterBell, 'gk_FMWaterBell_vibrato_rate', 0, 10);
-    var Guitar = cloud5_piece.menu_folder_addon('Guitar');
-    cloud5_piece.menu_slider_addon(Guitar, 'gk_Guitar_level', -50, 50);
-    var Kung2 = cloud5_piece.menu_folder_addon('Kung2');
-    cloud5_piece.menu_slider_addon(Kung2, 'gk_Kung2_level', -50, 50);
-    var Kung4 = cloud5_piece.menu_folder_addon('Kung4');
-    cloud5_piece.menu_slider_addon(Kung4, 'gk_Kung4_level', -50, 50);
-    var Phaser = cloud5_piece.menu_folder_addon('Phaser');
-    cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_level', -50, 50);
-    cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_ratio1', 0, 5);
-    cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_ratio2', 0, 5);
-    cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_index1', 0, 15);
-    cloud5_piece.menu_slider_addon(Phaser, 'gk_Phaser_index2', 0, 15);
-    var Plucked = cloud5_piece.menu_folder_addon('Plucked');
-    cloud5_piece.menu_slider_addon(Plucked, 'gk_Plucked_level', -50, 50);
-    var Shiner = cloud5_piece.menu_folder_addon('Shiner');
-    cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_level', -50, 50);
-    cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_attack', 0, 1);
-    cloud5_piece.menu_slider_addon(Shiner, 'gk_Shiner_release', 0, 4);
-    var SeidelHarmonicOsc = cloud5_piece.menu_folder_addon('SeidelHarmonicOsc');
-    cloud5_piece.menu_slider_addon(SeidelHarmonicOsc, 'gk_SeidelHarmonicOsc_level', -50, 50);
     var Sweeper = cloud5_piece.menu_folder_addon('Sweeper');
     cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_level', -50, 50);
     cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britel', 0, 4);
     cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_briteh', 0, 4);
     cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britels', 0, 4);
     cloud5_piece.menu_slider_addon(Sweeper, 'gk_Sweeper_britehs', 0, 4);
-    var TubularBell = cloud5_piece.menu_folder_addon('TubularBell');
-    cloud5_piece.menu_slider_addon(TubularBell, 'gk_TubularBell_level', -50, 50);
-    var YiString = cloud5_piece.menu_folder_addon('YiString');
-    cloud5_piece.menu_slider_addon(YiString, 'gk_YiString_level', -50, 50);
-    var Xing = cloud5_piece.menu_folder_addon('Xing');
-    cloud5_piece.menu_slider_addon(Xing, 'gk_Xing_level', -50, 50);
     //#endregion
     // #region Shader
     let cloud5_shader = document.querySelector('cloud5-shadertoy');
