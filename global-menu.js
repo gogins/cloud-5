@@ -29,7 +29,7 @@ function injectGlobalMenuList() {
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='cloud_music_no_14.html'">Cloud Music No. 14</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='cancycle.html'">Cancycle</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='droner.html'">Droner</li>
-        <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='polymetric.html'">Polymetric</li>
+        <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='circler.html'">Circler</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='scrims.html'">Scrims</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='trichord_space.cloud5.html'">Trichord Space</li>
     `;
