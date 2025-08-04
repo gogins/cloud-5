@@ -313,9 +313,11 @@ class Cloud5Piece extends HTMLElement {
       // Start recording if not already recording, 
       // stop recording if already recording.
       if (menu_item_record.innerText == "Record") {
+        let output_soundfile_name = document.title + ".wav";
+        this.csound?.setControlChannel("gS_MasterOutput_filename", output_soundfile_name);
         this.csound?.setControlChannel("gk_record", 1);
         menu_item_record.innerText = "Pause";
-        this.log("Csound has started recording...\n");
+        this.log("Csound has started recording to: " + output_soundfile_name + "\n");
       } else {
         this.csound?.setControlChannel("gk_record", 0);
         menu_item_record.innerText = "Record";
@@ -484,9 +486,9 @@ class Cloud5Piece extends HTMLElement {
    * the audio output interface, but optionally to a local soundfile. Acts as an 
    * async member function because it is bound to this.
    * 
-   * @param {Boolean} is_offline If true, renders to a local soundfile.
+   * @param {Boolean} write_soundfile If true, renders to a local soundfile.
    */
-  render = async function (is_offline) {
+  render = async function (write_soundfile) {
     this.csound = await get_csound((message) => this.csound_message_callback(message));
     if (non_csound(this.csound)) {
       return;
@@ -510,9 +512,6 @@ class Cloud5Piece extends HTMLElement {
         csd = this.csound_code_addon.replace("</CsScore>", csound_score);
       }
     }
-    if (is_offline == true) {
-      csd = csd.replace("-odac", "-o" + document.title + ".wav");
-    }
     // Save the .csd file so we can debug a failing orchestra,
     // instead of it just nullifying Csound.        
     const csd_filename = document.title + '-generated.csd';
@@ -525,6 +524,10 @@ class Cloud5Piece extends HTMLElement {
     }
     await this.csound.start();
     this.csound_message_callback("Csound has started...\n");
+    if (write_soundfile == true) {
+      this.csound?.setControlChannel("gk_record", 1);
+      this.log("Csound has started recording...\n");
+    }
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.
     this.send_parameters(this.control_parameters_addon);
@@ -535,7 +538,7 @@ class Cloud5Piece extends HTMLElement {
     // values defined in the control parameters addon.
     csd = this.update_parameters_in_csd(csd, this.control_parameters_addon);
     write_file(csd_filename_parameters, csd);
-    if (is_offline == false) {
+    if (write_soundfile == false) {
       if (!(this?.csound.getNode)) {
         this.csound.perform();
       }
@@ -1335,14 +1338,14 @@ class Cloud5ShaderToy extends HTMLElement {
       if (csound) {
         var node;
         if (typeof csound.getNode == 'undefined') {
-          node = csound;
+          /// node = csound;
         } else {
           node = await csound.getNode()
+          this.analyser = new AnalyserNode(node.context);
+          this.analyser.fftSize = 2048;
+          console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
+          node.connect(this.analyser);
         }
-        this.analyser = new AnalyserNode(node.context);
-        this.analyser.fftSize = 2048;
-        console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
-        node.connect(this.analyser);
       }
     }
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -1442,9 +1445,10 @@ try {
 }
 
 /**
- * The title of a piece is always the basename of the document.
+ * The title of the document and of the piece is always the basename of 
+ * the HTML file.
  */
-document.title = document.location.pathname.replace("/", "").replace(".html", "");
+document.title = document.location.pathname.replace(/\.[^/.]+$/, ''); // removes only the last extension
 
 /**
  * Tries to clear all browser caches upon loading.
@@ -1730,7 +1734,7 @@ function downsample_lttb(data, buckets) {
   * All such files exist by default in the Emscripten MEMFS filesystem 
   * at '/'.
   */
-async function url_for_soundfile(csound) {
+async function url_for_soundfilex(csound) {
   try {
     let soundfile_name = document.title + ".wav";
     // But see https://mimetype.io/audio/vnd.wav.
@@ -1753,6 +1757,28 @@ async function url_for_soundfile(csound) {
     console.log(x);
   }
 }
+
+async function url_for_soundfile(csound) {
+  try {
+    let soundfile_name = document.title + ".wav";
+    let mime_type = "audio/wav";
+    let file_data = await csound.GetFileData(soundfile_name);
+    console.info(`Offering download of "${soundfile_name}", with ${file_data.length} bytes...`);
+    var a = document.createElement('a');
+    a.download = soundfile_name;
+    a.href = URL.createObjectURL(new Blob([file_data], { type: mime_type }));
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    requestAnimationFrame(() => a.click());
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }, 2000);
+  } catch (x) {
+    console.error("Download failed:", x);
+  }
+}
+
 
 /**
  * Generates a new copy(s) of the Score in canon to the original, at the 

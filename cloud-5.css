@@ -85,7 +85,7 @@ cloud5-log {
   position: fixed;
   top: 0px;
   left: 0px;
-  visibility: none;
+  visibility: visible;
   display: block;
   padding: 20px;
   padding-left: 60px;
@@ -171,6 +171,7 @@ cloud5-piano-roll {
  cloud5-strudel {
   z-index: 60;
  }
+ 
 /**
  * Override styles of dat.gui menu to suit our styles.
  */
