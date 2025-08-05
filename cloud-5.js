@@ -328,7 +328,9 @@ class Cloud5Piece extends HTMLElement {
     let menu_item_stop = document.querySelector('#menu_item_stop');
     menu_item_stop.onclick = ((event) => {
       console.info("menu_item_stop click...");
+      this.csound?.setControlChannel("gk_record", 0);
       this.stop();
+      let soundefile_url = url_for_soundfile(this.csound);
     });
     let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
     menu_item_fullscreen.onclick = (async (event) => {
@@ -1445,10 +1447,10 @@ try {
 }
 
 /**
- * The title of the document and of the piece is always the basename of 
- * the HTML file.
+ * The title of the document and of the piece is always the filename part, 
+ * without extension, of the HTML file.
  */
-document.title = document.location.pathname.replace(/\.[^/.]+$/, ''); // removes only the last extension
+document.title = get_filename(document.location.href)
 
 /**
  * Tries to clear all browser caches upon loading.
@@ -1815,6 +1817,16 @@ function canon(CsoundAC, csoundac_score, delay, transposition, layers, csoundac_
   return new_score;
 }
 
+function get_filename(pathOrUrl) {
+    const parts = pathOrUrl.split('/');
+    let filename = parts.pop() || parts.pop(); // handles trailing slash
+    const dotIndex = filename.lastIndexOf('.');
+    if (dotIndex > 0) {
+        return filename.slice(0, dotIndex);
+    } else {
+        return filename; // No extension
+    }
+}
 
 
 
