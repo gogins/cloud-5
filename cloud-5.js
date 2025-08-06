@@ -314,23 +314,26 @@ class Cloud5Piece extends HTMLElement {
       // stop recording if already recording.
       if (menu_item_record.innerText == "Record") {
         let output_soundfile_name = document.title + ".wav";
-        this.csound?.setControlChannel("gS_MasterOutput_filename", output_soundfile_name);
-        this.csound?.setControlChannel("gk_record", 1);
+        this.csound?.setStringChannel("gS_cloud5_soundfile_name", output_soundfile_name);
+        this.csound?.setControlChannel("gk_cloud5_record", 1);
         menu_item_record.innerText = "Pause";
         this.log("Csound has started recording to: " + output_soundfile_name + "\n");
       } else {
-        this.csound?.setControlChannel("gk_record", 0);
+        this.csound?.setControlChannel("gk_cloud5_record", 0);
         menu_item_record.innerText = "Record";
         this.log("Csound has stopped recording.\n");
-        let soundefile_url = url_for_soundfile(this.csound);
+        let soundfile_url = url_for_soundfile(this.csound);
       }
     });
     let menu_item_stop = document.querySelector('#menu_item_stop');
     menu_item_stop.onclick = ((event) => {
       console.info("menu_item_stop click...");
-      this.csound?.setControlChannel("gk_record", 0);
+      this.csound?.setControlChannel("gk_cloud5_record", 0);
       this.stop();
-      let soundefile_url = url_for_soundfile(this.csound);
+      if(this.is_rendering) {
+        let soundfile_url = url_for_soundfile(this.csound);
+        this.is_rendering = false;
+      }
     });
     let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
     menu_item_fullscreen.onclick = (async (event) => {
@@ -484,14 +487,15 @@ class Cloud5Piece extends HTMLElement {
    * 
    * @memberof Cloud5Piece
    * 
-   * @description Invokes Csound and/or Strudel to perform music, by default to 
-   * the audio output interface, but optionally to a local soundfile. Acts as an 
-   * async member function because it is bound to this.
+   * @description Invokes Csound and/or Strudel to perform music, by default 
+   * to the audio output interface, but optionally also to a local soundfile. 
+   * Acts as an async member function because it is bound to this.
    * 
    * @param {Boolean} write_soundfile If true, renders to a local soundfile.
    */
   render = async function (write_soundfile) {
     this.csound = await get_csound((message) => this.csound_message_callback(message));
+    this.is_rendering = write_soundfile;
     if (non_csound(this.csound)) {
       return;
     }
@@ -518,6 +522,17 @@ class Cloud5Piece extends HTMLElement {
     // instead of it just nullifying Csound.        
     const csd_filename = document.title + '-generated.csd';
     write_file(csd_filename, csd);
+    // Enable Csound to control whether to record a soundfile along with 
+    // playing audio, and what the soundfile is named.
+    const output_soundfile_name = document.title + ".wav";
+    this.csound?.setStringChannel("gS_cloud5_soundfile_name", output_soundfile_name);
+    if (write_soundfile == true) {
+      this.csound?.setControlChannel("gk_cloud5_record", 1);
+      this.log("Csound has started rendering to " + output_soundfile_name + "...\n");
+    } else {
+      this.csound?.setControlChannel("gk_cloud5_record", 0);
+      this.log("Csound is not rendering a soundile.\n")
+    }
     try {
       let result = await this.csound.compileCsdText(csd);
       this.csound_message_callback("CompileCsdText returned: " + result + "\n");
@@ -526,10 +541,6 @@ class Cloud5Piece extends HTMLElement {
     }
     await this.csound.start();
     this.csound_message_callback("Csound has started...\n");
-    if (write_soundfile == true) {
-      this.csound?.setControlChannel("gk_record", 1);
-      this.log("Csound has started recording...\n");
-    }
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.
     this.send_parameters(this.control_parameters_addon);
@@ -1734,11 +1745,12 @@ function downsample_lttb(data, buckets) {
 /**
   * Creates a URL for a soundfile recorded by this piece.
   * All such files exist by default in the Emscripten MEMFS filesystem 
-  * at '/'.
+  * at '/', and are automatically downloaded to the user's downloads 
+  * directory.
   */
 async function url_for_soundfilex(csound) {
   try {
-    let soundfile_name = document.title + ".wav";
+    const soundfile_name = document.title + ".wav";
     // But see https://mimetype.io/audio/vnd.wav.
     let mime_type = "audio/wav";
     let file_data = await csound.GetFileData(soundfile_name);
@@ -1753,7 +1765,7 @@ async function url_for_soundfilex(csound) {
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
-    }, 2000);
+    }, 4000);
     // 
   } catch (x) {
     console.log(x);
