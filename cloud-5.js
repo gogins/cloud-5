@@ -1,3 +1,26 @@
+
+// --- Injected by PR: dynamic loader for Strudel REPL web component ---
+let __strudelReplLoaded = null;
+function loadScriptOnce(url, id) {
+  if (id && document.getElementById(id)) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    if (id) s.id = id;
+    s.src = url;
+    s.async = true;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+function ensureStrudelReplLoaded() {
+  if (!__strudelReplLoaded) {
+    __strudelReplLoaded = loadScriptOnce('https://unpkg.com/@strudel/repl@1.2.4', 'strudel-repl-loader');
+  }
+  return __strudelReplLoaded;
+}
+// --- End injected helper ---
+
 /**
  * This script defines custom HTML elements and supporting code for the 
  * cloud-5 system. Once a custom element is used in the body of a Web page, 
@@ -557,11 +580,10 @@ class Cloud5Piece extends HTMLElement {
       }
       if (typeof strudel_view !== 'undefined') {
         if (strudel_view !== null) {
-          console.info("strudel_view:", this.strudel_view);
-          strudel_view?.setCsound(this.csound);
-          strudel_view?.setCsoundAC(this.csoundac);
-          strudel_view?.setParameters(this.control_parameters_addon);
-          strudel_view?.startPlaying();
+          console.info("strudel_view:", this.strudel_view);          globalThis.__csound__ = this.csound;
+          globalThis.__csoundac__ = this.csoundac;
+          globalThis.__parameters__ = this.control_parameters_addon;
+          strudel_view?.start?.();
         }
       }
     } else {
@@ -869,13 +891,15 @@ class Cloud5Strudel extends HTMLElement {
   constructor() {
     super();
   }
-  connectedCallback() {
+  async connectedCallback() { await ensureStrudelReplLoaded();
     this.innerHTML = `
-    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;z-index:4001;'>
+    <strudel-editor id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;z-index:4001;'>
+
         <!--
         ${this.#strudel_code_addon}
         -->
-    </strudel-repl-component>
+    
+</strudel-editor>
     `;
     this.strudel_component = this.querySelector('#strudel_view');
     this.strudel_component.addEventListener("focusout", (event) => {
@@ -889,14 +913,14 @@ class Cloud5Strudel extends HTMLElement {
    * Starts the Strudel performance loop (the Cyclist).
    */
   start() {
-    this.strudel_component.startPlaying();
+    this.strudel_component.start?.();
 
   }
   /**
    * Stops the Strudel performance loop (the Cyclist).
    */
   stop() {
-    this.strudel_component.stopPlaying();
+    this.strudel_component.stop?.();
 
   }
   #strudel_code_addon = null;
