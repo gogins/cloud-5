@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- Pin the version to avoid breaking changes -->
+    <script src="https://unpkg.com/@strudel/repl@1.2.4"></script>
+  </head>
+  <body>
+    <div style="margin:8px 0;">
+      <button id="start">Start</button>
+      <button id="stop">Stop</button>
+    </div>
+
+    <strudel-editor id="repl">
+      <!--
+      setcps(1)
+      // keep this simple first to rule out sample-loading issues:
+      s("bd sd") .room(0.3)
+      -->
+    </strudel-editor>
+
+    <script>
+      customElements.whenDefined('strudel-editor').then(() => {
+        const repl = document.getElementById('repl');
+        const start = () => { repl.editor.evaluate(); repl.editor.start(); };
+        const stop  = () => { repl.editor.stop(); };
+
+        document.getElementById('start').addEventListener('click', start);
+        document.getElementById('stop').addEventListener('click', stop);
+      });
+    </script>
+  </body>
+</html>

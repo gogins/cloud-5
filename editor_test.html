@@ -1,0 +1,51 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://unpkg.com/@strudel/repl@latest"></script>
+    <style>
+      .controls{margin:8px 0; display:flex; gap:.5rem}
+      button{padding:.5rem .8rem; font:inherit; cursor:pointer}
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <button id="start">Start</button>
+      <button id="stop">Stop</button>
+    </div>
+
+    <strudel-editor id="repl">
+      <!--
+      setcps(1)
+      n("<0 1 2 3 4>*8").scale('G4 minor')
+      .s("gm_lead_6_voice")
+      .clip(sine.range(.2,.8).slow(8))
+      .jux(rev)
+      .room(2)
+      .sometimes(add(note("12")))
+      .lpf(perlin.range(200,20000).slow(4))
+      -->
+    </strudel-editor>
+
+    <script>
+      // Ensure the custom element is defined before touching its API
+      customElements.whenDefined('strudel-editor').then(() => {
+        const repl = document.getElementById('repl');
+
+        // Helper: (re-)evaluate code in the editor and start playback
+        const startPlayback = () => {
+          // Evaluate whatever is currently in the editor
+          repl.editor.evaluate();
+          // Start the transport / playback
+          repl.editor.start();
+        };
+
+        const stopPlayback = () => {
+          repl.editor.stop();
+        };
+
+        document.getElementById('start').addEventListener('click', startPlayback);
+        document.getElementById('stop').addEventListener('click', stopPlayback);
+      });
+    </script>
+  </body>
+</html>

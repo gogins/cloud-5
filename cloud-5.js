@@ -1,25 +1,40 @@
-
-// --- Injected by PR: dynamic loader for Strudel REPL web component ---
+let __strudelWebLoaded  = null;
 let __strudelReplLoaded = null;
-function loadScriptOnce(url, id) {
+
+function loadScriptOnce(url, id, { module = false } = {}) {
   if (id && document.getElementById(id)) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     if (id) s.id = id;
-    s.src = url;
+    if (module) s.type = 'module';
     s.async = true;
+    s.src = url;
     s.onload = resolve;
     s.onerror = reject;
     document.head.appendChild(s);
   });
 }
+
+function ensureStrudelWebLoaded() {
+  if (!__strudelWebLoaded) {
+    __strudelWebLoaded = loadScriptOnce(
+      "https://unpkg.com/@strudel/web@1.0.3",
+      "strudel-web-loader"
+    );
+  }
+  return __strudelWebLoaded;
+}
+
 function ensureStrudelReplLoaded() {
   if (!__strudelReplLoaded) {
-    __strudelReplLoaded = loadScriptOnce('https://unpkg.com/@strudel/repl@1.2.4', 'strudel-repl-loader');
+    __strudelReplLoaded = loadScriptOnce(
+      "https://unpkg.com/@strudel/repl@1.2.4",
+      "strudel-repl-loader",
+      { module: true }
+    );
   }
   return __strudelReplLoaded;
 }
-// --- End injected helper ---
 
 /**
  * This script defines custom HTML elements and supporting code for the 
@@ -298,7 +313,8 @@ class Cloud5Piece extends HTMLElement {
         <li id="menu_item_log" title="Show/hide message log" class="w3-btn w3-hover-text-light-green">Log
         </li>
         <li id="menu_item_about" title="Show/hide information about this piece"
-            class="w3-btn w3-hover-text-light-green">About ${filename}</li>
+            class="w3-btn w3-hover-text-light-green">About ${filename}
+        </li>
         <li id="mini_console" class="w3-btn w3-text-green w3-hover-text-light-green"></li>
         <li id="vu_meter_left" class="w3-btn w3-hover-text-light-green"></li>
         <li id="vu_meter_right" class="w3-btn w3-hover-text-light-green"></li>
@@ -524,6 +540,10 @@ class Cloud5Piece extends HTMLElement {
     }
     this?.log_overlay.clear();
     this.csoundac = await createCsoundAC();
+
+
+
+
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -578,13 +598,20 @@ class Cloud5Piece extends HTMLElement {
       if (!(this?.csound.getNode)) {
         this.csound.perform();
       }
-      if (typeof strudel_view !== 'undefined') {
-        if (strudel_view !== null) {
-          console.info("strudel_view:", this.strudel_view);          globalThis.__csound__ = this.csound;
-          globalThis.__csoundac__ = this.csoundac;
-          globalThis.__parameters__ = this.control_parameters_addon;
-          strudel_view?.start?.();
-        }
+// after you have this.csound and this.csoundac:
+globalThis.__csound__     = this.csound;
+globalThis.__csoundac__   = this.csoundac;
+globalThis.__parameters__ = this.control_parameters_addon || {};
+
+const el = document.querySelector('cloud5-strudel');
+if (el) {
+  await el.prime(this.csound, this.csoundac, this.control_parameters_addon);
+  el.start(); // injects code, evaluate(), then start()
+}
+      const cloud5StrudelEl = document.querySelector('cloud5-strudel');
+      if (cloud5StrudelEl) {
+          await cloud5StrudelEl.prime(this.csound, this.csoundac, this.control_parameters_addon);
+          cloud5StrudelEl.start();
       }
     } else {
       // Returns before finishing because Csound will perform in a separate 
@@ -888,69 +915,82 @@ customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
  * and that starts and stops along wth Csound.
  */
 class Cloud5Strudel extends HTMLElement {
-  constructor() {
-    super();
-  }
-  async connectedCallback() { await ensureStrudelReplLoaded();
-    this.innerHTML = `
-    <strudel-editor id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;z-index:4001;'>
+  constructor() { super(); }
 
-        <!--
-        ${this.#strudel_code_addon}
-        -->
-    
-</strudel-editor>
-    `;
-    this.strudel_component = this.querySelector('#strudel_view');
-    this.strudel_component.addEventListener("focusout", (event) => {
-      console.log("strudel_component lost focus.");
-    });
-
-    let menu_button = document.getElementById("menu_item_strudel");
-    menu_button.style.display = 'inline';
+async connectedCallback() {
+  // --- Neutralize the obsolete uzu kit requested by the REPL ---
+  if (!window.__cloud5UzuSilenced__) {
+    window.__cloud5UzuSilenced__ = true;
+    const origFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (/\buzu-drumkit\.json(\?|$)/i.test(url)) {
+        // Return an empty, valid JSON instead of 404 HTML; avoids REPL parse errors.
+        return Promise.resolve(new Response("{}", {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }));
+      }
+      return origFetch(input, init);
+    };
   }
-  /**
-   * Starts the Strudel performance loop (the Cyclist).
-   */
-  start() {
-    this.strudel_component.start?.();
+  // -------------------------------------------------------------
 
+  // (Keep the rest of your connectedCallback exactly as you have it)
+  await ensureStrudelWebLoaded?.();   // if you're using @strudel/web
+  await ensureStrudelReplLoaded();    // your existing loader for @strudel/repl
+
+  let el = this.querySelector('#strudel_view');
+  if (!el) {
+    el = document.createElement('strudel-editor');
+    el.id = 'strudel_view';
+    el.className = 'cloud5-strudel-repl';
+    el.setAttribute('style', 'position:fixed;z-index:4001;');
+    this.appendChild(el);
   }
-  /**
-   * Stops the Strudel performance loop (the Cyclist).
-   */
+  this.strudel_component = el;
+}
+
+async prime(csound, csoundac, parameters) {
+  await ensureStrudelReplLoaded(); // already loaded, but safe
+  this.__cs     = csound;
+  this.__csac   = csoundac;
+  this.__params = parameters || {};
+  // also exposed above via globalThis for any imports
+}
+
+start() {
+  const el = this.strudel_component || this.querySelector('#strudel_view');
+  if (!el) return;
+  // clear previous
+  while (el.firstChild) el.removeChild(el.firstChild);
+  // inject your Strudel source safely (no literal <!-- in JS)
+  const code = (this.#strudel_code_addon ?? '').toString();
+  el.appendChild(document.createComment('\n' + code + '\n'));
+  if (typeof el.evaluate === 'function') el.evaluate();
+  if (typeof el.start    === 'function') el.start();
+}
+
   stop() {
-    this.strudel_component.stop?.();
+    const el = this.strudel_component || this.querySelector('#strudel_view');
+    if (el && typeof el.stop === 'function') el.stop();
+  }
 
-  }
-  #strudel_code_addon = null;
-  /**
-    * Contains the text of a user-defined Strudel patch, exactly as would 
-    * normally be entered by the user in the Strudel REPL. This patch may 
-    * also import and reference modules defined by the cloud-5 system, such 
-    * as statefulpatterns.mjs or csoundac.js.
-    */
-  set strudel_code_addon(code) {
-    this.#strudel_code_addon = code;
-    // Reconstruct the element.
-    this.connectedCallback();
-  }
-  get strudel_code_addon() {
-    return this.#strudel_code_addon;
-  }
+
+  // --- addons / config (NO re-entry to connectedCallback) ---
+  #strudel_code_addon = "";
+  set strudel_code_addon(code) { this.#strudel_code_addon = code ?? ""; }
+  get strudel_code_addon()     { return this.#strudel_code_addon; }
+
   #control_parameters_addon = null;
-  /**
-    * Gets or sets optional control parameters.
-    */
-  set control_parameters_addon(parameters_) {
-    this.#control_parameters_addon = parameters_;
-    globalThis.parameters = parameters_;
-    // Reconstruct the element.
-    this.connectedCallback();
+  set control_parameters_addon(obj) {
+    this.#control_parameters_addon = obj;
+    globalThis.parameters = obj;
   }
-  get control_parameters_addon() {
-    return this.#control_parameters_addon;
-  }
+  get control_parameters_addon() { return this.#control_parameters_addon; }
+
+  // Optional hook if you still need a menu folder addon; guard its use
+  menu_folder_addon = null;
 }
 customElements.define("cloud5-strudel", Cloud5Strudel);
 
