@@ -1,0 +1,26 @@
+name: Strudel tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: docker
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: apt install ztd
+        run: apt update && apt install -y zstd
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm run format-check
+      - run: pnpm run lint
+      - run: pnpm test

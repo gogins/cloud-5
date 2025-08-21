@@ -1,0 +1,37 @@
+name: Build and Deploy
+
+on: [workflow_dispatch]
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: docker
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # cache: "pnpm"
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy
+        run: |
+          eval $(ssh-agent -s)
+          echo "$SSH_PRIVATE_KEY" | ssh-add -
+          apt update && apt install -y rsync
+          mkdir ~/.ssh
+          ssh-keyscan matrix.toplap.org  > ~/.ssh/known_hosts
+          rsync -atv --delete --delete-after --progress ./website/dist/ strudel@matrix.toplap.org:/home/strudel/deploy
