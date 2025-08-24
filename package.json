@@ -1,12 +1,12 @@
 {
-  "_comments": "The build copies cloud-5 sources in the root directory to strudel/website/public. The cloud-5 Web site runs from strudel/website/dist.",
+  "_comments": "The build copies cloud-5 sources in the root directory to strudel/website/dist. The cloud-5 Web site runs from strudel/website/dist.",
   "scripts": {
     "clean-modules": "find . -name \"node_modules\" -type d -exec rm -r {} +;",
     "setup": "git submodule update --init --recursive --remote && cd strudel && git stash && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "cd strudel && pnpm run setup && pnpm run build",
     "jsdoc": "jsdoc -c jsdoc.json",
     "package": "rm -f cloud-5.zip && zip -r cloud-5.zip . -x '*chunks*/*' -x '*.git*/*' -x '*attic*/*' -x '*tests*/*' -x '*strudel*/*' -x '*node_modules*/*' -x '*csound-wasm**/*' -x '*csound-node*/*' ",
-    "build": "cp * strudel/website/public && pnpm run build-strudel && rm CNAME && pandoc --css readme.css -s --metadata title='cloud-music' --ascii=true CLOUD-MUSIC.md -o cloud-music.html && pnpm run jsdoc && rm favicon.ico && pnpm run package",
+    "build": "pnpm run build-strudel && rm -f CNAME && pandoc --css readme.css -s --metadata title='cloud-music' --ascii=true CLOUD-MUSIC.md -o cloud-music.html && pnpm run jsdoc && rm -f favicon.ico && bash cloud-5-to-dist.sh && pnpm run package",
     "local": "cd strudel/website/dist && python3 -m http.server"
   },
   "dependencies": {
