@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Controls for 2024-ICSS</title>
+    <style type="text/css">
+        input[type='range'] {
+            box-shadow: inset 0 0 5px #333;
+            background-color: gray;
+            height: 10px;
+            width: 100%;
+            vertical-align: middle;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            border: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 7px #234;
+            background: chartreuse;
+            margin-top: -4px;
+            border-radius: 10px;
+        }
+
+        table td {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: yellow;
+            background-color: teal;
+            font-family: sans-serif
+        }
+
+        table th {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: white;
+            background-color: teal;
+            font-family: sans-serif
+        }
+
+        textarea {
+            border-width: 2px;
+            padding: 8px;
+            border-style: solid;
+            border-color: transparent;
+            color: chartreuse;
+            background-color: black;
+            font-family: 'Courier', sans-serif
+        }
+
+        h1 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-family: 'Ultra', sans-serif;
+            font-size: 36px;
+            line-height: 42px;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-size: 30px;
+            line-height: 40px;
+            font-family: 'Orienta', sans-serif;
+        }
+
+        h3 {
+            margin: 1em 0 0.5em 0;
+            color: #343434;
+            font-weight: normal;
+            font-size: 24px;
+            line-height: 30px;
+            font-family: 'Orienta', sans-serif;
+        }
+    </style>
+    <script>
+        function csound_message_callback(message) {
+            var messages_textarea = document.getElementById("csound_console");
+            var existing = messages_textarea.value;
+            messages_textarea.value = existing + message;
+            messages_textarea.scrollTop = messages_textarea.scrollHeight;
+        };
+    </script>
+</head>
+
+<body id='bodie' style="background-color:CadetBlue">
+    <script src="jquery.js"></script>
+    <h1>Compositional Controls for <i>2024-ICSC</i></h1>
+    <form id='persist'>
+        <table>
+            <col width="2*">
+            <col width="5*">
+            <col width="100px">
+            <tr>
+                <td>
+                    <label for=gk_Performance_seconds>Duration</label>
+                <td>
+                    <input class=persistent-element type=range min=-1 max=12000 value=360 id=gk_Performance_seconds
+                        step=.0001>
+                <td>
+                    <output for=gk_Performance_seconds id=gk_Performance_seconds_output>1</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=NoteTempo>Music tempo</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=200 value=60 id=NoteTempo step=.0001>
+                <td>
+                    <output for=NoteTempo id=NoteTempo_output>.005</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=VelocityThreshold>Velocity cutoff</label>
+                <td>
+                    <input class=persistent-element type=range min=5 max=200 value=.89 id=VelocityThreshold step=.001>
+                <td>
+                    <output for=VelocityThreshold id=VelocityThreshold_output>.89</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=DynamicRamge>Dynamic range</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=10 value=1 id=DynamicRange step=.001>
+                <td>
+                    <output for=DynamicRange id=DynamicRange_output>1</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=NoteDurationFactor>Note duration factor</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=5 value=1 id=NoteDurationFactor step=.001>
+                <td>
+                    <output for=NoteDurationFactor id=NoteDurationFactor_output>1</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=GraphicsTempo>Visual tempo</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=.25 value=.1 id=GraphicsTempo step=.001>
+                <td>
+                    <output for=GraphicsTempo id=GraphicsTempo_output>.1</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=GraphicsHue>Hue</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=1 value=.5 id=GraphicsHue step=.001>
+                <td>
+                    <output for=GraphicsHue id=GraphicsHue_output>.5</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=GraphicsValue>Brightness</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=1 value=.3 id=GraphicsValue step=.001>
+                <td>
+                    <output for=GraphicsValue id=GraphicsValue_output>.3</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=CanonDelay>Canon Delay</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=5 value=.5 id=CanonDelay step=.125>
+                <td>
+                    <output for=CanonDelay id=CanonDelay_output>.5</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=CanonTranspose>Canon interval</label>
+                <td>
+                    <input class=persistent-element type=range min=-12 max=12 value=5 id=CanonTranspose step=1>
+                <td>
+                    <output for=CanonTranspose id=CanonTranspose_output>5</output>
+            </tr>
+            <tr>
+                <td>
+                    <label for=CanonLayers>Canon layers</label>
+                <td>
+                    <input class=persistent-element type=range min=0 max=6 value=0 id=CanonLayers step=1>
+                <td>
+                    <output for=CanonLayers id=CanonLayers_output>1</output>
+            </tr>
+
+        </table>
+        <p>
+    </form>
+    <p>
+
+    <script>
+        $(document).ready(function () {
+            let cloud5_piece = window.opener.document.querySelector('cloud5-piece')
+            $('input').on('input', async function (event) {
+                var slider_value = parseFloat(event.target.value);
+                cloud5_piece.control_parameters_addon[event.target.id] = slider_value;
+                var output_selector = '#' + event.target.id + '_output';
+                $(output_selector).val(slider_value);
+                // Propagate changed values to primary display.
+                cloud5_piece.gk_update(event.target.id, slider_value);
+            });
+            // Initialize input values.
+            for (const [name, value] of Object.entries(cloud5_piece.control_parameters_addon)) {
+                try {
+                    console.log(`"Initialize ${name}: ${value}`)
+                     $('#' + name).val(value);
+                     var output_selector = '#' + name + '_output';
+                    $(output_selector).val(value);
+                 } catch (err) {
+                    console.error(err);
+                }
+            }    
+        });
+    </script>
+</body>
+
+</html>
