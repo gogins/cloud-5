@@ -1054,8 +1054,7 @@ void mainImage(out vec4 O, vec2 I)
         console_editor.setReadOnly(true);
         console_editor.setShowPrintMargin(false);
         console_editor.setDisplayIndentGuides(false);
-        console_editor.renderer.setOption("showGutter", false);
-        console_editor.renderer.setOption("showLineNumbers", true);
+        console_editor.renderer.setOption("showGutter", true);
         var csound_message_callback = function (message) {
             // Split in case the newline is in the middle of the message but 
             // not at the end?

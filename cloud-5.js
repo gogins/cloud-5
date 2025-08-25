@@ -1404,8 +1404,7 @@ class Cloud5Log extends HTMLElement {
     this.console_editor = ace.edit("console_view");
     this.console_editor.setShowPrintMargin(false);
     this.console_editor.setDisplayIndentGuides(false);
-    this.console_editor.renderer.setOption("showGutter", false);
-    this.console_editor.renderer.setOption("showLineNumbers", true);
+    this.console_editor.renderer.setOption("showGutter", true);
   };
   /**
    * Displays the message at the bottom of the scrolling text area.

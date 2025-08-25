@@ -856,8 +856,7 @@
         console_editor.setReadOnly(true);
         console_editor.setShowPrintMargin(false);
         console_editor.setDisplayIndentGuides(false);
-        console_editor.renderer.setOption("showGutter", false);
-        console_editor.renderer.setOption("showLineNumbers", true);
+        console_editor.renderer.setOption("showGutter", true);
         (async function () {
             CsoundAC = await createCsoundAC();
             score = new CsoundAC.Score();
