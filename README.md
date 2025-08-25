@@ -291,63 +291,45 @@ statically served from the cloud-5 directory).
 
 ## Building
 
-Building cloud-5 is not normally necessary, as pieces will run directly from 
-the root directory of the system, which is a static Web site. However, if you 
-plan to make substantial contributions to, or alterations of, cloud-5, these 
-are the instructions for building.
-
 Install [pnpm](https://www.npmjs.com/package/pnpm), which cloud-5 and 
 Strudel use rather than npm. On macOS (I don't know about other platforms), 
 you may need to specifically install node@18.
 
-To initialize the local repository, obtain dependencies, build a static Web 
-site, and run it locally, execute the following commands in the root directory:
+The fundamental assumptions of this repository are:
 
-```
-cmake .
-make
-```
-These commands will patch Strudel with my addons; build everything; and make a 
-distributable copy of the cloud-5 Web site in the repository's root directory, 
-with all resources statically served. Examine `CMakeLists.txt` and 
-`package.json` for details. 
+ 1. The end product is a static cloud-5 Web site, which is built in 
+    `strudel/website/dist`. Once this site has been built, a composer can 
+    simply drop new pieces (.html files) into that directory, and they 
+    will run. At any time, this directory can be published as a public 
+    Web site.
 
-To test your build, run a local Web server and browse a piece such as 
-[cloud_music_no_9](http://localhost:8000/cloud_music_no_9.html), which uses 
-many facilities of the system.
+ 2. To this end, absolutely no changes or patches are made to the `strudel`
+    submodule in this repository. The cloud-5 build invokes the Strudel 
+    build, and once that has completed, the cloud-5 build adds files to the 
+    `dist` directory and renames some files.
 
-The build may fail due to failure to build `canvas.node` (not actually used 
-here). If that happens, execute `cd cloud-5/strudel/packages/canvas` and 
-`node-gyp rebuild`, and try again from `pnpm run build`.
+The actual build steps are:
 
-Before updating Strudel from GitHub, make a branch to contain the updates if 
-they break cloud-5.
+ 1. Clone the [cloud-5 GitHub repository](https://github.com/gogins/cloud-5.git).
 
-If you see warnings or errors, don't panic unless browsing localhost does not 
-open a working Web site with playable pieces! 
+ 2. Install pnpm.
 
-It may be necessary to clear the browser cache and application site data to 
-see updated pieces.
+ 2. Change to the `cloud-5` directory.
 
-The `csound-wasm` and `csound-node` targets will rebuild if the upstream Git 
-sources are newer than the local sources, or if the targets of the build are 
-missing. If you still have problems with one of these targets, completely 
-delete the problematic external project source directory, e.g. 
-`rm -rf csound-wasm-prefix/src`, delete `CMakeCache.txt`, and rebuild.
+ 3. Execute `pnpm install` to update dependencies of cloud-5.
 
-_**NOTE WELL**_: The `gogins.github.io` repository is maintained by hand.
- _DO NOT_ delete any files from `gogins.github.io`, although pieces may be 
- added there. In other words, `gogins.github.io` can be a superset of 
- `cloud-5`. Unzip the cloud-5.zip file in this build, into the 
- `gogins.github.io` directory, add all files thus updated (`git add .`), 
- commit, and push. The same procedure can be used to update other GitHub pages 
- repositories.
+ 4. Execute `pnpm setup` to bring in the Strudel submodule.
+
+ 5. Execute `pnpm build` to build Strudel and copy cloud-5 into 
+    `strudel/website/dist`.
+
+ 6. Execute `pnpm local` to run a local Web site from your `dist` directory.
 
 ## Running in NW.js
 
 It also is possible to run cloud-5 pieces locally in [NW.js](https://nwjs.io/) 
-using [csound.node](https://github.com/gogins/csound-extended-node). In this 
-case, csound.node provides a native code build of Csound, and such pieces can 
+using [csound.nwjs](https://github.com/gogins/csound-nwjs. In this 
+case, csound.nwjs provides a native code build of Csound, and such pieces can 
 load native code plugins and read and write to the local filesystem.
 
 This involves installing a number of pre-requisites, but the advantages 
@@ -358,15 +340,18 @@ ability to read and write in the local filesystem.
 ### Installation
 
  1. Install regular [Csound for desktop computers](https://csound.com/download.html).
+
  2. Install [pnpm](https://pnpm.io/installation).
- 2. Install [csound.node](https://github.com/gogins/csound-extended-node). Note that 
+
+ 2. Install [csound.node](https://github.com/gogins/csound-nwjs). Note that 
     the API for csound.node is virtually the same as the API for my WebAssembly build 
     of Csound.
+
  2. Install [NW.js](https://nwjs.io/).
 
 ### Configuration and Running
 
-Read about [csound.node](https://github.com/gogins/csound-extended-node) 
+Read about [csound.nwjs](https://github.com/gogins/csound-nwjs) 
 and make sure that the application directory for your `csound.node` pieces is the 
 `cloud-5` directory, which includes necessary resources.
 
