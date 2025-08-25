@@ -291,10 +291,6 @@ statically served from the cloud-5 directory).
 
 ## Building
 
-Install [pnpm](https://www.npmjs.com/package/pnpm), which cloud-5 and 
-Strudel use rather than npm. On macOS (I don't know about other platforms), 
-you may need to specifically install node@18.
-
 The fundamental assumptions of this repository are:
 
  1. The end product is a static cloud-5 Web site, which is built in 
@@ -312,7 +308,9 @@ The actual build steps are:
 
  1. Clone the [cloud-5 GitHub repository](https://github.com/gogins/cloud-5.git).
 
- 2. Install pnpm.
+ 2. Install [pnpm](https://www.npmjs.com/package/pnpm), which cloud-5 and 
+    Strudel use rather than npm. On macOS (I don't know about other platforms), 
+    you may need to specifically install node@18.
 
  2. Change to the `cloud-5` directory.
 
@@ -328,7 +326,7 @@ The actual build steps are:
 ## Running in NW.js
 
 It also is possible to run cloud-5 pieces locally in [NW.js](https://nwjs.io/) 
-using [csound.nwjs](https://github.com/gogins/csound-nwjs. In this 
+using [csound.nwjs](https://github.com/gogins/csound-nwjs). In this 
 case, csound.nwjs provides a native code build of Csound, and such pieces can 
 load native code plugins and read and write to the local filesystem.
 
