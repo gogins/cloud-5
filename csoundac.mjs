@@ -27,17 +27,17 @@
  */
 
 /**
- * Global instance of Csound, shared with Strudel.
+ * Global instance of Csound, shared from cloug-5 to Strudel.
  */
-let csound = globalThis.__csound__;
+let csound = parent.window.globalThis.__csound__;
 /**
- * Global instance of CsoundAC.
+ * Global instance of CsoundAC, shared from cloud-5 to Strudel.
  */
-let csoundac = globalThis.__csoundac__;
+let csoundac = parent.window.globalThis.__csoundac__;
 /**
  * Global reference to the cloud-5 parameters addon.
  */
-let parameters = globalThis.__parameters__;
+let parameters = parent.window.globalThis.__parameters__;
 
 let audioContext = new AudioContext();
 

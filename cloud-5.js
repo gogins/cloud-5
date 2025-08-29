@@ -34,7 +34,7 @@ globalThis.windows_to_close = [];
  * Close all secondary windows on exit.
  */
 window.addEventListener("beforeunload", (event) => {
-  for (let window_to_close of globalThis.windows_to_close()) {
+for (let window_to_close of globalThis.windows_to_close) {
     try {
       window_to_close.close()
     } catch (ex) {
@@ -193,13 +193,13 @@ class Cloud5Piece extends HTMLElement {
     if (message === null) {
       return;
     }
-    this.log_overlay?.log(message);
+    this?.log_overlay?.log(message);
     let level_left = -100;
     let level_right = -100;
-    if (non_csound(this.csound) == false) {
-      let score_time = await this.csound.getScoreTime();
-      level_left = await this.csound.getControlChannel("gk_MasterOutput_output_level_left");
-      level_right = await this.csound.getControlChannel("gk_MasterOutput_output_level_right");
+    if (globalThis.csound) {
+      let score_time = await csound.getScoreTime();
+      level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
+      level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
       let delta = score_time;
       // calculate (and subtract) whole days
       let days = Math.floor(delta / 86400);
@@ -284,8 +284,8 @@ class Cloud5Piece extends HTMLElement {
             class="w3-btn w3-left-align w3-hover-text-light-green w3-right"></li>
       </ul>
     </div>`;
-    this.vu_meter_left = document.querySelector("#vu_mter_left");
-    this.vu_meter_right = document.querySelector("#vu_mter_right");
+    this.vu_meter_left = document.querySelector("#vu_meter_left");
+    this.vu_meter_right = document.querySelector("#vu_meter_right");
     this.mini_console = document.querySelector("#mini_console");
     let menu_item_play = document.querySelector('#menu_item_play');
     menu_item_play.onclick = ((event) => {
@@ -493,14 +493,14 @@ class Cloud5Piece extends HTMLElement {
    * 
    * @param {Boolean} write_soundfile If true, renders to a local soundfile.
    */
-  render = async function (write_soundfile) {
-    this.csound = await get_csound((message) => this.csound_message_callback(message));
-    this.is_rendering = write_soundfile;
-    if (non_csound(this.csound)) {
-      return;
-    }
-    this?.log_overlay.clear();
-    this.csoundac = await createCsoundAC();
+
+   render = async function (write_soundfile) {
+     this.csound = await get_csound(this.csound_message_callback);
+     this.csoundac = await get_csound_ac();
+     this.is_rendering = write_soundfile;
+     if (non_csound(this.csound)) return;
+     this?.log_overlay?.clear?.();
+
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -561,7 +561,7 @@ class Cloud5Piece extends HTMLElement {
           strudel_view?.setCsound(this.csound);
           strudel_view?.setCsoundAC(this.csoundac);
           strudel_view?.setParameters(this.control_parameters_addon);
-          strudel_view?.startPlaying();
+          strudel_view?.start();
         }
       }
     } else {
@@ -862,73 +862,81 @@ class Cloud5PianoRoll extends HTMLElement {
 customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
 
 /**
- * Contains an instance of the Strudel REPL that can use Csound as an output,
- * and that starts and stops along wth Csound.
+ * <cloud5-strudel>
+ * Hosts a Strudel REPL in the same JS realm as cloud-5.
  */
 class Cloud5Strudel extends HTMLElement {
   constructor() {
     super();
+    this._repl = null;
+    this._ready = false;
+    this._code = '';
+    this._params = null;
   }
+
   connectedCallback() {
-    this.innerHTML = `
-    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;z-index:4001;'>
-        <!--
-        ${this.#strudel_code_addon}
-        -->
-    </strudel-repl-component>
-    `;
-    this.strudel_component = this.querySelector('#strudel_view');
-    this.strudel_component.addEventListener("focusout", (event) => {
-      console.log("strudel_component lost focus.");
-    });
+    if (!this._repl) {
+      this.innerHTML = `
+        <strudel-repl id="strudel_view_repl" class="cloud5-strudel-repl"
+          style="position:fixed;z-index:4001;left:70px;top:183px;height:calc(100vh - 183px);right:0;">
+        </strudel-repl>
+      `;
+      this._repl = this.querySelector('#strudel_view_repl');
 
-    let menu_button = document.getElementById("menu_item_strudel");
-    menu_button.style.display = 'inline';
+      const menuBtn = document.getElementById('menu_item_strudel');
+      if (menuBtn) menuBtn.style.display = 'inline';
+
+      this._init();
+    }
   }
-  /**
-   * Starts the Strudel performance loop (the Cyclist).
-   */
+
+  async _init() {
+    // if (!customElements.get('strudel-repl')) {
+    //   await customElements.whenDefined('strudel-repl');
+    // }
+
+    if (this._params) globalThis.parameters = this._params;
+    if (this._code) this.#applyCode(this._code);
+
+    this._ready = true;
+  }
+
+  // Public wrappers for app code calling <cloud5-strudel>.start/stop()
   start() {
-    this.strudel_component.startPlaying();
-
+    const f = this._repl?.play?.bind(this._repl) || this._repl?.startPlaying?.bind(this._repl);
+    if (f) f();
   }
-  /**
-   * Stops the Strudel performance loop (the Cyclist).
-   */
   stop() {
-    this.strudel_component.stopPlaying();
-
+    const f = this._repl?.stop?.bind(this._repl) || this._repl?.stopPlaying?.bind(this._repl);
+    if (f) f();
   }
+
+  // ---- Properties ----
   #strudel_code_addon = null;
-  /**
-    * Contains the text of a user-defined Strudel patch, exactly as would 
-    * normally be entered by the user in the Strudel REPL. This patch may 
-    * also import and reference modules defined by the cloud-5 system, such 
-    * as statefulpatterns.mjs or csoundac.js.
-    */
   set strudel_code_addon(code) {
     this.#strudel_code_addon = code;
-    // Reconstruct the element.
-    this.connectedCallback();
+    this._code = code || '';
+    if (this._repl && window.csound && window.csoundac) this.#applyCode(this._code);
   }
-  get strudel_code_addon() {
-    return this.#strudel_code_addon;
-  }
+  get strudel_code_addon() { return this.#strudel_code_addon; }
+
   #control_parameters_addon = null;
-  /**
-    * Gets or sets optional control parameters.
-    */
   set control_parameters_addon(parameters_) {
     this.#control_parameters_addon = parameters_;
+    this._params = parameters_;
     globalThis.parameters = parameters_;
-    // Reconstruct the element.
-    this.connectedCallback();
   }
-  get control_parameters_addon() {
-    return this.#control_parameters_addon;
+  get control_parameters_addon() { return this.#control_parameters_addon; }
+
+  // ---- Internals ----
+  #applyCode(code) {
+    this._repl.code = String(code);
   }
+
 }
-customElements.define("cloud5-strudel", Cloud5Strudel);
+
+customElements.define('cloud5-strudel', Cloud5Strudel);
+
 
 /**
  * Presents visuals generated by a GLSL shader. These visuals can show a 
@@ -1570,7 +1578,7 @@ function write_file(filepath, data) {
     // Sync, so a bad .csd file doesn't blow up Csound 
     // before the .csd file is written so it can be tested!
     fs.writeFileSync(filepath, data, function (err) {
-      console.error(err);
+      console.warn(err);
     });
   } catch (err) {
     try {

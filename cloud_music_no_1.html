@@ -64,6 +64,19 @@
             font: 1em/1.25em Verdana, sans-serif;
             background: transparent;
         }
+
+        /* Make the gutter background transparent */
+        .ace_editor .ace_gutter {
+            background: transparent !important;
+            border: none !important;   /* optional, remove divider line */
+            color: #888 !important;    /* pick your line number color */
+        }
+
+        /* Adjust line number text if you want */
+        .ace_editor .ace_gutter-cell {
+            background: transparent !important;
+        }
+
     </style>
     <script src="global-menu.js"></script>
 </head>
@@ -856,7 +869,7 @@
         console_editor.setReadOnly(true);
         console_editor.setShowPrintMargin(false);
         console_editor.setDisplayIndentGuides(false);
-        console_editor.renderer.setOption("showGutter", true);
+        console_editor.renderer.setShowGutter(true);
         (async function () {
             CsoundAC = await createCsoundAC();
             score = new CsoundAC.Score();

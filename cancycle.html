@@ -16,7 +16,8 @@
     <script src="tinycolor.js"></script>
     <script src="CsoundAudioNode.js"></script>
     <script src="CsoundAC.js"></script>
-    <script src="strudel_embed.js"></script>
+    <script defer src="strudel_embed.js"></script>
+    <script defer src="csound_loader.js"></script>
     <script defer src="global-menu.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="icon" href="data:,">
@@ -2990,6 +2991,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f %.80s", days, hours, minutes, seconds, trimmed));
                 });
             }
+            console.info(message);
             message_callback_buffer = message_callback_buffer + message;
             if (message_callback_buffer.endsWith("\n")) {
                 console.log(message_callback_buffer);
@@ -3116,7 +3118,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
                 let tidal_view = document.getElementById("tidal_view");
-                let csoundac = await createCsoundAC();
+                let csoundac = await get_csound_ac();
                 if (csound == null) {
                     try {
                         csound_message_callback("Trying to load CsoundAudioNode...\n");
@@ -3134,7 +3136,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                         }, function(error) {
                            csound_message_callback(error + '\n');
                         });
-                        csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
+                        /// csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
                     } catch (e) {
                         csound_message_callback(e + '\n');
                     }
@@ -3193,8 +3195,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                     // Set up Strudel REPL.
                     
                     console.log("tidal_view:", tidal_view);
-                    tidal_view.setCsound(csound);
-                    tidal_view.setCsoundAC(csoundac);
+                    tidal_view.setCsound(await get_csound(csound_message_callback));
+                    tidal_view.setCsoundAC(await get_csound_ac());
                     tidal_view.startPlaying();
                     
                     //~ interval_id = setTimeout(generate_score_fragment, tempo);

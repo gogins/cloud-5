@@ -85,11 +85,15 @@ class StrudelReplComponent extends HTMLElement {
     const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
     return code;
   }
-  setCsound(csound_) {
-    this.i_frame.contentWindow.__csound__ = csound_;
+  async setCsound(csound_) {
+    let cs = await get_csound(csound_message_callback);
+    this.i_frame.contentWindow.csound = cs;
+    this.i_frame.contentWindow.__csound__ = cs;
   }
-  setCsoundAC(csoundac_) {
-    this.i_frame.contentWindow.__csoundac__ = csoundac_;
+  async setCsoundAC(csoundac_) {
+    let csac = await get_csound_ac();
+    this.i_frame.contentWindow.csoundac = csac
+    this.i_frame.contentWindow.__csoundac__ = csac;
   }
   setParameters(parameters_) {
     this.i_frame.contentWindow.__parameters__ = parameters_;
