@@ -29,11 +29,11 @@
 /**
  * Global instance of Csound, shared from cloug-5 to Strudel.
  */
-let csound = parent.window.globalThis.__csound__;
+let csound = parent.window.globalThis.csound;
 /**
  * Global instance of CsoundAC, shared from cloud-5 to Strudel.
  */
-let csoundac = parent.window.globalThis.__csoundac__;
+let csoundac = parent.window.globalThis.csound_ac;
 /**
  * Global reference to the cloud-5 parameters addon.
  */
@@ -280,88 +280,62 @@ export const velmap = register('velmap', (base_velocity, scale, curve, pat) => {
  * @param {Pattern} pat The target of this Pattern.
  */
 export const csoundn = register('csoundn', (instrument, pat) => {
-    let p1;
-    if (typeof instrument === 'string') {
-        p1 = '\"' + instrument + '\"';
-    } else {
-        p1 = instrument;
-    }
-    return pat.onTrigger((tidal_time, hap) => {
-        try {
-            if (!csound) {
-              diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
-              return;
-            }
-            // Time in seconds counting from now.
-            let p2 = tidal_time - getAudioContext().currentTime;
-            if (p2 < 0) {
-                p2 = 0;
-            }
-            const p3 = hap.duration.valueOf() + 0;
-            const frequency = getFrequency(hap);
-            // Translate frequency to MIDI key number _without_ rounding.
-            const C4 = 261.62558;
-            let octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
-            const p4 = octave * 12.0 - 36.0;
-            // We prefer floating point precision, but over the MIDI range [0, 127].
-            ///const p5 = 127 * (hap.context?.velocity ?? 0.9);
-            let gain;
-            if (typeof hap.value.gain === 'undefined') {
-                gain = .9;
-            } else {
-                gain = hap.value.gain;
-            }
-            let p5 = 127 * gain;
-            let p6;
-            if (typeof hap.value.depth === 'undefined') {
-                p6 = 0;
-            } else {
-                p6 = hap.value.depth;
-            }
-            let p7;
-            if (typeof hap.value.pan === 'undefined') {
-                p7 = 0;
-            } else {
-                p7 = hap.value.pan;
-            }
-            let p8;
-            if (typeof hap.value.height === 'undefined') {
-                p8 = 0;
-            } else {
-                p8 = hap.value.depth;
-            }
-            const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8, '\n'].join(' ');
-            console.log('[csoundn] ' + i_statement);
-            csound.readScore(i_statement);
-            // Any controls in the Hap that start with 'gi' or 'gk' will be 
-            // treated as Csound control channels, and their values will be 
-            // sent to Csound. Normally, these channels have been defined in 
-            // the Csound orchestra code.
-            for (let control in hap.value) {
-                if (control.startsWith('gi') || control.startsWith('gk')) {
-                    csound.SetControlChannel(control, parseFloat(hap.value[control]));
-                }
-            }
-            csoundn_counter = csoundn_counter + 1;
-            if ((diagnostic_level() >= INFORMATION) === true) {
-                print_counter('csoundn', csoundn_counter, hap);
-            }
-            // Color the event by both insno and gain.
-            // insno is hue, and gain is value, in HSV.
-            if (globalThis.haps_from_outputs) {
-                if (typeof hap.value !== 'object') {
-                    hap.value = {note: p4, gain: gain};
-                } else {
-                    hap.value.note = p4;
-                    hap.value.gain = gain;
-                }
-                hap.value.color = hsvToRgb((p1 / instrument_count) * 360, 1, gain);
-                globalThis.haps_from_outputs.push(hap);
-            }
-        } catch (except) {
-            diagnostic('[csoundn] error: ' + except + '\n', ERROR);
+  return pat.onTrigger((hap, deadline, duration) => {
+    try {
+      if (!csound) {
+        diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
+        return;
+      }
+
+      // p1 (instrument): number or quoted string, same as before
+      const p1 = (typeof instrument === 'string') ? `"${instrument}"` : instrument;
+
+      // NEW: Strudel already gives us the scheduler times
+      const p2 = deadline;   // seconds from now
+      const p3 = duration;   // seconds
+
+      // Ensure value object exists before we write to it
+      if (typeof hap.value !== 'object' || hap.value === null) hap.value = {};
+
+      // Pitch → MIDI (keep your C4-based formula)
+      const frequency = getFrequency(hap);
+      const C4 = 261.62558;
+      const octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
+      const p4 = octave * 12.0 - 36.0;
+
+      const gain = (typeof hap.value.gain === 'number') ? hap.value.gain : 0.9;
+      const p5 = 127 * gain;
+      const p6 = (typeof hap.value.depth === 'number') ? hap.value.depth : 0;
+      const p7 = (typeof hap.value.pan === 'number') ? hap.value.pan : 0;
+      const p8 = (typeof hap.value.height === 'number') ? hap.value.height : 0; // <- was using depth
+
+      const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8].join(' ') + '\n';
+      console.log('[csoundn] ' + i_statement);
+      csound.readScore(i_statement);
+
+      // Push any gi/gk controls
+      for (const control in hap.value) {
+        if (control.startsWith('gi') || control.startsWith('gk')) {
+          csound.SetControlChannel(control, parseFloat(hap.value[control]));
         }
-    });
+      }
+
+      csoundn_counter++;
+      if ((diagnostic_level() >= INFORMATION) === true) {
+        print_counter('csoundn', csoundn_counter, hap);
+      }
+
+      // Optional: keep your visualization bookkeeping
+      if (globalThis.haps_from_outputs) {
+        hap.value.note = p4;
+        hap.value.gain = gain;
+        hap.value.color = hsvToRgb(((typeof p1 === 'number' ? p1 : 0) / instrument_count) * 360, 1, gain);
+        globalThis.haps_from_outputs.push(hap);
+      }
+    } catch (e) {
+      diagnostic('[csoundn] error: ' + e + '\n', ERROR);
+    }
+  });
 });
 
 let chordn_counter = 0;

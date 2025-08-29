@@ -92,15 +92,15 @@ var load_csound = async function(csound_message_callback_) {
         // console.log.
         return;
     }
-    if (typeof csound !== 'undefined') {
-        if (csound != null) {
-            csound_injected = csound;
-            csound_is_loaded = true;
-            console.log = csound_message_callback;
-            csound_message_callback_("Csound is already defined in this JavaScript context.\n");
-            return;
-        }
-    }
+    // if (typeof csound !== 'undefined') {
+    //     if (csound != null) {
+    //         csound_injected = csound;
+    //         csound_is_loaded = true;
+    //         console.log = csound_message_callback;
+    //         csound_message_callback_("Csound is already defined in this JavaScript context.\n");
+    //         return;
+    //     }
+    // }
     try {
         csound_message_callback_("Trying to load csound.node...\n");
         csound_node = await require('csound.node');
@@ -171,14 +171,14 @@ var get_csound = async function(csound_message_callback_) {
     } else if (csound_audio_node != null) {
         globalThis.csound = csound_audio_node;
         csound.setMessageCallback(csound_message_callback_);
-        return globalThis.csound_audio_node;
+        return globalThis.csound;
      } else {
         csound_message_callback_("Csound is still loading, wait a bit...\n");
     }
 }       
 
 var get_csound_ac = async function() {
-    if (globalThis.csoundac) {
+    if (globalThis.csound_ac) {
         return globalThis.csound_ac;
     }
     // Calls into WebAssembly.
