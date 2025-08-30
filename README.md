@@ -16,7 +16,7 @@ or device. For examples of such music, see
 The cloud-5 system is based on <a href="https://github.com/gogins/csound-wasm"> 
 my own WebAssembly builds of Csound and CsoundAC</a>. Some pieces may use 
 third party libraries. The home page of Csound itself is 
-<a href="[xx](https://csound.com/)">here</a>.
+<a href="https://csound.com/">here</a>.
 
 Code written as part of cloud-5 is licensed under the terms of the same 
 license as Csound, the 
@@ -75,22 +75,24 @@ cloud-5 directory.
 There is no configuration!
 
 Well, actually there might be one thing. You might need to configure your 
-local Web server to serve files from your cloud-5 directory.
+local Web server to serve files from your cloud-5 directory; specifically, 
+from Strudel's Web root (`cloud-5/strudel/website/dist`).
 
 ### Running
 
- 1. Start a local Web server to serve the cloud-5 directory. The easiest way 
-    to do this on most systems is to open a terminal, change to your cloud-5 
-    directory, and execute `python3 -m http.server`. 
+ 1. Start a local Web server to serve the `cloud-5/strudel/website/dist` 
+    directory. The easiest way to do this on most systems is to open a 
+    terminal, change to `cloud-5/strudel/website/dist`, and execute 
+    `python3 -m http.server`. 
 
  2. Start your Web browser, and navigate to your cloud-5 Web site (usually 
     just something like `https://localhost:8000`). Some users have problems 
     with Firefox, e.g. with WebMIDI permissions. If you experience this, try 
     the Chrome browser.
 
- 3. You should see this README as a Web page. Click on 
-    [cloud_music_no_1.html](cloud_music_no_1.html) and verify that you see 
-    animated graphics, and can play and hear the piece.
+ 3. The home page of the default installation is 
+    [cloud_music_no_1.html](cloud_music_no_1.html). Verify that you see 
+    animated graphics on this page, and can play and hear the piece.
 
  4. Some cloud-5 pieces use the dat.gui library to create a popup menu of 
     controls for Csound instruments or other purposes. You can create new 
@@ -105,10 +107,10 @@ In cloud-5, musical compositions are written as Web pages, i.e. as .html
 files. 
 
 It's a good idea for each composition to be written as just one .html file. 
-It must be in your cloud-5 directory. Any Csound orchestra code, JavaScript 
-code, and GLSL shader programs should simply be embedded in the HTML file in, 
-e.g., template strings (string literals) in JavaScript code, or included as 
-`<script>` or `<textview>` elements.
+It must end up in your `cloud-5/strudel/website/dist` directory. Any Csound 
+orchestra code, JavaScript code, and GLSL shader programs should simply be 
+embedded in the HTML file in, e.g., template strings (string literals) in 
+JavaScript code, or included as `<script>` or `<textview>` elements.
 
 There are many ways to write compositions, because the capabilities of Csound, 
 Strudel, and HTML5 are so vast. Start out by a making a copy of one of the 
@@ -174,8 +176,7 @@ simplifies writing cloud music pieces.
  
  - [Strudel](https://strudel.tidalcycles.org/), a JavaScript port of the 
    widely used live coding system [Tidal Cycles](http://tidalcycles.org/), by 
-   Alex McLean, Felix Roos, and others. _Note_: cloud-5 makes several 
-   necessary patches to the Strudel source code and distribution.
+   Alex McLean, Felix Roos, and others. 
    
  - Of course, a standards-compliant Web browser, which has an awesome set of 
    capabilities, including the most widely used programming language, 
@@ -291,18 +292,20 @@ statically served from the cloud-5 directory).
 
 ## Building
 
-The fundamental assumptions of this repository are:
+The fundamental assumptions of the build are:
 
- 1. The end product is a static cloud-5 Web site, which is built in 
-    `strudel/website/dist`. Once this site has been built, a composer can 
-    simply drop new pieces (.html files) into that directory, and they 
+ 1. Absolutely no changes or patches are made to any code in the `strudel` 
+    directory of this repository. The cloud-5 build invokes the Strudel build, 
+    and once that has completed, the cloud-5 build copies pieces 
+    and other files from the `cloud-5` root directory to Strudel's Web root 
+    directory (`cloud-5/strudel/website/dist`), and renames some files.
+    
+ 2. The end product is a static cloud-5 Web site in 
+    `cloud-5/strudel/website/dist`. Once this site has been built, a composer 
+    can simply drop new pieces (.html files) into that directory, and they 
     will run. At any time, this directory can be published as a public 
     Web site.
 
- 2. To this end, absolutely no changes or patches are made to the `strudel`
-    submodule in this repository. The cloud-5 build invokes the Strudel 
-    build, and once that has completed, the cloud-5 build adds files to the 
-    `dist` directory and renames some files.
 
 The actual build steps are:
 
@@ -354,6 +357,20 @@ and make sure that the application directory for your `csound.node` pieces is th
 `cloud-5` directory, which includes necessary resources.
 
 ## Release Notes
+
+### [v1.2](https://github.com/gogins/cloud-5/releases/tag/v1.2)
+
+ - Moved the Web root directory from `cloud-5` to 
+   `cloud-5/strudel/website/dist`. This makes it possible to integrate 
+   Strudel, Csound, and CsoundAC without any patches or other modifications of 
+   Strudel source code.
+
+ - Added one-time singleton creation code for CsoundAC to `csound_loader.js`.
+
+ - Simplified the integration of Csound, CsoundAC, and Strudel by ensuring 
+   that Csound and CsoundAC exist as fully initialized global objects in the 
+   JavaScript context (as globalThis.csound and globalThis.csoundac), before 
+   any HTML elements run.
 
 ### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1.1)
 
