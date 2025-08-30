@@ -927,17 +927,17 @@ instr MasterOutput uses instrument number 16
                         "gk_overlap": 0.05,
                         "gk_Reverb_feedback": 0.975,
                         "gk_Reverb2_feedback": 0.7,
-                        "gk_Droner_level": -26.0583641594739,
+                        "gk_Droner_level": -24.740519987668275,
                         "gk_Droner_partial1": 0.06185778873818331,
-                        "gk_Droner_partial2": 0.5156185778873819,
-                        "gk_Droner_partial3": 0.45643238799835595,
-                        "gk_Droner_partial4": 0.08158651870119195,
-                        "gk_Droner_partial5": 0.43012741471434446,
+                        "gk_Droner_partial2": 0.6340561093412804,
+                        "gk_Droner_partial3": 0.1868256088788408,
+                        "gk_Droner_partial4": 0.48936388860343233,
+                        "gk_Droner_partial5": 0.0881718220121262,
                         "gk_Blower_level": 0.5,
-                        "gk_Blower_grainDensity": 0.15,
+                        "gk_Blower_grainDensity": 85.25331415065254,
                         "gk_Blower_grainDuration": 0.2,
-                        "gk_Blower_grainAmplitudeRange": 0.1,
-                        "gk_Blower_grainFrequencyRange": 0.033,
+                        "gk_Blower_grainAmplitudeRange": 77.36101120131539,
+                        "gk_Blower_grainFrequencyRange": 6.186414551433563,
                         "gk_Phaser_ratio1": 1,
                         "gk_Phaser_ratio2": 0.3333334,
                         "gk_Phaser_index1": 1,
@@ -945,9 +945,9 @@ instr MasterOutput uses instrument number 16
                         "gk_Phaser_level": 0.5,
                         "gk_Guitar_level": 0,
                         "gk_FilteredSines_level": 0,
-                        "gk_Sweeper_britel": 0,
+                        "gk_Sweeper_britel": 0.7209947590175727,
                         "gk_Sweeper_briteh": 2.9,
-                        "gk_Sweeper_britels": 0.06666666666666667,
+                        "gk_Sweeper_britels": 1.3523789949645464,
                         "gk_Sweeper_britehs": 1.25,
                         "gk_Sweeper_level": 0.5,
                         "gk_Plucked_level": 0,
@@ -971,7 +971,7 @@ instr MasterOutput uses instrument number 16
                     }
                 }
             },
-            "closed": true,
+            "closed": false,
             "folders": {
                 "Master": {
                     "preset": "Default",
@@ -985,7 +985,7 @@ instr MasterOutput uses instrument number 16
                 },
                 "Blower": {
                     "preset": "Default",
-                    "closed": true,
+                    "closed": false,
                     "folders": {}
                 },
                 "Phaser": {
@@ -1005,7 +1005,7 @@ instr MasterOutput uses instrument number 16
                 },
                 "Sweeper": {
                     "preset": "Default",
-                    "closed": true,
+                    "closed": false,
                     "folders": {}
                 },
                 "Plucked": {
@@ -1030,7 +1030,7 @@ instr MasterOutput uses instrument number 16
                 },
                 "Zakian Flute": {
                     "preset": "Default",
-                    "closed": false,
+                    "closed": true,
                     "folders": {}
                 },
                 "Kung4": {
@@ -2689,7 +2689,7 @@ instr MasterOutput uses instrument number 16
         gk_MasterOutput_output_level_right = dbfsamp(rms(a_out_right))
         chnset gk_MasterOutput_output_level_left, "gk_MasterOutput_output_level_left"
         chnset gk_MasterOutput_output_level_right, "gk_MasterOutput_output_level_right"
-        printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
+        ;;; printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
         endin
 
         </CsInstruments>
@@ -3006,7 +3006,7 @@ instr MasterOutput uses instrument number 16
                     let strudel_view = document.getElementById('strudel_view');
                     strudel_view.style.top = `${menu_bar_bottom}px`;
                     // Back out menu bar height from console view height.
-                    strudel_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
+                    strudel_view.style.height = `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
             });
             $("#menu_item_console").click(function (event) {
@@ -3023,7 +3023,7 @@ instr MasterOutput uses instrument number 16
                     let console_view = document.getElementById('console_view');
                     console_view.style.top = `${menu_bar_bottom}px`;
                     // Back out menu bar height from console view height.
-                    console_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
+                    console_view.style.height = `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                     // Needed to make visible in place.
                     console_editor.resize(true);
                 }
@@ -3035,13 +3035,13 @@ instr MasterOutput uses instrument number 16
                 if ($("#about_view").is(":visible")) {
                     $("#about_view").hide();
                 } else {
-                     $("#about_view").show();
+                    $("#about_view").show();
                     const menu_bar = document.getElementById('main_menu');
                     const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
                     let about_view = document.getElementById('about_view');
                     about_view.style.top = `${menu_bar_bottom}px`;
                     // Back out menu bar height from about view height.
-                    about_view.style.height= `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
+                    about_view.style.height = `calc(${document.body.style.height} - ${menu_bar_bottom}px)`;
                 }
             });
             $(document).keydown(function (event) {
