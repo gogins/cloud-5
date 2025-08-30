@@ -86,9 +86,9 @@ class StrudelReplComponent extends HTMLElement {
     return code;
   }
   async setCsound(csound_) {
-    let cs = await get_csound(csound_message_callback);
-    this.i_frame.contentWindow.csound = cs;
-    this.i_frame.contentWindow.__csound__ = cs;
+    /// let cs = await get_csound(csound_message_callback);
+    this.i_frame.contentWindow.csound = csound_;
+    this.i_frame.contentWindow.__csound__ = csound_;
   }
   async setCsoundAC(csoundac_) {
     let csac = await get_csound_ac();
