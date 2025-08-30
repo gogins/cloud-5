@@ -279,83 +279,102 @@ export const velmap = register('velmap', (base_velocity, scale, curve, pat) => {
  * @param {number} instrument The Csound instrument number (p1); may be patternified.
  * @param {Pattern} pat The target of this Pattern.
  */
+// --- helpers (modern Strudel) ---
+const isNum = x => typeof x === 'number' && Number.isFinite(x);
+
+// Prefer injected AudioContext clock; else self-calibrate against wall clock
+let _dlEpoch = null, _tEpoch = null;
+function secondsFromNow(deadline) {
+  const d = Number(deadline) || 0;
+  if (d >= 0 && d < 16) return Math.max(0, d); // already relative
+  const wallNow = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()) / 1000;
+  if (_dlEpoch == null) { _dlEpoch = d; _tEpoch = wallNow; return 0; }
+  return Math.max(0, (d - _dlEpoch) - (wallNow - _tEpoch));
+}
+function computeP2(deadline) {
+  const d = Number(deadline) || 0;
+  const now = (typeof globalThis.getAudioNow === 'function')
+    ? globalThis.getAudioNow()
+    : (globalThis.audioContext && isNum(globalThis.audioContext.currentTime) ? globalThis.audioContext.currentTime : null);
+  return (now != null) ? Math.max(0, d > now + 1e-3 ? d - now : d) : secondsFromNow(d);
+}
+
+// EVENT span in cycles: prefer PART (event), then direct begin/end, then WHOLE (last resort)
+function getEventCycleSpan(h) {
+  const bPart = h?.part?.begin, ePart = h?.part?.end;
+  if (isNum(bPart) && isNum(ePart)) return [bPart, ePart];
+
+  const b = h?.begin, e = h?.end;
+  if (isNum(b) && isNum(e)) return [b, e];
+
+  const bWhole = h?.whole?.begin, eWhole = h?.whole?.end;
+  if (isNum(bWhole) && isNum(eWhole)) return [bWhole, eWhole];
+
+  return null;
+}
+
+// Resolve MIDI from .note/.midi/.pitch or via freq/getFrequency (never return NaN)
+function resolveMidi(hap) {
+  const n = hap?.value?.note ?? hap?.value?.midi ?? hap?.value?.pitch ?? hap?.note ?? hap?.midi ?? hap?.pitch;
+  if (isNum(n)) return n;
+  let f;
+  if (isNum(hap?.value?.freq) && hap.value.freq > 0) f = hap.value.freq;
+  else if (isNum(hap?.freq) && hap.freq > 0) f = hap.freq;
+  else if (typeof getFrequency === 'function') {
+    const g = getFrequency(hap);
+    if (isNum(g) && g > 0) f = g;
+  }
+  if (isNum(f) && f > 0) return 69 + 12 * Math.log2(f / 440);
+  return undefined;
+}
+
+// --- csoundn (modern Strudel) ---
 export const csoundn = register('csoundn', (instrument, pat) => {
   return pat.onTrigger((hap, deadline, duration) => {
     try {
-      if (!csound) {
-        diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
-        return;
-      }
+      if (!csound) { diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING); return; }
 
-      // p1: instrument number or quoted name
       const p1 = (typeof instrument === 'string') ? `"${instrument}"` : instrument;
+      const p2 = computeP2(deadline);
 
-      // Start time: Strudel scheduler already gives seconds-from-now
-      const p2 = Math.max(0, Number(deadline) || 0);
+      // CPS: use getcps() if present; else REPL default 0.5
+      const cps = (typeof getcps === 'function') ? Math.max(1e-9, getcps()) : 0.5;
 
-      // ---- Duration (seconds) ----
-      // Prefer the hap's actual span in cycles, then convert via CPS.
-      const getCps = () => {
-        if (typeof getcps === 'function') return getcps();
-        if (globalThis?.uzu?.cps) return globalThis.uzu.cps;
-        if (typeof globalThis?.cps === 'number') return globalThis.cps;
-        return 1; // sensible default
-      };
-
-      const cps = Math.max(1e-9, getCps());
-
-      const start =
-        hap?.whole?.start ?? hap?.part?.start ?? hap?.start ?? null;
-      const end =
-        hap?.whole?.end   ?? hap?.part?.end   ?? hap?.end   ?? null;
-
-      let p3; // duration in seconds
-      if (typeof start === 'number' && typeof end === 'number') {
-        const cycles = Math.max(0, end - start);
-        p3 = Math.max(1e-4, cycles / cps);
-      } else if (typeof hap?.value?.dur === 'number') {
-        // `dur` given in cycles
-        p3 = Math.max(1e-4, hap.value.dur / cps);
-      } else if (typeof hap?.value?.sustain === 'number') {
-        // `sustain` given directly in seconds
-        p3 = Math.max(1e-4, hap.value.sustain);
+      // p3: duration in seconds from the *event* span
+      let p3;
+      const span = getEventCycleSpan(hap);
+      if (span) {
+        const [b, e] = span;
+        p3 = Math.max(1e-4, (e - b) / cps);
+      } else if (isNum(hap?.value?.dur)) {
+        p3 = Math.max(1e-4, hap.value.dur / cps);   // dur in cycles
+      } else if (isNum(hap?.value?.sustain)) {
+        p3 = Math.max(1e-4, hap.value.sustain);     // seconds
       } else {
-        // fall back to scheduler's duration (often constant) or 0.5
         p3 = Math.max(1e-4, Number(duration) || 0.5);
       }
+      if (!(p3 > 0)) return;
 
-      // Ensure value object exists before we write to it
       if (typeof hap.value !== 'object' || hap.value === null) hap.value = {};
 
-      // Pitch → MIDI (your C4-based formula)
-      const frequency = getFrequency(hap);
-      const C4 = 261.62558;
-      const octave = Math.log(frequency / C4) / Math.log(2.0) + 8.0;
-      const p4 = octave * 12.0 - 36.0;
+      const midi = resolveMidi(hap);
+      if (!isNum(midi)) return; // rest/control → skip
+      const p4 = midi;
 
-      const gain = (typeof hap.value.gain === 'number') ? hap.value.gain : 0.9;
-      const p5 = 127 * gain;
-      const p6 = (typeof hap.value.depth === 'number') ? hap.value.depth : 0;
-      const p7 = (typeof hap.value.pan === 'number') ? hap.value.pan : 0;
-      const p8 = (typeof hap.value.height === 'number') ? hap.value.height : 0;
+      const gain = isNum(hap.value.gain) ? hap.value.gain : 0.9;
+      const p5 = Math.max(0, Math.min(127, 127 * gain));
+      const p6 = isNum(hap.value.depth)  ? hap.value.depth  : 0;
+      const p7 = isNum(hap.value.pan)    ? hap.value.pan    : 0;
+      const p8 = isNum(hap.value.height) ? hap.value.height : 0;
 
-      const i_statement = ['i', p1, p2, p3, p4, p5, p6, p7, p8].join(' ') + '\n';
-      console.log('[csoundn] ' + i_statement);
-      csound.readScore(i_statement);
+      csound.readScore(`i ${p1} ${p2} ${p3} ${p4} ${p5} ${p6} ${p7} ${p8}\n`);
 
-      // Push any gi/gk controls
-      for (const control in hap.value) {
-        if (control.startsWith('gi') || control.startsWith('gk')) {
-          csound.SetControlChannel(control, parseFloat(hap.value[control]));
-        }
+      // gi/gk controls
+      for (const k in hap.value) {
+        if (k.startsWith('gi') || k.startsWith('gk')) csound.SetControlChannel(k, parseFloat(hap.value[k]));
       }
 
-      csoundn_counter++;
-      if ((diagnostic_level() >= INFORMATION) === true) {
-        print_counter('csoundn', csoundn_counter, hap);
-      }
-
-      // Optional visualization bookkeeping
+      // optional viz
       if (globalThis.haps_from_outputs) {
         hap.value.note = p4;
         hap.value.gain = gain;
@@ -367,6 +386,7 @@ export const csoundn = register('csoundn', (instrument, pat) => {
     }
   });
 });
+
 let chordn_counter = 0;
 
 /**
