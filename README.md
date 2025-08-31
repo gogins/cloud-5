@@ -143,11 +143,10 @@ simplifies writing cloud music pieces.
 
 ### Other Things
 
- - [Strudel REPL](strudel_repl.html), exactly the same as the main Strudel Web 
-   site.
+ - [Strudel REPL](strudel_repl.html), exactly like the main Strudel Web site.
 
  - [CsoundAC Reference](jsdocs/), reference documentation for cloud-5's 
-   JavaScript code.
+   JavaScript API.
  
  - A [minimal example](minimal.html) that just plays an embedded Csound piece.
  

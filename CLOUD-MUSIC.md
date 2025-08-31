@@ -32,13 +32,13 @@ system and use it for making your own pieces, go to the
 
 ## Other Things
 
-The following is a list of all Web pages on this site. It includes pieces (good, 
-indifferent, bad, or even broken), examples, tests, and so on.
+The following is a list other things on this site. It includes pieces (good, 
+indifferent, bad, or even broken), documentation, examples, tests, and so on.
 
 <ul>
-<li><a href="2024-ICSC-controller.html">2024-ICSC-controller.html</a></li>
 <li><a href="2024-ICSC.html">2024-ICSC.html</a></li>
 <li><a href="strudel_repl.html">Strudel REPL</a></li>
+<li><a href="jsdocs">CsoundAC Reference</a></li>
 <li><a href="Tishina.html">Tishina.html</a></li>
 <li><a href="cancycle.html">cancycle.html</a></li>
 <li><a href="cloud5-example-parametric-lindenmayer.html">cloud5-example-parametric-lindenmayer.html</a></li>
