@@ -24,7 +24,7 @@
     },
     "recurseDepth": 3,                        
     "opts": {
-        "destination": "./jsdocs/",               
+        "destination": "./strudel/website/dist/jsdocs/",               
         "recurse": true                      
     },
     "plugins": ["plugins/markdown"]

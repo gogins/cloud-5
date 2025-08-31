@@ -13,13 +13,15 @@
 
     "buildx:strudel": "pnpm -C strudel/website run build",
 
+    "document":  "pandoc --css readme.css -s --metadata title='cloud-music' --ascii=true CLOUD-MUSIC.md -o cloud-music.html && pnpm run jsdoc && rm -f favicon.ico",
+
     "dist:rename-strudel-index": "sh -c 'cd strudel/website/dist && [ -f index.html ] && mv -f index.html strudel_repl.html || true'",
 
     "dist:copy-root-files": "rsync -a ./ strudel/website/dist/ --exclude \"/index.html\" --exclude \"/*/\" --exclude \".git*\" --exclude \"node_modules\"",
 
     "dist:promote-cloud5-index": "sh -c 'cd strudel/website/dist && [ -f cloud-5-index.html ] && mv -f cloud-5-index.html index.html || echo \"cloud-5-index.html not found; skipped\"'",
 
-    "build": "pnpm run build-strudel && pnpm run dist:rename-strudel-index && pnpm run dist:copy-root-files && pnpm run dist:promote-cloud5-index && pnpm run dist:neutralize-sw",
+    "build": "pnpm run build-strudel && pnpm run dist:rename-strudel-index && pnpm run dist:copy-root-files && pnpm run dist:promote-cloud5-index && pnpm run document && pnpm run dist:neutralize-sw",
 
     "dist:neutralize-sw": "bash -lc 'cat > strudel/website/dist/sw.js <<\"SW\"\nself.addEventListener(\"install\", () => self.skipWaiting());\nself.addEventListener(\"activate\", event => {\n  event.waitUntil((async () => {\n    try {\n      for (const k of await caches.keys()) await caches.delete(k);\n    } catch {}\n    try { await self.registration.unregister(); } catch {}\n    try {\n      const list = await self.clients.matchAll({ type: \"window\" });\n      for (const c of list) c.navigate(c.url);\n    } catch {}\n  })());\n});\n// no fetch handler -> don’t intercept anything\nSW'"
 

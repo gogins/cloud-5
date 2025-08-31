@@ -38,6 +38,7 @@ indifferent, bad, or even broken), examples, tests, and so on.
 <ul>
 <li><a href="2024-ICSC-controller.html">2024-ICSC-controller.html</a></li>
 <li><a href="2024-ICSC.html">2024-ICSC.html</a></li>
+<li><a href="strudel_repl.html">Strudel REPL</a></li>
 <li><a href="Tishina.html">Tishina.html</a></li>
 <li><a href="cancycle.html">cancycle.html</a></li>
 <li><a href="cloud5-example-parametric-lindenmayer.html">cloud5-example-parametric-lindenmayer.html</a></li>

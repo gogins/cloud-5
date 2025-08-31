@@ -141,8 +141,14 @@ simplifies writing cloud music pieces.
   always-on visual music produced by a GLSL shader that is sampled and 
   shaped using CsoundAC.
 
-### Other Examples
+### Other Things
 
+ - [Strudel REPL](strudel_repl.html), exactly the same as the main Strudel Web 
+   site.
+
+ - [CsoundAC Reference](jsdocs/), reference documentation for cloud-5's 
+   JavaScript code.
+ 
  - A [minimal example](minimal.html) that just plays an embedded Csound piece.
  
  - A [Csound Player](player.html) that will play, and let you edit, any 
@@ -150,9 +156,6 @@ simplifies writing cloud music pieces.
    
  - [Message from Another Planet](message.html), a Csound piece with a basic 
    HTML user interface.
- 
- - [Strudel REPL](strudel_repl.html), exactly the same as the main Strudel Web 
-   site.
  
  - [Trichord Space](trichord_space.cloud5.html), an interactive piece that displays 
    Dmitri Tymoczko's chord space for trichords, with the ability to perform, 
