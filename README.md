@@ -146,7 +146,7 @@ simplifies writing cloud music pieces.
  - [Strudel REPL](strudel_repl.html), exactly like the main Strudel Web site.
 
  - [CsoundAC Reference](jsdocs/), reference documentation for cloud-5's 
-   JavaScript API.
+   JavaScript code.
  
  - A [minimal example](minimal.html) that just plays an embedded Csound piece.
  
@@ -183,7 +183,27 @@ simplifies writing cloud music pieces.
  - Of course, a standards-compliant Web browser, which has an awesome set of 
    capabilities, including the most widely used programming language, 
    JavaScript, which can call Csound, CsoundAC, and Strudel.
-   
+
+### Design Notes
+
+The integration between Csound and Strudel has been implemented without any 
+changes to Strudel's source code. Instead, the Csound and CsoundAC APIs are 
+exposed as global singletons in `globalThis.csound` and `globalThis.csoundac`. 
+These are copied into the Strudel REPL's JavaScript context, also as 
+`globalThis.csound` and `globalThis.csoundac`. This is permitted because the 
+cloud-5 Web site and the Strudel REPL's IFrame have the same origin. 
+
+The cloud-5 build copies cloud-5 pieces, examples, tests, documentation, and 
+other resources are copied from the cloud-5 repository's root directory 
+(`cloud-5`) to the Strudel submodule's Web root directory 
+(`cloud-5/strudel/website/dist`) -- _after_ building Strudel.
+
+This means that cloud-5 becomes a completely static Web site hosted from 
+`cloud-5/strudel/website/dist`.
+
+It also means that any Strudel patch can import or access Csound, CsoundAC, or 
+any JavaScript or other resource in the Web root.
+
 ### Capabilities
 
  - High-resolution, sample-accurate sound synthesis using one of the largest and 
@@ -308,7 +328,6 @@ The fundamental assumptions of the build are:
     will run. At any time, this directory can be published as a public 
     Web site.
 
-
 The actual build steps are:
 
  1. Clone the [cloud-5 GitHub repository](https://github.com/gogins/cloud-5.git).
@@ -367,7 +386,8 @@ and make sure that the application directory for your `csound.node` pieces is th
    Strudel, Csound, and CsoundAC without any patches or other modifications of 
    Strudel source code.
 
- - Added one-time singleton creation code for CsoundAC to `csound_loader.js`.
+ - Added one-time singleton creation code for Csound and CsoundAC to 
+   `csound_loader.js`.
 
  - Simplified the integration of Csound, CsoundAC, and Strudel by ensuring 
    that Csound and CsoundAC exist as fully initialized global objects in the 

@@ -7,10 +7,10 @@ style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.p
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 
-This is computer music that is hosted online, but actually rendered in Web 
-browsers. The pieces are not soundfiles and they are not streamed. Each piece 
-is a Web page that contains embedded software that runs in the browser to 
-synthesize the music.  Most pieces will play indefinitely. There may or may 
+This is computer music that is hosted online, but actually rendered in your  
+Web browser. The pieces are not soundfiles, and they are not streamed. Each 
+piece is a Web page that contains embedded software that runs in the browser 
+to synthesize the music.  Most pieces will play indefinitely. There may or may 
 not be animated visuals along with the music. The listener may or may not be 
 able to control and/or customize the piece -- perhaps quite a bit, amounting 
 to a new piece, co-composed with me.
@@ -23,8 +23,8 @@ code.
 
 The cloud-music pieces are (mostly) implemented using my cloud-5 system for 
 creating computer music that runs in Web browsers. I presented a 
-[paper](https://github.com/gogins/michael.gogins.studio/blob/master/music/ICSC-2024/cloud-5.pdf) 
-on cloud-5 at the [2024 International Csound Conference in Vienna](https://mdw.ac.at/icsc2024/).
+[paper](cloud-5.pdf) on cloud-5 at the 
+[2024 International Csound Conference in Vienna](https://mdw.ac.at/icsc2024/).
 
 For more information, including instructions on how to set up the cloud-5 
 system and use it for making your own pieces, go to the 
@@ -32,13 +32,14 @@ system and use it for making your own pieces, go to the
 
 ## Other Things
 
-The following is a list other things on this site. It includes pieces (good, 
-indifferent, bad, or even broken), documentation, examples, tests, and so on.
+The following is a list of other things on this site. It includes pieces 
+(good, indifferent, bad, or even broken), documentation, examples, tests, and 
+so on.
 
 <ul>
-<li><a href="2024-ICSC.html">2024-ICSC.html</a></li>
 <li><a href="strudel_repl.html">Strudel REPL</a></li>
 <li><a href="jsdocs">CsoundAC Reference</a></li>
+<li><a href="2024-ICSC.html">2024-ICSC.html</a></li>
 <li><a href="Tishina.html">Tishina.html</a></li>
 <li><a href="cancycle.html">cancycle.html</a></li>
 <li><a href="cloud5-example-parametric-lindenmayer.html">cloud5-example-parametric-lindenmayer.html</a></li>
@@ -48,11 +49,6 @@ indifferent, bad, or even broken), documentation, examples, tests, and so on.
 <li><a href="cloud5-example-visual-music.html">cloud5-example-visual-music.html</a></li>
 <li><a href="cloud5-example-web.html">cloud5-example-web.html</a></li>
 <li><a href="cloud_music_no_1.html">cloud_music_no_1.html</a></li>
-<li><a href="cloud_music_no_10.html">cloud_music_no_10.html</a></li>
-<li><a href="cloud_music_no_11.html">cloud_music_no_11.html</a></li>
-<li><a href="cloud_music_no_12.html">cloud_music_no_12.html</a></li>
-<li><a href="cloud_music_no_13.html">cloud_music_no_13.html</a></li>
-<li><a href="cloud_music_no_14.html">cloud_music_no_14.html</a></li>
 <li><a href="cloud_music_no_2.html">cloud_music_no_2.html</a></li>
 <li><a href="cloud_music_no_3.html">cloud_music_no_3.html</a></li>
 <li><a href="cloud_music_no_4.html">cloud_music_no_4.html</a></li>
@@ -61,6 +57,11 @@ indifferent, bad, or even broken), documentation, examples, tests, and so on.
 <li><a href="cloud_music_no_7.html">cloud_music_no_7.html</a></li>
 <li><a href="cloud_music_no_8.html">cloud_music_no_8.html</a></li>
 <li><a href="cloud_music_no_9.html">cloud_music_no_9.html</a></li>
+<li><a href="cloud_music_no_10.html">cloud_music_no_10.html</a></li>
+<li><a href="cloud_music_no_11.html">cloud_music_no_11.html</a></li>
+<li><a href="cloud_music_no_12.html">cloud_music_no_12.html</a></li>
+<li><a href="cloud_music_no_13.html">cloud_music_no_13.html</a></li>
+<li><a href="cloud_music_no_14.html">cloud_music_no_14.html</a></li>
 <li><a href="droner.html">droner.html</a></li>
 <li><a href="epicycles.html">epicycles.html</a></li>
 <li><a href="index.html">index.html</a></li>

@@ -16,6 +16,7 @@
     <script src="tinycolor.js"></script>
     <script src="CsoundAudioNode.js"></script>
     <script src="CsoundAC.js"></script>
+    <script src="csound_loader.js"></script>
     <script src="strudel_embed.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="icon" href="data:,">
@@ -78,12 +79,6 @@ patched_text = text.replace(find_this, replace_with)
 
 const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.INFORMATION);
-csac.diagnostic('This is a NEVER notification\n', csac.NEVER);
-csac.diagnostic('This is a DEBUG notification\n', csac.DEBUG);
-csac.diagnostic('This is an INFORMATION notification\n', csac.INFORMATION);
-csac.diagnostic('This is a WARNING notification\n', csac.WARNING);
-csac.diagnostic('This is an ERROR notification\n', csac.ERROR);
-csac.diagnostic('This is an ALWAYS notification\n', csac.ALWAYS);
 /**
  * Classes can be used to define stateful Patterns; such classes can have an 
  * 'evaluate' method that sets a 'value' property, which could be of any type. 
