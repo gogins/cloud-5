@@ -392,14 +392,14 @@ export const csoundn = register('csoundn', (instrument, pat) => {
       // Only notes that actually are played are coerced to onsets.
       hap.is_onset = hap.isOnset = true;
 
-    //   // optional viz bookkeeping
-    //   if (globalThis.haps_from_outputs) {
-    //     hap.value.note = p4;
-    //     hap.value.duration = p3;
-    //     hap.value.gain = gain;
-    //     hap.value.color = hsvToRgb(((typeof p1 === 'number' ? p1 : 0) / instrument_count) * 360, 1, gain);
-    //     globalThis.haps_from_outputs.push(hap);
-    //   }
+      // optional viz bookkeeping
+      if (globalThis.haps_from_outputs) {
+        hap.value.note = p4;
+        hap.value.duration = p3;
+        hap.value.gain = gain;
+        hap.value.color = hsvToRgb(((typeof p1 === 'number' ? p1 : 0) / instrument_count) * 360, 1, gain);
+        globalThis.haps_from_outputs.push(hap);
+      }
     } catch (e) {
       diagnostic('[csoundn] error: ' + e + '\n', ERROR);
     }
