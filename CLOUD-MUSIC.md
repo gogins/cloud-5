@@ -40,7 +40,7 @@ so on.
 <li><a href="strudel_repl.html">Strudel REPL</a></li>
 <li><a href="jsdocs">CsoundAC Reference</a></li>
 <li><a href="2024-ICSC.html">2024-ICSC.html</a></li>
-<li><a href="Tishina.html">Tishina.html</a></li>
+<li><a href="Tishina.html">Tishina.html (runs only in NW.js)</a></li>
 <li><a href="cancycle.html">cancycle.html</a></li>
 <li><a href="cloud5-example-parametric-lindenmayer.html">cloud5-example-parametric-lindenmayer.html</a></li>
 <li><a href="cloud5-example-score-generator.html">cloud5-example-score-generator.html</a></li>
@@ -49,7 +49,7 @@ so on.
 <li><a href="cloud5-example-visual-music.html">cloud5-example-visual-music.html</a></li>
 <li><a href="cloud5-example-web.html">cloud5-example-web.html</a></li>
 <li><a href="cloud_music_no_1.html">cloud_music_no_1.html</a></li>
-<li><a href="cloud_music_no_2.html">cloud_music_no_2.html</a></li>
+<li><a href="cloud_music_no_2.html">cloud_music_no_2.html, can take a very long time to find an attractor</a></li>
 <li><a href="cloud_music_no_3.html">cloud_music_no_3.html</a></li>
 <li><a href="cloud_music_no_4.html">cloud_music_no_4.html</a></li>
 <li><a href="cloud_music_no_5.html">cloud_music_no_5.html</a></li>

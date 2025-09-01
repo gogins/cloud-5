@@ -16,6 +16,7 @@
     <script src="tinycolor.js"></script>
     <script src="CsoundAudioNode.js"></script>
     <script src="CsoundAC.js"></script>
+    <script src="csound_loader.js"></script>
     <script src="strudel_embed.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="icon" href="data:,">
@@ -113,7 +114,7 @@ class AscenderPattern extends csac.StatefulPatterns {
             this.counter = this.counter + 1;
             csac.print_counter('Ascender onset', counter, hap);
         }
-        hap.value = this.midi_key;
+        hap.pitch = this.midi_key;
         ///csac.print_counter('Ascender value', this.counter, hap);
         return hap;
      }

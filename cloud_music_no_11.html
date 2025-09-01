@@ -16,6 +16,7 @@
     <script src="tinycolor.js"></script>
     <script src="CsoundAudioNode.js"></script>
     <script src="CsoundAC.js"></script>
+    <script src="csound_loader.js"></script>
     <script src="strudel_embed.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="icon" href="data:,">
@@ -109,11 +110,11 @@ class LogisticPattern extends csac.StatefulPatterns {
             let y1 = 4 * this.c * this.y * (1 - this.y);
             this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
-            hap.value = this.midi_key;
+            hap.pitch = this.midi_key;
             this.counter = this.counter + 1;
             csac.print_counter('Logistic onset', this.counter, hap);
         }
-        hap.value = this.midi_key;
+        hap.pitch = this.midi_key;
         ///csac.print_counter('Logistic value', this.counter, hap);
         return hap;
      }
@@ -129,10 +130,10 @@ pure(0)
   // This pattern should be very clearly audible.
   .acCT(chordPattern, "0 1 2 3 4 -10".slow(12)).slow(2)
   .acCV(chordPattern)
-  .note()
   .legato("2")
+  .csoundn("5")  
+  .pianoroll({ labels:1, fill:1, stroke:1 })
   .pianoroll({labels:1,fold:0,scaleauto:1,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})    
-  .csoundn("5")    
 
 -->
 

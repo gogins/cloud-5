@@ -303,16 +303,29 @@ function computeP2(deadline) {
 
 // Resolve MIDI note from common fields or via frequency; returns undefined for rests/meta
 function resolveMidi(hap) {
-  const n = hap?.value?.note ?? hap?.value?.midi ?? hap?.value?.pitch ?? hap?.note ?? hap?.midi ?? hap?.pitch;
-  if (isNum(n)) return n;
+  // Prefer explicit fractional MIDI pitch
+  if (isNum(hap?.pitch)) return hap.pitch;
+  if (isNum(hap?.midi))  return hap.midi;
+  if (isNum(hap?.note))  return hap.note;
+  // Then check structured value payloads
+  if (isNum(hap?.value?.pitch)) return hap.value.pitch;
+  if (isNum(hap?.value?.midi))  return hap.value.midi;
+  if (isNum(hap?.value?.note))  return hap.value.note;
+  // Frequency fallbacks
   let f;
-  if (isNum(hap?.value?.freq) && hap.value.freq > 0) f = hap.value.freq;
-  else if (isNum(hap?.freq) && hap.freq > 0) f = hap.freq;
-  else if (typeof getFrequency === 'function') {
-    const g = getFrequency(hap);
-    if (isNum(g) && g > 0) f = g;
+  if (isNum(hap?.freq) && hap.freq > 0) {
+    f = hap.freq;
+  } else if (isNum(hap?.value?.freq) && hap.value.freq > 0) {
+    f = hap.value.freq;
+  } else if (typeof getFrequency === 'function') {
+    try {
+      const g = getFrequency(hap);
+      if (isNum(g) && g > 0) f = g;
+    } catch (_) {}
   }
-  if (isNum(f) && f > 0) return 69 + 12 * Math.log2(f / 440);
+  if (isNum(f) && f > 0) {
+    return 69 + 12 * Math.log2(f / 440); // Hz → fractional MIDI
+  }
   return undefined;
 }
 
@@ -321,10 +334,8 @@ export const csoundn = register('csoundn', (instrument, pat) => {
   return pat.onTrigger((hap, deadline, duration) => {
     try {
       if (!csound) { diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING); return; }
-
       const p1 = (typeof instrument === 'string') ? `"${instrument}"` : instrument;
       const p2 = computeP2(deadline);
-
       // Prefer Strudel's own seconds via hap.duration.valueOf()
       let p3;
       const secFromValueOf =
@@ -337,7 +348,6 @@ export const csoundn = register('csoundn', (instrument, pat) => {
         // Fallbacks: cycles -> seconds using cps, then sustain (sec), then scheduler duration
         const cps = (typeof getcps === 'function') ? Math.max(1e-9, getcps()) : 0.5; // REPL default
         let cycles = undefined;
-
         // Prefer the event's own span first
         const bPart = hap?.part?.begin, ePart = hap?.part?.end;
         const b     = hap?.begin,        e     = hap?.end;
@@ -347,7 +357,6 @@ export const csoundn = register('csoundn', (instrument, pat) => {
         else if (isNum(bWhole) && isNum(eWhole)) cycles = eWhole - bWhole;
         else if (isNum(hap?.duration))    cycles = hap.duration; // cycles
         else if (isNum(hap?.delta))       cycles = hap.delta;    // cycles
-
         if (isNum(cycles) && cycles > 0)      p3 = Math.max(1e-4, cycles / cps);
         else if (isNum(hap?.value?.sustain))  p3 = Math.max(1e-4, hap.value.sustain);
         else                                  p3 = Math.max(1e-4, Number(duration) || 0.5);
@@ -355,39 +364,46 @@ export const csoundn = register('csoundn', (instrument, pat) => {
 
       // Optional: apply legato as a ratio if present (common Strudel idiom)
       if (isNum(hap?.value?.legato) && p3 > 0) p3 = Math.max(1e-4, p3 * hap.value.legato);
-      if (!(p3 > 0)) return;
+      if (!(p3 > 0)) return hap;
 
       if (typeof hap.value !== 'object' || hap.value === null) hap.value = {};
 
       const midi = resolveMidi(hap);
-      if (!isNum(midi)) return; // skip rests/meta events
+      // Don't send non-notes to csound -- I think.
+      if (!isNum(midi)) {
+        return hap;
+      };
       const p4 = midi;
-
       const gain = isNum(hap.value.gain) ? hap.value.gain : 0.9;
       const p5 = Math.max(0, Math.min(127, 127 * gain));
       const p6 = isNum(hap.value.depth)  ? hap.value.depth  : 0;
       const p7 = isNum(hap.value.pan)    ? hap.value.pan    : 0;
       const p8 = isNum(hap.value.height) ? hap.value.height : 0;
-
       csound.readScore(`i ${p1} ${p2} ${p3} ${p4} ${p5} ${p6} ${p7} ${p8}\n`);
-
-      // gi/gk controls
+      // gi/gk are Csound control channels.
       for (const k in hap.value) {
         if (k.startsWith('gi') || k.startsWith('gk')) {
           csound.SetControlChannel(k, parseFloat(hap.value[k]));
         }
       }
+      // For the pianoroll.
+      // hap.duration = p3;           
+      hap.gain     = p5 / 127.0;  
+      // Only notes that actually are played are coerced to onsets.
+      hap.is_onset = hap.isOnset = true;
 
-      // optional viz bookkeeping
-      if (globalThis.haps_from_outputs) {
-        hap.value.note = p4;
-        hap.value.gain = gain;
-        hap.value.color = hsvToRgb(((typeof p1 === 'number' ? p1 : 0) / instrument_count) * 360, 1, gain);
-        globalThis.haps_from_outputs.push(hap);
-      }
+    //   // optional viz bookkeeping
+    //   if (globalThis.haps_from_outputs) {
+    //     hap.value.note = p4;
+    //     hap.value.duration = p3;
+    //     hap.value.gain = gain;
+    //     hap.value.color = hsvToRgb(((typeof p1 === 'number' ? p1 : 0) / instrument_count) * 360, 1, gain);
+    //     globalThis.haps_from_outputs.push(hap);
+    //   }
     } catch (e) {
       diagnostic('[csoundn] error: ' + e + '\n', ERROR);
     }
+    return hap;
   });
 });
 

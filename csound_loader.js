@@ -92,6 +92,7 @@ var load_csound = async function(csound_message_callback_) {
         // console.log.
         return;
     }
+    // TODO: Fix this so it detects csound.node and Android! Yikes!
     // if (typeof csound !== 'undefined') {
     //     if (csound != null) {
     //         csound_injected = csound;
