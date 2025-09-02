@@ -77,7 +77,7 @@ patched_text = text.replace(find_this, replace_with)
 
         <!--
 
-const csac = await import('../csoundac.mjs');
+        const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.INFORMATION);
 csac.diagnostic('This is a NEVER notification\n', csac.NEVER);
 csac.diagnostic('This is a DEBUG notification\n', csac.DEBUG);
@@ -110,11 +110,11 @@ class LogisticPattern extends csac.StatefulPatterns {
             let y1 = 4 * this.c * this.y * (1 - this.y);
             this.midi_key = Math.round(y1 * 36 + 36);
             this.y = y1;
-            hap.pitch = this.midi_key;
+            hap.value = this.midi_key;
             this.counter = this.counter + 1;
             csac.print_counter('Logistic onset', this.counter, hap);
         }
-        hap.pitch = this.midi_key;
+        hap.value = this.midi_key;
         ///csac.print_counter('Logistic value', this.counter, hap);
         return hap;
      }
@@ -130,12 +130,13 @@ pure(0)
   // This pattern should be very clearly audible.
   .acCT(chordPattern, "0 1 2 3 4 -10".slow(12)).slow(2)
   .acCV(chordPattern)
+  .note()
   .legato("2")
-  .csoundn("5")  
-  .pianoroll({ labels:1, fill:1, stroke:1 })
   .pianoroll({labels:1,fold:0,scaleauto:1,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})    
+  .csoundn("5")
 
--->
+
+        -->
 
     </strudel-repl-component>
 
