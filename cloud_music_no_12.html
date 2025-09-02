@@ -16,6 +16,7 @@
     <script src="tinycolor.js"></script>
     <script src="CsoundAudioNode.js"></script>
     <script src="CsoundAC.js"></script>
+    <script src="csound_loader.js"></script>
     <script src="strudel_embed.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="icon" href="data:,">
@@ -113,7 +114,7 @@ class AscenderPattern extends csac.StatefulPatterns {
             this.counter = this.counter + 1;
             csac.print_counter('Ascender onset', counter, hap);
         }
-        hap.value = this.midi_key;
+        hap.pitch = this.midi_key;
         ///csac.print_counter('Ascender value', this.counter, hap);
         return hap;
      }
@@ -126,17 +127,17 @@ stack(
   "<D5 E5>".note().csoundn("6"),
   "<D4 C3 F4>".note().piano().gain(.3),
 pure(0)
-  //.fast(32)
+  .fast(3)
   .Ascender(ascenderInstance, "48")
   //.acC(chordInstance, "<CM7 Dm7 Em7 G7>/3").slow(2)
   // This pattern should be very clearly audible.
   //.acCT(chordInstance, "0 1 2 3 4 -10".slow(12)).slow(2)
   //.acCV(chordInstance)
-  .note()//.piano())
-        .csoundn("6"))
+  //.piano())
+  .csoundn("9"))
   //.legato("2"))
   .pianoroll({labels:1,fold:0,scaleauto:1,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
-
+  
 -->
 
     </strudel-repl-component>

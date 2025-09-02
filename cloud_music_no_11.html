@@ -16,6 +16,7 @@
     <script src="tinycolor.js"></script>
     <script src="CsoundAudioNode.js"></script>
     <script src="CsoundAC.js"></script>
+    <script src="csound_loader.js"></script>
     <script src="strudel_embed.js"></script>
     <link rel="stylesheet" href="w3.css">
     <link rel="icon" href="data:,">
@@ -76,7 +77,7 @@ patched_text = text.replace(find_this, replace_with)
 
         <!--
 
-const csac = await import('../csoundac.mjs');
+        const csac = await import('../csoundac.mjs');
 csac.diagnostic_level(csac.INFORMATION);
 csac.diagnostic('This is a NEVER notification\n', csac.NEVER);
 csac.diagnostic('This is a DEBUG notification\n', csac.DEBUG);
@@ -132,9 +133,10 @@ pure(0)
   .note()
   .legato("2")
   .pianoroll({labels:1,fold:0,scaleauto:1,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})    
-  .csoundn("5")    
+  .csoundn("5")
 
--->
+
+        -->
 
     </strudel-repl-component>
 

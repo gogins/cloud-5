@@ -72,85 +72,115 @@ export function diagnostic(message, level = WARNING) {
  * methods as class methods.
  */
 export class StatefulPatterns {
-    constructor() {
-    }
-    registerPatterns() {
-        for (let name of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
-            let method = this[name];
-            if ((method instanceof Function) &&
-                (method.name !== this.constructor.name) && 
-                (method.name !== 'registerMethods')) {
-                let instance = this;
-                // Problem: the Pattern function must explicitly declare its 
-                // parameters. We can't push that information from the class 
-                // method Function object into the Pattern function 
-                // declaration, but we do know the arity of the class method, 
-                // which is always at least 1 because of the need to pass the 
-                // Hap.
-                let arity = method.length;
-                // For now, we will set up separate registrations for the 
-                // first few arities. The actual arity of the Pattern function 
-                // is always at least 3 because of the need to pass the class 
-                // instance, the is_onset flag, and the Hap along with any 
-                // patternifiable rguments.
-                arity = arity + 1;
-                if (arity === 3) {
-                    let registration = register(name, (stateful, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, hap);
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                            hap = method.call(stateful, false, hap);
-                            return hap;
-                        });
-                    });
-                    // There are no dynamic exports in JavaScript, so we just stuff 
-                    // these into the window scope as global functions.
-                    window[name] = registration;
-                } else if (arity === 4) {
-                    let registration = register(name, (stateful, p2, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, p2, hap);
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                            hap = method.call(stateful, false, p2, hap);
-                            return hap;
-                        });
-                    });
-                    window[name] = registration;
-                } else if (arity === 5) {
-                    let registration = register(name, (stateful, p2, p3, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, p2, p3, hap);
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                            hap = method.call(stateful, false, p2, p3, hap);
-                            return hap;
-                        });
-                    });
-                    window[name] = registration;
-               } else if (arity === 6) {
-                    let registration = register(name, (stateful, p2, p3, p4, pat) => {
-                        return pat.onTrigger((t, hap) => {
-                            method.call(stateful, true, p2, p3, p4, hap);
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] onset:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                        }, false).withHap((hap) => {
-                            stateful.current_time = getAudioContext().currentTime;
-                            if (diagnostic_level_ >= DEBUG) diagnostic('[registerStateful][' + method.name + '] value:' + JSON.stringify({x, stateful}, null, 4) + '\n');
-                            hap = method.call(stateful, false, p2, p3, p4, hap);
-                            return hap;
-                        });
-                    });
-                    window[name] = registration;
+  constructor() {}
+
+  registerPatterns() {
+    const proto = Object.getPrototypeOf(this);
+    for (const name of Object.getOwnPropertyNames(proto)) {
+      const method = this[name];
+      if (typeof method === 'function'
+          && method.name !== this.constructor.name
+          && method.name !== 'registerPatterns') {
+
+        // how many params the method expects (e.g. is_onset, ..., hap)
+        // we add 1 so we can pick the correct registration shape
+        let arity = method.length + 1;
+        const stateful = this;
+
+        const make = (factory) => {
+          const op = register(name, factory);
+          (typeof globalThis !== 'undefined' ? globalThis : window)[name] = op;
+        };
+
+        if (arity === 3) {
+          make((statefulArg, pat) =>
+            pat
+              .onTrigger((hap, deadline, duration) => {
+                try {
+                  // keep your method’s contract: (is_onset, ..., hap)
+                  stateful.current_time = deadline;
+                  method.call(statefulArg, true, hap);
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] onset error: ${e}\n`, ERROR);
                 }
-            }
+              })
+              .withHap((hap) => {
+                try {
+                  // map non-onset / continuous updates
+                  stateful.current_time = getAudioContext().currentTime;
+                  return method.call(statefulArg, false, hap) || hap;
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] withHap error: ${e}\n`, ERROR);
+                  return hap;
+                }
+              })
+          );
+        } else if (arity === 4) {
+          make((statefulArg, p2, pat) =>
+            pat
+              .onTrigger((hap, deadline, duration) => {
+                try {
+                  stateful.current_time = deadline;
+                  method.call(statefulArg, true, p2, hap);
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] onset error: ${e}\n`, ERROR);
+                }
+              })
+              .withHap((hap) => {
+                try {
+                  stateful.current_time = getAudioContext().currentTime;
+                  return method.call(statefulArg, false, p2, hap) || hap;
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] withHap error: ${e}\n`, ERROR);
+                  return hap;
+                }
+              })
+          );
+        } else if (arity === 5) {
+          make((statefulArg, p2, p3, pat) =>
+            pat
+              .onTrigger((hap, deadline, duration) => {
+                try {
+                  stateful.current_time = deadline;
+                  method.call(statefulArg, true, p2, p3, hap);
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] onset error: ${e}\n`, ERROR);
+                }
+              })
+              .withHap((hap) => {
+                try {
+                  stateful.current_time = getAudioContext().currentTime;
+                  return method.call(statefulArg, false, p2, p3, hap) || hap;
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] withHap error: ${e}\n`, ERROR);
+                  return hap;
+                }
+              })
+          );
+        } else if (arity === 6) {
+          make((statefulArg, p2, p3, p4, pat) =>
+            pat
+              .onTrigger((hap, deadline, duration) => {
+                try {
+                  stateful.current_time = deadline;
+                  method.call(statefulArg, true, p2, p3, p4, hap);
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] onset error: ${e}\n`, ERROR);
+                }
+              })
+              .withHap((hap) => {
+                try {
+                  stateful.current_time = getAudioContext().currentTime;
+                  return method.call(statefulArg, false, p2, p3, p4, hap) || hap;
+                } catch (e) {
+                  if (typeof diagnostic === 'function') diagnostic(`[registerStateful][${method.name}] withHap error: ${e}\n`, ERROR);
+                  return hap;
+                }
+              })
+          );
         }
+      }
     }
+  }
 }
 

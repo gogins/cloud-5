@@ -28,7 +28,8 @@
  * message callback function to console.log.
  */
  
-// These are globals:
+// These are globals for this script. The global Csound and CsoundAC are set 
+// as properties of globalThis.
 
 csound_injected = null;
 csound_node = null;
@@ -91,15 +92,16 @@ var load_csound = async function(csound_message_callback_) {
         // console.log.
         return;
     }
-    if (typeof csound !== 'undefined') {
-        if (csound != null) {
-            csound_injected = csound;
-            csound_is_loaded = true;
-            console.log = csound_message_callback;
-            csound_message_callback_("Csound is already defined in this JavaScript context.\n");
-            return;
-        }
-    }
+    // TODO: Fix this so it detects csound.node and Android! Yikes!
+    // if (typeof csound !== 'undefined') {
+    //     if (csound != null) {
+    //         csound_injected = csound;
+    //         csound_is_loaded = true;
+    //         console.log = csound_message_callback;
+    //         csound_message_callback_("Csound is already defined in this JavaScript context.\n");
+    //         return;
+    //     }
+    // }
     try {
         csound_message_callback_("Trying to load csound.node...\n");
         csound_node = await require('csound.node');
@@ -157,22 +159,31 @@ var get_csound = async function(csound_message_callback_) {
         await load_csound(csound_message_callback_);
     }
     if (csound_injected != null) {
-        csound = csound_injected;
-        return csound_injected;
+        globalThis.csound = csound_injected;
+        return globalThis.csound;
     } else if (csound_node != null) {
-        csound = csound_node;
+        globalThis.csound = csound_node;
         csound.setMessageCallback(csound_message_callback_);
-        return csound_node;
+        return globalThis.csound;
     } else if (csound_obj != null) {
-        csound = csound_obj;
+        globalThis.csound = csound_obj;
         await csound.on("message", csound_message_callback_);
-        return csound_obj;
+        return globalThis.csound;
     } else if (csound_audio_node != null) {
-        csound = csound_audio_node;
+        globalThis.csound = csound_audio_node;
         csound.setMessageCallback(csound_message_callback_);
-        return csound_audio_node;
+        return globalThis.csound;
      } else {
         csound_message_callback_("Csound is still loading, wait a bit...\n");
     }
 }       
+
+var get_csound_ac = async function() {
+    if (globalThis.csound_ac) {
+        return globalThis.csound_ac;
+    }
+    // Calls into WebAssembly.
+    globalThis.csound_ac = await createCsoundAC();
+    return globalThis.csound_ac;
+}
 

@@ -34,7 +34,7 @@ globalThis.windows_to_close = [];
  * Close all secondary windows on exit.
  */
 window.addEventListener("beforeunload", (event) => {
-  for (let window_to_close of globalThis.windows_to_close()) {
+for (let window_to_close of globalThis.windows_to_close) {
     try {
       window_to_close.close()
     } catch (ex) {
@@ -193,13 +193,13 @@ class Cloud5Piece extends HTMLElement {
     if (message === null) {
       return;
     }
-    this.log_overlay?.log(message);
+    this?.log_overlay?.log(message);
     let level_left = -100;
     let level_right = -100;
-    if (non_csound(this.csound) == false) {
-      let score_time = await this.csound.getScoreTime();
-      level_left = await this.csound.getControlChannel("gk_MasterOutput_output_level_left");
-      level_right = await this.csound.getControlChannel("gk_MasterOutput_output_level_right");
+    if (globalThis.csound) {
+      let score_time = await csound.getScoreTime();
+      level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
+      level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
       let delta = score_time;
       // calculate (and subtract) whole days
       let days = Math.floor(delta / 86400);
@@ -284,8 +284,8 @@ class Cloud5Piece extends HTMLElement {
             class="w3-btn w3-left-align w3-hover-text-light-green w3-right"></li>
       </ul>
     </div>`;
-    this.vu_meter_left = document.querySelector("#vu_mter_left");
-    this.vu_meter_right = document.querySelector("#vu_mter_right");
+    this.vu_meter_left = document.querySelector("#vu_meter_left");
+    this.vu_meter_right = document.querySelector("#vu_meter_right");
     this.mini_console = document.querySelector("#mini_console");
     let menu_item_play = document.querySelector('#menu_item_play');
     menu_item_play.onclick = ((event) => {
@@ -493,19 +493,23 @@ class Cloud5Piece extends HTMLElement {
    * 
    * @param {Boolean} write_soundfile If true, renders to a local soundfile.
    */
-  render = async function (write_soundfile) {
-    this.csound = await get_csound((message) => this.csound_message_callback(message));
-    this.is_rendering = write_soundfile;
-    if (non_csound(this.csound)) {
-      return;
-    }
-    this?.log_overlay.clear();
-    this.csoundac = await createCsoundAC();
+
+   render = async function (write_soundfile) {
+     this.csound = await get_csound(this.csound_message_callback);
+     this.csoundac = await get_csound_ac();
+     this.is_rendering = write_soundfile;
+     if (non_csound(this.csound)) return;
+     this?.log_overlay?.clear?.();
+
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
-        // CsoundAudioNode does not have the metadata facility.
-        this.csound?.setMetadata(key, value);
+        // CsoundAudioNode does not have the metadata facility,
+        // csound.nwjs does have it.
+
+        if (this.csound.setMetadata) {
+          this.csound?.setMetadata(key, value);
+        }
       }
     }
     let csd;
@@ -1404,8 +1408,7 @@ class Cloud5Log extends HTMLElement {
     this.console_editor = ace.edit("console_view");
     this.console_editor.setShowPrintMargin(false);
     this.console_editor.setDisplayIndentGuides(false);
-    this.console_editor.renderer.setOption("showGutter", false);
-    this.console_editor.renderer.setOption("showLineNumbers", true);
+    this.console_editor.renderer.setOption("showGutter", true);
   };
   /**
    * Displays the message at the bottom of the scrolling text area.
@@ -1571,7 +1574,7 @@ function write_file(filepath, data) {
     // Sync, so a bad .csd file doesn't blow up Csound 
     // before the .csd file is written so it can be tested!
     fs.writeFileSync(filepath, data, function (err) {
-      console.error(err);
+      console.warn(err);
     });
   } catch (err) {
     try {

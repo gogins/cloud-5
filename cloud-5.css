@@ -19,6 +19,18 @@ html::-webkit-scrollbar {
   display: none !important;
 }
 
+/* Make the gutter background transparent */
+.ace_editor .ace_gutter {
+    background: transparent !important;
+    border: none !important;   /* optional, remove divider line */
+    color: #888 !important;    /* pick your line number color */
+}
+
+/* Adjust line number text if you want */
+.ace_editor .ace_gutter-cell {
+    background: transparent !important;
+}
+
 .no-scroll {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
