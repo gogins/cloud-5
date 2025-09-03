@@ -34,7 +34,7 @@ globalThis.windows_to_close = [];
  * Close all secondary windows on exit.
  */
 window.addEventListener("beforeunload", (event) => {
-for (let window_to_close of globalThis.windows_to_close) {
+  for (let window_to_close of globalThis.windows_to_close) {
     try {
       window_to_close.close()
     } catch (ex) {
@@ -330,7 +330,7 @@ class Cloud5Piece extends HTMLElement {
       console.info("menu_item_stop click...");
       this.csound?.setControlChannel("gk_cloud5_record", 0);
       this.stop();
-      if(this.is_rendering) {
+      if (this.is_rendering) {
         let soundfile_url = url_for_soundfile(this.csound);
         this.is_rendering = false;
       }
@@ -406,7 +406,7 @@ class Cloud5Piece extends HTMLElement {
     let menu_item_log = document.querySelector('#menu_item_log');
     menu_item_log.onclick = ((event) => {
       const menu_bottom = document.getElementById('main_menu').getBoundingClientRect().bottom;
-      this.log_overlay.style.position='fixed';
+      this.log_overlay.style.position = 'fixed';
       this.log_overlay.style.top = `${menu_bottom}px`;
       console.info("menu_item_log click...");
       //this.show(this.piano_roll_overlay)
@@ -494,19 +494,18 @@ class Cloud5Piece extends HTMLElement {
    * @param {Boolean} write_soundfile If true, renders to a local soundfile.
    */
 
-   render = async function (write_soundfile) {
-     this.csound = await get_csound(this.csound_message_callback);
-     this.csoundac = await get_csound_ac();
-     this.is_rendering = write_soundfile;
-     if (non_csound(this.csound)) return;
-     this?.log_overlay?.clear?.();
+  render = async function (write_soundfile) {
+    this.csound = await get_csound(this.csound_message_callback);
+    this.csoundac = await get_csound_ac();
+    this.is_rendering = write_soundfile;
+    if (non_csound(this.csound)) return;
+    this?.log_overlay?.clear?.();
 
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
         // CsoundAudioNode does not have the metadata facility,
         // csound.nwjs does have it.
-
         if (this.csound.setMetadata) {
           this.csound?.setMetadata(key, value);
         }
@@ -555,23 +554,17 @@ class Cloud5Piece extends HTMLElement {
     // values defined in the control parameters addon.
     csd = this.update_parameters_in_csd(csd, this.control_parameters_addon);
     write_file(csd_filename_parameters, csd);
-    if (write_soundfile == false) {
-      if (!(this?.csound.getNode)) {
-        this.csound.perform();
+    if (!(this?.csound.getNode)) {
+      this.csound.perform();
+    }
+    if (typeof strudel_view !== 'undefined') {
+      if (strudel_view !== null) {
+        console.info("strudel_view:", this.strudel_view);
+        strudel_view?.setCsound(this.csound);
+        strudel_view?.setCsoundAC(this.csoundac);
+        strudel_view?.setParameters(this.control_parameters_addon);
+        strudel_view?.startPlaying();
       }
-      if (typeof strudel_view !== 'undefined') {
-        if (strudel_view !== null) {
-          console.info("strudel_view:", this.strudel_view);
-          strudel_view?.setCsound(this.csound);
-          strudel_view?.setCsoundAC(this.csoundac);
-          strudel_view?.setParameters(this.control_parameters_addon);
-          strudel_view?.startPlaying();
-        }
-      }
-    } else {
-      // Returns before finishing because Csound will perform in a separate 
-      // thread.
-      await this.csound.performAndPostProcess();
     }
     this?.piano_roll_overlay?.trackScoreTime();
     this?.csound_message_callback("Csound is playing...\n");
@@ -603,10 +596,10 @@ class Cloud5Piece extends HTMLElement {
         const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
         overlay.style.top = `${menu_bar_bottom}px`;
         const computed_height = window.getComputedStyle(document.body).height;
-        overlay.style.height= `calc(${computed_height} - ${menu_bar_bottom}px)`;
+        overlay.style.height = `calc(${computed_height} - ${menu_bar_bottom}px)`;
         console.log(`overlay style: ${overlay.style}`);
       }
-   }
+    }
   }
   /**
    * Helper function to hide custom element overlays.
@@ -685,18 +678,18 @@ class Cloud5Piece extends HTMLElement {
     let inInstrBlock = false;
     let lines = csdText.split("\n");
     for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim();
-        // Detect entering/exiting an instr block
-        if (/^instr\b/i.test(line)) {
-            inInstrBlock = true;
-        } else if (/^endin\b/i.test(line)) {
-            inInstrBlock = false;
-        }
-        // Only modify lines outside instr blocks.
-        if (!inInstrBlock) {
-          // If the line contains " init " we may update it.
-          let parts = line.split(' ');
-          if (parts[1] === "init") {
+      let line = lines[i].trim();
+      // Detect entering/exiting an instr block
+      if (/^instr\b/i.test(line)) {
+        inInstrBlock = true;
+      } else if (/^endin\b/i.test(line)) {
+        inInstrBlock = false;
+      }
+      // Only modify lines outside instr blocks.
+      if (!inInstrBlock) {
+        // If the line contains " init " we may update it.
+        let parts = line.split(' ');
+        if (parts[1] === "init") {
           let parameter = parts[0]
           if (parameter in parameters) {
             let new_value = parameters[parameter];
@@ -709,7 +702,7 @@ class Cloud5Piece extends HTMLElement {
       }
     }
     return lines.join("\n");
-}
+  }
 
   /**
    * Adds a new folder to the Controls menu of the piece.
@@ -1833,14 +1826,14 @@ function canon(CsoundAC, csoundac_score, delay, transposition, layers, csoundac_
 }
 
 function get_filename(pathOrUrl) {
-    const parts = pathOrUrl.split('/');
-    let filename = parts.pop() || parts.pop(); // handles trailing slash
-    const dotIndex = filename.lastIndexOf('.');
-    if (dotIndex > 0) {
-        return filename.slice(0, dotIndex);
-    } else {
-        return filename; // No extension
-    }
+  const parts = pathOrUrl.split('/');
+  let filename = parts.pop() || parts.pop(); // handles trailing slash
+  const dotIndex = filename.lastIndexOf('.');
+  if (dotIndex > 0) {
+    return filename.slice(0, dotIndex);
+  } else {
+    return filename; // No extension
+  }
 }
 
 
