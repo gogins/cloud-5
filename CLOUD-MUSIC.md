@@ -38,7 +38,7 @@ so on.
 
 <ul>
 <li><a href="strudel_repl.html">Strudel REPL</a></li>
-<li><a href="jsdocs">CsoundAC Reference</a></li>
+<li><a href="jsdocs/index.html">CsoundAC Reference</a></li>
 <li><a href="2024-ICSC.html">2024-ICSC.html</a></li>
 <li><a href="Tishina.html">Tishina.html (runs only in NW.js)</a></li>
 <li><a href="cancycle.html">cancycle.html</a></li>

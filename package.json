@@ -4,7 +4,7 @@
     "clean-modules": "find . -name \"node_modules\" -type d -exec rm -r {} +;",
     "setup": "git submodule update --init --recursive --remote && cd strudel && git stash && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "cd strudel && pnpm run setup && pnpm run build",
-    "jsdoc": "jsdoc -c jsdoc.json",
+    "jsdoc": "jsdoc -c jsdoc.json -d jsdocs",
     "package": "rm -f cloud-5.zip && zip -r cloud-5.zip . -x '*chunks*/*' -x '*.git*/*' -x '*attic*/*' -x '*tests*/*' -x '*strudel*/*' -x '*node_modules*/*' -x '*csound-wasm**/*' -x '*csound-node*/*' ",
     "local": "cd strudel/website/dist && python3 -m http.server",
     "marshal": "rsync -av --exclude='/*/' --exclude='.git*' --exclude='index.html' --exclude='node_modules' ./ strudel/website/dist/",
@@ -12,7 +12,7 @@
     "document":  "pandoc --css readme.css -s --metadata title='cloud-music' --ascii=true CLOUD-MUSIC.md -o cloud-music.html && pnpm run jsdoc",
     "dist:rename-strudel-index": "sh -c 'cd strudel/website/dist && [ -f index.html ] && mv -f index.html strudel_repl.html || true'",
     "dist:copy-root-files": "rsync -a ./ strudel/website/dist/ --exclude \"/index.html\" --exclude \"/*/\" --exclude \".git*\" --exclude \"node_modules\"",
-    "dist:copy-root-jsdocs": "rsync -a ./jsdocs/ strudel/website/dist/",
+    "dist:copy-root-jsdocs": "rsync -a --delete ./jsdocs/ strudel/website/dist/jsdocs/",
     "dist:promote-cloud5-index": "sh -c 'cd strudel/website/dist && [ -f cloud-5-index.html ] && mv -f cloud-5-index.html index.html || echo \"cloud-5-index.html not found; skipped\"'",
     "build": "pnpm run document && pnpm run build-strudel && pnpm run dist:rename-strudel-index && pnpm run dist:copy-root-files && pnpm run dist:copy-root-jsdocs && pnpm run dist:promote-cloud5-index && pnpm run dist:neutralize-sw",
     "dist:neutralize-sw": "bash -lc 'cat > strudel/website/dist/sw.js <<\"SW\"\nself.addEventListener(\"install\", () => self.skipWaiting());\nself.addEventListener(\"activate\", event => {\n  event.waitUntil((async () => {\n    try {\n      for (const k of await caches.keys()) await caches.delete(k);\n    } catch {}\n    try { await self.registration.unregister(); } catch {}\n    try {\n      const list = await self.clients.matchAll({ type: \"window\" });\n      for (const c of list) c.navigate(c.url);\n    } catch {}\n  })());\n});\n// no fetch handler -> don’t intercept anything\nSW'"
