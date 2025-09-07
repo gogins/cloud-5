@@ -44,6 +44,111 @@ window.addEventListener("beforeunload", (event) => {
   globalThis.windows_to_close = [];
 });
 
+
+
+function forceShowCanvas(canvas, opts = {}) {
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error("forceShowCanvas: expected an HTMLCanvasElement");
+  }
+
+  const {
+    width = 640,
+    height = 480,
+    top = "10px",
+    left = "10px",
+    label = "DEBUG CANVAS",
+  } = opts;
+
+  // Remove attribute-based hiding
+  canvas.removeAttribute("hidden");
+  canvas.removeAttribute("inert");
+  // aria-hidden doesn't visually hide, but clear it anyway to avoid surprises
+  canvas.removeAttribute("aria-hidden");
+
+  // Ensure it’s in the top document and not trapped in a hidden ancestor
+  if (!document.body.contains(canvas)) {
+    document.body.appendChild(canvas);
+  } else {
+    // Re-append to ensure it's last and on top
+    document.body.appendChild(canvas);
+  }
+
+  // Hard set backing store size (device pixels)
+  canvas.width = width;
+  canvas.height = height;
+
+  // Force CSS with !important so it beats most rules
+  const setImportant = (prop, val) => canvas.style.setProperty(prop, val, "important");
+
+  setImportant("position", "fixed");
+  setImportant("top", top);
+  setImportant("left", left);
+  setImportant("width", width + "px");
+  setImportant("height", height + "px");
+  setImportant("z-index", "2147483647"); // max 32-bit
+  setImportant("display", "block");
+  setImportant("visibility", "visible");
+  setImportant("opacity", "1");
+  setImportant("pointer-events", "auto");
+  setImportant("transform", "none");
+  setImportant("filter", "none");
+  setImportant("clip-path", "none");
+  setImportant("mask", "none");
+  setImportant("mix-blend-mode", "normal");
+  setImportant("contain", "none");
+  setImportant("isolation", "auto");
+  // Loud background so you can see the rectangle even if WebGL draws nothing
+  setImportant("background", "magenta");
+  setImportant("outline", "3px solid black");
+  setImportant("box-shadow", "0 0 0 3px yellow inset");
+
+  // Add a visible label (ARIA + title tooltip)
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", label);
+  canvas.title = label;
+
+  // If you already created a WebGL context elsewhere, we can still poke it.
+  let gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+  if (!gl) {
+    // Try to create one for the visibility test (opaque if possible)
+    gl =
+      canvas.getContext("webgl2", { alpha: false, preserveDrawingBuffer: true }) ||
+      canvas.getContext("webgl", { alpha: false, preserveDrawingBuffer: true });
+  }
+
+  if (gl) {
+    // Match viewport to backing store
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    // Force a clearly visible frame. Use opaque clear to fight transparency.
+    gl.disable(gl.SCISSOR_TEST);
+    gl.disable(gl.STENCIL_TEST);
+    gl.disable(gl.DEPTH_TEST);
+    gl.clearColor(1, 0, 1, 1); // solid magenta, alpha=1 (opaque)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+    // If context is alpha:true (created elsewhere), alpha=1 still makes it opaque.
+    // If your pipeline never draws, you’ll at least see this magenta.
+  }
+
+  // Diag log
+  const rect = canvas.getBoundingClientRect();
+  console.log("[forceShowCanvas] rect:", rect, "computed opacity:",
+    getComputedStyle(canvas).opacity);
+
+  // Context loss visibility
+  canvas.addEventListener("webglcontextlost", (e) => {
+    console.warn("[forceShowCanvas] WebGL context lost", e);
+  }, { once: true });
+
+  return canvas;
+}
+
+
+
+
+
+
 /**
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
  * objects of other cloud-5 elements to the `_overlay` properties. 
@@ -189,7 +294,7 @@ class Cloud5Piece extends HTMLElement {
    * 
    * @param {string} message 
    */
-  csound_message_callback = async function (message) {
+  csound_message_callback = async (message) => {
     if (message === null) {
       return;
     }
@@ -290,7 +395,8 @@ class Cloud5Piece extends HTMLElement {
     let menu_item_play = document.querySelector('#menu_item_play');
     menu_item_play.onclick = ((event) => {
       console.info("menu_item_play click...");
-      this.show(this.piano_roll_overlay)
+      ///this.show(this.piano_roll_overlay)
+      this.show(this.shader_overlay);
       // this.hide(this.strudel_overlay);
       // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
@@ -1136,9 +1242,9 @@ class Cloud5ShaderToy extends HTMLElement {
     this.canvas.height = this.canvas.clientHeight * devicePixelRatio_;
     console.info("canvas.height: " + this.canvas.height);
     console.info("canvas.width:  " + this.canvas.width);
-    this.gl = this.canvas.getContext("webgl2", { antialias: true });
+    this.gl = this.canvas.getContext('webgl2', {alpha:false, antialias:false, depth:false, stencil:false});
     if (!this.gl) {
-      alert("Could not create webgl2 context.");
+        throw new Error('WebGL2 is required for #version 300 es shaders.');
     }
     let extensions = this.gl.getSupportedExtensions();
     console.info("Supported extensions:\n" + extensions);
@@ -1388,52 +1494,83 @@ customElements.define("cloud5-shadertoy", Cloud5ShaderToy);
  * Displays a scrolling list of runtime messages from Csound and/or other 
  * sources.
  */
+/**
+ * Displays a scrolling list of runtime messages from Csound and/or other sources.
+ */
 class Cloud5Log extends HTMLElement {
   constructor() {
     super();
     this.cloud5_piece = null;
+    this._pinTimer = null;
   }
+
   connectedCallback() {
-    this.innerHTML = `<div 
-      id='console_view' 
-      class="cloud5-log-editor no-scroll">`;
-    this.message_callback_buffer = "";
+    this.innerHTML = `<div id="console_view" class="cloud5-log-editor no-scroll"></div>`;
+
     this.console_editor = ace.edit("console_view");
     this.console_editor.setShowPrintMargin(false);
     this.console_editor.setDisplayIndentGuides(false);
     this.console_editor.renderer.setOption("showGutter", true);
-  };
+
+    // Keep the last line visible at the bottom ~4x/second.
+    this._pinTimer = setInterval(() => {
+      if (!this.console_editor) return;
+
+      const editor = this.console_editor;
+      const session = editor.getSession();
+      const renderer = editor.renderer;
+
+      // If the editor is hidden (display:none), scroller height can be 0.
+      // In that case, defer; as soon as it becomes visible, this will run and pin correctly.
+      const scroller = renderer.scroller;
+      const scrollerHeight =
+        (renderer.$size && renderer.$size.scrollerHeight) ||
+        (scroller && scroller.clientHeight) ||
+        0;
+      if (scrollerHeight <= 0) return;
+
+      const lineHeight = renderer.lineHeight || 16;
+      const totalRows = session.getLength();
+      const maxY = Math.max(0, totalRows * lineHeight - scrollerHeight);
+
+      // Scroll so the last line sits at the bottom of the viewport.
+      renderer.scrollToY(maxY);
+    }, 250);
+  }
+
+  disconnectedCallback() {
+    if (this._pinTimer) {
+      clearInterval(this._pinTimer);
+      this._pinTimer = null;
+    }
+  }
+
   /**
-   * Displays the message at the bottom of the scrolling text area.
-   * 
-   * @param {string} message 
+   * Appends message text to the end of the editor, trimming old lines if needed.
+   * @param {string} message
    */
   log(message) {
-    // Split in case the newline is in the middle of the message but 
-    // not at the end?
-    this.message_callback_buffer = this.message_callback_buffer + message;
-    if (this.message_callback_buffer.endsWith("\n")) {
-      console.info(this.message_callback_buffer);
-      let lines = this.console_editor.getSession().getLength();
-      // Prevent the console editor from hogging memory.
-      if (lines > 5000) {
-        this.console_editor.getSession().removeFullLines(0, 2500);
-        lines = this.console_editor.getSession().getLength();
-      }
-      this.console_editor.moveCursorTo(lines, 0);
-      this.console_editor.scrollToLine(lines);
-      this.console_editor.insert(this.message_callback_buffer);
-      this.message_callback_buffer = "";
-    };
+    if (!this.console_editor) return;
+
+    const editor = this.console_editor;
+    const session = editor.getSession();
+    const doc = session.getDocument();
+
+    // Trim if too large (prevent runaway memory).
+    let lines = session.getLength();
+    if (lines > 5000) {
+      session.removeFullLines(0, 2500);
+      lines = session.getLength();
+    }
+
+    // Append at end-of-document (regardless of visibility or cursor position).
+    const lastRow = Math.max(0, doc.getLength() - 1);
+    const lastCol = (session.getLine(lastRow) || "").length;
+    session.insert({ row: lastRow, column: lastCol }, message);
   }
-  /**
-   * Clears the message display.
-   */
-  clear() {
-    this.console_editor.setValue('');
-  }
-};
+}
 customElements.define("cloud5-log", Cloud5Log);
+
 
 /**
  * May contain license, authorship, credits, and program notes as inner HTML.

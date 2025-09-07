@@ -91,9 +91,12 @@ class StrudelReplComponent extends HTMLElement {
     this.i_frame.contentWindow.__csound__ = csound_;
   }
   async setCsoundAC(csoundac_) {
-    let csac = await get_csound_ac();
-    this.i_frame.contentWindow.csoundac = csac
-    this.i_frame.contentWindow.__csoundac__ = csac;
+    if (!csoundac_) {
+      csoundac_ = await get_csound_ac();
+    }
+    /// let csac = await get_csound_ac();
+    this.i_frame.contentWindow.csoundac = csoundac_
+    this.i_frame.contentWindow.__csoundac__ = csoundac_;
   }
   setParameters(parameters_) {
     this.i_frame.contentWindow.__parameters__ = parameters_;

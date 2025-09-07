@@ -2504,7 +2504,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
             $("#menu_item_play").click(async function(event) {
                 console.log("menu_item_play click...");     
                 let tidal_view = document.getElementById("tidal_view");
-                let csoundac = await createCsoundAC();
+                let csoundac = await get_csound_ac();
                 if (csound == null) {
                     try {
                         csound_message_callback("Trying to load CsoundAudioNode...\n");
