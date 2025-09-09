@@ -44,110 +44,22 @@ window.addEventListener("beforeunload", (event) => {
   globalThis.windows_to_close = [];
 });
 
-
-
-function forceShowCanvas(canvas, opts = {}) {
-  if (!(canvas instanceof HTMLCanvasElement)) {
-    throw new Error("forceShowCanvas: expected an HTMLCanvasElement");
-  }
-
-  const {
-    width = 640,
-    height = 480,
-    top = "10px",
-    left = "10px",
-    label = "DEBUG CANVAS",
-  } = opts;
-
-  // Remove attribute-based hiding
-  canvas.removeAttribute("hidden");
-  canvas.removeAttribute("inert");
-  // aria-hidden doesn't visually hide, but clear it anyway to avoid surprises
-  canvas.removeAttribute("aria-hidden");
-
-  // Ensure it’s in the top document and not trapped in a hidden ancestor
-  if (!document.body.contains(canvas)) {
-    document.body.appendChild(canvas);
-  } else {
-    // Re-append to ensure it's last and on top
-    document.body.appendChild(canvas);
-  }
-
-  // Hard set backing store size (device pixels)
-  canvas.width = width;
-  canvas.height = height;
-
-  // Force CSS with !important so it beats most rules
-  const setImportant = (prop, val) => canvas.style.setProperty(prop, val, "important");
-
-  setImportant("position", "fixed");
-  setImportant("top", top);
-  setImportant("left", left);
-  setImportant("width", width + "px");
-  setImportant("height", height + "px");
-  setImportant("z-index", "2147483647"); // max 32-bit
-  setImportant("display", "block");
-  setImportant("visibility", "visible");
-  setImportant("opacity", "1");
-  setImportant("pointer-events", "auto");
-  setImportant("transform", "none");
-  setImportant("filter", "none");
-  setImportant("clip-path", "none");
-  setImportant("mask", "none");
-  setImportant("mix-blend-mode", "normal");
-  setImportant("contain", "none");
-  setImportant("isolation", "auto");
-  // Loud background so you can see the rectangle even if WebGL draws nothing
-  setImportant("background", "magenta");
-  setImportant("outline", "3px solid black");
-  setImportant("box-shadow", "0 0 0 3px yellow inset");
-
-  // Add a visible label (ARIA + title tooltip)
-  canvas.setAttribute("role", "img");
-  canvas.setAttribute("aria-label", label);
-  canvas.title = label;
-
-  // If you already created a WebGL context elsewhere, we can still poke it.
-  let gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
-  if (!gl) {
-    // Try to create one for the visibility test (opaque if possible)
-    gl =
-      canvas.getContext("webgl2", { alpha: false, preserveDrawingBuffer: true }) ||
-      canvas.getContext("webgl", { alpha: false, preserveDrawingBuffer: true });
-  }
-
-  if (gl) {
-    // Match viewport to backing store
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
-    // Force a clearly visible frame. Use opaque clear to fight transparency.
-    gl.disable(gl.SCISSOR_TEST);
-    gl.disable(gl.STENCIL_TEST);
-    gl.disable(gl.DEPTH_TEST);
-    gl.clearColor(1, 0, 1, 1); // solid magenta, alpha=1 (opaque)
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-
-    // If context is alpha:true (created elsewhere), alpha=1 still makes it opaque.
-    // If your pipeline never draws, you’ll at least see this magenta.
-  }
-
-  // Diag log
-  const rect = canvas.getBoundingClientRect();
-  console.log("[forceShowCanvas] rect:", rect, "computed opacity:",
-    getComputedStyle(canvas).opacity);
-
-  // Context loss visibility
-  canvas.addEventListener("webglcontextlost", (e) => {
-    console.warn("[forceShowCanvas] WebGL context lost", e);
-  }, { once: true });
-
-  return canvas;
-}
-
-
-
-
-
+Z_INDEX = {
+  // The Shader overlay is always visible unless the About overlay is 
+  // visible.
+  shader: 100,
+  // The Strudel and Piano Roll overlays are mutually exclusive.
+  log: 1000,
+  strudel: 1100,
+  piano_roll: 1100,
+  // The About overlay, when visible, hides the Shader overlay.
+  about: 4000,
+  // The piece, which shows as the main menu, is next to topmost; the dat.gui 
+  // controls are children of the Controls button in the main menu.
+  piece: 8000,
+  // The dat.gui menu is above all others
+  dat_gui:8001
+};
 
 /**
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
@@ -181,8 +93,9 @@ class Cloud5Piece extends HTMLElement {
   */
   set shader_overlay(shader) {
     this.#shader_overlay = shader;
-    // Back reference for shader to access Csound, etc.
+    // Back reference for shader to access the piece.
     shader.cloud5_piece = this;
+    this.#shader_overlay.style.zIndex = Z_INDEX.shader;
     this.show(this.#shader_overlay);
   }
   get shader_overlay() {
@@ -263,6 +176,7 @@ class Cloud5Piece extends HTMLElement {
    */
   set piano_roll_overlay(piano_roll) {
     this.#piano_roll_overlay = piano_roll;
+    this.#piano_roll_overlay.style.zIndex = Z_INDEX.piano_roll;
     this.#piano_roll_overlay.cloud5_piece = this;
   }
   get piano_roll_overlay() {
@@ -281,19 +195,20 @@ class Cloud5Piece extends HTMLElement {
    * this element may contain license information, authorship, credits, 
    * program notes for the piece, or other information.
    */
+  set about_overlay(overlay) {
+    this.#about_overlay = overlay;
+    this.#about_overlay.style.zIndex = Z_INDEX.about;
+  }
   get about_overlay() {
     return this.#about_overlay;
   }
-  set about_overlay(overlay) {
-    this.#about_overlay = overlay;
-  }
   /**
-   * Called by Csound during performance, and prints the message to the 
-   * scrolling text area of a <csound5-log> element overlay. This function may 
-   * also be called by user code.
-   * 
-   * @param {string} message 
-   */
+     * Called by Csound during performance, and prints the message to the 
+     * scrolling text area of a <csound5-log> element overlay. This function may 
+     * also be called by user code.
+     * 
+     * @param {string} message 
+     */
   csound_message_callback = async (message) => {
     if (message === null) {
       return;
@@ -495,6 +410,7 @@ class Cloud5Piece extends HTMLElement {
     menu_item_strudel.onclick = ((event) => {
       console.info("menu_item_strudel click...");
       //this.hide(this.piano_roll_overlay)
+      this.strudel_overlay.style.zIndex = Z_INDEX.strudel;
       this.toggle(this.strudel_overlay);
       // this.hide(this.shader_overlay);
       // this.hide(this.log_overlay);
@@ -511,6 +427,7 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_log = document.querySelector('#menu_item_log');
     menu_item_log.onclick = ((event) => {
+      this.log_overlay.style.zIndex = Z_INDEX.log;
       const menu_bottom = document.getElementById('main_menu').getBoundingClientRect().bottom;
       this.log_overlay.style.position = 'fixed';
       this.log_overlay.style.top = `${menu_bottom}px`;
@@ -1242,9 +1159,9 @@ class Cloud5ShaderToy extends HTMLElement {
     this.canvas.height = this.canvas.clientHeight * devicePixelRatio_;
     console.info("canvas.height: " + this.canvas.height);
     console.info("canvas.width:  " + this.canvas.width);
-    this.gl = this.canvas.getContext('webgl2', {alpha:false, antialias:false, depth:false, stencil:false});
+    this.gl = this.canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false });
     if (!this.gl) {
-        throw new Error('WebGL2 is required for #version 300 es shaders.');
+      throw new Error('WebGL2 is required for #version 300 es shaders.');
     }
     let extensions = this.gl.getSupportedExtensions();
     console.info("Supported extensions:\n" + extensions);
@@ -1972,6 +1889,3 @@ function get_filename(pathOrUrl) {
     return filename; // No extension
   }
 }
-
-
-

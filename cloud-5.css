@@ -43,11 +43,11 @@ html::-webkit-scrollbar {
 /* The cloud-5 custom elements share a common style, which can be overridden by lower level styles. */
 
 .cloud5-menu {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  z-index: 1000;  
+  width: 100%;;  
+  z-index: 8000
 }
 
 .cloud5-body {
@@ -125,7 +125,6 @@ cloud5-about {
   color: rgb(255, 255, 200, 67%);
   /* overflow-y: auto; */
   overflow-wrap: break-word;
-  z-index:1;
 }
 
 cloud5-shader, 
@@ -138,7 +137,6 @@ cloud5-shadertoy {
   width: 100vw;
   height: 100vh;
   font-size: 11px;
-  /* z-index: 5; */
   background: transparent;
   color: rgb(255, 255, 200, 67%);
   /* overflow-y: auto; */
@@ -155,34 +153,10 @@ cloud5-piano-roll {
   width: 100vw;
   height: 100vh;
   font-size: 11px;
-  /* z-index: 5; */
-  background:  black;
+  background:  transparent;
    /* overflow-y: auto; */
   overflow-wrap: break-word;
 }
-
-/**
- * Stacking order for all overlays. The shader should always be at the bottom 
- * and the menu bar should always be at the top.
- */
- cloud5-shader, cloud5-shadertoy {
-  z-index: 0;
- }
- cloud5-score {
-  z-index: 10;
- }
- cloud5-log {
-  z-index: 20;
- }
- cloud5-about {
-  z-index: 40;
- }
- cloud5-piece {
-  z-index: 50;
- }
- cloud5-strudel {
-  z-index: 60;
- }
  
 /**
  * Override styles of dat.gui menu to suit our styles.
