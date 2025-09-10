@@ -498,14 +498,19 @@ class Cloud5Piece extends HTMLElement {
       // this.hide(this.log_overlay);
       this.hide(this.about_overlay);
     });
-    let menu_item_piano_roll = document.querySelector('#menu_item_piano_roll');
-    menu_item_piano_roll.onclick = ((evemt) => {
-      console.info("menu_item_piano_roll click...");
-      this.toggle(this.piano_roll_overlay)
-      //this.hide(this.strudel_overlay);
-      // this.hide(this.shader_overlay);
-      // this.hide(this.log_overlay);
-      this.hide(this.about_overlay);
+    const menu_item_piano_roll = document.querySelector('#menu_item_piano_roll');
+    menu_item_piano_roll.addEventListener('click', () => {
+      const el = this.piano_roll_overlay;          // <cloud5-piano-roll> host
+      const willShow = getComputedStyle(el).display === 'none';
+      this.toggle(el);                              // show/hide the overlay
+      this.hide(this.about_overlay);                // About can stay hidden
+      // If you don’t have automatic mutual exclusion, also hide Strudel:
+      // this.hide(this.strudel_overlay);
+      if (willShow) {
+        // Wait one frame so layout knows the element is visible,
+        // then let the element size its canvas & redraw.
+        requestAnimationFrame(() => el.onShown?.());
+      }
     });
     let menu_item_log = document.querySelector('#menu_item_log');
     menu_item_log.onclick = ((event) => {
@@ -880,6 +885,12 @@ customElements.define("cloud5-piece", Cloud5Piece);
  * the performance in the score. The user may use the trackball 
  * to zoom in or out of the score, to drag it, or to spin it around.
  */
+/**
+ * Displays a CsoundAC Score as a 3-dimensional piano roll. During 
+ * performance, a moving red ball indicates the current position of 
+ * the performance in the score. The user may use the trackball 
+ * to zoom in or out of the score, to drag it, or to spin it around.
+ */
 class Cloud5PianoRoll extends HTMLElement {
   constructor() {
     super();
@@ -890,17 +901,10 @@ class Cloud5PianoRoll extends HTMLElement {
     this.interval_id = null;
   }
   connectedCallback() {
-    this.canvas = document.createElement('canvas');
-    this.appendChild(this.canvas);
-    this.canvas.style.position = 'fixed';
-    this.canvas.style.top = '0px';
-    this.canvas.style.left = '0px';
-    this.canvas.style.display = 'block';
-    this.canvas.style.width = '100vw';
-    this.canvas.style.height = '100vh';
-    this.canvas.style.inset = '0px';
-    this.canvas.style.pointerEvents = 'none';
-    this.canvas.style.click = 'none';
+    this.innerHTML = `
+     <canvas id="display" class="cloud5-score-canvas">
+    `;
+    this.canvas = this.querySelector('#display');
     if (this.csoundac_score !== null) {
       this.draw(this.csoundac_score);
     }
@@ -967,8 +971,27 @@ class Cloud5PianoRoll extends HTMLElement {
   recenter() {
     this.silencio_score.lookAtFullScore3D();
   }
+  onShown() {
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = document.documentElement.clientWidth;
+    const cssH = document.documentElement.clientHeight;
+    // 2a) backing store
+    this.canvas.width = Math.max(1, Math.floor(cssW * dpr));
+    this.canvas.height = Math.max(1, Math.floor(cssH * dpr));
+    // 2b–d) if Silencio exposes hooks; otherwise re-call draw3D
+    if (this.silencio_score?.resize3D) {
+      this.silencio_score.resize3D(this.canvas.width, this.canvas.height);
+      if (this.silencio_score.lookAtFullScore3D) this.silencio_score.lookAtFullScore3D();
+      if (this.silencio_score.redraw3D) this.silencio_score.redraw3D();
+    } else {
+      // Fallback: rebuild the renderer with the now-correct size
+      this.silencio_score?.draw3D?.(this.canvas);
+      this.silencio_score?.lookAtFullScore3D?.();
+    }
+  }
 }
 customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
+
 
 /**
  * Contains an instance of the Strudel REPL that can use Csound as an output,

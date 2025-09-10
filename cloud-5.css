@@ -62,11 +62,11 @@ html::-webkit-scrollbar {
 
 .cloud5-score-canvas,
 .cloud5-shader-canvas {
-  background:black;
+  background:transparent;
   margin: 0px;
-  width: 100vw;
-  height: 100vh;
-  
+  inset: 0px;
+  width: 100%;
+  height: 100%;
 }
 
 .cloud5-strudel-repl {
@@ -144,19 +144,21 @@ cloud5-shadertoy {
   overflow-wrap: break-word;
 }
 
+/* Replace the whole cloud5-piano-roll block with this */
 cloud5-piano-roll {
   position: fixed;
-  top: 0px;
-  left: 0px;
-  visibility: none;
-  display: none;
-  margin: 0px;
-  width: 100vw;
-  height: 100vh;
-  font-size: 11px;
-  background:  transparent;
-   /* overflow-y: auto; */
+  inset: 0;
+  display: none;           /* hidden by default, same as about/strudel */
+  z-index: 1100;           /* above shader, below main menu (8000) */
+  background: transparent;
   overflow-wrap: break-word;
+}
+
+/* Make its canvas fill the host regardless of classes applied */
+cloud5-piano-roll > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
  
 /**
