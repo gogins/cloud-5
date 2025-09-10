@@ -144,17 +144,16 @@ cloud5-shadertoy {
   overflow-wrap: break-word;
 }
 
-/* Replace the whole cloud5-piano-roll block with this */
 cloud5-piano-roll {
   position: fixed;
   inset: 0;
   display: none;           /* hidden by default, same as about/strudel */
   z-index: 1100;           /* above shader, below main menu (8000) */
-  background: transparent;
+  background: black;
   overflow-wrap: break-word;
 }
 
-/* Make its canvas fill the host regardless of classes applied */
+/* Fill the host regardless of classes applied */
 cloud5-piano-roll > canvas {
   display: block;
   width: 100%;

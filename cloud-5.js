@@ -509,7 +509,7 @@ class Cloud5Piece extends HTMLElement {
       if (willShow) {
         // Wait one frame so layout knows the element is visible,
         // then let the element size its canvas & redraw.
-        requestAnimationFrame(() => el.onShown?.());
+        requestAnimationFrame(() => el.on_shown?.());
       }
     });
     let menu_item_log = document.querySelector('#menu_item_log');
@@ -900,16 +900,29 @@ class Cloud5PianoRoll extends HTMLElement {
     this.canvas = null;
     this.interval_id = null;
   }
+  _onWindowResize = () => {
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) return;
+    requestAnimationFrame(() => this.onShow());
+  };
   connectedCallback() {
     this.innerHTML = `
      <canvas id="display" class="cloud5-score-canvas">
     `;
     this.canvas = this.querySelector('#display');
+    window.addEventListener('resize', this._onWindowResize, { passive: true });
+    window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
     if (this.csoundac_score !== null) {
       this.draw(this.csoundac_score);
     }
     let menu_button = document.getElementById("menu_item_piano_roll");
     menu_button.style.display = 'inline';
+  }
+  disconnectedCallback() {
+    window.removeEventListener('resize', this._onWindowResize);
+    window.visualViewport?.removeEventListener('resize', this._onWindowResize);
   }
   /**
    * Called by the browser to update the display of the Score. It is 
@@ -971,7 +984,7 @@ class Cloud5PianoRoll extends HTMLElement {
   recenter() {
     this.silencio_score.lookAtFullScore3D();
   }
-  onShown() {
+  on_shown() {
     const dpr = window.devicePixelRatio || 1;
     const cssW = document.documentElement.clientWidth;
     const cssH = document.documentElement.clientHeight;
