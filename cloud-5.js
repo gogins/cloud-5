@@ -58,8 +58,90 @@ Z_INDEX = {
   // controls are children of the Controls button in the main menu.
   piece: 8000,
   // The dat.gui menu is above all others
-  dat_gui:8001
+  dat_gui: 8001
 };
+
+/**
+ * Create a full-viewport WebGL2 canvas inside `container` and return {gl, canvas}.
+ * Transparent by default so lower layers (e.g., your shader background) can show through.
+ */
+function obtainWebGL2(container, {
+  alpha = true,
+  antialias = true,
+  premultipliedAlpha = true,
+  preserveDrawingBuffer = false,
+  desynchronized = true,          // lower latency on some browsers
+  powerPreference = 'high-performance'
+} = {}) {
+  const canvas = document.createElement('canvas');
+  Object.assign(canvas.style, {
+    position: 'fixed', inset: '0', width: '100%', height: '100%', border: '0',
+    display: 'block', pointerEvents: 'none' // keep clicks for UI above
+  });
+  container.appendChild(canvas);
+
+  // Try WebGL2 first.
+  let gl = canvas.getContext('webgl2', {
+    alpha, antialias, premultipliedAlpha, preserveDrawingBuffer,
+    desynchronized, powerPreference
+  });
+
+  // Optional fallback to WebGL1 (if you want it)
+  if (!gl) {
+    gl = canvas.getContext('webgl', {
+      alpha, antialias, premultipliedAlpha, preserveDrawingBuffer,
+      desynchronized, powerPreference
+    }) || canvas.getContext('experimental-webgl');
+  }
+  if (!gl) throw new Error('Unable to obtain WebGL or WebGL2 context.');
+
+  // Transparent clear so underlying layers remain visible.
+  gl.clearColor(0, 0, 0, 0);
+
+  // Handle HiDPI and resizing
+  function resize() {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const w = Math.floor(canvas.clientWidth * dpr);
+    const h = Math.floor(canvas.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w; canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+  resize();
+  new ResizeObserver(resize).observe(canvas);
+  window.addEventListener('orientationchange', resize);
+
+  // Context loss / restore
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    // stop anim loops / releases as needed
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    // re-create programs/buffers/textures, then:
+    resize();
+  });
+
+  // Useful diagnostics
+  // console.log(gl.getParameter(gl.VERSION), gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+
+  // WebGL2-only? Check once:
+  const isWebGL2 = (typeof WebGL2RenderingContext !== 'undefined') && (gl instanceof WebGL2RenderingContext);
+
+  // Enable common extensions when available (WebGL2: only EXT_color_buffer_float typically needed)
+  if (isWebGL2) {
+    gl.getExtension('EXT_color_buffer_float'); // renderable float targets
+    gl.getExtension('EXT_texture_filter_anisotropic'); // better texture filtering
+  } else {
+    gl.getExtension('OES_texture_float');
+    gl.getExtension('OES_texture_float_linear');
+    gl.getExtension('OES_element_index_uint');
+    gl.getExtension('EXT_shader_texture_lod');
+    gl.getExtension('EXT_texture_filter_anisotropic');
+  }
+
+  return { gl, canvas, isWebGL2 };
+}
 
 /**
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
@@ -808,10 +890,17 @@ class Cloud5PianoRoll extends HTMLElement {
     this.interval_id = null;
   }
   connectedCallback() {
-    this.innerHTML = `
-     <canvas id="display" class="cloud5-score-canvas">
-    `;
-    this.canvas = this.querySelector('#display');
+    this.canvas = document.createElement('canvas');
+    this.appendChild(this.canvas);
+    this.canvas.style.position = 'fixed';
+    this.canvas.style.top = '0px';
+    this.canvas.style.left = '0px';
+    this.canvas.style.display = 'block';
+    this.canvas.style.width = '100vw';
+    this.canvas.style.height = '100vh';
+    this.canvas.style.inset = '0px';
+    this.canvas.style.pointerEvents = 'none';
+    this.canvas.style.click = 'none';
     if (this.csoundac_score !== null) {
       this.draw(this.csoundac_score);
     }
@@ -988,14 +1077,21 @@ class Cloud5Shader extends HTMLElement {
     * Called by the browser whenever this element is added to the document.
     */
   connectedCallback() {
+    ///const { gl, canvas, isWebGL2 } = obtainWebGL2(this));
+    // ...compile/link programs, start your render loop...
+
+
     this.canvas = document.createElement('canvas');
     this.appendChild(this.canvas);
     this.canvas.style.position = 'fixed';
     this.canvas.style.top = '0px';
+    this.canvas.style.inset = '0px';
     this.canvas.style.left = '0px';
     this.canvas.style.display = 'block';
     this.canvas.style.width = '100%';
     this.canvas.style.height = '100%';
+    this.canvas.style.pointerEvents = 'none';
+    this.canvas.style.click = 'none';
     //this.canvas.style.zIndex = '0';
     this.glsl = SwissGL(this.canvas);
     this.slowdown = 1000;
