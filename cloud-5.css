@@ -84,9 +84,6 @@ cloud5-about {
   isolation: isolate;
 }
 
-/* Show state */
-.is-open { display: block; }
-
 /* Layering (top → bottom) */
 cloud5-menu       { position: fixed; inset: 0 auto auto 0; z-index: 8000; }
 cloud5-strudel    { z-index: 1400; }
@@ -116,7 +113,6 @@ cloud5-strudel {
   /* overflow-y: auto; */
   background: transparent;
   overflow-wrap: break-word;
-  display: block;
 }
 
 cloud5-piano-roll {
@@ -135,10 +131,10 @@ cloud5-log {
 
 cloud5-about {
   isolation: isolate;
-  inset: 80px;
+  padding: 4em;
   font-size: 11px;
   color: rgb(255, 255, 200, 67%);
-  overflow: visible; 
+  overflow: auto; 
   overflow-wrap: break-word;
 }
 
@@ -149,7 +145,6 @@ cloud5-shadertoy {
   color: rgb(255, 255, 200, 67%);
   /* overflow-y: auto; */
   overflow-wrap: break-word;
-  display: block;
  }
 
 .cloud5-score-canvas,
