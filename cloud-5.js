@@ -44,23 +44,6 @@ window.addEventListener("beforeunload", (event) => {
   globalThis.windows_to_close = [];
 });
 
-Z_INDEX = {
-  // The Shader overlay is always visible unless the About overlay is 
-  // visible.
-  shader: 100,
-  // The Strudel and Piano Roll overlays are mutually exclusive.
-  log: 1000,
-  strudel: 1100,
-  piano_roll: 1100,
-  // The About overlay, when visible, hides the Shader overlay.
-  about: 4000,
-  // The piece, which shows as the main menu, is next to topmost; the dat.gui 
-  // controls are children of the Controls button in the main menu.
-  piece: 8000,
-  // The dat.gui menu is above all others
-  dat_gui: 8001
-};
-
 /**
  * Create a full-viewport WebGL2 canvas inside `container` and return {gl, canvas}.
  * Transparent by default so lower layers (e.g., your shader background) can show through.
@@ -177,7 +160,6 @@ class Cloud5Piece extends HTMLElement {
     this.#shader_overlay = shader;
     // Back reference for shader to access the piece.
     shader.cloud5_piece = this;
-    this.#shader_overlay.style.zIndex = Z_INDEX.shader;
     this.show(this.#shader_overlay);
   }
   get shader_overlay() {
@@ -258,7 +240,6 @@ class Cloud5Piece extends HTMLElement {
    */
   set piano_roll_overlay(piano_roll) {
     this.#piano_roll_overlay = piano_roll;
-    this.#piano_roll_overlay.style.zIndex = Z_INDEX.piano_roll;
     this.#piano_roll_overlay.cloud5_piece = this;
   }
   get piano_roll_overlay() {
@@ -279,7 +260,6 @@ class Cloud5Piece extends HTMLElement {
    */
   set about_overlay(overlay) {
     this.#about_overlay = overlay;
-    this.#about_overlay.style.zIndex = Z_INDEX.about;
   }
   get about_overlay() {
     return this.#about_overlay;
@@ -492,7 +472,6 @@ class Cloud5Piece extends HTMLElement {
     menu_item_strudel.onclick = ((event) => {
       console.info("menu_item_strudel click...");
       //this.hide(this.piano_roll_overlay)
-      this.strudel_overlay.style.zIndex = Z_INDEX.strudel;
       this.toggle(this.strudel_overlay);
       // this.hide(this.shader_overlay);
       // this.hide(this.log_overlay);
@@ -514,7 +493,6 @@ class Cloud5Piece extends HTMLElement {
     });
     let menu_item_log = document.querySelector('#menu_item_log');
     menu_item_log.onclick = ((event) => {
-      this.log_overlay.style.zIndex = Z_INDEX.log;
       const menu_bottom = document.getElementById('main_menu').getBoundingClientRect().bottom;
       this.log_overlay.style.position = 'fixed';
       this.log_overlay.style.top = `${menu_bottom}px`;
@@ -561,6 +539,7 @@ class Cloud5Piece extends HTMLElement {
       }
     });
     this.show(this.shader_overlay);
+    this.show(this);
     window.addEventListener('load', function (event) {
       let save_button = this.gui.domElement.querySelector('span.button.save');
       save_button.onclick = function (event) {
@@ -1974,7 +1953,6 @@ async function url_for_soundfile(csound) {
     console.error("Download failed:", x);
   }
 }
-
 
 /**
  * Generates a new copy(s) of the Score in canon to the original, at the 

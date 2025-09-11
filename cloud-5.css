@@ -42,14 +42,6 @@ html::-webkit-scrollbar {
 
 /* The cloud-5 custom elements share a common style, which can be overridden by lower level styles. */
 
-.cloud5-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;;  
-  z-index: 8000
-}
-
 .cloud5-body {
   margin: 0;
   padding: 0;
@@ -58,7 +50,107 @@ html::-webkit-scrollbar {
   overflow: hidden;
   position: relative;
   background-color:black;
+
 }
+
+/**
+ * Overlay elements are fixed position, filling the viewport, and hidden by
+ * default. They can be shown or hidden by setting their display style to
+ * 'block' or 'none'. They are stacked in a specific order using z-index.
+ * The main menu (cloud5-menu) is always visible and has the highest z-index.
+ * Other overlays can be toggled on and off, and their visibility is managed
+ * by the cloud-5 piece.
+ *
+ * From highest stacking order to lowest:
+ *
+ * Menu (i.e. Piece), always visible.
+ * Strudel.
+ * Piano Roll.
+ * Log.
+ * About (hides all others except Menu).
+ * Shader (always visible except when About is visible).
+ */ 
+cloud5-shader,
+cloud5-shadertoy,
+cloud5-strudel,
+cloud5-piano-roll,
+cloud5-log,
+cloud5-about {
+  position: fixed;
+  inset: 0;
+  display: none;      /* toggle with .is-open */
+  width: 100vw;
+  height: 100vh;
+  isolation: isolate;
+}
+
+/* Show state */
+.is-open { display: block; }
+
+/* Layering (top → bottom) */
+cloud5-menu       { position: fixed; inset: 0 auto auto 0; z-index: 8000; }
+cloud5-strudel    { z-index: 1400; }
+cloud5-piano-roll { z-index: 1200; }
+cloud5-log        { z-index: 1100; }
+cloud5-about      { z-index: 1000; }
+cloud5-shader,
+cloud5-shadertoy  { z-index: 100; }
+
+cloud5-piece {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  inset: 0px;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  display: block;
+  z-index: 8000;
+}
+
+cloud5-strudel {
+  isolation: isolate;
+  padding: 80px;
+  font-size: 11px;
+  color: rgb(255, 255, 200, 67%);
+  /* overflow-y: auto; */
+  background: transparent;
+  overflow-wrap: break-word;
+  display: block;
+}
+
+cloud5-piano-roll {
+  background: black;
+  overflow-wrap: break-word;
+}
+
+cloud5-log {
+  padding: 20px;
+  padding-left: 60px;
+  color: rgb(255, 255, 200, 67%);
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+cloud5-about {
+  isolation: isolate;
+  inset: 80px;
+  font-size: 11px;
+  color: rgb(255, 255, 200, 67%);
+  overflow: visible; 
+  overflow-wrap: break-word;
+}
+
+cloud5-shader, 
+cloud5-shadertoy {
+  font-size: 11px;
+  background: transparent;
+  color: rgb(255, 255, 200, 67%);
+  /* overflow-y: auto; */
+  overflow-wrap: break-word;
+  display: block;
+ }
 
 .cloud5-score-canvas,
 .cloud5-shader-canvas {
@@ -94,64 +186,6 @@ html::-webkit-scrollbar {
   -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 
-cloud5-log {
-  position: fixed;
-  top: 0px;
-  left: 0px;
-  visibility: visible;
-  display: block;
-  padding: 20px;
-  padding-left: 60px;
-  width: 100vw;
-  height: 100vh;
-  color: rgb(255, 255, 200, 67%);
-  background: transparent;
-  overflow: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer and Edge */
-}
-
-cloud5-strudel,
-cloud5-about {
-  isolation: isolate;
-  position: fixed;
-  top: 0;
-  left: 0;
-  display: none;
-  padding: 80px;
-  width: 100vw;
-  height:100vh;
-  font-size: 11px;
-  background: transparent;
-  color: rgb(255, 255, 200, 67%);
-  /* overflow-y: auto; */
-  overflow-wrap: break-word;
-}
-
-cloud5-shader, 
-cloud5-shadertoy {
-  position: fixed;
-  top: 0;
-  left: 0;
-  display: none;
-  margin: 0;
-  width: 100vw;
-  height: 100vh;
-  font-size: 11px;
-  background: transparent;
-  color: rgb(255, 255, 200, 67%);
-  /* overflow-y: auto; */
-  overflow-wrap: break-word;
-}
-
-cloud5-piano-roll {
-  position: fixed;
-  inset: 0;
-  display: none;           /* hidden by default, same as about/strudel */
-  z-index: 1100;           /* above shader, below main menu (8000) */
-  background: black;
-  overflow-wrap: break-word;
-}
 
 /* Fill the host regardless of classes applied */
 cloud5-piano-roll > canvas {
