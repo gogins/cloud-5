@@ -2154,7 +2154,7 @@
         // #region Shader
         let cloud5_shader = document.querySelector('cloud5-shadertoy');
         cloud5_shader.shader_parameters_addon = {
-        fragment_shader_code_addon: `#version 300 es
+            fragment_shader_code_addon: `#version 300 es
         #line 2184
         precision highp float;
         /**
@@ -2285,6 +2285,8 @@
         }
         `,
             pre_draw_frame_function_addon: (function() {
+                let total_loudness_location = this.uniform_locations['total_loudness'];
+                let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
                 if (this.analyser) {
                     let spectral_tilt = 0;
                     let total_loudness = 0;
@@ -2303,15 +2305,15 @@
                     total_loudness /= 100.;
                     /// console.info(`tilt: ${spectral_tilt} loudness: ${total_loudness}`);
                     // Set the uniforms.
-                    let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
                     this.gl.uniform1f(spectral_tilt_location, spectral_tilt);
-                    let total_loudness_location = this.uniform_locations['total_loudness'];
                     this.gl.uniform1f(total_loudness_location, total_loudness);
+                } else {
+                    this.gl.uniform1f(spectral_tilt_location, 0);
+                    this.gl.uniform1f(total_loudness_location, .75);
                 }
             }).bind(cloud5_shader),
         };
         cloud5_piece.shader_overlay = cloud5_shader;
-        cloud5_piece.show(cloud5_shader);
         // #endregion
         // #region Log
         let cloud5_log = document.querySelector('cloud5-log');

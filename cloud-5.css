@@ -70,7 +70,6 @@ html::-webkit-scrollbar {
  * About (hides all others except Menu).
  * Shader (always visible except when About is visible).
  */ 
-cloud5-shader,
 cloud5-shadertoy,
 cloud5-strudel,
 cloud5-piano-roll,
@@ -90,7 +89,6 @@ cloud5-strudel    { z-index: 1400; }
 cloud5-piano-roll { z-index: 1200; }
 cloud5-log        { z-index: 1100; }
 cloud5-about      { z-index: 1000; }
-cloud5-shader,
 cloud5-shadertoy  { z-index: 100; }
 
 cloud5-piece {
@@ -138,7 +136,6 @@ cloud5-about {
   overflow-wrap: break-word;
 }
 
-cloud5-shader, 
 cloud5-shadertoy {
   font-size: 11px;
   background: transparent;
