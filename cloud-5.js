@@ -850,7 +850,7 @@ class Cloud5Piece extends HTMLElement {
    * @param {Object} gui_folder The folder to which the command will be added.
    * @param {string} name The name of the command.
    * @param {Function} onclick User-defined function to execute the command.
-   */
+   */f
   menu_add_command(control_parameters_addon, gui_folder, name, onclick) {
     control_parameters_addon['name'] = onclick;
     gui_folder.add(this.control_parameters_addon, name)
@@ -995,7 +995,7 @@ class Cloud5Strudel extends HTMLElement {
   }
   connectedCallback() {
     this.innerHTML = `
-    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl' style='position:fixed;z-index:4001;'>
+    <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl'>
         <!--
         ${this.#strudel_code_addon}
         -->
@@ -1093,9 +1093,7 @@ class Cloud5Shader extends HTMLElement {
     */
   connectedCallback() {
     ///const { gl, canvas, isWebGL2 } = obtainWebGL2(this));
-    // ...compile/link programs, start your render loop...
-
-
+    // ...compile/link programs, start your render loop....
     this.canvas = document.createElement('canvas');
     this.appendChild(this.canvas);
     this.canvas.style.position = 'fixed';
@@ -1139,6 +1137,14 @@ class Cloud5Shader extends HTMLElement {
   }
   get cloud5_piece() {
     return this.#cloud5_piece;
+  }
+  on_shown() {
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = document.documentElement.clientWidth;
+    const cssH = document.documentElement.clientHeight;
+    // Refit backing store size to CSS size.
+    this.canvas.width = Math.max(1, Math.floor(cssW * dpr));
+    this.canvas.height = Math.max(1, Math.floor(cssH * dpr));
   }
 }
 customElements.define("cloud5-shader", Cloud5Shader);
@@ -1515,6 +1521,14 @@ class Cloud5ShaderToy extends HTMLElement {
     this.rendering_frame++;
     requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
   }
+  on_shown() {
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = document.documentElement.clientWidth;
+    const cssH = document.documentElement.clientHeight;
+    // Refit backing store size to CSS size.
+    this.canvas.width = Math.max(1, Math.floor(cssW * dpr));
+    this.canvas.height = Math.max(1, Math.floor(cssH * dpr));
+  }
 }
 customElements.define("cloud5-shadertoy", Cloud5ShaderToy);
 
@@ -1598,7 +1612,6 @@ class Cloud5Log extends HTMLElement {
   }
 }
 customElements.define("cloud5-log", Cloud5Log);
-
 
 /**
  * May contain license, authorship, credits, and program notes as inner HTML.
