@@ -2310,7 +2310,9 @@
             fragColor = vec4(col, 1.0);
         }
         `,
-            set_uniforms_function_addon: (function () {
+            pre_draw_frame_function_addon: (function() {
+                let total_loudness_location = this.uniform_locations['total_loudness'];
+                let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
                 if (this.analyser) {
                     let spectral_tilt = 0;
                     let total_loudness = 0;
@@ -2329,10 +2331,11 @@
                     total_loudness /= 100.;
                     /// console.info(`tilt: ${spectral_tilt} loudness: ${total_loudness}`);
                     // Set the uniforms.
-                    let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
                     this.gl.uniform1f(spectral_tilt_location, spectral_tilt);
-                    let total_loudness_location = this.uniform_locations['total_loudness'];
                     this.gl.uniform1f(total_loudness_location, total_loudness);
+                } else {
+                    this.gl.uniform1f(spectral_tilt_location, 0);
+                    this.gl.uniform1f(total_loudness_location, .75);
                 }
             }).bind(cloud5_shader),
         };
