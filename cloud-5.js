@@ -588,7 +588,7 @@ class Cloud5Piece extends HTMLElement {
     this.is_rendering = write_soundfile;
     if (non_csound(this.csound)) return;
     this?.log_overlay?.clear?.();
-
+    this?.log_overlay?.start?.();
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -667,6 +667,7 @@ class Cloud5Piece extends HTMLElement {
     this.csound.reset();
     this.strudel_overlay?.stop();
     this.csound_message_callback("Csound has stopped.\n");
+    this?.log_overlay?.stop?.();
   };
   /**
    * Helper function to show custom element overlays. Resizes overlay 
@@ -715,6 +716,25 @@ class Cloud5Piece extends HTMLElement {
     }
   }
 
+  /**
+   * Walks the dat.gui menu and returns a dictionary of all current
+   * values of all controls in the menu.
+   */
+  snapshot_dat_gui_menu() {
+    const snapshot = {};
+    (function walk(pane, path = '') {
+      pane.__controllers.forEach(ctrl => {
+        const name = ctrl._name || ctrl.property;
+        const key = path ? `${path}.${name}` : name;
+        snapshot[key] = ctrl.object[ctrl.property];   // now committed
+      });
+      Object.values(pane.__folders || {}).forEach((folder, fname) => {
+        walk(folder, path ? `${path}.${fname}` : fname);
+      });
+    })(this.gui);
+    return snapshot;
+  }
+
   create_dat_gui_menu(parameters) {
     let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };
     if (parameters) {
@@ -751,6 +771,7 @@ class Cloud5Piece extends HTMLElement {
   send_parameters(parameters) {
     if (non_csound(this.csound) == false) {
       this.csound_message_callback("Sending initial state of control perameters to Csound...\n")
+      let snapshot = this.snapshot_dat_gui_menu();
       for (const [name, value] of Object.entries(parameters)) {
         this.csound_message_callback(name + ": " + value + "\n");
         this.csound?.setControlChannel(name, parseFloat(value));
@@ -1502,47 +1523,57 @@ class Cloud5Log extends HTMLElement {
     super();
     this.cloud5_piece = null;
     this._pinTimer = null;
+    this._pinIntervalMs = 250;
   }
 
   connectedCallback() {
     this.innerHTML = `<div id="console_view" class="cloud5-log-editor no-scroll"></div>`;
-
     this.console_editor = ace.edit("console_view");
     this.console_editor.setShowPrintMargin(false);
     this.console_editor.setDisplayIndentGuides(false);
     this.console_editor.renderer.setOption("showGutter", true);
-
-    // Keep the last line visible at the bottom ~4x/second.
-    this._pinTimer = setInterval(() => {
-      if (!this.console_editor) return;
-
-      const editor = this.console_editor;
-      const session = editor.getSession();
-      const renderer = editor.renderer;
-
-      // If the editor is hidden (display:none), scroller height can be 0.
-      // In that case, defer; as soon as it becomes visible, this will run and pin correctly.
-      const scroller = renderer.scroller;
-      const scrollerHeight =
-        (renderer.$size && renderer.$size.scrollerHeight) ||
-        (scroller && scroller.clientHeight) ||
-        0;
-      if (scrollerHeight <= 0) return;
-
-      const lineHeight = renderer.lineHeight || 16;
-      const totalRows = session.getLength();
-      const maxY = Math.max(0, totalRows * lineHeight - scrollerHeight);
-
-      // Scroll so the last line sits at the bottom of the viewport.
-      renderer.scrollToY(maxY);
-    }, 250);
   }
 
   disconnectedCallback() {
+    this.stop();
+  }
+
+  /** Start the autoscroll timer (call when Csound starts). */
+  start(intervalMs = 250) {
+    this._pinIntervalMs = intervalMs;
+    if (this._pinTimer) return; // already running
+    this._pinTimer = setInterval(() => this._pinToBottom(), this._pinIntervalMs);
+  }
+
+  /** Stop the autoscroll timer (call when Csound stops). */
+  stop() {
     if (this._pinTimer) {
       clearInterval(this._pinTimer);
       this._pinTimer = null;
     }
+  }
+
+  /** One tick: keep last line visible at the bottom of the viewport. */
+  _pinToBottom() {
+    if (!this.console_editor) return;
+
+    const editor = this.console_editor;
+    const session = editor.getSession();
+    const renderer = editor.renderer;
+
+    // If the editor is hidden (display:none), scroller height can be 0.
+    const scroller = renderer.scroller;
+    const scrollerHeight =
+      (renderer.$size && renderer.$size.scrollerHeight) ||
+      (scroller && scroller.clientHeight) ||
+      0;
+    if (scrollerHeight <= 0) return;
+
+    const lineHeight = renderer.lineHeight || 16;
+    const totalRows = session.getLength();
+    const maxY = Math.max(0, totalRows * lineHeight - scrollerHeight);
+
+    renderer.scrollToY(maxY);
   }
 
   /**
@@ -1570,6 +1601,7 @@ class Cloud5Log extends HTMLElement {
   }
 }
 customElements.define("cloud5-log", Cloud5Log);
+
 
 /**
  * May contain license, authorship, credits, and program notes as inner HTML.

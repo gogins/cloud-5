@@ -1,18 +1,22 @@
 /* A cloud-5 piece always fills the viewport and only the viewport. */
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   position: relative;
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 html::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 
 .ace_scrollbar {
@@ -21,23 +25,28 @@ html::-webkit-scrollbar {
 
 /* Make the gutter background transparent */
 .ace_editor .ace_gutter {
-    background: transparent !important;
-    border: none !important;   /* optional, remove divider line */
-    color: #888 !important;    /* pick your line number color */
+  background: transparent !important;
+  border: none !important;
+  /* optional, remove divider line */
+  color: #888 !important;
+  /* pick your line number color */
 }
 
 /* Adjust line number text if you want */
 .ace_editor .ace_gutter-cell {
-    background: transparent !important;
+  background: transparent !important;
 }
 
 .no-scroll {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 .no-scroll::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 
 /* The cloud-5 custom elements share a common style, which can be overridden by lower level styles. */
@@ -49,7 +58,7 @@ html::-webkit-scrollbar {
   height: 100vh;
   overflow: hidden;
   position: relative;
-  background-color:black;
+  background-color: black;
 
 }
 
@@ -69,7 +78,7 @@ html::-webkit-scrollbar {
  * Log.
  * About (hides all others except Menu).
  * Shader (always visible except when About is visible).
- */ 
+ */
 cloud5-shadertoy,
 cloud5-strudel,
 cloud5-piano-roll,
@@ -77,19 +86,39 @@ cloud5-log,
 cloud5-about {
   position: fixed;
   inset: 0;
-  display: none;      /* toggle with .is-open */
+  display: none;
+  /* toggle with .is-open */
   width: 100vw;
   height: 100vh;
   isolation: isolate;
 }
 
 /* Layering (top → bottom) */
-cloud5-menu       { position: fixed; inset: 0 auto auto 0; z-index: 8000; }
-cloud5-strudel    { z-index: 1400; }
-cloud5-piano-roll { z-index: 1200; }
-cloud5-log        { z-index: 1100; }
-cloud5-about      { z-index: 1000; }
-cloud5-shadertoy  { z-index: 100; }
+cloud5-menu {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 8000;
+}
+
+cloud5-strudel {
+  z-index: 1400;
+}
+
+cloud5-piano-roll {
+  z-index: 1200;
+}
+
+cloud5-log {
+  z-index: 1100;
+}
+
+cloud5-about {
+  z-index: 1000;
+}
+
+cloud5-shadertoy {
+  z-index: 100;
+}
 
 cloud5-piece {
   position: fixed;
@@ -100,7 +129,14 @@ cloud5-piece {
   height: 100vh;
   background: transparent;
   display: block;
+  pointer-events: none;
   z-index: 8000;
+}
+
+.cloud5-menu {
+  pointer-events: auto;
+  position: fixed;
+  z-index: 8001;
 }
 
 cloud5-strudel {
@@ -123,8 +159,10 @@ cloud5-log {
   padding-left: 60px;
   color: rgb(255, 255, 200, 67%);
   overflow: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* Internet Explorer and Edge */
 }
 
 cloud5-about {
@@ -132,7 +170,7 @@ cloud5-about {
   padding: 4em;
   font-size: 11px;
   color: rgb(255, 255, 200, 67%);
-  overflow: auto; 
+  overflow: auto;
   overflow-wrap: break-word;
 }
 
@@ -142,11 +180,11 @@ cloud5-shadertoy {
   color: rgb(255, 255, 200, 67%);
   /* overflow-y: auto; */
   overflow-wrap: break-word;
- }
+}
 
 .cloud5-score-canvas,
 .cloud5-shader-canvas {
-  background:transparent;
+  background: transparent;
   margin: 0px;
   inset: 0px;
   width: 100%;
@@ -156,8 +194,8 @@ cloud5-shadertoy {
 .cloud5-strudel-repl {
   position: fixed;
   top: 0px;
-  width:120em;
-  height:80em;
+  width: 120em;
+  height: 80em;
   left: 40px;
   /* Bring Strudel's self-determined font size back into line with ours. */
   transform: scale(.666667);
@@ -174,28 +212,30 @@ cloud5-shadertoy {
   color: rgb(255, 255, 200);
   overflow-wrap: break-word;
   overflow: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* Internet Explorer and Edge */
 }
 
 
 /* Fill the host regardless of classes applied */
-cloud5-piano-roll > canvas {
+cloud5-piano-roll>canvas {
   display: block;
   width: 100%;
   height: 100%;
 }
- 
+
 /**
  * Override styles of dat.gui menu to suit our styles.
  */
-  
+
 .dg {
-    font: 12px 'Verdana', sans-serif;
+  font: 12px 'Verdana', sans-serif;
 }
 
 .dg .c {
-    background: transparent;
+  background: transparent;
 }
 
 .dg.main {
@@ -204,15 +244,15 @@ cloud5-piano-roll > canvas {
 }
 
 .dg.main .close-button {
-    background: transparent;
-    font: 15px 'Verdana', sans-serif;
+  background: transparent;
+  font: 15px 'Verdana', sans-serif;
 }
 
 .dg.main .close-button:hover {
-    background: transparent;
+  background: transparent;
 }
 
 input {
-    font: 1em/1.25em Verdana, sans-serif;
-    background: transparent;
+  font: 1em/1.25em Verdana, sans-serif;
+  background: transparent;
 }
