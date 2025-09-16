@@ -372,23 +372,40 @@ class Cloud5Piece extends HTMLElement {
     let menu_item_play = document.querySelector('#menu_item_play');
     menu_item_play.onclick = ((event) => {
       console.info("menu_item_play click...");
+      this.cancel_scheduled_stop();
       ///this.show(this.piano_roll_overlay)
       this.show(this.shader_overlay);
       // this.hide(this.strudel_overlay);
       // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
-      (() => this.render(false))();
+      (() => this.render(1))();
     });
     let menu_item_render = document.querySelector('#menu_item_render');
     menu_item_render.onclick = ((event) => {
       console.info("menu_item_render click...");
-      this.show(this.piano_roll_overlay)
+      this.cancel_scheduled_stop();
+      this.show(this.piano_roll_overlay);
       this.hide(this.strudel_overlay);
       // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
-      (() => this.render(true))();
+      let seconds;
+      let fadeout;
+      if (this.#control_parameters_addon) {
+        seconds = this.#control_parameters_addon.gk_cloud5_duration;
+        if (this.#control_parameters_addon.gk_cloud5_fadeout) {
+          fadeout = this.#control_parameters_addon.gk_cloud5_fadeout;
+        }
+        if (fadeout) {
+          seconds = seconds + fadeout + 4;
+        }
+      }
+      if (seconds) {
+        this.log(`Rendering to stop after ${seconds} seconds...\n`);
+        this.schedule_stop_after(seconds);
+      }
+      (() => this.render(4))();
     });
     let menu_item_record = document.querySelector('#menu_item_record');
     menu_item_record.onclick = ((event) => {
@@ -396,13 +413,14 @@ class Cloud5Piece extends HTMLElement {
       // Start recording if not already recording, 
       // stop recording if already recording.
       if (menu_item_record.innerText == "Record") {
+        this.cancel_scheduled_stop();
         let output_soundfile_name = document.title + ".wav";
         this.csound?.setStringChannel("gS_cloud5_soundfile_name", output_soundfile_name);
-        this.csound?.setControlChannel("gk_cloud5_record", 1);
+        this.csound?.setControlChannel("gk_cloud5_performance_mode", 2);
         menu_item_record.innerText = "Pause";
         this.log("Csound has started recording to: " + output_soundfile_name + "\n");
       } else {
-        this.csound?.setControlChannel("gk_cloud5_record", 0);
+        this.csound?.setControlChannel("gk_cloud5_performance_mode", 3);
         menu_item_record.innerText = "Record";
         this.log("Csound has stopped recording.\n");
         let soundfile_url = url_for_soundfile(this.csound);
@@ -411,11 +429,12 @@ class Cloud5Piece extends HTMLElement {
     let menu_item_stop = document.querySelector('#menu_item_stop');
     menu_item_stop.onclick = ((event) => {
       console.info("menu_item_stop click...");
-      this.csound?.setControlChannel("gk_cloud5_record", 0);
+      this.csound?.setControlChannel("gk_cloud5_performance_mode", 0);
       this.stop();
       if (this.is_rendering) {
         let soundfile_url = url_for_soundfile(this.csound);
         this.is_rendering = false;
+        this.cancel_scheduled_stop();
       }
     });
     let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
@@ -570,6 +589,25 @@ class Cloud5Piece extends HTMLElement {
     }
   }
 
+  schedule_stop_after(seconds) {
+    if (this._stop_timer) clearTimeout(this._stop_timer);
+    this._stop_timer = setTimeout(() => {
+      this.stop();
+      if (this.is_rendering) {
+        const soundfile_url = url_for_soundfile(this.csound);
+        this.is_rendering = false;
+      }
+      this._stop_timer = null;
+    }, seconds * 1000);
+  }
+
+  cancel_scheduled_stop() {
+    if (this._stop_timer) {
+      clearTimeout(this._stop_timer);
+    }
+    this._stop_timer = null;
+  }
+
   /**
    * @function render
    * 
@@ -579,13 +617,26 @@ class Cloud5Piece extends HTMLElement {
    * to the audio output interface, but optionally also to a local soundfile. 
    * Acts as an async member function because it is bound to this.
    * 
-   * @param {Boolean} write_soundfile If true, renders to a local soundfile.
+   * @param {Number}  gk_cloud5_performance_mode
+   *
+   * Possible values of gk_cloud5_performance_mode, which is sent as a control
+   * channel value to Csound before performance:
+   * 1. Start the Csound performance to audio out, and continue indefinitely
+   *    until the user stops it manually (default).
+   * 2. Start recording the audio output to the output soundfile.
+   * 3. Pause recording, and automatically download the output soundfile.
+   * 4. Start the Csound performance to the audio output for a fixed duration 
+   *    with a fadeout, and also record the audio output to the output soundfile;
+   *    when the performance has finished or is stopped, automatically download
+   *    the output soundfile.
    */
-
-  render = async function (write_soundfile) {
+  render = async function (gk_cloud5_performance_mode) {
+    this.log(`render(${gk_cloud5_performance_mode})...`);
     this.csound = await get_csound(this.csound_message_callback);
     this.csoundac = await get_csound_ac();
-    this.is_rendering = write_soundfile;
+    if (gk_cloud5_performance_mode == 2 || gk_cloud5_performance_mode == 4) {
+      this.is_rendering = true;
+    }
     if (non_csound(this.csound)) return;
     this?.log_overlay?.clear?.();
     this?.log_overlay?.start?.();
@@ -615,14 +666,13 @@ class Cloud5Piece extends HTMLElement {
     write_file(csd_filename, csd);
     // Enable Csound to control whether to record a soundfile along with 
     // playing audio, and what the soundfile is named.
+    this.csound?.setControlChannel("gk_cloud5_performance_mode", gk_cloud5_performance_mode);
     const output_soundfile_name = document.title + ".wav";
     this.csound?.setStringChannel("gS_cloud5_soundfile_name", output_soundfile_name);
-    if (write_soundfile == true) {
-      this.csound?.setControlChannel("gk_cloud5_record", 1);
+    if (gk_cloud5_performance_mode == 2 || gk_cloud5_performance_mode == 4) {
       this.log("Csound has started rendering to " + output_soundfile_name + "...\n");
     } else {
-      this.csound?.setControlChannel("gk_cloud5_record", 0);
-      this.log("Csound is not rendering a soundile.\n")
+      this.log("Csound is not rendering a soundfile.\n")
     }
     try {
       let result = await this.csound.compileCsdText(csd);
@@ -1909,33 +1959,9 @@ function downsample_lttb(data, buckets) {
 /**
   * Creates a URL for a soundfile recorded by this piece.
   * All such files exist by default in the Emscripten MEMFS filesystem 
-  * at '/', and are automatically downloaded to the user's downloads 
+  * at '/', and are automatically downloaded to the user's Downloads 
   * directory.
   */
-async function url_for_soundfilex(csound) {
-  try {
-    const soundfile_name = document.title + ".wav";
-    // But see https://mimetype.io/audio/vnd.wav.
-    let mime_type = "audio/wav";
-    let file_data = await csound.GetFileData(soundfile_name);
-    console.info(`Offering download of "${soundfile_name}", with ${file_data.length} bytes...`);
-    var a = document.createElement('a');
-    a.download = soundfile_name;
-    a.href = URL.createObjectURL(new Blob([file_data], { type: mime_type }));
-    // We hide the download link and automatically click it.
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(a.href);
-    }, 4000);
-    // 
-  } catch (x) {
-    console.log(x);
-  }
-}
-
 async function url_for_soundfile(csound) {
   try {
     let soundfile_name = document.title + ".wav";

@@ -41,7 +41,7 @@ let parameters = parent.window.globalThis.__parameters__;
 
 let audioContext = new AudioContext();
 
-import { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns } from '../statefulpatterns.mjs';
+import { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns } from './statefulpatterns.mjs';
 export { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns };
 
 /**
