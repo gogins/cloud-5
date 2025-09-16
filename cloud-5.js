@@ -265,6 +265,13 @@ class Cloud5Piece extends HTMLElement {
     return this.#about_overlay;
   }
   /**
+   * Called on a timer as long as the piece exists.
+   */
+  update_display() {
+    this.csound_message_callback();
+    this?.piano_roll_overlay?.update_play_position();
+  }
+  /**
      * Called by Csound during performance, and prints the message to the 
      * scrolling text area of a <csound5-log> element overlay. This function may 
      * also be called by user code.
@@ -272,10 +279,9 @@ class Cloud5Piece extends HTMLElement {
      * @param {string} message 
      */
   csound_message_callback = async (message) => {
-    if (message === null) {
-      return;
+    if (message && this.log_overlay) {
+      this.log_overlay.log(message);
     }
-    this?.log_overlay?.log(message);
     let level_left = -100;
     let level_right = -100;
     if (globalThis.csound) {
@@ -567,6 +573,7 @@ class Cloud5Piece extends HTMLElement {
     window.addEventListener("unload", function (event) {
       nw_window?.close();
     });
+    this._update_timer = setInterval(() => this.update_display(), 250);  
   }
 
   /**
@@ -704,7 +711,7 @@ class Cloud5Piece extends HTMLElement {
         strudel_view?.startPlaying();
       }
     }
-    this?.piano_roll_overlay?.trackScoreTime();
+    this?.piano_roll_overlay?.show_score_time();
     this?.csound_message_callback("Csound is playing...\n");
   }
   /**
@@ -947,7 +954,6 @@ class Cloud5PianoRoll extends HTMLElement {
     this.silencio_score = new Silencio.Score();
     this.csoundac_score = null;
     this.canvas = null;
-    this.interval_id = null;
   }
   _onWindowResize = () => {
     const visible = this.checkVisibility
@@ -972,6 +978,7 @@ class Cloud5PianoRoll extends HTMLElement {
   disconnectedCallback() {
     window.removeEventListener('resize', this._onWindowResize);
     window.visualViewport?.removeEventListener('resize', this._onWindowResize);
+    removeTimer(this?._update_timer);
   }
   /**
    * Called by the browser to update the display of the Score. It is 
@@ -1013,23 +1020,16 @@ class Cloud5PianoRoll extends HTMLElement {
    * Called by a timer during performance to update the play 
    * position in the piano roll display.
    */
-  trackScoreTime() {
+  show_score_time() {
     if (non_csound(this?.cloud5_piece?.csound)) {
       return;
     }
-    let interval_callback = async function () {
-      let score_time = await this?.cloud5_piece?.csound?.GetScoreTime();
-      this?.silencio_score.progress3D(score_time);
-    };
-    let bound_interval_callback = interval_callback.bind(this);
-    this.interval_id = setInterval(bound_interval_callback, 200);
+    let score_time = this?.cloud5_piece?.csound?.GetScoreTime();
+    this?.silencio_score.progress3D(score_time);
   }
   /**
    * Stops the timer that is updating the play position of the score.
    */
-  stop() {
-    clearInterval(this.interval_id);
-  }
   recenter() {
     this.silencio_score.lookAtFullScore3D();
   }
@@ -1053,7 +1053,6 @@ class Cloud5PianoRoll extends HTMLElement {
   }
 }
 customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
-
 
 /**
  * Contains an instance of the Strudel REPL that can use Csound as an output,
@@ -1572,8 +1571,6 @@ class Cloud5Log extends HTMLElement {
   constructor() {
     super();
     this.cloud5_piece = null;
-    this._pinTimer = null;
-    this._pinIntervalMs = 250;
   }
 
   connectedCallback() {
@@ -1584,33 +1581,13 @@ class Cloud5Log extends HTMLElement {
     this.console_editor.renderer.setOption("showGutter", true);
   }
 
-  disconnectedCallback() {
-    this.stop();
-  }
-
-  /** Start the autoscroll timer (call when Csound starts). */
-  start(intervalMs = 250) {
-    this._pinIntervalMs = intervalMs;
-    if (this._pinTimer) return; // already running
-    this._pinTimer = setInterval(() => this._pinToBottom(), this._pinIntervalMs);
-  }
-
-  /** Stop the autoscroll timer (call when Csound stops). */
-  stop() {
-    if (this._pinTimer) {
-      clearInterval(this._pinTimer);
-      this._pinTimer = null;
+  _pin_to_bottom() {
+    if (!this.console_editor) {
+      return;
     }
-  }
-
-  /** One tick: keep last line visible at the bottom of the viewport. */
-  _pinToBottom() {
-    if (!this.console_editor) return;
-
     const editor = this.console_editor;
     const session = editor.getSession();
     const renderer = editor.renderer;
-
     // If the editor is hidden (display:none), scroller height can be 0.
     const scroller = renderer.scroller;
     const scrollerHeight =
@@ -1618,11 +1595,9 @@ class Cloud5Log extends HTMLElement {
       (scroller && scroller.clientHeight) ||
       0;
     if (scrollerHeight <= 0) return;
-
     const lineHeight = renderer.lineHeight || 16;
     const totalRows = session.getLength();
     const maxY = Math.max(0, totalRows * lineHeight - scrollerHeight);
-
     renderer.scrollToY(maxY);
   }
 
@@ -1632,22 +1607,20 @@ class Cloud5Log extends HTMLElement {
    */
   log(message) {
     if (!this.console_editor) return;
-
     const editor = this.console_editor;
     const session = editor.getSession();
     const doc = session.getDocument();
-
     // Trim if too large (prevent runaway memory).
     let lines = session.getLength();
     if (lines > 5000) {
       session.removeFullLines(0, 2500);
       lines = session.getLength();
     }
-
     // Append at end-of-document (regardless of visibility or cursor position).
     const lastRow = Math.max(0, doc.getLength() - 1);
     const lastCol = (session.getLine(lastRow) || "").length;
     session.insert({ row: lastRow, column: lastCol }, message);
+    this._pin_to_bottom();
   }
 }
 customElements.define("cloud5-log", Cloud5Log);
