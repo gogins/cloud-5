@@ -10,7 +10,7 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License<
 
 The cloud-5 system is a toolkit and library designed for creating computer 
 music that is hosted on Web servers and that runs and plays in a user's Web 
-browser. In theory that can be any Web browser even on smartphones and 
+browser. In theory that can be any current Web browser, even on smartphones and 
 tablets, although performance might be an issue. For examples of such music, see 
 <a href="https://gogins.github.io/">cloud-music</a>.
 
