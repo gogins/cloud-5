@@ -267,9 +267,9 @@ class Cloud5Piece extends HTMLElement {
   /**
    * Called on a timer as long as the piece exists.
    */
-  update_display() {
+  update_display = async () => {
     this.csound_message_callback();
-    this?.piano_roll_overlay?.update_play_position();
+    this?.piano_roll_overlay?.show_score_time();
   }
   /**
      * Called by Csound during performance, and prints the message to the 
@@ -646,7 +646,6 @@ class Cloud5Piece extends HTMLElement {
     }
     if (non_csound(this.csound)) return;
     this?.log_overlay?.clear?.();
-    this?.log_overlay?.start?.();
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -718,7 +717,6 @@ class Cloud5Piece extends HTMLElement {
    * Stops both Csound and Strudel from performing.
    */
   stop = async function () {
-    this.piano_roll_overlay?.stop();
     await this.csound.stop();
     await this.csound.cleanup();
     this.csound.reset();
@@ -978,7 +976,6 @@ class Cloud5PianoRoll extends HTMLElement {
   disconnectedCallback() {
     window.removeEventListener('resize', this._onWindowResize);
     window.visualViewport?.removeEventListener('resize', this._onWindowResize);
-    removeTimer(this?._update_timer);
   }
   /**
    * Called by the browser to update the display of the Score. It is 
@@ -1020,11 +1017,11 @@ class Cloud5PianoRoll extends HTMLElement {
    * Called by a timer during performance to update the play 
    * position in the piano roll display.
    */
-  show_score_time() {
+  show_score_time = async () => {
     if (non_csound(this?.cloud5_piece?.csound)) {
       return;
     }
-    let score_time = this?.cloud5_piece?.csound?.GetScoreTime();
+    let score_time = await this?.cloud5_piece?.csound?.GetScoreTime();
     this?.silencio_score.progress3D(score_time);
   }
   /**
