@@ -44,7 +44,6 @@ so on.
 <li><a href="cancycle.html">cancycle.html</a></li>
 <li><a href="cloud5-example-parametric-lindenmayer.html">cloud5-example-parametric-lindenmayer.html</a></li>
 <li><a href="cloud5-example-score-generator.html">cloud5-example-score-generator.html</a></li>
-<li><a href="cloud5-example-simple.html">cloud5-example-simple.html</a></li>
 <li><a href="cloud5-example-strudel.html">cloud5-example-strudel.html</a></li>
 <li><a href="cloud5-example-visual-music.html">cloud5-example-visual-music.html</a></li>
 <li><a href="cloud5-example-web.html">cloud5-example-web.html</a></li>
