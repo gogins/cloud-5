@@ -396,8 +396,8 @@ and make sure that the application directory for your `csound.node` pieces is th
 
  - Simplified the integration of Csound, CsoundAC, and Strudel by ensuring 
    that Csound and CsoundAC exist as fully initialized global objects in the 
-   JavaScript context (as globalThis.csound and globalThis.csoundac), before 
-   any HTML elements run.
+   JavaScript context (as `globalThis.csound` and `globalThis.csoundac`), 
+   before any HTML elements run.
 
 ### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1.1)
 
