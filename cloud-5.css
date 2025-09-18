@@ -240,7 +240,7 @@ cloud5-piano-roll>canvas {
 
 .dg.main {
   isolation: isolate;
-  z-index: 3000;
+  z-index: 9000;
 }
 
 .dg.main .close-button {
