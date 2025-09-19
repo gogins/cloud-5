@@ -408,7 +408,7 @@ class Cloud5Piece extends HTMLElement {
         }
       }
       if (seconds) {
-        this.log(`Rendering to stop after ${seconds} seconds...\n`);
+        this?.csound_message_callback(`Scheduling to stop rendering after ${seconds} seconds...\n`);
         this.schedule_stop_after(seconds);
       }
       (() => this.render(4))();
@@ -638,7 +638,7 @@ class Cloud5Piece extends HTMLElement {
    *    the output soundfile.
    */
   render = async function (gk_cloud5_performance_mode) {
-    this.log(`render(${gk_cloud5_performance_mode})...`);
+    this.log(`render(${gk_cloud5_performance_mode})...\n`);
     this.csound = await get_csound(this.csound_message_callback);
     this.csoundac = await get_csound_ac();
     if (gk_cloud5_performance_mode == 2 || gk_cloud5_performance_mode == 4) {
@@ -673,12 +673,13 @@ class Cloud5Piece extends HTMLElement {
     // Enable Csound to control whether to record a soundfile along with 
     // playing audio, and what the soundfile is named.
     this.csound?.setControlChannel("gk_cloud5_performance_mode", gk_cloud5_performance_mode);
+    this.csound?.setControlChannel("gk_cloud5_duration", this?.control_parameters_addon?.gk_cloud5_duration);
     const output_soundfile_name = document.title + ".wav";
     this.csound?.setStringChannel("gS_cloud5_soundfile_name", output_soundfile_name);
     if (gk_cloud5_performance_mode == 2 || gk_cloud5_performance_mode == 4) {
-      this.log("Csound has started rendering to " + output_soundfile_name + "...\n");
+      this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
     } else {
-      this.log("Csound is not rendering a soundfile.\n")
+      this.csound_message_callback("Csound is not rendering a soundfile.\n")
     }
     try {
       let result = await this.csound.compileCsdText(csd);
@@ -717,12 +718,12 @@ class Cloud5Piece extends HTMLElement {
    * Stops both Csound and Strudel from performing.
    */
   stop = async function () {
+    this.csound_message_callback("cloud-5 is stopping...\n");
     await this.csound.stop();
     await this.csound.cleanup();
     this.csound.reset();
     this.strudel_overlay?.stop();
-    this.csound_message_callback("Csound has stopped.\n");
-    this?.log_overlay?.stop?.();
+    this.csound_message_callback("cloud-5 has stopped.\n");
   };
   /**
    * Helper function to show custom element overlays. Resizes overlay 
