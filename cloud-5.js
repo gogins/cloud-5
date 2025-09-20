@@ -396,20 +396,22 @@ class Cloud5Piece extends HTMLElement {
       // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
-      let seconds;
+      let duration;
       let fadeout;
+      let seconds;
       if (this.#control_parameters_addon) {
-        seconds = this.#control_parameters_addon.gk_cloud5_duration;
-        if (this.#control_parameters_addon.gk_cloud5_fadeout) {
-          fadeout = this.#control_parameters_addon.gk_cloud5_fadeout;
+        duration = this.#control_parameters_addon.gi_cloud5_duration;
+        if (this.#control_parameters_addon.gi_cloud5_fadeout) {
+          fadeout = this.#control_parameters_addon.gi_cloud5_fadeout;
         }
         if (fadeout) {
-          seconds = seconds + fadeout + 4;
+          seconds = duration + fadeout + 4;
         }
       }
       if (seconds) {
-        this?.csound_message_callback(`Scheduling to stop rendering after ${seconds} seconds...\n`);
-        this.schedule_stop_after(seconds);
+        this.stop_after_seconds = seconds;
+        this?.csound_message_callback(`Duration: ${duration} fadeout: ${fadeout}\n`);
+        this?.csound_message_callback(`Rendering will be stopped ${this.stop_after_seconds} seconds after starting...\n`);
       }
       (() => this.render(4))();
     });
@@ -573,7 +575,7 @@ class Cloud5Piece extends HTMLElement {
     window.addEventListener("unload", function (event) {
       nw_window?.close();
     });
-    this._update_timer = setInterval(() => this.update_display(), 250);  
+    this._update_timer = setInterval(() => this.update_display(), 250);
   }
 
   /**
@@ -666,21 +668,26 @@ class Cloud5Piece extends HTMLElement {
         csd = this.csound_code_addon.replace("</CsScore>", csound_score);
       }
     }
+    const output_soundfile_name = document.title + ".wav";
+    // Define globals for controlling the performance mode, time, and fadeout.
+    const orc_globals = `
+<CsInstruments>
+
+; The following global variables were defined by cloud-5 and are available 
+; for use in the rest of the orchestra for controlling the performance
+; mode, duration, and fadeout time of the piece.
+
+gi_cloud5_performance_mode init ${gk_cloud5_performance_mode}
+gi_cloud5_duration init ${this?.control_parameters_addon?.gi_cloud5_duration ?? 420}
+gi_cloud5_fadeout init ${this?.control_parameters_addon?.gi_cloud5_fadeout ?? 8}
+gS_cloud5_soundfile_name init "${output_soundfile_name}"
+
+`
+    csd = this.csound_code_addon.replace("<CsInstruments>", orc_globals);
     // Save the .csd file so we can debug a failing orchestra,
     // instead of it just nullifying Csound.        
     const csd_filename = document.title + '-generated.csd';
     write_file(csd_filename, csd);
-    // Enable Csound to control whether to record a soundfile along with 
-    // playing audio, and what the soundfile is named.
-    this.csound?.setControlChannel("gk_cloud5_performance_mode", gk_cloud5_performance_mode);
-    this.csound?.setControlChannel("gk_cloud5_duration", this?.control_parameters_addon?.gk_cloud5_duration);
-    const output_soundfile_name = document.title + ".wav";
-    this.csound?.setStringChannel("gS_cloud5_soundfile_name", output_soundfile_name);
-    if (gk_cloud5_performance_mode == 2 || gk_cloud5_performance_mode == 4) {
-      this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
-    } else {
-      this.csound_message_callback("Csound is not rendering a soundfile.\n")
-    }
     try {
       let result = await this.csound.compileCsdText(csd);
       this.csound_message_callback("CompileCsdText returned: " + result + "\n");
@@ -688,6 +695,12 @@ class Cloud5Piece extends HTMLElement {
       alert(e);
     }
     await this.csound.start();
+    if (gk_cloud5_performance_mode == 4) {
+      this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
+      this.schedule_stop_after(this.stop_after_seconds);
+    } else {
+      this.csound_message_callback("Csound is not rendering a soundfile.\n")
+    }
     this.csound_message_callback("Csound has started...\n");
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.

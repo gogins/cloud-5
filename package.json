@@ -5,7 +5,7 @@
     "setup": "git submodule update --init --recursive --remote && cd strudel && git stash && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "cd strudel && pnpm run setup && pnpm run build",
     "jsdoc": "jsdoc -c jsdoc.json -d jsdocs",
-    "package": "rm -f cloud-5.zip && cd strudel/website/dist && zip -r ../../../cloud-5.zip . -x '*.git*'",
+    "package": "rm -f cloud-5.zip && cd strudel/website/dist && zip -r ../../../cloud-5.zip . -x '*.git*' -x'*.zip'",
     "marshal": "rsync -av --exclude='/*/' --exclude='.git*' --exclude='index.html' --exclude='node_modules' ./ strudel/website/dist/",
     "rename": "cp -f strudel/website/dist/index.html strudel/website/dist/strudel_repl.html",
     "document":  "pandoc --css readme.css -s --metadata title='cloud-music' --ascii=true CLOUD-MUSIC.md -o cloud-music.html && pnpm run jsdoc",
