@@ -248,13 +248,17 @@ the user's computer.
 However, in some cloud-5 pieces, the Csound orchestra supports not only 
 rendering to the sandbox filesystem, but also automatically downloading the 
 finished soundfile to the user's Downloads directory. This done using the 
-_Record_ or _Render_ buttons on the cloud-5 menu.
+_Record_ or _Render_ buttons on the cloud-5 menu. However, the WebAssembly 
+runtime sets a hard limit on the size of such soundfiles, which cannot 
+exceed the size of the WebAssembly heap; pieces should probably not be more 
+than about 10 minutes long.
 
 It is _also_ possible to use an audio loopback driver such as 
 [BlackHole](https://github.com/ExistentialAudio/BlackHole) to route 
 audio produced by cloud-5 to a digital audio workstation that _can_ write 
 soundfiles. The maximum resolution of such soundfiles is floating-point 
-samples at 48 KHz, significantly higher resolution than the CD format.
+samples at 48 KHz, significantly higher resolution than the CD format, and 
+there is no hard limit to the size of the resulting soundfiles.
 
 To set this up on the Mac, open the Audio MIDI Setup app, click on the `+` at
 the bottom, and click on Create Multi-Ouput Device, including both your 

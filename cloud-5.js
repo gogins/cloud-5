@@ -598,21 +598,36 @@ class Cloud5Piece extends HTMLElement {
     }
   }
 
+  stop_and_download = async () => {
+    await this.stop();
+    if (this.is_rendering) {
+      const soundfile_name = await url_for_soundfile(this.csound);
+      this.is_rendering = false;
+      this.csound_message_callback(`Rendering has stopped; automatically downloaded ${soundfile_name}\n`);
+    }
+  };
+
   schedule_stop_after(seconds) {
-    if (this._stop_timer) clearTimeout(this._stop_timer);
+    this.csound_message_callback(`Scheduling stop ${seconds} seconds from now...\n`);
+    const milliseconds = seconds * 1000;
+    const deadline = performance.now() + milliseconds;
     this._stop_timer = setTimeout(() => {
-      this.stop();
-      if (this.is_rendering) {
-        const soundfile_url = url_for_soundfile(this.csound);
-        this.is_rendering = false;
+      const remaining = Math.ceil(deadline - performance.now());
+      if (remaining > 0) {
+        this.csound_message_callback(
+          `Timed out early, rescheduling in ${(remaining / 1000).toFixed(3)} seconds...\n`
+        );
+        this._stop_timer = setTimeout(() => this.stop_and_download(), remaining);
+        return; // <-- critical: do not fall through to the immediate stop
       }
-      this._stop_timer = null;
-    }, seconds * 1000);
+      this.stop_and_download();
+    }, milliseconds);
   }
 
   cancel_scheduled_stop() {
     if (this._stop_timer) {
       clearTimeout(this._stop_timer);
+      this.csound_message_callback(`Canceled scheduled stop.\n`);
     }
     this._stop_timer = null;
   }
@@ -1944,7 +1959,7 @@ function downsample_lttb(data, buckets) {
   * Creates a URL for a soundfile recorded by this piece.
   * All such files exist by default in the Emscripten MEMFS filesystem 
   * at '/', and are automatically downloaded to the user's Downloads 
-  * directory.
+  * directory. The filename is returned.
   */
 async function url_for_soundfile(csound) {
   try {
@@ -1962,6 +1977,7 @@ async function url_for_soundfile(csound) {
       document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
     }, 2000);
+    return soundfile_name;
   } catch (x) {
     console.error("Download failed:", x);
   }

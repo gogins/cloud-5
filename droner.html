@@ -7,15 +7,15 @@
   <meta http-equiv='pragma' content='no-cache'>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="CsoundAC.js"></script>
+  <script src="CsoundAudioNode.js"></script>
+  <script src="csound_loader.js"></script> 
   <script src="dat.gui.js"></script>
   <script src="jquery.js"></script>
   <script src="sprintf.js"></script>
   <script src="three.js"></script>
   <script src="ace.js"></script>
   <script src="tinycolor.js"></script>
-  <script src="CsoundAudioNode.js"></script>
-  <script src="csound_loader.js"></script>
-  <script src="CsoundAC.js"></script>
   <script src='Silencio.js'></script>
   <script src='ChordSpace.js'></script>
   <script src="TrackballControls.js"></script>
@@ -37,7 +37,7 @@
           sr = 48000
           ksmps = 128
           nchnls = 2
-          0dbfs = 3
+          0dbfs = 30
           
           ; Ensure the same random stream for each rendering.
           ; rand, randh, randi, rnd(x) and birnd(x) are not affected by seed.
@@ -416,7 +416,7 @@
           a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
           outleta "outleft", a_out_left
           outleta "outright", a_out_right
-          outs a_out_left, a_out_right
+          ;outs a_out_left, a_out_right
           endin
             
           gk_Buzzer_attack chnexport "gk_Buzzer_attack", 3
@@ -1934,67 +1934,43 @@
         printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), k(aoutleft), k(aoutright)
         endin   
         
-        ;; Using reverbsc:
-
-        instr Reverberatorx
-          gk_Reverberator_dry = 1. - gk_Reverberator_wet
-          aleftin init 0
-          arightin init 0
-          aleftout init 0
-          arightout init 0
-          aleftin inleta "inleft"
-          arightin inleta "inright"
-          gi_Reverberator_delay_modulation = i(gk_Reverberator_delay_modulation)
-          ; kfblvl in [0, 1]
-          ; kfco in [0, sr/2]
-          ; ipitchm in [0, 10]
-          // Sean's reverb assumed mono input; hence collapse stereo inputs.
-          asignal_l = (aleftin + arightin) * .5
-          asignal_r = asignal_l
-          ; aoutL, aoutR reverbsc ainL, ainR, kfblvl, kfco[, israte[, ipitchm[, iskip]]] 
-          aleftout, arightout reverbsc asignal_l, asignal_r, gk_Reverberator_feedback, gk_Reverberator_frequency_cutoff, sr, gi_Reverberator_delay_modulation
-          // But the dry signal is the stereo input.
-          aleftoutmix = aleftin * gk_Reverberator_dry + aleftout * gk_Reverberator_wet
-          arightoutmix = arightin * gk_Reverberator_dry + arightout * gk_Reverberator_wet
-          outleta "outleft", aleftoutmix
-          outleta "outright", arightoutmix
-          prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-          endin
-  
-          gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
-          gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
-          
-          gk_MasterOutput_level init 0
-          gS_MasterOutput_filename init ""
-        
-          chn_k "gk_MasterOutput_output_level_left", 3
-          chn_k "gk_MasterOutput_output_level_right", 3
-        
-          instr MasterOutput
-          aleft inleta "inleft"
-          aright inleta "inright"
-          k_gain = ampdb(gk_MasterOutput_level)
-          printks2 "Master gain: %f\n", k_gain
-          iamp init 1
-          aleft butterlp aleft, 18000
-          aright butterlp aright, 18000
-          a_out_left = aleft * k_gain
-          a_out_right = aright * k_gain
-          outs a_out_left, a_out_right
-          ; We want something that will play on my phone.
-          i_amplitude_adjustment = ampdbfs(-3) / 32767
-          i_filename_length strlen gS_MasterOutput_filename
-          ;if i_filename_length > 0 then
-          ;prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
-          ;fout gS_MasterOutput_filename, 18, a_out_left * i_amplitude_adjustment, a_out_right * i_amplitude_adjustment
-          ;endif
-          prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-          gk_MasterOutput_output_level_left = dbfsamp(rms(a_out_left))
-          gk_MasterOutput_output_level_right = dbfsamp(rms(a_out_right))
-          chnset gk_MasterOutput_output_level_left, "gk_MasterOutput_output_level_left"
-          chnset gk_MasterOutput_output_level_right, "gk_MasterOutput_output_level_right"
-          ;;; printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
-          endin
+gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3
+gk_MasterOutput_level init -40 ; Updated from: gk_MasterOutput_level init 0
+instr MasterOutput
+printf "MasterOutput: gi_cloud5_performance_mode: %d gi_cloud5_duration: %f gi_cloud5_fadeout: %f gS_cloud5_soundfile_name: %s\n", 1, gi_cloud5_performance_mode, gi_cloud5_duration, gi_cloud5_fadeout, gS_cloud5_soundfile_name
+a_left inleta "inleft"
+a_right inleta "inright"
+k_gain_linear = ampdb(gk_MasterOutput_level)
+k_gain_smoothed portk k_gain_linear, 0.05
+a_gain interp k_gain_smoothed
+a_left butterlp a_left, 18000
+a_right butterlp a_right, 18000
+a_envelope linseg 1, gi_cloud5_duration, 1, gi_cloud5_fadeout, 0
+a_left = a_left * a_gain * a_envelope
+a_right = a_right * a_gain * a_envelope
+k_rms_left rms a_left
+k_rms_right rms a_right
+k_meter_left dbfsamp k_rms_left
+k_meter_right dbfsamp k_rms_right
+chnset k_meter_left, "gk_MasterOutput_output_level_left"
+chnset k_meter_right, "gk_MasterOutput_output_level_right"
+; Possible values of gi_cloud5_performance_mode:
+; 1. Start the Csound performance to audio out, and continue indefinitely 
+;    until the user stops it manually (default).
+; 2. Start recording the audio output to the output soundfile.
+; 3. Pause recording, and automatically download the output soundfile.
+; 4. Start the Csound performance to the audio output for a fixed duration 
+;    with a fadeout, and also record the audio output to the output soundfile;
+;    when the performance has finished or is stopped, automatically download
+;    the output soundfile.
+outs a_left, a_right
+prints  "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+k_times times 
+printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, k_times, p3, p4, p5, p7, active(p1), k(a_left), k(a_right)
+if gi_cloud5_performance_mode == 2 || gi_cloud5_performance_mode == 4 then
+fout gS_cloud5_soundfile_name, 19, a_left, a_right
+endif
+endin
 
           </CsInstruments>
           <CsScore>
@@ -2110,9 +2086,7 @@
     cloud5_piece.strudel_overlay = document.querySelector('cloud5-strudel');
     cloud5_piece.strudel_overlay.strudel_code_addon = `
 const csac = await import('../csoundac.mjs');
-// csac.diagnostic_level(csac.INFORMATION);
 
-// Just intonation for concert C, ratios from Scala.
 let scale = csac.Scale('C_major');
 scale.set_ratio(0, 1, 1);
 scale.set_ratio(1, 9, 8);
@@ -2123,44 +2097,57 @@ scale.set_ratio(5, 5, 3);
 scale.set_ratio(6, 15, 8);
 let scalePattern = new csac.ScalePatterns(scale, 2);
 
-// Adapting the "polyrhythms" example.
+// Parameters for scaling loudness by pitch.
+const MIN = 0.35, MAX = 0.95, CONC = 1.25;
 
-function scale_velocity_by_key(pitch, baseCpm = 120, concavity = 1.1) {
-    const minVel = 30;
-    const maxVel = 127;
-    const scaled = Math.pow(1 - (pitch / 127), concavity);
-    const velocity = minVel + scaled * (maxVel - minVel);
-    return note(pitch).cpm(baseCpm * pitch / 64).velocity(velocity);
-}
+const midiOf = ev =>
+  (ev?.midi && typeof ev.midi.valueOf === 'function') ? ev.midi.valueOf() :
+  (ev?.pitch && typeof ev.pitch.toMidi === 'function') ? ev.pitch.toMidi() :
+  (typeof ev?.value?.note === 'number') ? ev.value.note :
+  (typeof ev?.note === 'number') ? ev.note : 60;
 
-stack(
-  ...Array.from({ length: 64 }, (_, i) => scale_velocity_by_key(i))
-)
-.slow(120)
-.csoundn("<1 4>").color("red green")
-.acSS(scalePattern, "<1 2 7 1 11 5 7>/11")
-.acSCV(scalePattern)
-.transpose("20")
-.pan("<.1 .5 .8 .3 .7 .25>")
-.gain(.7)
-.pianoroll({labels:1,fold:0,scaleauto:1,minMidi:0,maxMidi:127,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})        `;
+// Make higher notes softer.
+const pitchScaledGain = ev => {
+  const m = Math.max(0, Math.min(127, midiOf(ev)));
+  const t = 1 - m / 127;
+  return MIN + Math.pow(t, CONC) * (MAX - MIN);
+};
+
+const pat =
+  stack(
+    ...Array.from({ length: 64 }, (_, i) => note(i).cpm(120 * (i + 1) / 64))
+  )
+  .slow(120)
+  .acSS(scalePattern, "<1 2 7 1 11 5 7>/11")
+  .acSCV(scalePattern)
+  .transpose(20)
+  .gain(pitchScaledGain)              // only one function-valued param
+  .csoundn("<1 4>").color("red green")
+  .pan("<.1 .5 .8 .3 .7 .25>")
+  .pianoroll({labels:1,fold:0,scaleauto:1,minMidi:0,maxMidi:127,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9});
+
+// Make the pattern the last expression so the REPL sees it:
+pat
+`;
     // #endregion
     // #region Controls 
     cloud5_piece.control_parameters_addon = {
-    "gk_MasterOutput_level": -31.31743911211592,
-    "gk_Reverberator_feedback": 0.5025177268523277,
-    "gk_Reverberator_wet": 1,
-    "gk_Reverberator_delay_modulation": 1.2763333675881205,
+    "gk_MasterOutput_level": -50,
+    "gi_cloud5_duration": 720,
+    "gi_cloud5_fadeout": 30,
+    "gk_Reverberator_feedback": 0.6800246609124537,
+    "gk_Reverberator_wet": 0.7768390686173501,
+    "gk_Reverberator_delay_modulation": 0.6843403205918619,
     "gk_Reverberator_frequency_cutoff": 6100,
-    "gk_Droner_level": -8.298222176549174,
+    "gk_Droner_level": 10.110974106041922,
     "gk_Droner_partial1": 0.154,
-    "gk_Droner_partial2": 0.542,
-    "gk_Droner_partial3": 0.161,
-    "gk_Droner_partial4": 0.312,
-    "gk_Droner_partial5": 0.41000000000000003,
-    "gk_Droner_partial6": 0.167,
-    "gk_Droner_partial7": 0.101,
-    "gk_Droner_partial8": 0.20700000000000002,
+    "gk_Droner_partial2": 0.055,
+    "gk_Droner_partial3": 0.154,
+    "gk_Droner_partial4": 0.483,
+    "gk_Droner_partial5": 0.101,
+    "gk_Droner_partial6": 0.108,
+    "gk_Droner_partial7": 0.41000000000000003,
+    "gk_Droner_partial8": 0.036000000000000004,
     "gk_Droner_partial9": 0,
     "gk_Droner_partial10": 0,
     "gk_Blower_level": -29.344363374781626,
@@ -2200,11 +2187,11 @@ stack(
     "gk_Shiner_attack": 0.125,
     "gk_Shiner_release": 0.5,
     "gk_SeidelHarmonicOsc_level": 33.794060219915735,
-    "gk_Sweeper_level": 14.720994759017572,
-    "gk_Sweeper_britel": 0.14222587606618026,
-    "gk_Sweeper_briteh": 3.5096084677833725,
-    "gk_Sweeper_britels": 0.2474565820573425,
-    "gk_Sweeper_britehs": 1.194532935977803,
+    "gk_Sweeper_level": 45,
+    "gk_Sweeper_britel": 3.193588162762022,
+    "gk_Sweeper_briteh": 0.8261405672009864,
+    "gk_Sweeper_britels": 3.32511302918208,
+    "gk_Sweeper_britehs": 0.3789560213727908,
     "gk_TubularBell_level": -6.982838351659645,
     "gk_YiString_level": 0,
     "gk_Xing_level": 0,
@@ -2218,6 +2205,8 @@ stack(
 };
     let Master = cloud5_piece.menu_folder_addon('Master');
     cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
+    cloud5_piece.menu_slider_addon(Master, 'gi_cloud5_duration', 0, 1200);
+    cloud5_piece.menu_slider_addon(Master, 'gi_cloud5_fadeout', 0, 60);
     cloud5_piece.menu_slider_addon(Master, 'gk_Reverberator_feedback', 0., 1.);
     cloud5_piece.menu_slider_addon(Master, 'gk_Reverberator_wet', 0., 1.);
     cloud5_piece.menu_slider_addon(Master, 'gk_Reverberator_delay_modulation', 0., 10.);
@@ -2245,7 +2234,7 @@ stack(
     let cloud5_shader = document.querySelector('cloud5-shadertoy');
     cloud5_shader.shader_parameters_addon = {
       fragment_shader_code_addon: `#version 300 es
-        #line 2248
+        #line 2285
         precision highp float;
         /**
          * These are all of the standard ShaderToy inputs. If any of these are 
@@ -2379,7 +2368,7 @@ stack(
                 let spectral_tilt_location = this.uniform_locations['spectral_tilt'];
         if (this.analyser) {
           let spectral_tilt = 0;
-          let total_loudness = 0;
+                    let total_loudness = 0;
           this.analyser.getByteFrequencyData(this.frequency_domain_data);
           for (let i = 0; i < this.frequency_domain_data.length; ++i) {
             let sample = this.frequency_domain_data[i];
