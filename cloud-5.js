@@ -350,11 +350,10 @@ class Cloud5Piece extends HTMLElement {
     this.innerHTML = `
     <div class="w3-bar cloud5-menu" id="main_menu">
     <ul class="menu" id="main_menu_list">
-        <li id="menu_item_play" title="Play piece on output" class="w3-btn w3-hover-text-light-green">
+        <li id="menu_item_play" title="Play piece on audio output" class="w3-btn w3-hover-text-light-green">
             Play</li>
-        <li id="menu_item_render" title="Render piece to soundfile" class="w3-btn w3-hover-text-light-green">Render
+        <li id="menu_item_render" title="Render piece to soundfile while playing on audio output" class="w3-btn w3-hover-text-light-green">Render
         </li>
-        <li id="menu_item_record" title="Record live audio to soundfile" class="w3-btn w3-hover-text-light-green">Record</li>
         <li id="menu_item_stop" title="Stop performance" class="w3-btn w3-hover-text-light-green">Stop</li>
         <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
         <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green" style="display:none;">Strudel</li>
@@ -414,25 +413,6 @@ class Cloud5Piece extends HTMLElement {
         this?.csound_message_callback(`Rendering will be stopped ${this.stop_after_seconds} seconds after starting...\n`);
       }
       (() => this.render(4))();
-    });
-    let menu_item_record = document.querySelector('#menu_item_record');
-    menu_item_record.onclick = ((event) => {
-      this.log("menu_item_record click...\n");
-      // Start recording if not already recording, 
-      // stop recording if already recording.
-      if (menu_item_record.innerText == "Record") {
-        this.cancel_scheduled_stop();
-        let output_soundfile_name = document.title + ".wav";
-        this.csound?.setStringChannel("gS_cloud5_soundfile_name", output_soundfile_name);
-        this.csound?.setControlChannel("gk_cloud5_performance_mode", 2);
-        menu_item_record.innerText = "Pause";
-        this.log("Csound has started recording to: " + output_soundfile_name + "\n");
-      } else {
-        this.csound?.setControlChannel("gk_cloud5_performance_mode", 3);
-        menu_item_record.innerText = "Record";
-        this.log("Csound has stopped recording.\n");
-        let soundfile_url = url_for_soundfile(this.csound);
-      }
     });
     let menu_item_stop = document.querySelector('#menu_item_stop');
     menu_item_stop.onclick = ((event) => {
@@ -508,7 +488,13 @@ class Cloud5Piece extends HTMLElement {
     menu_item_piano_roll.addEventListener('click', () => {
       const el = this.piano_roll_overlay;          // <cloud5-piano-roll> host
       const willShow = getComputedStyle(el).display === 'none';
-      this.toggle(el);                              // show/hide the overlay
+      if (willShow) {
+        this.show(this?.piano_roll_overlay);
+        this.hide(this?.shader_overlay);      
+      } else {
+        this.hide(this?.piano_roll_overlay);
+        this.show(this?.shader_overlay);      
+      }
       this.hide(this.about_overlay);                // About can stay hidden
       // If you don’t have automatic mutual exclusion, also hide Strudel:
       // this.hide(this.strudel_overlay);
@@ -673,8 +659,7 @@ class Cloud5Piece extends HTMLElement {
         }
       }
     }
-    let csd;
-    csd = this.csound_code_addon.slice();
+    let csd = this.csound_code_addon.slice();
     if (this.score_generator_function_addon) {
       let score = await this.score_generator_function_addon();
       if (score) {
@@ -698,7 +683,7 @@ gi_cloud5_fadeout init ${this?.control_parameters_addon?.gi_cloud5_fadeout ?? 8}
 gS_cloud5_soundfile_name init "${output_soundfile_name}"
 
 `
-    csd = this.csound_code_addon.replace("<CsInstruments>", orc_globals);
+    csd = csd.replace("<CsInstruments>", orc_globals);
     // Save the .csd file so we can debug a failing orchestra,
     // instead of it just nullifying Csound.        
     const csd_filename = document.title + '-generated.csd';
