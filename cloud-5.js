@@ -677,9 +677,9 @@ class Cloud5Piece extends HTMLElement {
     const orc_globals = `
 <CsInstruments>
 
-; The following global variables were defined by cloud-5 and are available 
-; for use in the rest of the orchestra for controlling the performance
-; mode, duration, and fadeout time of the piece.
+; The following global variables were defined by cloud-5 and are available to 
+; use in the rest of the orchestra for controlling the performance mode, 
+; duration, and fadeout time of the piece.
 
 gi_cloud5_performance_mode init ${gk_cloud5_performance_mode}
 gi_cloud5_duration init ${performance_duration}
