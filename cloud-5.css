@@ -238,9 +238,14 @@ cloud5-piano-roll>canvas {
   background: transparent;
 }
 
+#main_menu {
+  isolation: isolate;
+}
+
 .dg.main {
   isolation: isolate;
   z-index: 9000;
+  overflow: visible;
 }
 
 .dg.main .close-button {

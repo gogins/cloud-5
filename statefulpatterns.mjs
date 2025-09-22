@@ -13,7 +13,7 @@ let audioContext = new AudioContext();
 /**
  * Sets the level of diagnostic messages in this module.
  */
-let diagnostic_level_ = 5;
+let diagnostic_level_ = 1;
 
 /**
  * Gets and/or sets the level of diagnostic messages.
@@ -44,7 +44,7 @@ export const NEVER = 0;
  * @param {number} level Diagnostic level, defaulting to WARNING.
  */
 export function diagnostic(message, level = WARNING) {
-    if (level >= diagnostic_level_) {
+    if (level <= diagnostic_level_) {
         const text = 'L' + level + ' ' + audioContext.currentTime.toFixed(4) + ' [csac]' + message;
         logger(text, 'debug');
         if (csound) csound.message(text);

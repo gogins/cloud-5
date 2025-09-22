@@ -27,7 +27,7 @@
  */
 
 /**
- * Global instance of Csound, shared from cloug-5 to Strudel.
+ * Global instance of Csound, shared from cloud-5 to Strudel.
  */
 let csound = parent.window.globalThis.csound;
 /**
@@ -163,11 +163,11 @@ export function Clone(a, b) {
 
 export function print_counter(pattern, counter, value) {
     if (value.constructor.name === 'Hap') {
-        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value.show() + '\n', ALWAYS);
+        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value.show() + '\n', DEBUG);
     } else if (value.constructor.name === 'Chord') {
-        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value.toString() + '\n', ALWAYS);
+        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value.toString() + '\n', DEBUG);
     } else {
-        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value + '\n', ALWAYS);
+        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value + '\n', DEBUG);
     }
 }
 
@@ -1413,7 +1413,7 @@ export class PitvPatterns extends StatefulPatterns {
         try {
             frequency = getFrequency(hap);
         } catch (error) {
-            diagnostic('[acPV] not a note!\n', WARNING);
+            diagnostic('[acPV] not a note!\n');
             return;
         }
         let current_midi_key = frequencyToMidiInteger(frequency);

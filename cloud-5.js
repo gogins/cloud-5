@@ -670,6 +670,10 @@ class Cloud5Piece extends HTMLElement {
     }
     const output_soundfile_name = document.title + ".wav";
     // Define globals for controlling the performance mode, time, and fadeout.
+    let performance_duration = 10e37;
+    if (gk_cloud5_performance_mode == 4) {
+      performance_duration = this?.control_parameters_addon?.gi_cloud5_duration ?? 10e37;
+    } 
     const orc_globals = `
 <CsInstruments>
 
@@ -678,7 +682,7 @@ class Cloud5Piece extends HTMLElement {
 ; mode, duration, and fadeout time of the piece.
 
 gi_cloud5_performance_mode init ${gk_cloud5_performance_mode}
-gi_cloud5_duration init ${this?.control_parameters_addon?.gi_cloud5_duration ?? 420}
+gi_cloud5_duration init ${performance_duration}
 gi_cloud5_fadeout init ${this?.control_parameters_addon?.gi_cloud5_fadeout ?? 8}
 gS_cloud5_soundfile_name init "${output_soundfile_name}"
 
