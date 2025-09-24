@@ -203,6 +203,7 @@ cloud5-shadertoy {
 .cloud5-log-editor {
   background: transparent;
   display: block;
+  padding: 2em;
   margin: 0px;
   width: 100%;
   height: 100%;

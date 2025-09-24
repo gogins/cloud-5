@@ -751,14 +751,14 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
   show(overlay) {
     if (overlay) {
       overlay.style.display = 'block';
-      // Back out the menu bar height from console view height for the log 
+      // Back out the menu bar height from overlay height for the log 
       // console, the score, and the about page.
       if (['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName)) {
-        const menu_bar = document.getElementById('main_menu');
+        const menu_bar = document.getElementById('main_menu_list');
         const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
         overlay.style.top = `${menu_bar_bottom}px`;
-        const computed_height = window.getComputedStyle(document.body).height;
-        overlay.style.height = `calc(${computed_height} - ${menu_bar_bottom}px)`;
+        // Back out the menu bar height from the overlay height.
+        overlay.style.height = `calc(100% - ${menu_bar_bottom}px)`;
         console.log(`overlay style: ${overlay.style}`);
       }
     }
