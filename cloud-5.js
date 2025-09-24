@@ -135,6 +135,14 @@ class Cloud5Piece extends HTMLElement {
     super();
     this.csound = null;
     this.csoundac = null;
+    this.is_rendering = false;
+    // Default duration and fadeout for rendering to a soundfile.
+    // These may be overridden by control parameters, and are somewhat less 
+    // than the setTimeout maximum.
+    this.duration = 2e6;
+    this.fadeout = 6;
+    this.safe_tail = 4;
+    this.total_duration = this.duration + this.fadeout + this.safe_tail;
   }
   #csound_code_addon = null;
   /**
@@ -395,23 +403,26 @@ class Cloud5Piece extends HTMLElement {
       // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
+      // There must be a default duration and fadeout, if not specified in the 
+      // control parameters, for rendering to a soundfile to work.
       let duration;
       let fadeout;
-      let seconds;
+      const safe_tail = 4;
       if (this.#control_parameters_addon) {
         duration = this.#control_parameters_addon.gi_cloud5_duration;
         if (this.#control_parameters_addon.gi_cloud5_fadeout) {
           fadeout = this.#control_parameters_addon.gi_cloud5_fadeout;
         }
-        if (fadeout) {
-          seconds = duration + fadeout + 4;
-        }
       }
-      if (seconds) {
-        this.stop_after_seconds = seconds;
-        this?.csound_message_callback(`Duration: ${duration} fadeout: ${fadeout}\n`);
-        this?.csound_message_callback(`Rendering will be stopped ${this.stop_after_seconds} seconds after starting...\n`);
+      if (duration) {
+        this.duration = duration;
       }
+      if (fadeout) {
+        this.fadeout = fadeout;
+      }
+      this.total_duration = this.duration + this.fadeout + this.safe_tail;
+      this?.csound_message_callback(`Duration: ${this.duration} fadeout: ${this.fadeout}\n`);
+      this?.csound_message_callback(`Rendering will be stopped ${this.total_duration} seconds after starting...\n`);
       (() => this.render(4))();
     });
     let menu_item_stop = document.querySelector('#menu_item_stop');
@@ -490,10 +501,10 @@ class Cloud5Piece extends HTMLElement {
       const willShow = getComputedStyle(el).display === 'none';
       if (willShow) {
         this.show(this?.piano_roll_overlay);
-        this.hide(this?.shader_overlay);      
+        this.hide(this?.shader_overlay);
       } else {
         this.hide(this?.piano_roll_overlay);
-        this.show(this?.shader_overlay);      
+        this.show(this?.shader_overlay);
       }
       this.hide(this.about_overlay);                // About can stay hidden
       // If you don’t have automatic mutual exclusion, also hide Strudel:
@@ -669,11 +680,6 @@ class Cloud5Piece extends HTMLElement {
       }
     }
     const output_soundfile_name = document.title + ".wav";
-    // Define globals for controlling the performance mode, time, and fadeout.
-    let performance_duration = 10e37;
-    if (gk_cloud5_performance_mode == 4) {
-      performance_duration = this?.control_parameters_addon?.gi_cloud5_duration ?? 10e37;
-    } 
     const orc_globals = `
 <CsInstruments>
 
@@ -682,8 +688,8 @@ class Cloud5Piece extends HTMLElement {
 ; duration, and fadeout time of the piece.
 
 gi_cloud5_performance_mode init ${gk_cloud5_performance_mode}
-gi_cloud5_duration init ${performance_duration}
-gi_cloud5_fadeout init ${this?.control_parameters_addon?.gi_cloud5_fadeout ?? 8}
+gi_cloud5_duration init ${this.duration}
+gi_cloud5_fadeout init ${this.fadeout}
 gS_cloud5_soundfile_name init "${output_soundfile_name}"
 
 `
@@ -701,7 +707,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     await this.csound.start();
     if (gk_cloud5_performance_mode == 4) {
       this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
-      this.schedule_stop_after(this.stop_after_seconds);
+      this.schedule_stop_after(this.total_duration);
     } else {
       this.csound_message_callback("Csound is not rendering a soundfile.\n")
     }
@@ -1945,13 +1951,26 @@ function downsample_lttb(data, buckets) {
 }
 
 /**
-  * Creates a URL for a soundfile recorded by this piece.
+  * In the browser, creates a URL for a soundfile recorded by this piece.
   * All such files exist by default in the Emscripten MEMFS filesystem 
   * at '/', and are automatically downloaded to the user's Downloads 
   * directory. The filename is returned.
+  * 
+  * Does nothing in NW.js, where files are written directly to the 
+  * local filesystem.
+  * 
+  * @param {Csound} csound The Csound instance.
+  * @returns {string} The name of the soundfile, if successful.
   */
 async function url_for_soundfile(csound) {
   try {
+    if (non_csound(csound)) {
+      return;
+    }
+    if (!csound.GetFileData) {
+      console.warn("csound.GetFileData() is not available.");
+      return;
+    }
     let soundfile_name = document.title + ".wav";
     let mime_type = "audio/wav";
     let file_data = await csound.GetFileData(soundfile_name);
