@@ -390,16 +390,33 @@ ability to read and write in the local filesystem.
 
 ### Running
 
-You will need to create a `package.json` file in the cloud-5 Web root 
-directory, as a manifest for your piece as an NW.js app, in the following 
-format:
+You will need to create a `package.json` in the directory containing your 
+piece, as a manifest for your piece as an NW.js app, in the following format:
 ```
+{
+  "main": "MyPiece.html",
+  "name": "MyPiece",
+  "description": "HTML5 with Csound",
+  "version": "0.1.0",
+  "keywords": [ "Csound", "node-webkit" ],
+  "window": {
+    "title": "MyPiece",
+    "icon": "link.png",
+    "toolbar": true,
+    "frame": true,
+    "maximized": true,
+    "position": "mouse",
+    "fullscreen": true
+  },
+   "chromium-args": "--enable-logging=stderr --v=1 --device-scale-factor=2 --allow-running-insecure-content"
+}
 ```
 Then, run NW.js with one parameter, the path to the directory containing 
 your `package.json` file, e.g. on macOS:
 ```
- /Applications/nwjs.app/Contents/MacOS/nwjs /Users/michaelgogins/cloud-5/strudel/website/dist
+/Applications/nwjs.app/Contents/MacOS/nwjs /Users/michaelgogins/cloud-5/strudel/website/dist
 ```
+
 NOTE WELL: Do _not_ overwrite the `package.json` file in the cloud-5 
 repository root directory! That is required for building cloud-5.
 
