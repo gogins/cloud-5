@@ -390,36 +390,18 @@ ability to read and write in the local filesystem.
 
 ### Running
 
-Strudel is written so that all of its resources are located using absolute URLs 
-from the Web root. When using NW.js, the Web root is the application directory. 
-This presents several obstacles to running cloud-5 pieces that use Strudel with 
-NW.js:
-
- 1. An NW.js application is defined by a `package.json` file that would 
-    overwrite the cloud-5's piece's own `package.json` (which is needed if you 
-    are going to build cloud-5 yourself).
-
- 2. Strudel uses `index.html` as the filename of the Strudel REPL, which is 
-    embedded into cloud-5 pieces. However, in cloud-5, `index.html` is the 
-    filename of cloud-5's own home page, and the Strudel REPL is named  
-    `strudel_repl.html`.
-
-These obstacles can be overcome using an undocumented feature of the NW.js 
-program. In an NW.js app's `package.json`, the `main` field, which defines 
-the entry point for the app, and which is documented only as a filepath, can 
-also be an HTTP URL.
-
-And this means that if a local Web server is running from the cloud-5 Web 
-root, NW.js will run NW.js apps from that root. The Strudel REPL will load 
-from `strudel_repl.html` and run, and all resources needed by NW.js and the 
-cloud-5 piece also will load and run.
-
-Then, both the all-JavaScript Strudel, and the native build of Csound exposed 
-by csound.node, will run in the same JavaScript context. As `csound.node` has 
-essentially the same JavaScript API as the pure WebAssembly 
-`CsoundAudioNode.js`, it becomes possible to use Csound orchestras in cloud-5 
-pieces that use plugin opcodes, VST3 plugins and other sorts of plugins, and 
-that read and write files in the local filesystem.
+You will need to create a `package.json` file in the cloud-5 Web root 
+directory, as a manifest for your piece as an NW.js app, in the following 
+format:
+```
+```
+Then, run NW.js with one parameter, the path to the directory containing 
+your `package.json` file, e.g. on macOS:
+```
+ /Applications/nwjs.app/Contents/MacOS/nwjs /Users/michaelgogins/cloud-5/strudel/website/dist
+```
+NOTE WELL: Do _not_ overwrite the `package.json` file in the cloud-5 
+repository root directory! That is required for building cloud-5.
 
 ## Release Notes
 
@@ -438,7 +420,7 @@ that read and write files in the local filesystem.
    JavaScript context (as `globalThis.csound` and `globalThis.csoundac`), 
    before any HTML elements run.
 
- - Documented running cloud-5 pieces in NW.js using HTTP URLs.
+ - Updated documentation for running cloud-5 pieces in NW.js.
 
 ### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1.1)
 
