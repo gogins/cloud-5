@@ -378,12 +378,15 @@ ability to read and write in the local filesystem.
  2. Install [pnpm](https://pnpm.io/installation).
 
  2. Install [csound.node](https://github.com/gogins/csound-nwjs). Note that 
-    the API for csound.node is virtually the same as the API for my WebAssembly build 
-    of Csound.
+    the API for csound.node is virtually the same as the API for my 
+    WebAssembly build of Csound.
 
- 2. Install [NW.js](https://nwjs.io/).
+ 2. Install [NW.js](https://nwjs.io/). Be sure to install the SDK version of 
+    NW.js.
 
- 3. On macOS, follow the instructions to disable the Gatekeeper for the nwjs app.
+ 3. On macOS, follow the instructions 
+    [here](https://github.com/gogins/csound-nwjs/blob/main/README.md) 
+    to disable the Gatekeeper for the nwjs app.
 
 ### Running
 
