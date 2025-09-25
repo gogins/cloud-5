@@ -10,8 +10,9 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License<
 
 The cloud-5 system is a toolkit and library designed for creating computer 
 music that is hosted on Web servers and that runs and plays in the user's Web 
-browser. In theory, that can be any current Web browser, even on smartphones and 
-tablets, although performance might be an issue. For examples of such music, see 
+browser. In theory, that can be any current Web browser, even on smartphones 
+and tablets, although performance might be an issue on less powerful systes. 
+For examples of such music, see 
 <a href="https://gogins.github.io/">cloud-music</a>.
 
 The cloud-5 system is based on <a href="https://github.com/gogins/csound-wasm"> 
@@ -61,8 +62,9 @@ this document.
 
 ### Installation
 
-There is no installation! Simply download the release (`cloud-5.zip`), and 
-unzip it into in empty directory.
+There is no installation! 
+
+Simply download the release (`cloud-5.zip`), and unzip it into an empty directory.
 
 cloud-5 can be stored on a USB thumb drive, and will run with all functionality 
 _from_ the thumb drive. That makes it possible to carry all of your work in 
