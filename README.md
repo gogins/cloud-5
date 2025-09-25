@@ -249,7 +249,7 @@ the user's computer.
 
 However, in some cloud-5 pieces, the Csound orchestra supports not only 
 rendering to the sandbox filesystem, but also automatically downloading the 
-finished soundfile to the user's Downloads directory. This done using the 
+finished soundfile to the user's _Downloads_ directory. This done using the 
 _Render_ button on the cloud-5 menu. However, the WebAssembly runtime sets a 
 hard limit on the size of such soundfiles, which cannot exceed the size of the 
 WebAssembly heap; pieces should probably not be more than about 10 minutes 
@@ -389,7 +389,7 @@ ability to read and write in the local filesystem.
 
 Strudel is written so that all of its resources are located using absolute URLs 
 from the Web root. When using NW.js, the Web root is the application directory. 
-This presents several obstacles to running cloud-5 that use Strudel pieces with 
+This presents several obstacles to running cloud-5 pieces that use Strudel with 
 NW.js:
 
  1. An NW.js application is defined by a `package.json` file that would 
@@ -402,7 +402,7 @@ NW.js:
     `strudel_repl.html`.
 
 These obstacles can be overcome using an undocumented feature of the NW.js 
-program. In an NW.js app's `package.json`, the `main` attribute, which defines 
+program. In an NW.js app's `package.json`, the `main` field, which defines 
 the entry point for the app, and which is documented only as a filepath, can 
 also be an HTTP URL.
 
@@ -412,10 +412,10 @@ from `strudel_repl.html` and run, and all resources needed by NW.js and the
 cloud-5 piece also will load and run.
 
 Then, both the all-JavaScript Strudel, and the native build of Csound exposed 
-by csound.node will run in the same JavaScript context. As `csound.node` has 
+by csound.node, will run in the same JavaScript context. As `csound.node` has 
 essentially the same JavaScript API as the pure WebAssembly 
 `CsoundAudioNode.js`, it becomes possible to use Csound orchestras in cloud-5 
-pieces that use plugin opcdes, VST3 plugins and other sorts of plugins, and 
+pieces that use plugin opcodes, VST3 plugins and other sorts of plugins, and 
 that read and write files in the local filesystem.
 
 ## Release Notes
