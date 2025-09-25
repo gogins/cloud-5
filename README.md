@@ -248,10 +248,10 @@ the user's computer.
 However, in some cloud-5 pieces, the Csound orchestra supports not only 
 rendering to the sandbox filesystem, but also automatically downloading the 
 finished soundfile to the user's Downloads directory. This done using the 
-_Record_ or _Render_ buttons on the cloud-5 menu. However, the WebAssembly 
-runtime sets a hard limit on the size of such soundfiles, which cannot 
-exceed the size of the WebAssembly heap; pieces should probably not be more 
-than about 10 minutes long.
+_Render_ on the cloud-5 menu. However, the WebAssembly runtime sets a hard 
+limit on the size of such soundfiles, which cannot exceed the size of the 
+WebAssembly heap; pieces should probably not be more than about 10 minutes 
+long.
 
 It is _also_ possible to use an audio loopback driver such as 
 [BlackHole](https://github.com/ExistentialAudio/BlackHole) to route 
@@ -381,19 +381,49 @@ ability to read and write in the local filesystem.
 
  2. Install [NW.js](https://nwjs.io/).
 
-### Configuration and Running
+ 3. On macOS, follow the instructions to disable the Gatekeeper for the nwjs app.
 
-Read about [csound.nwjs](https://github.com/gogins/csound-nwjs) 
-and make sure that the application directory for your `csound.node` pieces is the 
-`cloud-5` directory, which includes necessary resources.
+### Running
+
+Strudel is written so that all of its resources are located using absolute URLs 
+from the Web root. When using NW.js, the Web root is the application directory. 
+This presents several obstacles to running cloud-5 that use Strudel pieces with 
+NW.js:
+
+ 1. An NW.js application is defined by a `package.json` file that would 
+    overwrite the cloud-5's piece's own `package.json` (which is needed if you 
+    are going to build cloud-5 yourself).
+
+ 2. Strudel uses `index.html` as the filename of the Strudel REPL, which is 
+    embedded into cloud-5 pieces. However, in cloud-5, `index.html` is the 
+    filename of cloud-5's own home page, and the Strudel REPL is named  
+    `strudel_repl.html`.
+
+These obstacles can be overcome using an undocumented feature of the NW.js 
+program. In an NW.js app's `package.json`, the `main` attribute, which defines 
+the entry point for the app, and which is documented only as a filepath, can 
+also be an HTTP URL.
+
+And this means that if a local Web server is running from the cloud-5 Web 
+root, NW.js will run NW.js apps from that root. The Strudel REPL will load 
+from `strudel_repl.html` and run, and all resources needed by NW.js and the 
+cloud-5 piece also will load and run.
+
+Then, both the all-JavaScript Strudel, and the native build of Csound exposed 
+by csound.node will run in the same JavaScript context. As `csound.node` has 
+essentially the same JavaScript API as the pure WebAssembly 
+`CsoundAudioNode.js`, it becomes possible to use Csound orchestras in cloud-5 
+pieces that use plugin opcdes, VST3 plugins and other sorts of plugins, and 
+that read and write files in the local filesystem.
 
 ## Release Notes
 
 ### [v2.0](https://github.com/gogins/cloud-5/releases/tag/v1.2)
 
- - Moved cloud-5's Web root directory from to `cloud-5/strudel/website/dist`. 
-   This makes it possible to integrate Strudel, Csound, and CsoundAC without any 
-   patches or other modifications of Strudel source code.
+ - Moved cloud-5's Web root directory from `cloud-5` to 
+   `cloud-5/strudel/website/dist`. This makes it possible to integrate 
+   Strudel, Csound, and CsoundAC without any patches or other modifications of 
+   Strudel source code.
 
  - Added one-time singleton creation code for Csound and CsoundAC to 
    `csound_loader.js`.
@@ -403,10 +433,12 @@ and make sure that the application directory for your `csound.node` pieces is th
    JavaScript context (as `globalThis.csound` and `globalThis.csoundac`), 
    before any HTML elements run.
 
+ - Documented running cloud-5 pieces in NW.js using HTTP URLs.
+
 ### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1.1)
 
  - Made a clearer distinction between the Web site serving showcase for 
- cloud-music pieces, and the README.md for the cloud-5 system.
+   cloud-music pieces, and the README.md for the cloud-5 system.
 
  - Added a global menu with a curated list of better pieces.
 
