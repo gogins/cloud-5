@@ -250,8 +250,8 @@ the user's computer.
 However, in some cloud-5 pieces, the Csound orchestra supports not only 
 rendering to the sandbox filesystem, but also automatically downloading the 
 finished soundfile to the user's Downloads directory. This done using the 
-_Render_ on the cloud-5 menu. However, the WebAssembly runtime sets a hard 
-limit on the size of such soundfiles, which cannot exceed the size of the 
+_Render_ button on the cloud-5 menu. However, the WebAssembly runtime sets a 
+hard limit on the size of such soundfiles, which cannot exceed the size of the 
 WebAssembly heap; pieces should probably not be more than about 10 minutes 
 long.
 
