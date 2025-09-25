@@ -11,7 +11,7 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License<
 The cloud-5 system is a toolkit and library designed for creating computer 
 music that is hosted on Web servers and that runs and plays in the user's Web 
 browser. In theory, that can be any current Web browser, even on smartphones 
-and tablets, although performance might be an issue on less powerful systes. 
+and tablets, although performance might be an issue on less powerful systems. 
 For examples of such music, see 
 <a href="https://gogins.github.io/">cloud-music</a>.
 
@@ -110,10 +110,10 @@ In cloud-5, musical compositions are written as Web pages, i.e. as .html
 files. 
 
 It's a good idea for each composition to be written as just one .html file. 
-It must end up in your `cloud-5/strudel/website/dist` directory. Any Csound 
-orchestra code, JavaScript code, and GLSL shader programs should simply be 
-embedded in the HTML file, e.g. in template strings (string literals) in 
-JavaScript code, or included as `<script>` or `<textview>` elements.
+It must end up in the cloud-5 Web root directory. Any Csound orchestra code, 
+JavaScript code, and GLSL shader programs should simply be embedded in the 
+HTML file, e.g. in template strings (string literals) in JavaScript code, or 
+included as `<script>` or `<textview>` elements.
 
 There are many ways to write compositions, because the capabilities of Csound, 
 Strudel, and HTML5 are so vast. Start out by a making a copy of one of the 
