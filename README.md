@@ -422,7 +422,7 @@ repository root directory! That is required for building cloud-5.
 
 ## Release Notes
 
-### [v2.0](https://github.com/gogins/cloud-5/releases/tag/v1.2)
+### [v2.0](https://github.com/gogins/cloud-5/releases/tag/v2.0)
 
  - Moved cloud-5's Web root directory from `cloud-5` to 
    `cloud-5/strudel/website/dist`. This makes it possible to integrate 
