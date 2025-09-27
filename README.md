@@ -439,6 +439,18 @@ repository root directory! That is required for building cloud-5.
 
  - Updated documentation for running cloud-5 pieces in NW.js.
 
+ - Many bug fixes:
+
+    - Enable editing in dat.gui text fields.
+    - Ensure that opening the _Controls_ menu does not affect the layout of other elements.
+    - Toggle showing piano roll/hiding shader with showing shader/hiding piano roll.
+    - Fixed logic for diagnostic levels in `statefulpatterns.mjs`.
+    - Removed _Record_ button and handler, and other dead code.
+    - Removed unnecessary files.
+    - Clarifed source code in `cloud-5.js`.
+    - Enabled rendering to soundfile in NW.js.
+    - Enabled running Strudel in NW.js.
+
 ### [v1.1](https://github.com/gogins/cloud-5/releases/tag/v1.1)
 
  - Made a clearer distinction between the Web site serving showcase for 

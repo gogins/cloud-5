@@ -14,3 +14,4 @@ git status
 git commit -m "Deploy updated Web site."
 git push
 pwd
+echo "Completed deployment of strudel/website/dist to GitHub pages."
