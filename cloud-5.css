@@ -93,6 +93,11 @@ cloud5-about {
   isolation: isolate;
 }
 
+/* Must be on top to permit editing text fields. */
+#menu_item_dat_gui {
+  z-index: 9000;
+}
+
 /* Layering (top → bottom) */
 cloud5-menu {
   position: fixed;
@@ -132,6 +137,7 @@ cloud5-piece {
   pointer-events: none;
   z-index: 8000;
 }
+
 
 .cloud5-menu {
   pointer-events: auto;
@@ -243,8 +249,8 @@ cloud5-piano-roll>canvas {
 }
 
 .dg.main {
-  isolation: isolate;
-  z-index: 9000;
+  pointer-events: auto;
+  z-index: 10000;
   overflow: visible;
 }
 
@@ -261,3 +267,30 @@ input {
   font: 1em/1.25em Verdana, sans-serif;
   background: transparent;
 }
+
+/* Make dat.gui fields truly editable & visibly so inside the button-styled LI */
+#menu_item_dat_gui,
+#menu_item_dat_gui * {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+#menu_item_dat_gui .dg input,
+#menu_item_dat_gui .dg textarea,
+#menu_item_dat_gui .dg select {
+  pointer-events: auto !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  /* Make typing visible against transparent layers */
+  background: rgba(0,0,0,0.3) !important;
+  color: #fff !important;
+}
+
+#menu_item_dat_gui .dg input:focus,
+#menu_item_dat_gui .dg textarea:focus,
+#menu_item_dat_gui .dg select:focus {
+  border-color: rgba(0,255,128,0.8);
+}
+
+/* Neutralize button-like cursor on this LI so clicks feel “form-like” */
+#menu_item_dat_gui.w3-btn { cursor: default; }

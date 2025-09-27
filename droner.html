@@ -7,10 +7,10 @@
   <meta http-equiv='pragma' content='no-cache'>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="dat.gui.js"></script>
   <script src="CsoundAC.js"></script>
   <script src="CsoundAudioNode.js"></script>
   <script src="csound_loader.js"></script> 
-  <script src="dat.gui.js"></script>
   <script src="jquery.js"></script>
   <script src="sprintf.js"></script>
   <script src="three.js"></script>
@@ -22,6 +22,21 @@
   <script src="strudel_embed.js"></script>
   <link rel="stylesheet" href="w3.css">
   <link rel="stylesheet" href="cloud-5.css">
+  <script>
+(function () {
+  const isEditable = t =>
+    t?.isContentEditable ||
+    /^(INPUT|TEXTAREA|SELECT)$/.test(t?.tagName) ||
+    t?.closest?.('.dg');
+
+  ['keydown','keypress','beforeinput'].forEach(type => {
+    window.addEventListener(type, e => {
+      if (isEditable(e.target)) e.stopImmediatePropagation();
+    }, { capture: true });
+  });
+})();
+</script>
+
   <!-- Disable caching to speed up debugging. -->
   <script src='cloud-5.js?time=<?= time() ?'></script>
   <script defer src="global-menu.js"></script>

@@ -540,6 +540,14 @@ class Cloud5Piece extends HTMLElement {
     // Ensure that the dat.gui controls are children of the _Controls_ button.
     this.create_dat_gui_menu();
     document.onkeydown = ((e) => {
+      const t = e.target;
+      if (
+        t?.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(t?.tagName) ||
+        t?.closest?.('.dg') // inside dat.gui
+      ) {
+        return; // let the field handle the keystroke
+      }
       let e_char = String.fromCharCode(e.keyCode || e.charCode);
       if (e.ctrlKey === true) {
         if (e_char === 'H') {
@@ -914,18 +922,19 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
    * @param {number} step An optional value for the granularity of values.
    */
   menu_slider_addon(gui_folder, token, minimum, maximum, step, name_) {
-    const on_parameter_change = ((value) => {
-      this.gk_update(token, value);
-    });
-    if (name_) {
-      gui_folder.add(this.get_default_preset(), token, minimum, maximum, step).name(name_).listen().onChange(on_parameter_change);
-    } else {
-      gui_folder.add(this.get_default_preset(), token, minimum, maximum, step).listen().onChange(on_parameter_change);
-    }
-    // Remembers parameter values. Required for the 'Revert' button to 
-    // work, and to be able to save/restore new presets.
+    const on_parameter_change = (value) => this.gk_update(token, value);
+
+    const ctrl = name_
+      ? gui_folder.add(this.get_default_preset(), token, minimum, maximum, step).name(name_)
+      : gui_folder.add(this.get_default_preset(), token, minimum, maximum, step);
+
+    // live while dragging slider:
+    ctrl.onChange(on_parameter_change);
+    // commit when user finishes typing (Enter/blur):
+    ctrl.onFinishChange(on_parameter_change);
+
     this.gui.remember(this.control_parameters_addon);
-  };
+  }
   /**
    * Called by the browser when the user updates the value of a control in the 
    * Controls menu, and sends the update to the Csound control channel with 
