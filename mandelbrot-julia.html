@@ -21,7 +21,13 @@
   <label>M pitch: <input id="binsM" type="number" value="48"></label>
   <label>K inst: <input id="binsK" type="number" value="4"></label>
   <button id="btnScore">Make Score (Alt+S)</button>
-  <span>Click Mandelbrot to set c & zoom; Shift+Click to zoom out; Alt/Option+Drag on Julia to select ROI.</span>
+<span>
+  Click Mandelbrot = set Julia point •
+  Option-Click = zoom in & center •
+  Shift+Option-Click = zoom out & center •
+  Drag on Julia = select ROI •
+  Alt+S = Make Score
+</span>
 </div>
 
 <mandelbrot-julia></mandelbrot-julia>
@@ -412,63 +418,174 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   initInteractions() {
-    const pIn  = document.getElementById('expP');
-    const mIn  = document.getElementById('iterM');
-    const jIn  = document.getElementById('iterJ');
-    const nIn  = document.getElementById('binsN');
-    const MIn  = document.getElementById('binsM');
-    const kIn  = document.getElementById('binsK');
-    const btnS = document.getElementById('btnScore');
+  const pIn  = document.getElementById('expP');
+  const mIn  = document.getElementById('iterM');
+  const jIn  = document.getElementById('iterJ');
+  const nIn  = document.getElementById('binsN');
+  const MIn  = document.getElementById('binsM');
+  const kIn  = document.getElementById('binsK');
+  const btnS = document.getElementById('btnScore');
 
-    const clampZoom = () => {
-      this.viewM.scale = Math.max(1e-6, Math.min(1000, this.viewM.scale));
-      this.viewJ.scale = Math.max(1e-6, Math.min(1000, this.viewJ.scale));
+  const clampZoom = () => {
+    this.viewM.scale = Math.max(1e-6, Math.min(1000, this.viewM.scale));
+    this.viewJ.scale = Math.max(1e-6, Math.min(1000, this.viewJ.scale));
+  };
+
+  const sync = () => {
+    this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
+    this.maxIterM = parseInt(mIn.value);
+    this.maxIterJ = parseInt(jIn.value);
+    this.nTime    = parseInt(nIn.value);
+    this.nPitch   = parseInt(MIn.value);
+    this.nInst    = parseInt(kIn.value);
+    clampZoom();
+  };
+  [pIn,mIn,jIn,nIn,MIn,kIn].forEach(e=>e.addEventListener('change', sync));
+  sync();
+
+  // --- Mandelbrot interactions ---
+  this.canvasM.addEventListener('click', (e)=>{
+    const { altKey, shiftKey } = e; // Alt=Option on macOS
+    const dpr  = Math.max(1, window.devicePixelRatio || 1);
+    const rect = this.canvasM.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * dpr;
+    const y = (e.clientY - rect.top ) * dpr;
+    const w = this.canvasM.width, h = this.canvasM.height;
+    const ndc = { x: x / w * 2 - 1, y: y / h * 2 - 1 };
+    const aspect = w / Math.max(1,h);
+
+    // Complex coord at click
+    const zx = this.viewM.cx + ndc.x * this.viewM.scale;
+    const zy = this.viewM.cy - ndc.y * this.viewM.scale / aspect;
+
+    // Always set c so Julia updates for this point
+    this.c = { x: zx, y: zy };
+
+    // Zoom behavior per spec
+    if (altKey && shiftKey) {
+      // Shift+Option: zoom OUT and center on clicked point
+      this.viewM.cx = zx; this.viewM.cy = zy;
+      this.viewM.scale *= 1.5;
+    } else if (altKey) {
+      // Option: zoom IN and center on clicked point
+      this.viewM.cx = zx; this.viewM.cy = zy;
+      this.viewM.scale *= 0.6667;
+    } else {
+      // Plain click: just update Julia's parameter; no zoom on Mandelbrot
+    }
+
+    // Keep Julia view centered; parameter c moved already
+    this.viewJ.cx = 0.0;
+    this.viewJ.cy = 0.0;
+  });
+
+  // --- Julia interactions: drag-to-select ROI ---
+  let dragging = false;
+  let startPx = {x:0, y:0};
+  let curPx   = {x:0, y:0};
+  const root = this.shadowRoot.querySelector('div'); // grid root for overlay positioning
+
+  const beginDrag = (e) => {
+    if (e.button !== 0) return; // left button only
+    dragging = true;
+    const rJ   = this.canvasJ.getBoundingClientRect();
+    startPx.x  = e.clientX;
+    startPx.y  = e.clientY;
+    curPx.x    = e.clientX;
+    curPx.y    = e.clientY;
+
+    // Show selection overlay anchored to Julia canvas
+    this.sel.style.display = 'block';
+    this._placeSelRect(rJ, startPx, curPx);
+    e.preventDefault();
+  };
+  const moveDrag = (e) => {
+    if (!dragging) return;
+    const rJ = this.canvasJ.getBoundingClientRect();
+    curPx.x = Math.min(Math.max(e.clientX, rJ.left), rJ.right);
+    curPx.y = Math.min(Math.max(e.clientY, rJ.top ), rJ.bottom);
+    this._placeSelRect(rJ, startPx, curPx);
+  };
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const rJ  = this.canvasJ.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+    // Pixel coords relative to Julia canvas
+    const x0 = (Math.min(startPx.x, curPx.x) - rJ.left) * dpr;
+    const y0 = (Math.min(startPx.y, curPx.y) - rJ.top ) * dpr;
+    const x1 = (Math.max(startPx.x, curPx.x) - rJ.left) * dpr;
+    const y1 = (Math.max(startPx.y, curPx.y) - rJ.top ) * dpr;
+
+    // If tiny box, treat as cleared ROI
+    if (Math.abs(x1 - x0) < 3 || Math.abs(y1 - y0) < 3) {
+      this.roiJ = null;
+      this.sel.style.display = 'none';
+      return;
+    }
+
+    // Convert pixel box -> complex plane box used by Julia shader
+    const w = this.canvasJ.width, h = this.canvasJ.height;
+    const aspect = w / Math.max(1,h);
+
+    const toComplex = (px, py) => {
+      const ndcX = px / w * 2 - 1;
+      const ndcY = py / h * 2 - 1;
+      return {
+        x: this.viewJ.cx + ndcX * this.viewJ.scale,
+        y: this.viewJ.cy - ndcY * this.viewJ.scale / aspect
+      };
     };
 
-    const sync = () => {
-      this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
-      this.maxIterM = parseInt(mIn.value);
-      this.maxIterJ = parseInt(jIn.value);
-      this.nTime    = parseInt(nIn.value);
-      this.nPitch   = parseInt(MIn.value);
-      this.nInst    = parseInt(kIn.value);
-      clampZoom();
+    const zA = toComplex(x0, y0);
+    const zB = toComplex(x1, y1);
+    this.roiJ = {
+      minx: Math.min(zA.x, zB.x),
+      maxx: Math.max(zA.x, zB.x),
+      miny: Math.min(zA.y, zB.y),
+      maxy: Math.max(zA.y, zB.y),
     };
-    [pIn,mIn,jIn,nIn,MIn,kIn].forEach(e=>e.addEventListener('change', sync));
-    sync();
 
-this.canvasM.addEventListener('click', (e)=>{
-  const shift = e.shiftKey;
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const rect = this.canvasM.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * dpr;
-  const y = (e.clientY - rect.top ) * dpr;
-  const w = this.canvasM.width, h = this.canvasM.height;
-  const ndc = { x: x / w * 2 - 1, y: y / h * 2 - 1 };
-  const zx = this.viewM.cx + ndc.x * this.viewM.scale;
-  const zy = this.viewM.cy - ndc.y * this.viewM.scale / (w/h);
+    this.sel.style.display = 'none';
+  };
 
-  // Update c from Mandelbrot click
-  this.c = { x: zx, y: zy };
+  this.canvasJ.addEventListener('mousedown', beginDrag);
+  window.addEventListener('mousemove', moveDrag);
+  window.addEventListener('mouseup',   endDrag);
 
-  // Zoom Mandelbrot, centered on the click
-  if (shift) {
-    this.viewM.scale *= 1.5;
-  } else {
-    this.viewM.cx = zx; this.viewM.cy = zy; this.viewM.scale *= 0.6667;
-  }
+  // --- Score hotkey/button ---
+  window.addEventListener('keydown', (e)=>{
+    if ((e.key.toLowerCase()==='s') && (e.altKey || e.metaKey)) { e.preventDefault(); this.makeScore(); }
+  });
+  btnS.addEventListener('click', ()=> this.makeScore());
+},
 
-  // Keep the Julia plot centered (0,0) after each change to c
-  // (This avoids drift if aspect changes or after repeated zooms.)
-  this.viewJ.cx = 0.0;
-  this.viewJ.cy = 0.0;
-});
+// Helper: position selection rectangle overlay within the grid root
+_placeSelRect(rJ, startPx, curPx) {
+  const rRoot = this.shadowRoot.querySelector('div').getBoundingClientRect();
+  const left  = Math.min(startPx.x, curPx.x) - rRoot.left;
+  const top   = Math.min(startPx.y, curPx.y) - rRoot.top;
+  const width = Math.abs(curPx.x - startPx.x);
+  const height= Math.abs(curPx.y - startPx.y);
 
-    window.addEventListener('keydown', (e)=>{
-      if ((e.key.toLowerCase()==='s') && (e.altKey || e.metaKey)) { e.preventDefault(); this.makeScore(); }
-    });
-    btnS.addEventListener('click', ()=> this.makeScore());
-  }
+  // Clamp overlay to Julia canvas bounds
+  const jl = rJ.left - rRoot.left, jt = rJ.top - rRoot.top;
+  const jr = rJ.right - rRoot.left, jb = rJ.bottom - rRoot.top;
+  const L = Math.max(left, jl);
+  const T = Math.max(top,  jt);
+  const R = Math.min(left + width,  jr);
+  const B = Math.min(top  + height, jb);
+
+  Object.assign(this.sel.style, {
+    left:   `${L}px`,
+    top:    `${T}px`,
+    width:  `${Math.max(0, R - L)}px`,
+    height: `${Math.max(0, B - T)}px`,
+  });
+}
+
+
 
   async makeScore() {
     const N = this.nTime, M = this.nPitch, K = this.nInst;
