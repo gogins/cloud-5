@@ -559,7 +559,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if ((e.key.toLowerCase()==='s') && (e.altKey || e.metaKey)) { e.preventDefault(); this.makeScore(); }
   });
   btnS.addEventListener('click', ()=> this.makeScore());
-},
+}
 
 // Helper: position selection rectangle overlay within the grid root
 _placeSelRect(rJ, startPx, curPx) {
