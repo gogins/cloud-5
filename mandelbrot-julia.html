@@ -139,14 +139,16 @@ class MandelbrotJulia extends HTMLElement {
         return vec4<f32>(p, 0.0, 1.0);
       }
     `;
-const fsWGSL = /*wgsl*/`
+
+    const fsWGSL = /*wgsl*/`
 struct DrawUniforms {
-  a: vec4<f32>,
-  b: vec4<f32>,
-  c: vec4<f32>,
+  a: vec4<f32>,  // center.xy, scale, p
+  b: vec4<f32>,  // cParam.xy, viewport.xy
+  c: vec4<f32>,  // maxIter, mode, aspect, 0
 };
 @group(0) @binding(0) var<uniform> U : DrawUniforms;
 
+// ----- complex helpers -----
 fn clog(z: vec2<f32>) -> vec2<f32> {
   let r = length(z);
   let th = atan2(z.y, z.x);
@@ -157,37 +159,29 @@ fn cexp(w: vec2<f32>) -> vec2<f32> {
   return vec2<f32>(a * cos(w.y), a * sin(w.y));
 }
 fn cpow(z: vec2<f32>, p: f32) -> vec2<f32> {
-  let w = clog(z) * vec2<f32>(p, p);
+  // protect z=0 from log()
+  let zsafe = select(z, vec2<f32>(1e-30, 0.0), all(z == vec2<f32>(0.0,0.0)));
+  let w = clog(zsafe) * vec2<f32>(p, p);
   return cexp(w);
 }
 
-// HSV helper: h in [0,1] (rainbow), s,v in [0,1]
+// ----- palettes -----
 fn hsv2rgb(h: f32, s: f32, v: f32) -> vec3<f32> {
   let h6 = h * 6.0;
-  let i_u = u32(floor(h6));     // sector index as u32 (0..5)
-  let f   = h6 - floor(h6);     // fractional part within sector
-
+  let i_u = u32(floor(h6));
+  let f   = h6 - floor(h6);
   let p = v * (1.0 - s);
   let q = v * (1.0 - s * f);
   let t = v * (1.0 - s * (1.0 - f));
-
   var rgb: vec3<f32>;
-  if (i_u == 0u) {
-    rgb = vec3<f32>(v, t, p);
-  } else if (i_u == 1u) {
-    rgb = vec3<f32>(q, v, p);
-  } else if (i_u == 2u) {
-    rgb = vec3<f32>(p, v, t);
-  } else if (i_u == 3u) {
-    rgb = vec3<f32>(p, q, v);
-  } else if (i_u == 4u) {
-    rgb = vec3<f32>(t, p, v);
-  } else {
-    rgb = vec3<f32>(v, p, q);
-  }
+  if (i_u == 0u)      { rgb = vec3<f32>(v, t, p); }
+  else if (i_u == 1u) { rgb = vec3<f32>(q, v, p); }
+  else if (i_u == 2u) { rgb = vec3<f32>(p, v, t); }
+  else if (i_u == 3u) { rgb = vec3<f32>(p, q, v); }
+  else if (i_u == 4u) { rgb = vec3<f32>(t, p, v); }
+  else                { rgb = vec3<f32>(v, p, q); }
   return rgb;
 }
-
 fn palette(t: f32) -> vec3<f32> {
   let pi = 3.141592653589793;
   let a  = vec3<f32>(0.5, 0.5, 0.5);
@@ -199,15 +193,17 @@ fn palette(t: f32) -> vec3<f32> {
 
 @fragment
 fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
-  let center = U.a.xy;
-  let scale  = U.a.z;
-  let p      = U.a.w;
-  let cParam = U.b.xy;
-  let viewport = U.b.zw;           // (w, h)
+  // uniforms
+  let center   = U.a.xy;
+  let scale    = U.a.z;
+  let p        = U.a.w;
+  let cParam   = U.b.xy;
+  let viewport = U.b.zw;
   let maxIter  = u32(U.c.x);
   let mode     = u32(U.c.y);
   let aspect   = U.c.z;
 
+  // screen -> complex
   let ndc = (pos.xy / viewport) * 2.0 - vec2<f32>(1.0,1.0);
   var z = vec2<f32>(
     center.x + ndc.x * scale,
@@ -221,55 +217,48 @@ fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     c = cParam;                        // Julia
   }
 
+  // iterate
   var n: u32 = 0u;
   let R = 4.0;
   loop {
     if (n >= maxIter) { break; }
-    let zsafe = select(z, vec2<f32>(1e-30, 0.0), all(z == vec2<f32>(0.0,0.0)));
-    z = cpow(zsafe, p) + c;
+    z = cpow(z, p) + c;
     if (dot(z,z) > R*R) { break; }
     n = n + 1u;
   }
 
-  // Interior: pure black.
+  // interior: pure black
   if (n >= maxIter) {
     return vec4<f32>(0.0, 0.0, 0.0, 1.0);
   }
 
-  // Renormalized smooth iteration count -> [0,1]
+  // smooth iteration in [0,1]
   let r = length(z);
-  let smooth_ = (f32(n) + 1.0 - log(max(log(max(r, 1e-30)), 1e-30)) / log(max(p, 1.0001))) / f32(maxIter);
-
-  // Contrast curve
+  let smooth_ = (f32(n) + 1.0
+                 - log(max(log(max(r, 1e-30)), 1e-30)) / log(max(p, 1.0001)))
+                / f32(maxIter);
   let t = clamp(pow(smooth_, 0.85), 0.0, 1.0);
 
   if (mode == 1u) {
-    // ==== JULIA PALETTE ====
-    // 1) Rapidly-repelling -> black (fade-in from black)
-    //    ramp from 0..tLow to reveal color
-    let tLow0 = 0.05;
-    let tLow1 = 0.15;
-    let fadeIn = clamp((t - tLow0) / max(tLow1 - tLow0, 1e-6), 0.0, 1.0);
-
-    // 2) Rainbow in the middle (full saturation/value)
-    let rainbow = hsv2rgb(fract(t), 1.0, 1.0);
-
-    // 3) Boundary -> white: ramp color to white near t -> 1
-    let tHi0 = 0.85;
-    let tHi1 = 0.995;
-    let toWhite = clamp((t - tHi0) / max(tHi1 - tHi0, 1e-6), 0.0, 1.0);
+    // JULIA palette:
+    // - very fast escape -> black (narrow)
+    // - middle -> rainbow
+    // - boundary -> white
+    let fadeIn = clamp((t - 0.01) / 0.05, 0.0, 1.0);          // limits “all black”
+    let hue = t - floor(t);                                   // fract(t)
+    let rainbow = hsv2rgb(hue, 1.0, 1.0);
+    let toWhite = clamp((t - 0.90) / 0.08, 0.0, 1.0);
     let withWhite = mix(rainbow, vec3<f32>(1.0,1.0,1.0), toWhite);
-
-    // 4) Apply the fade-in so fastest escape stays black
     let col = withWhite * fadeIn;
     return vec4<f32>(col, 1.0);
-  } else {
-    // ==== MANDELBROT: keep existing palette behavior ====
-    let col = palette(t);
-    return vec4<f32>(col, 1.0);
   }
+
+  // MANDELBROT: keep prior palette
+  let col = palette(t);
+  return vec4<f32>(col, 1.0);
 }
 `;
+
     const csWGSL = /*wgsl*/`
 struct CsUniforms {
   // u0: cParam.xy, roiMin.xy
