@@ -557,10 +557,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const x1 = (Math.max(startPx.x, curPx.x) - rJ.left) * dpr;
     const y1 = (Math.max(startPx.y, curPx.y) - rJ.top ) * dpr;
 
-    // If tiny box, treat as cleared ROI
     if (Math.abs(x1 - x0) < 3 || Math.abs(y1 - y0) < 3) {
-      this.roiJ = null;
-      this.sel.style.display = 'none';
       return;
     }
 
@@ -585,8 +582,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       miny: Math.min(zA.y, zB.y),
       maxy: Math.max(zA.y, zB.y),
     };
-
-    this.sel.style.display = 'none';
   };
 
   this.canvasJ.addEventListener('mousedown', beginDrag);
@@ -594,9 +589,16 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   window.addEventListener('mouseup',   endDrag);
 
   // --- Score hotkey/button ---
-  window.addEventListener('keydown', (e)=>{
-    if ((e.key.toLowerCase()==='s') && (e.altKey || e.metaKey)) { e.preventDefault(); this.makeScore(); }
-  });
+window.addEventListener('keydown', (e)=>{
+  const key = e.key.toLowerCase();
+  if ((key === 's') && (e.altKey || e.metaKey)) { e.preventDefault(); this.makeScore(); }
+  if ((key === 'r') && (e.altKey || e.metaKey)) {
+    e.preventDefault();
+    this.roiJ = null;
+    this.sel.style.display = 'none';   // hide the rectangle
+  }
+});
+
   btnS.addEventListener('click', ()=> this.makeScore());
 }
 
