@@ -161,13 +161,40 @@ fn cpow(z: vec2<f32>, p: f32) -> vec2<f32> {
   return cexp(w);
 }
 
-// Cosine palette that starts at black when t=0.
+// HSV helper: h in [0,1] (rainbow), s,v in [0,1]
+fn hsv2rgb(h: f32, s: f32, v: f32) -> vec3<f32> {
+  let h6 = h * 6.0;
+  let i_u = u32(floor(h6));     // sector index as u32 (0..5)
+  let f   = h6 - floor(h6);     // fractional part within sector
+
+  let p = v * (1.0 - s);
+  let q = v * (1.0 - s * f);
+  let t = v * (1.0 - s * (1.0 - f));
+
+  var rgb: vec3<f32>;
+  if (i_u == 0u) {
+    rgb = vec3<f32>(v, t, p);
+  } else if (i_u == 1u) {
+    rgb = vec3<f32>(q, v, p);
+  } else if (i_u == 2u) {
+    rgb = vec3<f32>(p, v, t);
+  } else if (i_u == 3u) {
+    rgb = vec3<f32>(p, q, v);
+  } else if (i_u == 4u) {
+    rgb = vec3<f32>(t, p, v);
+  } else {
+    rgb = vec3<f32>(v, p, q);
+  }
+  return rgb;
+}
+
 fn palette(t: f32) -> vec3<f32> {
-  // base black, modest amplitude, phase offsets for variety
-  let a = vec3<f32>(0.00, 0.00, 0.00);
-  let b = vec3<f32>(0.85, 0.85, 0.85);
-  let c = vec3<f32>(0.00, 0.33, 0.67);
-  return a + b * 0.5 * (1.0 + cos(6.2831853 * (c + t)));
+  let pi = 3.141592653589793;
+  let a  = vec3<f32>(0.5, 0.5, 0.5);
+  let b  = vec3<f32>(0.5, 0.5, 0.5);
+  let c  = vec3<f32>(1.0, 1.0, 1.0);
+  let d  = vec3<f32>(0.00, 0.33, 0.67);
+  return a + b * cos(2.0 * pi * (c * t + d));
 }
 
 @fragment
@@ -213,11 +240,34 @@ fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
   let r = length(z);
   let smooth_ = (f32(n) + 1.0 - log(max(log(max(r, 1e-30)), 1e-30)) / log(max(p, 1.0001))) / f32(maxIter);
 
-  // Gentle contrast curve
-  let t = pow(clamp(smooth_ + 0.0, 0.0, 1.0), 0.85);
+  // Contrast curve
+  let t = clamp(pow(smooth_, 0.85), 0.0, 1.0);
 
-  let col = palette(t);
-  return vec4<f32>(col, 1.0);
+  if (mode == 1u) {
+    // ==== JULIA PALETTE ====
+    // 1) Rapidly-repelling -> black (fade-in from black)
+    //    ramp from 0..tLow to reveal color
+    let tLow0 = 0.05;
+    let tLow1 = 0.15;
+    let fadeIn = clamp((t - tLow0) / max(tLow1 - tLow0, 1e-6), 0.0, 1.0);
+
+    // 2) Rainbow in the middle (full saturation/value)
+    let rainbow = hsv2rgb(fract(t), 1.0, 1.0);
+
+    // 3) Boundary -> white: ramp color to white near t -> 1
+    let tHi0 = 0.85;
+    let tHi1 = 0.995;
+    let toWhite = clamp((t - tHi0) / max(tHi1 - tHi0, 1e-6), 0.0, 1.0);
+    let withWhite = mix(rainbow, vec3<f32>(1.0,1.0,1.0), toWhite);
+
+    // 4) Apply the fade-in so fastest escape stays black
+    let col = withWhite * fadeIn;
+    return vec4<f32>(col, 1.0);
+  } else {
+    // ==== MANDELBROT: keep existing palette behavior ====
+    let col = palette(t);
+    return vec4<f32>(col, 1.0);
+  }
 }
 `;
     const csWGSL = /*wgsl*/`
