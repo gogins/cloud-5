@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Mandelbrot–Julia WebGPU (IAC MIDI + Auto MIDI Download)</title>
+  <title>Mandelbrot–Julia WebGPU (IAC MIDI + Auto MIDI Download + Persistent ROI + Playhead)</title>
   <style>
     html,
     body {
@@ -109,11 +109,25 @@
         this.canvasJ = document.createElement('canvas');
         Object.assign(this.canvasM.style, { width: '100%', height: '100%' });
         Object.assign(this.canvasJ.style, { width: '100%', height: '100%' });
+
+        // ROI lasso rectangle (persists)
         this.sel = document.createElement('div');
-        this.sel.style.cssText = `position:absolute; border:1px dashed #9cf; pointer-events:none; display:none; background: rgba(100,150,255,0.15);`;
+        this.sel.style.cssText = `
+          position:absolute; border:1px dashed #9cf; pointer-events:none;
+          display:none; background: rgba(100,150,255,0.15); box-shadow: inset 0 0 0 1px rgba(156,206,255,0.25);
+        `;
+
+        // Playhead line
+        this.playHead = document.createElement('div');
+        this.playHead.style.cssText = `
+          position:absolute; width:2px; background:#ff6b4a; opacity:0.9; pointer-events:none; display:none;
+          box-shadow:0 0 6px rgba(255,107,74,0.6);
+        `;
+
         root.appendChild(this.canvasM);
         root.appendChild(this.canvasJ);
         root.appendChild(this.sel);
+        root.appendChild(this.playHead);
         this.shadowRoot.appendChild(root);
 
         // Defaults
@@ -132,21 +146,24 @@
         this._timers = [];
         this._activeAudio = new Set();
         this._playing = false;
+        this._playStartMS = 0;
+        this._playTotalBeats = 0;
 
         this.viewM = { cx: -0.5, cy: 0.0, scale: 2.5 };
         this.viewJ = { cx: 0.0, cy: 0.0, scale: 1.5 };
         this.c = { x: -0.8, y: 0.156 };
-        this.roiJ = null;
+        this.roiJ = null; // {minx,maxx,miny,maxy} in Julia complex space
 
         // MIDI state
         this._midi = null;
         this._midiOutId = localStorage.getItem('mj.midiOutId') || '';
 
-        this._resizeObserver = new ResizeObserver(() => this.resize());
+        this._resizeObserver = new ResizeObserver(() => { this.resize(); this._updateSelectionOverlay(); this._updatePlayheadOverlay(); });
       }
 
       _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
       _secondsForBeats(beats) { return beats * 60 / Math.max(20, this.bpm | 0); }
+      _beatsForMillis(ms) { return (ms / 1000) * (Math.max(20, this.bpm | 0) / 60); }
       _clearTimers() { for (const id of this._timers) clearTimeout(id); this._timers.length = 0; }
 
       _panicMIDI() {
@@ -167,7 +184,6 @@
         }
         this._activeAudio.clear();
       }
-
 
       async connectedCallback() {
         if (!('gpu' in navigator)) {
@@ -560,7 +576,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       render() {
         const enc = this.device.createCommandEncoder();
 
-        // Mandelbrot
+        // Mandelbrot (left)
         this.writeDrawUniforms({
           mode: 0, canvas: this.canvasM,
           center: this.viewM, scale: this.viewM.scale,
@@ -577,7 +593,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         passM.draw(3, 1, 0, 0);
         passM.end();
 
-        // Julia
+        // Julia (right)
         this.writeDrawUniforms({
           mode: 1, canvas: this.canvasJ,
           center: this.viewJ, scale: this.viewJ.scale,
@@ -595,7 +611,83 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         passJ.end();
 
         this.device.queue.submit([enc.finish()]);
+
+        // Keep overlays aligned every frame
+        this._updateSelectionOverlay();
+        this._updatePlayheadOverlay();
+
         requestAnimationFrame(() => this.render());
+      }
+
+      // ---- Overlay helpers ----
+      _complexToCanvasCss(x, y) {
+        const rJ = this.canvasJ.getBoundingClientRect();
+        const rRoot = this.shadowRoot.querySelector('div').getBoundingClientRect();
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const w = Math.max(1, this.canvasJ.width), h = Math.max(1, this.canvasJ.height);
+        const aspect = w / h;
+
+        const ndcX = (x - this.viewJ.cx) / this.viewJ.scale;             // -1..1
+        const ndcY = - (y - this.viewJ.cy) * (1 / this.viewJ.scale) / aspect;
+        const pxX = (ndcX * 0.5 + 0.5) * w;                               // device px
+        const pxY = (ndcY * 0.5 + 0.5) * h;
+
+        const cssX = rJ.left - rRoot.left + pxX / dpr;
+        const cssY = rJ.top - rRoot.top + pxY / dpr;
+        return { x: cssX, y: cssY };
+      }
+
+      _updateSelectionOverlay() {
+        if (!this.roiJ) { this.sel.style.display = 'none'; return; }
+        const { minx, maxx, miny, maxy } = this.roiJ;
+        const a = this._complexToCanvasCss(minx, maxy); // top-left
+        const b = this._complexToCanvasCss(maxx, miny); // bottom-right
+        const L = Math.min(a.x, b.x), T = Math.min(a.y, b.y);
+        const W = Math.abs(b.x - a.x), H = Math.abs(b.y - a.y);
+        Object.assign(this.sel.style, {
+          display: 'block',
+          left: `${L}px`,
+          top: `${T}px`,
+          width: `${W}px`,
+          height: `${H}px`,
+        });
+      }
+
+      _updatePlayheadOverlay() {
+        if (!this._playing || this._playTotalBeats <= 0) {
+          this.playHead.style.display = 'none';
+          return;
+        }
+        // Compute elapsed beats since start
+        const now = performance.now();
+        const elapsedBeats = this._beatsForMillis(now - this._playStartMS);
+        const frac = Math.max(0, Math.min(1, elapsedBeats / this._playTotalBeats));
+
+        // Use ROI if present; otherwise use full Julia viewport bounds
+        const roi = this.roiJ ?? {
+          minx: this.viewJ.cx - this.viewJ.scale,
+          maxx: this.viewJ.cx + this.viewJ.scale,
+          miny: this.viewJ.cy - this.viewJ.scale,
+          maxy: this.viewJ.cy + this.viewJ.scale
+        };
+
+        const topLeft = this._complexToCanvasCss(roi.minx, roi.maxy);
+        const botRight = this._complexToCanvasCss(roi.maxx, roi.miny);
+        const L = Math.min(topLeft.x, botRight.x);
+        const T = Math.min(topLeft.y, botRight.y);
+        const W = Math.abs(botRight.x - topLeft.x);
+        const H = Math.abs(botRight.y - topLeft.y);
+
+        const x = L + W * frac;
+        Object.assign(this.playHead.style, {
+          display: 'block',
+          left: `${Math.round(x)}px`,
+          top: `${T}px`,
+          height: `${H}px`,
+        });
+
+        // Hide after the sweep completes
+        if (frac >= 1) this.playHead.style.display = 'none';
       }
 
       initInteractions() {
@@ -611,12 +703,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const denVal = document.getElementById('densityVal');
         const maxVIn = document.getElementById('maxVoices');
         const btnStop = document.getElementById('btnStop');
-
-
-        const clampZoom = () => {
-          this.viewM.scale = Math.max(1e-6, Math.min(1000, this.viewM.scale));
-          this.viewJ.scale = Math.max(1e-6, Math.min(1000, this.viewJ.scale));
-        };
 
         const sync = () => {
           this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
@@ -659,11 +745,12 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             this.viewM.cx = zx; this.viewM.cy = zy;
             this.viewM.scale *= 0.6667;
           }
-          this.viewJ.cx = 0.0;
-          this.viewJ.cy = 0.0;
+
+          // Keep Julia centered logically (we just set c); selection overlay will re-map itself each frame
+          this._updateSelectionOverlay();
         });
 
-        // --- Julia drag ROI ---
+        // --- Julia drag ROI (lasso persists) ---
         let dragging = false;
         let startPx = { x: 0, y: 0 };
         let curPx = { x: 0, y: 0 };
@@ -719,7 +806,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             miny: Math.min(zA.y, zB.y),
             maxy: Math.max(zA.y, zB.y),
           };
-          this.sel.style.display = 'none';
+
+          // Do NOT hide the lasso; keep it visible
+          this._updateSelectionOverlay();
         };
 
         this.canvasJ.addEventListener('mousedown', beginDrag);
@@ -732,7 +821,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
           if ((key === 's') && (e.altKey || e.metaKey)) {
             e.preventDefault(); e.stopPropagation();
-            this.makeScore(); // auto-download happens there
+            const score = this.makeScore(); // auto-download happens there
             this.playMIDIFromScore();
           }
 
@@ -850,7 +939,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const thinned = this._thinScore(score);
         this._lastScore = thinned;
 
-        // ---- NEW: auto export & download MIDI ----
+        // Auto export & download MIDI
         try { this._exportMIDI(thinned); } catch (e) { console.warn('MIDI export failed:', e); }
 
         return thinned;
@@ -888,8 +977,12 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const out = this._currentMIDIOutput();
         const step = (beats) => this._secondsForBeats(beats) * 1000; // ms
 
+        // For playhead timing
+        this._playStartMS = performance.now();
+        this._playTotalBeats = Math.max(0, ...score.map(n => n[1] + n[2]));
+
         if (out) {
-          const t0 = window.performance.now();
+          const t0 = this._playStartMS;
           for (const [ch, tBeats, dBeats, key, vel] of score) {
             const c = (ch | 0) & 0x0f;
             const on = 0x90 | c;
@@ -900,8 +993,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel | 0))]); }, Math.max(0, whenOn - performance.now())));
             this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
           }
-          const lastEnd = Math.max(...score.map(n => n[1] + n[2]));
-          this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(step(lastEnd) + 50)));
+          this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(step(this._playTotalBeats) + 50)));
           return;
         }
 
@@ -933,18 +1025,19 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
           this._activeAudio.add(osc);
           this._timers.push(setTimeout(() => this._activeAudio.delete(osc), Math.ceil((t1 - ac.currentTime + 0.1) * 1000)));
         }
-        const lastEnd = Math.max(...score.map(n => n[1] + n[2]));
-        this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(this._secondsForBeats(lastEnd) * 1000 + 50)));
+        this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(this._secondsForBeats(this._playTotalBeats) * 1000 + 50)));
       }
 
       stopPlayback() {
         this._playing = false;
+        this._playTotalBeats = 0;
+        this.playHead.style.display = 'none';
         this._clearTimers();
         this._panicMIDI();
         this._stopWebAudio();
       }
 
-      // --------- NEW: MIDI file export ---------
+      // --------- MIDI file export ---------
       _exportMIDI(score) {
         if (!score || !score.length) return;
         const PPQ = 480; // ticks per quarter note
@@ -962,7 +1055,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         }
         events.sort((a, b) => a.tick - b.tick || a.type - b.type); // offs before ons at same tick
 
-        // helpers
         const VLQ = (n) => {
           let buffer = n & 0x7f;
           const bytes = [];
