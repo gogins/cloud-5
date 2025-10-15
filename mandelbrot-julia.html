@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Mandelbrot–Julia WebGPU (Fixed Minimal + IAC MIDI)</title>
+  <title>Mandelbrot–Julia WebGPU (IAC MIDI + Auto MIDI Download)</title>
   <style>
     html,
     body {
@@ -62,8 +62,8 @@
     <label>Exponent p: <input id="expP" type="number" step="0.01" value="2.0"></label>
     <label>MaxIter M: <input id="iterM" type="number" value="500"></label>
     <label>MaxIter J: <input id="iterJ" type="number" value="1000"></label>
-    <label>N time: <input id="binsN" type="number" value="512"></label>
-    <label>M pitch: <input id="binsM" type="number" value="48"></label>
+    <label>N time: <input id="binsN" type="number" value="4096"></label>
+    <label>M pitch: <input id="binsM" type="number" value="60"></label>
     <label>K inst: <input id="binsK" type="number" value="4"></label>
 
     <label>BPM:
@@ -117,8 +117,8 @@
         this.shadowRoot.appendChild(root);
 
         // Defaults
-        this.nTime = 512;
-        this.nPitch = 48;
+        this.nTime = 4096;  // N time default
+        this.nPitch = 60;   // M pitch default
         this.nInst = 4;
         this.maxIterM = 500;
         this.maxIterJ = 1000;
@@ -133,10 +133,6 @@
         this._activeAudio = new Set();
         this._playing = false;
 
-
-
-
-
         this.viewM = { cx: -0.5, cy: 0.0, scale: 2.5 };
         this.viewJ = { cx: 0.0, cy: 0.0, scale: 1.5 };
         this.c = { x: -0.8, y: 0.156 };
@@ -150,20 +146,16 @@
       }
 
       _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
-
       _secondsForBeats(beats) { return beats * 60 / Math.max(20, this.bpm | 0); }
-
       _clearTimers() { for (const id of this._timers) clearTimeout(id); this._timers.length = 0; }
 
       _panicMIDI() {
         const out = this._currentMIDIOutput();
         if (!out) return;
         for (let ch = 0; ch < 16; ch++) {
-          // All Sound Off (120), All Notes Off (123), Reset All Controllers (121)
-          out.send([0xB0 | ch, 120, 0]);
-          out.send([0xB0 | ch, 123, 0]);
-          out.send([0xB0 | ch, 121, 0]);
-          // also send NoteOff across the full range just in case
+          out.send([0xB0 | ch, 120, 0]); // All Sound Off
+          out.send([0xB0 | ch, 123, 0]); // All Notes Off
+          out.send([0xB0 | ch, 121, 0]); // Reset All Controllers
           for (let k = 0; k < 128; k += 8) out.send([0x80 | ch, k, 0]);
         }
       }
@@ -198,7 +190,6 @@
       async initMIDI() {
         const sel = document.getElementById('midiOut');
         const rebuildOptions = () => {
-          // remember selection
           const previous = this._midiOutId;
           sel.innerHTML = '';
           const outs = this._midi ? Array.from(this._midi.outputs.values()) : [];
@@ -207,18 +198,15 @@
             this._midiOutId = '';
             return;
           }
-          // Sort: IAC first, then others alphabetically
           outs.sort((a, b) => {
             const ia = /iac|loop|bus/i.test(a.name) ? 0 : 1;
             const ib = /iac|loop|bus/i.test(b.name) ? 0 : 1;
             return ia - ib || a.name.localeCompare(b.name);
           });
           let toSelect = previous;
-          // Prefer IAC if nothing chosen yet
           if (!toSelect) {
             const iac = outs.find(o => /iac|loop|bus/i.test(o.name));
-            if (iac) toSelect = iac.id;
-            else toSelect = outs[0].id;
+            if (iac) toSelect = iac.id; else toSelect = outs[0].id;
           }
           for (const o of outs) {
             const opt = new Option(o.name, o.id, false, o.id === toSelect);
@@ -252,11 +240,8 @@
         if (!this._midi) return null;
         const outs = this._midi.outputs;
         if (!outs) return null;
-        // Try exact id
         if (this._midiOutId && outs.has(this._midiOutId)) return outs.get(this._midiOutId);
-        // Fallback to any IAC/loop port
         for (const o of outs.values()) if (/iac|loop|bus/i.test(o.name)) return o;
-        // Otherwise first port
         for (const o of outs.values()) return o;
         return null;
       }
@@ -399,7 +384,7 @@ fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
   }
 
   if (n >= maxIter) {
-    return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    return vec4<f32>(0.0, 0.0, 0.0, 1.0); // set interiors black
   }
 
   let r = length(z);
@@ -418,7 +403,7 @@ fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     return vec4<f32>(col, 1.0);
   }
 
-  let col = palette(t);
+  let col = palette(t) * (1.0 - 0.65 * t); // darken towards black
   return vec4<f32>(col, 1.0);
 }
 `;
@@ -747,7 +732,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
           if ((key === 's') && (e.altKey || e.metaKey)) {
             e.preventDefault(); e.stopPropagation();
-            this.makeScore();
+            this.makeScore(); // auto-download happens there
+            this.playMIDIFromScore();
           }
 
           if ((key === 'r') && (e.altKey || e.metaKey)) {
@@ -756,14 +742,13 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             this.sel.style.display = 'none';
           }
 
-          // Alt+Ctrl+M (Option+Control+M on macOS)
           if ((key === 'm') && (e.altKey && e.ctrlKey)) {
             e.preventDefault(); e.stopPropagation();
             this.playMIDIFromScore();
           }
         }, { capture: true });
 
-        btnS.addEventListener('click', () => this.playMIDIFromScore());
+        btnS.addEventListener('click', () => { this.makeScore(); this.playMIDIFromScore(); });
       }
 
       _placeSelRect(rJ, startPx, curPx) {
@@ -818,7 +803,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const u32grid = new Uint32Array(readBuf.getMappedRange().slice(0));
         readBuf.unmap();
 
-        // const dt = (60/120) * (1/8); // REMOVE this
         const dtBeats = this._stepBeats(); // 1/8 beat per time bin
         const pmin = 36;
         const active = Array.from({ length: N }, _ => new Uint8Array(M));
@@ -865,29 +849,29 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         console.log('SCORE [instrument, time, duration, key, velocity]:', score);
         const thinned = this._thinScore(score);
         this._lastScore = thinned;
+
+        // ---- NEW: auto export & download MIDI ----
+        try { this._exportMIDI(thinned); } catch (e) { console.warn('MIDI export failed:', e); }
+
         return thinned;
       }
-      
+
       _thinScore(score) {
         if (!score.length) return score;
         const keep = [];
-        const eps = 1e-6;
-        // group by start time (beats) with a tiny quantization to avoid float jitter
-        const q = new Map(); // tKey -> array of notes
+        const q = new Map(); // integer slice index -> array of notes
         for (const n of score) {
           const [ch, t, d, key, vel] = n;
           if (Math.random() > this.density) continue; // density filter
-          const tKey = Math.round(t / this._stepBeats()); // integer slice index
+          const tKey = Math.round(t / this._stepBeats());
           if (!q.has(tKey)) q.set(tKey, []);
           q.get(tKey).push(n);
         }
-        for (const [tKey, arr] of q.entries()) {
-          // sort by velocity desc; keep top-K
+        for (const [, arr] of q.entries()) {
           arr.sort((a, b) => (b[4] | 0) - (a[4] | 0));
           const top = arr.slice(0, this.maxVoicesPerSlice);
           keep.push(...top);
         }
-        // stable sort by (time, channel, key)
         keep.sort((a, b) => a[1] - b[1] || a[0] - b[0] || a[3] - b[3]);
         return keep;
       }
@@ -913,11 +897,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             const whenOn = t0 + step(tBeats);
             const whenOff = t0 + step(tBeats + dBeats);
 
-            // schedule to track & allow panic
             this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel | 0))]); }, Math.max(0, whenOn - performance.now())));
             this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
           }
-          // schedule an automatic stop after the last event
           const lastEnd = Math.max(...score.map(n => n[1] + n[2]));
           this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(step(lastEnd) + 50)));
           return;
@@ -949,7 +931,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
           osc.start(t0);
           osc.stop(t1 + 0.05);
           this._activeAudio.add(osc);
-          // automatically forget node after it stops
           this._timers.push(setTimeout(() => this._activeAudio.delete(osc), Math.ceil((t1 - ac.currentTime + 0.1) * 1000)));
         }
         const lastEnd = Math.max(...score.map(n => n[1] + n[2]));
@@ -961,7 +942,81 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         this._clearTimers();
         this._panicMIDI();
         this._stopWebAudio();
-        // if you’d like, also: this._audio && this._audio.suspend();
+      }
+
+      // --------- NEW: MIDI file export ---------
+      _exportMIDI(score) {
+        if (!score || !score.length) return;
+        const PPQ = 480; // ticks per quarter note
+        const tempoMicro = Math.round(60000000 / Math.max(20, this.bpm | 0)); // us/qn
+
+        // gather events {tick, type(0=off,1=on), ch, key, vel}
+        const events = [];
+        for (const [ch, tBeats, dBeats, key, vel] of score) {
+          const start = Math.max(0, Math.round(tBeats * PPQ));
+          const end = Math.max(start + 1, Math.round((tBeats + dBeats) * PPQ));
+          const c = (ch | 0) & 0x0f;
+          const v = Math.max(1, Math.min(127, vel | 0));
+          events.push({ tick: start, type: 1, ch: c, key: key & 0x7f, vel: v });
+          events.push({ tick: end,   type: 0, ch: c, key: key & 0x7f, vel: 0 });
+        }
+        events.sort((a, b) => a.tick - b.tick || a.type - b.type); // offs before ons at same tick
+
+        // helpers
+        const VLQ = (n) => {
+          let buffer = n & 0x7f;
+          const bytes = [];
+          while ((n >>= 7)) { buffer <<= 8; buffer |= ((n & 0x7f) | 0x80); }
+          while (true) { bytes.push(buffer & 0xff); if (buffer & 0x80) buffer >>= 8; else break; }
+          return bytes;
+        };
+
+        const track = [];
+        const push = (...xs) => track.push(...xs);
+
+        // Set tempo at delta 0
+        push(...VLQ(0), 0xFF, 0x51, 0x03, (tempoMicro >> 16) & 0xFF, (tempoMicro >> 8) & 0xFF, tempoMicro & 0xFF);
+
+        let lastTick = 0;
+        for (const ev of events) {
+          const dt = ev.tick - lastTick; lastTick = ev.tick;
+          push(...VLQ(dt));
+          if (ev.type === 1) {
+            push(0x90 | ev.ch, ev.key, ev.vel);
+          } else {
+            push(0x80 | ev.ch, ev.key, 0);
+          }
+        }
+        // End of Track
+        push(...VLQ(0), 0xFF, 0x2F, 0x00);
+
+        // Build MThd + MTrk
+        const header = new Uint8Array([
+          0x4d, 0x54, 0x68, 0x64,  // 'MThd'
+          0x00, 0x00, 0x00, 0x06,  // header length
+          0x00, 0x00,              // format 0
+          0x00, 0x01,              // one track
+          (PPQ >> 8) & 0xFF, PPQ & 0xFF, // division
+        ]);
+        const trkLen = track.length;
+        const trkHeader = new Uint8Array([
+          0x4d, 0x54, 0x72, 0x6b,  // 'MTrk'
+          (trkLen >>> 24) & 0xFF, (trkLen >>> 16) & 0xFF, (trkLen >>> 8) & 0xFF, trkLen & 0xFF,
+        ]);
+        const bytes = new Uint8Array(header.length + trkHeader.length + trkLen);
+        bytes.set(header, 0);
+        bytes.set(trkHeader, header.length);
+        bytes.set(new Uint8Array(track), header.length + trkHeader.length);
+
+        const blob = new Blob([bytes], { type: 'audio/midi' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        a.href = url;
+        a.download = `mandelbrot-julia-${ts}.mid`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
       }
 
     }
