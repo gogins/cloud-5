@@ -1,13 +1,25 @@
-<h2 align="center"><a href="https://michaelgogins.tumblr.com">Michael Gogins</a></h2>
+<h3 align="center"><a href="https://michaelgogins.tumblr.com">Copyright © 2025 Michael Gogins</a></h3>
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" 
 style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
 </a>
-<p>All music and examples herein are licensed under the  
+<p>All musical, textual, and visual works generated or included here are 
+licensed under the 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 
-This is computer music that is hosted online, but actually rendered in your  
+<a rel="gnu" href="https://upload.wikimedia.org/wikipedia/commons/2/22/Heckert_GNU_white.svg"><img alt="GNU LGPL v2.1+" rel="gnu"
+style="border-width:0" width="50px" height="50px" src="https://upload.wikimedia.org/wikipedia/commons/2/22/Heckert_GNU_white.svg"/>
+</a>
+<p>Software components of this site are licensed under the
+<a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html">GNU Lesser 
+General Public License v2.1</a>.
+
+By interacting with this site or using its code, you agree that derivative 
+musical, textual, or visual works must comply with the CC BY-NC-SA license, and 
+that that derivative software must comply with the LGPL.
+
+This is computer music that is hosted online, but actually rendered in your 
 Web browser. The pieces are not soundfiles, and they are not streamed. Each 
 piece is a Web page that contains embedded software that runs in the browser 
 to synthesize the music.  Most pieces will play indefinitely. There may or may 
