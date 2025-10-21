@@ -469,9 +469,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let ty = (f32(gid.y) + 0.5) / f32(M);
   let z0 = vec2<f32>(
     mix(roiMin.x, roiMax.x, tx),
-    mix(roiMax.y, roiMin.y, ty)
+    mix(roiMin.y, roiMax.y, ty)   // low pitch (j=0) -> bottom (miny)
   );
-
   var z = z0;
   var th_prev = atan2(z.y, z.x);
   var sumTh = 0.0;
