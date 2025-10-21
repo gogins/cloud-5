@@ -627,7 +627,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const aspect = w / h;
 
         const ndcX = (x - this.viewJ.cx) / this.viewJ.scale;             // -1..1
-        const ndcY = - (y - this.viewJ.cy) * (1 / this.viewJ.scale) / aspect;
+        // const ndcY = - (y - this.viewJ.cy) * (1 / this.viewJ.scale) / aspect;
+        const ndcY = - (y - this.viewJ.cy) * (aspect / this.viewJ.scale);
         const pxX = (ndcX * 0.5 + 0.5) * w;                               // device px
         const pxY = (ndcY * 0.5 + 0.5) * h;
 
