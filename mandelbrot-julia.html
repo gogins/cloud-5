@@ -904,6 +904,22 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             inst[i][j] = (v >>> 16) & 0xFF;
           }
         }
+   
+        // --- Adaptive per-slice normalization of density ---
+        // Keep the top velocities per slice so dim/bright plots yield similar note counts.
+        // We ignore the shader's on/off flag and decide activity from per-slice ranks.
+        const perSliceKeep = Math.max(1, Math.min(this.maxVoicesPerSlice, Math.round(this.density * M)));
+        for (let i = 0; i < N; i++) {
+          // Build (pitch, vel) pairs for this slice
+          const pairs = new Array(M);
+          for (let j = 0; j < M; j++) pairs[j] = [j, vel[i][j]];
+          // Highest velocities first
+          pairs.sort((a, b) => (b[1] | 0) - (a[1] | 0));
+          // Velocity cutoff at the per-slice rank
+          const cutoff = pairs[Math.min(perSliceKeep - 1, pairs.length - 1)][1] | 0;
+          // Mark active if at/above cutoff (ties included)
+          for (let j = 0; j < M; j++) active[i][j] = (vel[i][j] | 0) >= cutoff ? 1 : 0;
+        }
 
         const runOn = Array.from({ length: M }, _ => Array(K).fill(false));
         const runI0 = Array.from({ length: M }, _ => Array(K).fill(0));
@@ -950,7 +966,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const q = new Map(); // integer slice index -> array of notes
         for (const n of score) {
           const [ch, t, d, key, vel] = n;
-          if (Math.random() > this.density) continue; // density filter
           const tKey = Math.round(t / this._stepBeats());
           if (!q.has(tKey)) q.set(tKey, []);
           q.get(tKey).push(n);
