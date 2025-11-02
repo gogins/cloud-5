@@ -2045,3 +2045,189 @@ function get_filename(pathOrUrl) {
     return filename; // No extension
   }
 }
+
+// --- Monkey-patch CsoundAC.Score with Web MIDI playback (mirrors MandelbrotJulia.playMIDIFromScore) ---
+(function attachScoreMIDIPatch(root = (typeof window !== "undefined" ? window : globalThis)) {
+  const C = root.CsoundAC;
+  if (!C || !C.Score) {
+    console.warn('CsoundAC.Score not found; MIDI patch skipped.');
+    return;
+  }
+
+  const Score = C.Score;
+
+  // Private-ish state keys (per-document, not exported)
+  const __midi = {
+    access: null,
+    outIdKey: 'cloud5.midiOutId',
+    playing: false,
+    timers: new Set(),
+    startMS: 0,
+    totalBeats: 0,
+  };
+
+  function clearTimers() {
+    for (const id of __midi.timers) clearTimeout(id);
+    __midi.timers.clear();
+  }
+
+  function msFromBeats(beats, bpm) {
+    return (beats * 60 / Math.max(20, bpm | 0)) * 1000;
+  }
+
+  async function getMIDIAccess() {
+    if (__midi.access) return __midi.access;
+    if (!navigator.requestMIDIAccess) throw new Error('Web MIDI not supported in this browser.');
+    __midi.access = await navigator.requestMIDIAccess({ sysex: false });
+    return __midi.access;
+  }
+
+  function currentMIDIOutput() {
+    const acc = __midi.access;
+    if (!acc) return null;
+    const outs = acc.outputs;
+    if (!outs || outs.size === 0) return null;
+
+    const saved = localStorage.getItem(__midi.outIdKey);
+    if (saved && outs.has(saved)) return outs.get(saved);
+
+    // Prefer IAC / Loopback / Bus style outputs; else first available
+    for (const o of outs.values()) {
+      if (/iac|loop|bus/i.test(o.name)) {
+        localStorage.setItem(__midi.outIdKey, o.id);
+        return o;
+      }
+    }
+    const first = outs.values().next().value;
+    if (first) localStorage.setItem(__midi.outIdKey, first.id);
+    return first || null;
+  }
+
+  function panicAllNotes() {
+    const out = currentMIDIOutput();
+    if (!out) return;
+    for (let ch = 0; ch < 16; ch++) {
+      out.send([0xB0 | ch, 120, 0]); // All Sound Off
+      out.send([0xB0 | ch, 123, 0]); // All Notes Off
+      out.send([0xB0 | ch, 121, 0]); // Reset All Controllers
+      for (let k = 0; k < 128; k += 8) out.send([0x80 | ch, k, 0]);
+    }
+  }
+
+  // ---------------------------
+  // Class (static) helper APIs
+  // ---------------------------
+
+  /**
+   * Choose an output by (partial, case-insensitive) name; falls back to first match.
+   * Returns the chosen MIDIOutput or null.
+   */
+  Score.select_midi_output_by_name = async function(namePart) {
+    await getMIDIAccess();
+    const outs = __midi.access?.outputs;
+    if (!outs?.size) return null;
+    const lower = String(namePart || '').toLowerCase();
+    for (const o of outs.values()) {
+      if (o.name.toLowerCase().includes(lower)) {
+        localStorage.setItem(__midi.outIdKey, o.id);
+        return o;
+      }
+    }
+    return currentMIDIOutput();
+  };
+
+  /** Get the current MIDI output (or null). */
+  Score.get_current_midi_output = function() {
+    return currentMIDIOutput();
+  };
+
+  /** Global stop: cancels timers and sends panic. */
+  Score.stop_play_midi = function() {
+    __midi.playing = false;
+    __midi.totalBeats = 0;
+    clearTimers();
+    panicAllNotes();
+  };
+
+  /** Global panic only (does not clear timers). */
+  Score.panic_midi = function() {
+    panicAllNotes();
+  };
+
+  // ----------------------------------
+  // Instance method: play this score
+  // ----------------------------------
+
+  /**
+   * Play this CsoundAC.Score to Web MIDI.
+   * @param {Object} opts
+   * @param {number} [opts.bpm=120]            Beats per minute if times are in beats.
+   * @param {boolean} [opts.time_is_beats=true]If false, interpret time/duration as seconds.
+   */
+  Score.prototype.play_midi = async function(opts = {}) {
+    const { bpm = 120, time_is_beats = true } = opts;
+
+    await getMIDIAccess();
+    const out = currentMIDIOutput();
+    if (!out) {
+      console.warn('Score.play_midi: no MIDI outputs available.');
+      return;
+    }
+
+    const n = (typeof this.size === 'function') ? this.size() : 0;
+    if (!n) {
+      console.warn('Score.play_midi: empty score.');
+      return;
+    }
+
+    // Normalize to [ch, tBeats, dBeats, key, vel]
+    const toBeat = (x) => time_is_beats ? x : (x * bpm / 60.0);
+    const notes = [];
+
+    for (let i = 0; i < n; ++i) {
+      const ev = this.get(i);
+      const ch = (ev.getChannel ? ev.getChannel() : ev.getInstrument?.()) | 0;
+      const t  = toBeat(ev.getTime ? ev.getTime() : 0);
+      const d  = toBeat(ev.getDuration ? ev.getDuration() : 0.25);
+      const key= (ev.getKey ? ev.getKey() : 60) | 0;
+      const vel= (ev.getVelocity ? ev.getVelocity() : 100) | 0;
+      notes.push([ (ch|0)&0x0F, t, d, (key|0)&0x7F, Math.max(1, Math.min(127, vel|0)) ]);
+    }
+
+    __midi.playing = true;
+    clearTimers();
+    __midi.startMS = performance.now();
+    __midi.totalBeats = Math.max(0, ...notes.map(n => n[1] + n[2]));
+    const t0 = __midi.startMS;
+
+    for (const [ch, tBeats, dBeats, key, vel] of notes) {
+      const on  = 0x90 | ch;
+      const off = 0x80 | ch;
+      const whenOn  = t0 + msFromBeats(tBeats, bpm);
+      const whenOff = t0 + msFromBeats(tBeats + dBeats, bpm);
+
+      __midi.timers.add(setTimeout(() => {
+        if (__midi.playing) out.send([on,  key, vel]);
+      }, Math.max(0, whenOn - performance.now())));
+
+      __midi.timers.add(setTimeout(() => {
+        if (__midi.playing) out.send([off, key, 0]);
+      }, Math.max(0, whenOff - performance.now())));
+    }
+
+    // Auto-stop slightly after last note
+    __midi.timers.add(setTimeout(() => Score.stop_play_midi(),
+                                 Math.ceil(msFromBeats(__midi.totalBeats, bpm) + 50)));
+  };
+
+  // Optional: convenience alias (static) to play any score
+  Score.play_midi = async function(score, opts) {
+    if (!score || typeof score.play_midi !== 'function') {
+      throw new Error('Score.play_midi(score, opts): invalid score object');
+    }
+    return score.play_midi(opts);
+  };
+
+  console.info('CsoundAC.Score MIDI monkey-patch installed.');
+})();
+

@@ -954,8 +954,19 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const thinned = this._thinScore(score);
         this._lastScore = thinned;
 
-        // Auto export & download MIDI
-        try { this._exportMIDI(thinned); } catch (e) { console.warn('MIDI export failed:', e); }
+        // Auto export & download: MIDI + JSON snapshot (paired by timestamp)
+        try {
+          // Use the same ROI that was actually used for compute
+          const effectiveROI = roi;
+          const state = this._collectState(effectiveROI);
+          // Create one timestamp for both files
+          const ts = new Date().toISOString().replace(/[:.]/g, '-');
+          this._exportMIDI(thinned, ts);
+          this._exportStateJSON(state, ts);
+        } catch (e) {
+          console.warn('Export failed:', e);
+        }
+
 
         return thinned;
       }
@@ -1051,8 +1062,66 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         this._stopWebAudio();
       }
 
+_timestamp() {
+  return new Date().toISOString().replace(/[:.]/g, '-');
+}
+
+_collectState(roi) {
+  // Return a serializable snapshot of current state, allowing ROI override.
+  const s = this._currentState();
+  if (roi) s.roiJ = { ...roi };
+  s.timestamp = this._timestamp();
+  return s;
+}
+
+_currentState() {
+  const roi = this.roiJ ?? {
+    minx: this.viewJ.cx - this.viewJ.scale,
+    maxx: this.viewJ.cx + this.viewJ.scale,
+    miny: this.viewJ.cy - this.viewJ.scale,
+    maxy: this.viewJ.cy + this.viewJ.scale
+  };
+  const outName = this._currentMIDIOutput();
+  return {
+    timestamp: new Date().toISOString(),
+    // synthesis / mapping params
+    exponent: this.exponent,
+    maxIterM: this.maxIterM,
+    maxIterJ: this.maxIterJ,
+    nTime: this.nTime,
+    nPitch: this.nPitch,
+    nInst: this.nInst,
+    bpm: this.bpm,
+    density: this.density,
+    maxVoicesPerSlice: this.maxVoicesPerSlice,
+    stepBeats: this._stepBeats(),
+    // views & complex params
+    viewM: { ...this.viewM },
+    viewJ: { ...this.viewJ },
+    c: { ...this.c },
+    roiJ: this.roiJ ? { ...this.roiJ } : null,
+    // MIDI I/O info
+    midiOutId: this._midiOutId || null,
+    midiOutName: outName ? outName.name : null,
+    // housekeeping
+    version: 1
+  };
+}
+
+_exportStateJSON(state, baseName) {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${baseName}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+}
+
+
       // --------- MIDI file export ---------
-      _exportMIDI(score) {
+      _exportMIDI(score, baseName) {
         if (!score || !score.length) return;
         const PPQ = 480; // ticks per quarter note
         const tempoMicro = Math.round(60000000 / Math.max(20, this.bpm | 0)); // us/qn
@@ -1117,7 +1186,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const blob = new Blob([bytes], { type: 'audio/midi' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        const ts = baseName || new Date().toISOString().replace(/[:.]/g, '-');
         a.href = url;
         a.download = `mandelbrot-julia-${ts}.mid`;
         document.body.appendChild(a);
