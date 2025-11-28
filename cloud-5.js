@@ -240,7 +240,8 @@ class Cloud5Piece extends HTMLElement {
   get score_generator_function_addon() {
     return this.#score_generator_function_addon;
   }
-  #piano_roll_overlay = null;
+
+    #piano_roll_overlay = null;
   /**
    * May be assigned the DOM object of a <cloud5-piano-roll> element overlay. 
    * If so, the Score button will show or hide an animated, zoomable piano 
@@ -248,29 +249,57 @@ class Cloud5Piece extends HTMLElement {
    */
   set piano_roll_overlay(piano_roll) {
     this.#piano_roll_overlay = piano_roll;
-    this.#piano_roll_overlay.cloud5_piece = this;
+    if (this.#piano_roll_overlay) {
+      this.#piano_roll_overlay.cloud5_piece = this;
+    }
   }
   get piano_roll_overlay() {
     return this.#piano_roll_overlay;
   }
+
   /**
    * May be assigned the DOM object of a <cloud5-log> element overlay. If so, 
    * the Log button will show or hide a scrolling view of messages from Csound or 
    * other sources.
    */
   #log_overlay = null;
-  #about_overlay = null;
+  set log_overlay(overlay) {
+    this.#log_overlay = overlay;
+    if (this.#log_overlay) {
+      this.#log_overlay.cloud5_piece = this;
+    }
+  }
+  get log_overlay() {
+    return this.#log_overlay;
+  }
+
   /**
    * May be assigned the DOM object of a <cloud5-about> element overlay. If 
    * so, the About button will show or hide the overlay. The inner HTML of 
    * this element may contain license information, authorship, credits, 
    * program notes for the piece, or other information.
    */
+  #about_overlay = null;
   set about_overlay(overlay) {
     this.#about_overlay = overlay;
   }
   get about_overlay() {
     return this.#about_overlay;
+  }
+
+  /**
+   * May be assigned the DOM object of a <cloud5-strudel> element overlay. If 
+   * so, the Strudel button will show or hide the Strudel REPL.
+   */
+  #strudel_overlay = null;
+  set strudel_overlay(overlay) {
+    this.#strudel_overlay = overlay;
+    if (this.#strudel_overlay) {
+      this.#strudel_overlay.cloud5_piece = this;
+    }
+  }
+  get strudel_overlay() {
+    return this.#strudel_overlay;
   }
   /**
    * Called on a timer as long as the piece exists.
