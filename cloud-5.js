@@ -785,27 +785,39 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     this.strudel_overlay?.stop();
     this.csound_message_callback("cloud-5 has stopped.\n");
   };
-  /**
+
+    /**
    * Helper function to show custom element overlays. Resizes overlay 
    * if required to fit layout.
    * 
    * @param {Object} overlay 
    */
   show(overlay) {
-    if (overlay) {
-      overlay.style.display = 'block';
-      // Back out the menu bar height from overlay height for the log 
-      // console, the score, and the about page.
-      if (['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName)) {
-        const menu_bar = document.getElementById('main_menu_list');
+    if (!overlay) return;
+
+    overlay.style.display = 'block';
+
+    const tag_needs_layout = ['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName);
+    const class_needs_layout = overlay.classList && overlay.classList.contains('cloud5-overlay');
+
+    if (tag_needs_layout || class_needs_layout) {
+      const menu_bar = document.getElementById('main_menu_list');
+      if (menu_bar) {
         const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
+        overlay.style.position = overlay.style.position || 'fixed';
+        overlay.style.left = '0';
+        overlay.style.right = '0';
         overlay.style.top = `${menu_bar_bottom}px`;
-        // Back out the menu bar height from the overlay height.
         overlay.style.height = `calc(100% - ${menu_bar_bottom}px)`;
-        console.log(`overlay style: ${overlay.style}`);
       }
     }
+
+    // If the overlay has its own on_shown hook, call it now.
+    if (typeof overlay.on_shown === 'function') {
+      overlay.on_shown();
+    }
   }
+
   /**
    * Helper function to hide custom element overlays.
    * 
@@ -816,19 +828,24 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
       overlay.style.display = 'none';
     }
   }
+
   /**
    * Helper function to show the overlay if it is 
-   * hidden, or to hide the overlay if it is visible
+   * hidden, or to hide the overlay if it is visible.
    * 
    * @param {Object} overlay 
    */
   toggle(overlay) {
-    if (overlay) {
-      if (overlay.checkVisibility() == true) {
-        this.hide(overlay);
-      } else {
-        this.show(overlay);
-      }
+    if (!overlay) return;
+
+    const visible = overlay.checkVisibility
+      ? overlay.checkVisibility()
+      : getComputedStyle(overlay).display !== 'none';
+
+    if (visible) {
+      this.hide(overlay);
+    } else {
+      this.show(overlay);
     }
   }
 
