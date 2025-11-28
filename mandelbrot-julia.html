@@ -21,7 +21,7 @@
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
     <script type="module" src="mandelbrot-julia.mjs"></script>
- 
+
     <link rel="stylesheet" href="w3.css">
     <link rel="stylesheet" href="cloud-5.css">
     <!-- Disable caching to speed up debugging. -->
@@ -2044,7 +2044,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
     </script>
     <cloud5-piece></cloud5-piece>
     <cloud5-shadertoy></cloud5-shadertoy>
-    <mandelbrot-julia id="mandelbrot-julia"></mandelbrot-julia>
+    <mandelbrot-julia id="mandelbrot_julia" class="cloud5-overlay" data-cloud5-label="Mandelbrot/Julia">
+    </mandelbrot-julia>
     <cloud5-log></cloud5-log>
     <cloud5-about>
         <div>
@@ -2173,23 +2174,23 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         // #region Csound Code
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
         // #endregion
-// Grab the overlay element so we can call its methods safely.
-    const mjOverlay = document.querySelector('#mandelbrot-julia');
+        // Grab the overlay element so we can call its methods safely.
+        const mjOverlay = document.querySelector('#mandelbrot-julia');
 
-    Cloud5.registerOverlay('#mandelbrot-julia', {
-        id: 'MandelbrotJulia',
-        label: 'Mandelbrot/Julia',
-        createMenuItem: true,
-        // <<< this is the key change for ordering
-        beforeSelector: '#menu_item_about',
-        onShow: () => {
-            try {
-                mjOverlay && mjOverlay.resize(true);
-            } catch (e) {
-                console.warn(e);
+        Cloud5.registerOverlay('#mandelbrot-julia', {
+            id: 'MandelbrotJulia',
+            label: 'Mandelbrot/Julia',
+            createMenuItem: true,
+            // <<< this is the key change for ordering
+            beforeSelector: '#menu_item_about',
+            onShow: () => {
+                try {
+                    mjOverlay && mjOverlay.resize(true);
+                } catch (e) {
+                    console.warn(e);
+                }
             }
-        }
-    });
+        });
 
 
         // #region Controls 
