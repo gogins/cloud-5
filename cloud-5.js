@@ -612,6 +612,163 @@ class Cloud5Piece extends HTMLElement {
     this._update_timer = setInterval(() => this.update_display(), 250);
   }
 
+    /**
+   * Scans the DOM for overlays belonging to this piece and ensures each has
+   * a menu item that toggles its visibility. Built-in overlays reuse existing
+   * menu items; generic overlays get new <li> entries inserted before About.
+   */
+  init_overlays_from_dom() {
+    const menu_list = document.querySelector('#main_menu_list');
+    if (!menu_list) {
+      console.warn("Cloud5Piece.init_overlays_from_dom: no #main_menu_list found.");
+      return;
+    }
+
+    const menu_item_about = document.querySelector('#menu_item_about');
+    const mini_console = document.querySelector('#mini_console');
+
+    const overlays = [];
+
+    // --- Built-in overlays --------------------------------------------------
+    const piano_roll = document.querySelector('cloud5-piano-roll');
+    if (piano_roll) {
+      this.piano_roll_overlay = piano_roll;
+      overlays.push({
+        element: piano_roll,
+        existingMenuId: 'menu_item_piano_roll',
+        label: 'Score'
+      });
+    }
+
+    const log = document.querySelector('cloud5-log');
+    if (log) {
+      this.log_overlay = log;
+      overlays.push({
+        element: log,
+        existingMenuId: 'menu_item_log',
+        label: 'Log'
+      });
+    }
+
+    const about = document.querySelector('cloud5-about');
+    if (about) {
+      this.about_overlay = about;
+      const filename = document.location.pathname.split("/").pop();
+      overlays.push({
+        element: about,
+        existingMenuId: 'menu_item_about',
+        label: about.getAttribute('data-cloud5-label') || `About ${filename}`
+      });
+    }
+
+    const strudel = document.querySelector('cloud5-strudel');
+    if (strudel) {
+      this.strudel_overlay = strudel;
+      overlays.push({
+        element: strudel,
+        existingMenuId: 'menu_item_strudel',
+        label: 'Strudel'
+      });
+    }
+
+    // --- Generic overlays ---------------------------------------------------
+    const generic_candidates = Array.from(
+      document.querySelectorAll('[data-cloud5-overlay], .cloud5-overlay')
+    );
+
+    const built_in_set = new Set(
+      [piano_roll, log, about, strudel].filter(Boolean)
+    );
+
+    generic_candidates
+      .filter(el => !built_in_set.has(el))
+      .forEach(el => {
+        const label =
+          el.getAttribute('data-cloud5-label') ||
+          el.getAttribute('data-overlay-label') ||
+          el.getAttribute('title') ||
+          el.id ||
+          el.tagName.toLowerCase();
+
+        overlays.push({
+          element: el,
+          existingMenuId: null,
+          label
+        });
+      });
+
+    // --- Create / wire menu items ------------------------------------------
+    const registered = [];
+
+    overlays.forEach(cfg => {
+      const overlay = cfg.element;
+      if (!overlay) return;
+
+      // Start hidden by default; menu click will toggle.
+      this.hide(overlay);
+
+      let li = null;
+      if (cfg.existingMenuId) {
+        li = document.querySelector(`#${cfg.existingMenuId}`);
+      }
+
+      if (!li) {
+        li = document.createElement('li');
+        li.className = 'w3-btn w3-hover-text-light-green';
+        li.textContent = cfg.label;
+
+        // Insert new button before About (if present), otherwise before mini_console,
+        // otherwise appended at end.
+        if (menu_item_about && menu_item_about.parentNode === menu_list) {
+          menu_list.insertBefore(li, menu_item_about);
+        } else if (mini_console && mini_console.parentNode === menu_list) {
+          menu_list.insertBefore(li, mini_console);
+        } else {
+          menu_list.appendChild(li);
+        }
+      } else {
+        // Reuse existing button but ensure it has a sensible label.
+        if (!li.textContent.trim()) {
+          li.textContent = cfg.label;
+        }
+      }
+
+      li.style.display = 'inline';
+      li.dataset.cloud5Overlay = 'true';
+
+      li.addEventListener('click', () => {
+        this._toggleOverlayExclusive(overlay);
+      });
+
+      registered.push(overlay);
+    });
+
+    this._registered_overlays = registered;
+  }
+
+  /**
+   * Toggles one overlay and hides all others that we know about.
+   * Does NOT touch the shader overlay (which can remain as background).
+   */
+  _toggleOverlayExclusive(target) {
+    if (!target) return;
+
+    const all = new Set(this._registered_overlays || []);
+    if (this.piano_roll_overlay) all.add(this.piano_roll_overlay);
+    if (this.log_overlay) all.add(this.log_overlay);
+    if (this.about_overlay) all.add(this.about_overlay);
+    if (this.strudel_overlay) all.add(this.strudel_overlay);
+
+    all.forEach(overlay => {
+      if (!overlay) return;
+      if (overlay === target) {
+        this.toggle(overlay);
+      } else {
+        this.hide(overlay);
+      }
+    });
+  }
+
   /**
     * Copies all _current_ dat.gui parameters to the system clipboard in 
     * JSON format.
