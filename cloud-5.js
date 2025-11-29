@@ -864,7 +864,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     this.csound_message_callback("cloud-5 has stopped.\n");
   };
 
-    /**
+  /**
    * Helper function to show custom element overlays. Resizes overlay 
    * if required to fit layout.
    * 
@@ -876,7 +876,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     // Force visibility even if a stylesheet uses display:none !important.
     overlay.style.setProperty('display', 'block', 'important');
 
-    // Decide if this overlay needs to be laid out underneath the main menu.
     const is_built_in_overlay =
       ['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName);
 
@@ -889,15 +888,27 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
       if (!menu_bar) {
         menu_bar = document.getElementById('main_menu_list');
       }
-      if (menu_bar) {
-        const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
 
-        // Pin the overlay to fill the viewport below the menu.
-        overlay.style.position = 'fixed';
-        overlay.style.left = '0';
-        overlay.style.right = '0';
-        overlay.style.top = `${menu_bar_bottom}px`;
-        overlay.style.height = `calc(100% - ${menu_bar_bottom}px)`;
+      let menu_bar_bottom = 0;
+      if (menu_bar) {
+        const rect = menu_bar.getBoundingClientRect();
+        menu_bar_bottom = rect.bottom;
+      }
+
+      // Pin the overlay to fill the viewport below the menu.
+      overlay.style.position = 'fixed';
+      overlay.style.left = '0';
+      overlay.style.right = '0';
+      overlay.style.top = `${menu_bar_bottom}px`;
+      overlay.style.height = `calc(100% - ${menu_bar_bottom}px)`;
+      overlay.style.width = '100vw';
+
+      // Ensure generic overlays sit above the shader but below the menu.
+      if (is_generic_overlay) {
+        // Only override if author CSS hasn't already set an explicit z-index.
+        if (!overlay.style.zIndex) {
+          overlay.style.zIndex = '1300'; // between log/score/strudel and menu
+        }
       }
     }
 
