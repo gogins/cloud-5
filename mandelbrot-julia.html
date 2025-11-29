@@ -2177,22 +2177,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ){
         // Grab the overlay element so we can call its methods safely.
         const mjOverlay = document.querySelector('#mandelbrot-julia');
 
-        Cloud5.registerOverlay('#mandelbrot-julia', {
-            id: 'MandelbrotJulia',
-            label: 'Mandelbrot/Julia',
-            createMenuItem: true,
-            // <<< this is the key change for ordering
-            beforeSelector: '#menu_item_about',
-            onShow: () => {
-                try {
-                    mjOverlay && mjOverlay.resize(true);
-                } catch (e) {
-                    console.warn(e);
-                }
-            }
-        });
-
-
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
             "NoteTempo": 54.46511149933203,

@@ -383,57 +383,92 @@ class Cloud5Piece extends HTMLElement {
     "genre": null,
   };
   connectedCallback() {
-    const filename = document.location.pathname.split("/").pop()
+    const filename = document.location.pathname.split("/").pop();
+
     this.innerHTML = `
     <div class="w3-bar cloud5-menu" id="main_menu">
-    <ul class="menu" id="main_menu_list">
-        <li id="menu_item_play" title="Play piece on audio output" class="w3-btn w3-hover-text-light-green">
-            Play</li>
-        <li id="menu_item_render" title="Render piece to soundfile while playing on audio output" class="w3-btn w3-hover-text-light-green">Render
-        </li>
-        <li id="menu_item_stop" title="Stop performance" class="w3-btn w3-hover-text-light-green">Stop</li>
-        <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
-        <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green" style="display:none;">Strudel</li>
-        <li id="menu_item_piano_roll" title="Show/hide piano roll score" class="w3-btn w3-hover-text-light-green" style="display:none;">Score
-        </li>
-        <li id="menu_item_log" title="Show/hide message log" class="w3-btn w3-hover-text-light-green">Log
-        </li>
-        <li id="menu_item_about" title="Show/hide information about this piece"
+      <ul class="menu" id="main_menu_list">
+        <li id="menu_item_play"
+            title="Play piece on audio output"
+            class="w3-btn w3-hover-text-light-green">Play</li>
+
+        <li id="menu_item_render"
+            title="Render piece to soundfile then play on audio output"
+            class="w3-btn w3-hover-text-light-green">Render</li>
+
+        <li id="menu_item_stop"
+            title="Stop performance"
+            class="w3-btn w3-hover-text-light-green">Stop</li>
+
+        <li id="menu_item_fullscreen"
+            class="w3-btn w3-hover-text-light-green">Fullscreen</li>
+
+        <!-- Built-in overlay items (if their overlays exist) will reuse these.
+             Generic overlays will get new <li> items injected before About. -->
+        <li id="menu_item_strudel"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Strudel</li>
+
+        <li id="menu_item_piano_roll"
+            title="Show/hide piano roll score"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Score</li>
+
+        <li id="menu_item_log"
+            title="Show/hide message log"
+            class="w3-btn w3-hover-text-light-green">Log</li>
+
+        <li id="menu_item_about"
+            title="Show/hide information about this piece"
             class="w3-btn w3-hover-text-light-green">About ${filename}</li>
-        <li id="mini_console" class="w3-btn w3-text-green w3-hover-text-light-green"></li>
-        <li id="vu_meter_left" class="w3-btn w3-hover-text-light-green"></li>
-        <li id="vu_meter_right" class="w3-btn w3-hover-text-light-green"></li>
+
+        <li id="mini_console"
+            class="w3-btn w3-text-green w3-hover-text-light-green"></li>
+
+        <li id="vu_meter_left"
+            class="w3-btn w3-hover-text-light-green"></li>
+
+        <li id="vu_meter_right"
+            class="w3-btn w3-hover-text-light-green"></li>
+
         <li id="menu_item_dat_gui"
             title="Show/hide performance controls; 'Save' copies all control parameters to system clipboard"
             class="w3-btn w3-left-align w3-hover-text-light-green w3-right"></li>
       </ul>
     </div>`;
-    this.vu_meter_left = document.querySelector("#vu_meter_left");
-    this.vu_meter_right = document.querySelector("#vu_meter_right");
-    this.mini_console = document.querySelector("#mini_console");
-    let menu_item_play = document.querySelector('#menu_item_play');
-    menu_item_play.onclick = ((event) => {
+
+    // Cache status elements
+    this.vu_meter_left = this.querySelector("#vu_meter_left");
+    this.vu_meter_right = this.querySelector("#vu_meter_right");
+    this.mini_console = this.querySelector("#mini_console");
+
+    // Transport buttons
+    const menu_item_play = this.querySelector('#menu_item_play');
+    menu_item_play.onclick = (event) => {
       console.info("menu_item_play click...");
       this.cancel_scheduled_stop();
-      ///this.show(this.piano_roll_overlay)
-      this.show(this.shader_overlay);
-      // this.hide(this.strudel_overlay);
-      // this.hide(this.shader_overlay);
+      // Show shader background if available
+      if (this.shader_overlay) {
+        this.show(this.shader_overlay);
+      }
+      // Hide overlays that should not be visible while playing
+      this.hide(this.piano_roll_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
+      this.hide(this.strudel_overlay);
+      // Start performance
       (() => this.render(1))();
-    });
-    let menu_item_render = document.querySelector('#menu_item_render');
-    menu_item_render.onclick = ((event) => {
+    };
+
+    const menu_item_render = this.querySelector('#menu_item_render');
+    menu_item_render.onclick = (event) => {
       console.info("menu_item_render click...");
       this.cancel_scheduled_stop();
       this.show(this.piano_roll_overlay);
       this.hide(this.strudel_overlay);
-      // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
-      // There must be a default duration and fadeout, if not specified in the 
-      // control parameters, for rendering to a soundfile to work.
+
       let duration;
       let fadeout;
       const safe_tail = 4;
@@ -450,166 +485,52 @@ class Cloud5Piece extends HTMLElement {
         this.fadeout = fadeout;
       }
       this.total_duration = this.duration + this.fadeout + this.safe_tail;
-      this?.csound_message_callback(`Duration: ${this.duration} fadeout: ${this.fadeout}\n`);
-      this?.csound_message_callback(`Rendering will be stopped ${this.total_duration} seconds after starting...\n`);
+      this?.csound_message_callback(
+        `Duration: ${this.duration} fadeout: ${this.fadeout}\n`
+      );
+      this?.csound_message_callback(
+        `Rendering will be stopped ${this.total_duration} seconds after starting...\n`
+      );
       (() => this.render(4))();
-    });
-    let menu_item_stop = document.querySelector('#menu_item_stop');
-    menu_item_stop.onclick = ((event) => {
+    };
+
+    const menu_item_stop = this.querySelector('#menu_item_stop');
+    menu_item_stop.onclick = (event) => {
       console.info("menu_item_stop click...");
       this.csound?.setControlChannel("gk_cloud5_performance_mode", 0);
       this.stop();
       if (this.is_rendering) {
-        let soundfile_url = url_for_soundfile(this.csound);
+        const soundfile_url = url_for_soundfile(this.csound);
         this.is_rendering = false;
         this.cancel_scheduled_stop();
+        // Optionally, do something with soundfile_url.
       }
-    });
-    let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
-    menu_item_fullscreen.onclick = (async (event) => {
+    };
+
+     const menu_item_fullscreen = this.querySelector('#menu_item_fullscreen');
+    menu_item_fullscreen.onclick = async (event) => {
       console.info("menu_item_fullscreen click...");
       try {
         if (this.#shader_overlay?.canvas?.requestFullscreen) {
           let new_window = null;
           // Make the shader canvas fullscreen in the primary window.
           await this.#shader_overlay.canvas.requestFullscreen();
-          // Try to make the HTML controls, if available, fullscreen 
-          // in the secondary window.
-          const secondary_screen = (await getScreenDetails()).screens.find(
-            (screen) => screen.isExtended,
-          );
-          if (secondary_screen && this?.html_controls_url_addon) {
-            let permissions_granted = false;
-            const { state } = await navigator.permissions.query({ name: 'window-management' });
-            if (state === 'granted') {
-              permissions_granted = true;
-            }
-          }
-          const url = window.location.origin + this?.html_controls_url_addon;
-          const window_features = `top=${secondary_screen.availTop}, left=${secondary_screen.availLeft}, width=${secondary_screen.availWidth}, height=${secondary_screen.availHeight}`;
-          let opened_window = window.open(url, 'HTMLControls', window_features);
-          if (!opened_window || opened_window.closed || typeof opened_window.closed == 'undefined') {
-            alert("Your browser is blocking popups. Please allow popups and redirects in the browser settings for this Web site.")
-            return;
-          } else {
-            this.html_controls_window = opened_window;
-          }
-          globalThis.windows_to_close.push(this.html_controls_window);
-          if (this.html_controls_window) {
-            // These will pile up and that would be a problem... if users 
-            // repeatedly toggled fullscreen.
-            window.addEventListener("fullscreenchange", (event) => {
-              if (document.fullscreenElement) {
-              } else {
-                this.html_controls_window.close();
-                (value) => {
-                  globalThis.windows_to_close = globalThis.windows_to_close.filter(function (ele) {
-                    return ele != value;
-                  });
-                }
-              }
-            });
-          }
         }
-      } catch (ex) {
-        alert(ex.message + "\nIn the browser's 'Site permissions' for this Web site, set 'Pop-ups and redirects' to 'Allow' and 'Window management' to 'Allow'.");
-      };
-    });
-    let menu_item_strudel = document.querySelector('#menu_item_strudel');
-    menu_item_strudel.onclick = ((event) => {
-      console.info("menu_item_strudel click...");
-      //this.hide(this.piano_roll_overlay)
-      this.toggle(this.strudel_overlay);
-      // this.hide(this.shader_overlay);
-      // this.hide(this.log_overlay);
-      this.hide(this.about_overlay);
-    });
-    const menu_item_piano_roll = document.querySelector('#menu_item_piano_roll');
-    menu_item_piano_roll.addEventListener('click', () => {
-      const el = this.piano_roll_overlay;          // <cloud5-piano-roll> host
-      const willShow = getComputedStyle(el).display === 'none';
-      if (willShow) {
-        this.show(this?.piano_roll_overlay);
-        this.hide(this?.shader_overlay);
-      } else {
-        this.hide(this?.piano_roll_overlay);
-        this.show(this?.shader_overlay);
+      } catch (e) {
+        console.warn("Fullscreen failed:", e);
       }
-      this.hide(this.about_overlay);                // About can stay hidden
-      // If you don’t have automatic mutual exclusion, also hide Strudel:
-      // this.hide(this.strudel_overlay);
-      if (willShow) {
-        // Wait one frame so layout knows the element is visible,
-        // then let the element size its canvas & redraw.
-        requestAnimationFrame(() => el.on_shown?.());
-      }
-    });
-    let menu_item_log = document.querySelector('#menu_item_log');
-    menu_item_log.onclick = ((event) => {
-      const menu_bottom = document.getElementById('main_menu').getBoundingClientRect().bottom;
-      this.log_overlay.style.position = 'fixed';
-      this.log_overlay.style.top = `${menu_bottom}px`;
-      console.info("menu_item_log click...");
-      //this.show(this.piano_roll_overlay)
-      //this.hide(this.strudel_overlay);
-      //this.hide(this.shader_overlay);
-      this.toggle(this.log_overlay);
-      this.hide(this.about_overlay);
-    });
-    let menu_item_about = document.querySelector('#menu_item_about');
-    menu_item_about.onclick = ((event) => {
-      console.info("menu_item_about click...");
-      this.hide(this.piano_roll_overlay)
-      this.hide(this.strudel_overlay);
-      ///this.hide(this.shader_overlay);
-      this.hide(this.log_overlay);
-      this.toggle(this.about_overlay);
-      this.strudel_component?.focus(true);
-    });
-    // Ensure that the dat.gui controls are children of the _Controls_ button.
-    this.create_dat_gui_menu();
-    document.onkeydown = ((e) => {
-      const t = e.target;
-      if (
-        t?.isContentEditable ||
-        ['INPUT', 'TEXTAREA', 'SELECT'].includes(t?.tagName) ||
-        t?.closest?.('.dg') // inside dat.gui
-      ) {
-        return; // let the field handle the keystroke
-      }
-      let e_char = String.fromCharCode(e.keyCode || e.charCode);
-      if (e.ctrlKey === true) {
-        if (e_char === 'H') {
-          let console = document.getElementById("console");
-          if (console.style.display === "none") {
-            console.style.display = "block";
-          } else {
-            console.style.display = "none";
-          }
-          this.gui.closed = true;
-          gui.closed = false;
-        } else if (e_char === 'G') {
-          this.score_generator_function_addon();
-        } else if (e_char === 'P') {
-          this.play();
-        } else if (e_char === 'S') {
-          this.stop();
-        } else if (e_char === 'C') {
-          this?.piano_roll_overlay.recenter();
-        }
-      }
-    });
-    this.show(this);
-    window.addEventListener('load', function (event) {
-      let save_button = this.gui.domElement.querySelector('span.button.save');
-      save_button.onclick = function (event) {
-        this.copy_parameters()
-      }.bind(this);
-    }.bind(this));
-    window.addEventListener("unload", function (event) {
-      nw_window?.close();
-    });
-    this._update_timer = setInterval(() => this.update_display(), 250);
+    };
+
+    // After base menu is in place, interrogate the DOM and wire overlays,
+    // but do it *after* the whole document has been parsed so that
+    // overlays declared later (like <mandelbrot-julia>) exist.
+    const wireOverlays = () => this.init_overlays_from_dom();
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', wireOverlays, { once: true });
+    } else {
+      wireOverlays();
+    }
   }
 
     /**
@@ -952,16 +873,27 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
   show(overlay) {
     if (!overlay) return;
 
-    overlay.style.display = 'block';
+    // Force visibility even if a stylesheet uses display:none !important.
+    overlay.style.setProperty('display', 'block', 'important');
 
-    const tag_needs_layout = ['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName);
-    const class_needs_layout = overlay.classList && overlay.classList.contains('cloud5-overlay');
+    // Decide if this overlay needs to be laid out underneath the main menu.
+    const is_built_in_overlay =
+      ['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName);
 
-    if (tag_needs_layout || class_needs_layout) {
-      const menu_bar = document.getElementById('main_menu_list');
+    const is_generic_overlay =
+      overlay.classList && overlay.classList.contains('cloud5-overlay');
+
+    if (is_built_in_overlay || is_generic_overlay) {
+      // Use the menu bar (or its list) to determine bottom edge.
+      let menu_bar = document.getElementById('main_menu');
+      if (!menu_bar) {
+        menu_bar = document.getElementById('main_menu_list');
+      }
       if (menu_bar) {
         const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
-        overlay.style.position = overlay.style.position || 'fixed';
+
+        // Pin the overlay to fill the viewport below the menu.
+        overlay.style.position = 'fixed';
         overlay.style.left = '0';
         overlay.style.right = '0';
         overlay.style.top = `${menu_bar_bottom}px`;
@@ -969,7 +901,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
       }
     }
 
-    // If the overlay has its own on_shown hook, call it now.
+    // If the overlay has its own hook, let it know it's now visible.
     if (typeof overlay.on_shown === 'function') {
       overlay.on_shown();
     }
@@ -981,9 +913,9 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
    * @param {Object} overlay 
    */
   hide(overlay) {
-    if (overlay) {
-      overlay.style.display = 'none';
-    }
+    if (!overlay) return;
+    // Force hidden even in the presence of CSS !important.
+    overlay.style.setProperty('display', 'none', 'important');
   }
 
   /**
