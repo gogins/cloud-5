@@ -1,4 +1,4 @@
-class MandelbrotJulia extends HTMLElement {
+class MandelbrotJulia extends Cloud5Element {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });

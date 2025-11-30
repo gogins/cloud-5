@@ -127,6 +127,36 @@ function obtainWebGL2(container, {
 }
 
 /**
+ * Base class for Cloud5 overlay-like elements.
+ * Currently lightweight, but centralizes a few common conventions:
+ * - Optional `data-cloud5-stay-visible` attribute parsed into `cloud5_stay_visible`.
+ * - Optional `on_shown()` / `on_hidden()` lifecycle hooks.
+ *
+ * Subclasses should call `super.connectedCallback()` if they override it.
+ */
+class Cloud5Element extends HTMLElement {
+  constructor() {
+    super();
+    // If true, this overlay will not be auto-hidden when another overlay
+    // is toggled via the main menu (you can use this manually later).
+    this.cloud5_stay_visible = false;
+  }
+
+  connectedCallback() {
+    // Allow an attribute-based opt-in for "stay visible" behavior.
+    const attr = this.getAttribute && this.getAttribute('data-cloud5-stay-visible');
+    if (attr !== null) {
+      const v = String(attr).toLowerCase();
+      this.cloud5_stay_visible = (v === '' || v === 'true' || v === '1' || v === 'yes');
+    }
+  }
+
+  // Optional hooks; overlays may override these.
+  on_shown() {}
+  on_hidden() {}
+}
+
+/**
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
  * objects of other cloud-5 elements to the `_overlay` properties. 
  */
@@ -1161,20 +1191,14 @@ customElements.define("cloud5-piece", Cloud5Piece);
  * the performance in the score. The user may use the trackball 
  * to zoom in or out of the score, to drag it, or to spin it around.
  */
-/**
- * Displays a CsoundAC Score as a 3-dimensional piano roll. During 
- * performance, a moving red ball indicates the current position of 
- * the performance in the score. The user may use the trackball 
- * to zoom in or out of the score, to drag it, or to spin it around.
- */
-class Cloud5PianoRoll extends HTMLElement {
+class Cloud5PianoRoll extends Cloud5Element {
   constructor() {
     super();
-    this.cloud5_piece = null;
     this.silencio_score = new Silencio.Score();
     this.csoundac_score = null;
     this.canvas = null;
   }
+
   _onWindowResize = () => {
     const visible = this.checkVisibility
       ? this.checkVisibility()
@@ -1182,7 +1206,9 @@ class Cloud5PianoRoll extends HTMLElement {
     if (!visible) return;
     requestAnimationFrame(() => this.on_shown());
   };
+
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `
      <canvas id="display" class="cloud5-score-canvas">
     `;
@@ -1277,11 +1303,13 @@ customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
  * Contains an instance of the Strudel REPL that can use Csound as an output,
  * and that starts and stops along wth Csound.
  */
-class Cloud5Strudel extends HTMLElement {
+class Cloud5Strudel extends Cloud5Element {
   constructor() {
     super();
   }
+
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `
     <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl'>
         <!--
@@ -1296,8 +1324,7 @@ class Cloud5Strudel extends HTMLElement {
 
     let menu_button = document.getElementById("menu_item_strudel");
     menu_button.style.display = 'inline';
-  }
-  /**
+  }  /**
    * Starts the Strudel performance loop (the Cyclist).
    */
   start() {
@@ -1350,8 +1377,7 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
  * This class is specifically designed to simplify the use of shaders 
  * developed in or adapted from the ShaderToy Web site. Other types of shader 
  * also can be used.
- */
-class Cloud5ShaderToy extends HTMLElement {
+ */class Cloud5ShaderToy extends Cloud5Element {
   gl = null;
   shader_program = null;
   analyser = null;
@@ -1380,7 +1406,9 @@ class Cloud5ShaderToy extends HTMLElement {
   constructor() {
     super();
   }
+
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `
      <canvas id="display" class="cloud5-shader-canvas">
     `;
@@ -1388,6 +1416,8 @@ class Cloud5ShaderToy extends HTMLElement {
     window.addEventListener('resize', this._onWindowResize, { passive: true });
     window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
   }
+
+  // ...rest of Cloud5ShaderToy unchanged...
   disconnectedCallback() {
     window.removeEventListener('resize', this._onWindowResize);
     window.visualViewport?.removeEventListener('resize', this._onWindowResize);
@@ -1780,19 +1810,15 @@ class Cloud5ShaderToy extends HTMLElement {
 customElements.define("cloud5-shadertoy", Cloud5ShaderToy);
 
 /**
- * Displays a scrolling list of runtime messages from Csound and/or other 
- * sources.
- */
-/**
  * Displays a scrolling list of runtime messages from Csound and/or other sources.
  */
-class Cloud5Log extends HTMLElement {
+class Cloud5Log extends Cloud5Element {
   constructor() {
     super();
-    this.cloud5_piece = null;
   }
 
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `<div id="console_view" class="cloud5-log-editor no-scroll"></div>`;
     this.console_editor = ace.edit("console_view");
     this.console_editor.setShowPrintMargin(false);
@@ -1800,6 +1826,7 @@ class Cloud5Log extends HTMLElement {
     this.console_editor.renderer.setOption("showGutter", true);
   }
 
+  // ...rest of Cloud5Log unchanged...
   _pin_to_bottom() {
     if (!this.console_editor) {
       return;
@@ -1848,7 +1875,7 @@ customElements.define("cloud5-log", Cloud5Log);
 /**
  * May contain license, authorship, credits, and program notes as inner HTML.
  */
-class Cloud5About extends HTMLElement {
+class Cloud5About extends Cloud5Element {
   constructor() {
     super();
   }
