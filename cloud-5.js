@@ -538,6 +538,11 @@ class Cloud5Piece extends HTMLElement {
    * a menu item that toggles its visibility. Built-in overlays reuse existing
    * menu items; generic overlays get new <li> entries inserted before About.
    */
+  /**
+   * Scans the DOM for overlays belonging to this piece and ensures each has
+   * a menu item that toggles its visibility. Built-in overlays reuse existing
+   * menu items; generic overlays get new <li> entries inserted before About.
+   */
   init_overlays_from_dom() {
     const menu_list = document.querySelector('#main_menu_list');
     if (!menu_list) {
@@ -553,21 +558,23 @@ class Cloud5Piece extends HTMLElement {
     // --- Built-in overlays --------------------------------------------------
     const piano_roll = document.querySelector('cloud5-piano-roll');
     if (piano_roll) {
-      this.piano_roll_overlay = piano_roll;
+      this.piano_roll_overlay = piano_roll;     // setter already sets cloud5_piece
       overlays.push({
         element: piano_roll,
         existingMenuId: 'menu_item_piano_roll',
-        label: 'Score'
+        label: 'Score',
+        stayVisible: this._read_stay_visible_flag(piano_roll)
       });
     }
 
     const log = document.querySelector('cloud5-log');
     if (log) {
-      this.log_overlay = log;
+      this.log_overlay = log;                   // setter already sets cloud5_piece
       overlays.push({
         element: log,
         existingMenuId: 'menu_item_log',
-        label: 'Log'
+        label: 'Log',
+        stayVisible: this._read_stay_visible_flag(log)
       });
     }
 
@@ -578,17 +585,19 @@ class Cloud5Piece extends HTMLElement {
       overlays.push({
         element: about,
         existingMenuId: 'menu_item_about',
-        label: about.getAttribute('data-cloud5-label') || `About ${filename}`
+        label: about.getAttribute('data-cloud5-label') || `About ${filename}`,
+        stayVisible: this._read_stay_visible_flag(about)
       });
     }
 
     const strudel = document.querySelector('cloud5-strudel');
     if (strudel) {
-      this.strudel_overlay = strudel;
+      this.strudel_overlay = strudel;           // setter already sets cloud5_piece
       overlays.push({
         element: strudel,
         existingMenuId: 'menu_item_strudel',
-        label: 'Strudel'
+        label: 'Strudel',
+        stayVisible: this._read_stay_visible_flag(strudel)
       });
     }
 
@@ -614,7 +623,8 @@ class Cloud5Piece extends HTMLElement {
         overlays.push({
           element: el,
           existingMenuId: null,
-          label
+          label,
+          stayVisible: this._read_stay_visible_flag(el)
         });
       });
 
@@ -624,6 +634,12 @@ class Cloud5Piece extends HTMLElement {
     overlays.forEach(cfg => {
       const overlay = cfg.element;
       if (!overlay) return;
+
+      // Back-reference for ALL overlays (built-in + generic).
+      overlay.cloud5_piece = this;
+
+      // Remember whether this overlay wants to stay visible when others toggle.
+      overlay._cloud5_stay_visible = !!cfg.stayVisible;
 
       // Start hidden by default; menu click will toggle.
       this.hide(overlay);
@@ -668,7 +684,28 @@ class Cloud5Piece extends HTMLElement {
   }
 
   /**
+   * Reads the "stay visible" flag from overlay attributes.
+   * Recognized:
+   *   data-cloud5-stay-visible="true" | "1"
+   *   data-overlay-stay-visible="true" | "1"
+   *   visibility="keep"
+   */
+  _read_stay_visible_flag(el) {
+  if (!el || !el.getAttribute) return false;
+    const raw =
+      el.getAttribute('data-cloud5-stay-visible') ??
+      el.getAttribute('data-overlay-stay-visible') ??
+      el.getAttribute('visibility');
+
+    if (!raw) return false;
+    const v = String(raw).toLowerCase().trim();
+    return (v === 'true' || v === '1' || v === 'keep');
+  }
+
+
+  /**
    * Toggles one overlay and hides all others that we know about.
+   * Overlays marked with _cloud5_stay_visible (via attributes) are not hidden.
    * Does NOT touch the shader overlay (which can remain as background).
    */
   _toggleOverlayExclusive(target) {
@@ -682,11 +719,17 @@ class Cloud5Piece extends HTMLElement {
 
     all.forEach(overlay => {
       if (!overlay) return;
+
+      const stayVisible = !!overlay._cloud5_stay_visible;
+
       if (overlay === target) {
+        // Always toggle the requested overlay.
         this.toggle(overlay);
-      } else {
+      } else if (!stayVisible) {
+        // Only hide overlays that are not marked as "stay visible".
         this.hide(overlay);
       }
+      // If stayVisible === true and overlay !== target, we leave it as-is.
     });
   }
 
