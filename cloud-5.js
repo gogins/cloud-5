@@ -144,16 +144,46 @@ class Cloud5Element extends HTMLElement {
 
   connectedCallback() {
     // Allow an attribute-based opt-in for "stay visible" behavior.
-    const attr = this.getAttribute && this.getAttribute('data-cloud5-stay-visible');
+    const attr = this.getAttribute('data-cloud5-stay-visible');
     if (attr !== null) {
       const v = String(attr).toLowerCase();
       this.cloud5_stay_visible = (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
   }
-
-  // Optional hooks; overlays may override these.
-  on_shown() {}
-  on_hidden() {}
+  /**
+   * Optional lifecycle hook called by the piece when this element is shown.
+   * Subclasses may override this method to change behavior when shown.
+   */
+  on_shown() { }
+  /** 
+   * Optional lifecycle hook called by the piece when this element is hidden.
+   * Subclasses may override this method to change behavior when hidden.
+   */
+  on_hidden() { }
+  /**
+   * Optional lifecycle hook called by the piece when it stops its performance. 
+   * Subclasses may override this method to change behavior when the piece stops.  
+   */
+  on_stop() { }
+  /**
+   * Optional lifecycle hook called by the piece when it is cleared. 
+   * Subclasses may override this method to change behavior when the piece is 
+   * cleared, such as clearing any performance-related internal state in 
+   * preparation for a new performance.
+   */
+  on_clear() { }
+  /**
+   * Optional lifecycle hook called by the piece when it generates a new 
+   * Score. Subclasses may override this method to add new Events to the 
+   * Score, or to modify existing Events.
+   */
+  on_generate() { }
+  /**
+   * Optional lifecycle hook called by the piece when it starts its 
+   * performance. Subclasses may override this method to change behavior when 
+   * the piece starts, such as to schedule real-time events.
+   */
+  on_play() { }
 }
 
 /**
@@ -271,7 +301,7 @@ class Cloud5Piece extends HTMLElement {
     return this.#score_generator_function_addon;
   }
 
-    #piano_roll_overlay = null;
+  #piano_roll_overlay = null;
   /**
    * May be assigned the DOM object of a <cloud5-piano-roll> element overlay. 
    * If so, the Score button will show or hide an animated, zoomable piano 
@@ -537,7 +567,7 @@ class Cloud5Piece extends HTMLElement {
       }
     };
 
-     const menu_item_fullscreen = this.querySelector('#menu_item_fullscreen');
+    const menu_item_fullscreen = this.querySelector('#menu_item_fullscreen');
     menu_item_fullscreen.onclick = async (event) => {
       console.info("menu_item_fullscreen click...");
       try {
@@ -563,11 +593,21 @@ class Cloud5Piece extends HTMLElement {
     }
   }
 
-    /**
-   * Scans the DOM for overlays belonging to this piece and ensures each has
-   * a menu item that toggles its visibility. Built-in overlays reuse existing
-   * menu items; generic overlays get new <li> entries inserted before About.
-   */
+  /**
+ * Scans the DOM for overlays belonging to this piece and ensures each has
+ * a menu item that toggles its visibility. Built-in overlays reuse existing
+ * menu items; generic overlays get new <li> entries inserted before About.
+ */
+
+  _get_all_overlays() {
+    const s = new Set(this._registered_overlays || []);
+    if (this.piano_roll_overlay) s.add(this.piano_roll_overlay);
+    if (this.log_overlay) s.add(this.log_overlay);
+    if (this.about_overlay) s.add(this.about_overlay);
+    if (this.strudel_overlay) s.add(this.strudel_overlay);
+    return [...s];
+  }
+
   /**
    * Scans the DOM for overlays belonging to this piece and ensures each has
    * a menu item that toggles its visibility. Built-in overlays reuse existing
@@ -721,7 +761,7 @@ class Cloud5Piece extends HTMLElement {
    *   visibility="keep"
    */
   _read_stay_visible_flag(el) {
-  if (!el || !el.getAttribute) return false;
+    if (!el || !el.getAttribute) return false;
     const raw =
       el.getAttribute('data-cloud5-stay-visible') ??
       el.getAttribute('data-overlay-stay-visible') ??
@@ -847,7 +887,16 @@ class Cloud5Piece extends HTMLElement {
       this.is_rendering = true;
     }
     if (non_csound(this.csound)) return;
-    this?.log_overlay?.clear?.();
+    // Stop any current performance first.
+    await this.stop();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_stop();
+    }
+    // Clear performance-related state from all components.
+    await this?.log_overlay?.clear?.();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_clear();
+    }
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -862,6 +911,10 @@ class Cloud5Piece extends HTMLElement {
     if (this.score_generator_function_addon) {
       let score = await this.score_generator_function_addon();
       if (score) {
+        // Generate score from all components.
+        for (const overlay of this._get_all_overlays()) {
+          await overlay?.on_generate(score);
+        }
         let csound_score = await score.getCsoundScore(12., false);
         csound_score = csound_score.concat("\n</CsScore>");
         csd = this.csound_code_addon.replace("</CsScore>", csound_score);
@@ -910,8 +963,12 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     // values defined in the control parameters addon.
     csd = this.update_parameters_in_csd(csd, this.control_parameters_addon);
     write_file(csd_filename_parameters, csd);
+    // Start performance in all components.
     if (!(this?.csound.getNode)) {
       this.csound.perform();
+      for (const overlay of this._get_all_overlays()) {
+        overlay?.on_play();
+      }
     }
     if (typeof strudel_view !== 'undefined') {
       if (strudel_view !== null) {
@@ -930,10 +987,14 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
    */
   stop = async function () {
     this.csound_message_callback("cloud-5 is stopping...\n");
+    // Stop performance in all components.
     await this.csound.stop();
     await this.csound.cleanup();
     this.csound.reset();
     this.strudel_overlay?.stop();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_stop();
+    }
     this.csound_message_callback("cloud-5 has stopped.\n");
   };
 
@@ -2338,7 +2399,7 @@ function get_filename(pathOrUrl) {
    * Choose an output by (partial, case-insensitive) name; falls back to first match.
    * Returns the chosen MIDIOutput or null.
    */
-  Score.select_midi_output_by_name = async function(namePart) {
+  Score.select_midi_output_by_name = async function (namePart) {
     await getMIDIAccess();
     const outs = __midi.access?.outputs;
     if (!outs?.size) return null;
@@ -2353,12 +2414,12 @@ function get_filename(pathOrUrl) {
   };
 
   /** Get the current MIDI output (or null). */
-  Score.get_current_midi_output = function() {
+  Score.get_current_midi_output = function () {
     return currentMIDIOutput();
   };
 
   /** Global stop: cancels timers and sends panic. */
-  Score.stop_play_midi = function() {
+  Score.stop_play_midi = function () {
     __midi.playing = false;
     __midi.totalBeats = 0;
     clearTimers();
@@ -2366,7 +2427,7 @@ function get_filename(pathOrUrl) {
   };
 
   /** Global panic only (does not clear timers). */
-  Score.panic_midi = function() {
+  Score.panic_midi = function () {
     panicAllNotes();
   };
 
@@ -2380,7 +2441,7 @@ function get_filename(pathOrUrl) {
    * @param {number} [opts.bpm=120]            Beats per minute if times are in beats.
    * @param {boolean} [opts.time_is_beats=true]If false, interpret time/duration as seconds.
    */
-  Score.prototype.play_midi = async function(opts = {}) {
+  Score.prototype.play_midi = async function (opts = {}) {
     const { bpm = 120, time_is_beats = true } = opts;
 
     await getMIDIAccess();
@@ -2403,11 +2464,11 @@ function get_filename(pathOrUrl) {
     for (let i = 0; i < n; ++i) {
       const ev = this.get(i);
       const ch = (ev.getChannel ? ev.getChannel() : ev.getInstrument?.()) | 0;
-      const t  = toBeat(ev.getTime ? ev.getTime() : 0);
-      const d  = toBeat(ev.getDuration ? ev.getDuration() : 0.25);
-      const key= (ev.getKey ? ev.getKey() : 60) | 0;
-      const vel= (ev.getVelocity ? ev.getVelocity() : 100) | 0;
-      notes.push([ (ch|0)&0x0F, t, d, (key|0)&0x7F, Math.max(1, Math.min(127, vel|0)) ]);
+      const t = toBeat(ev.getTime ? ev.getTime() : 0);
+      const d = toBeat(ev.getDuration ? ev.getDuration() : 0.25);
+      const key = (ev.getKey ? ev.getKey() : 60) | 0;
+      const vel = (ev.getVelocity ? ev.getVelocity() : 100) | 0;
+      notes.push([(ch | 0) & 0x0F, t, d, (key | 0) & 0x7F, Math.max(1, Math.min(127, vel | 0))]);
     }
 
     __midi.playing = true;
@@ -2417,13 +2478,13 @@ function get_filename(pathOrUrl) {
     const t0 = __midi.startMS;
 
     for (const [ch, tBeats, dBeats, key, vel] of notes) {
-      const on  = 0x90 | ch;
+      const on = 0x90 | ch;
       const off = 0x80 | ch;
-      const whenOn  = t0 + msFromBeats(tBeats, bpm);
+      const whenOn = t0 + msFromBeats(tBeats, bpm);
       const whenOff = t0 + msFromBeats(tBeats + dBeats, bpm);
 
       __midi.timers.add(setTimeout(() => {
-        if (__midi.playing) out.send([on,  key, vel]);
+        if (__midi.playing) out.send([on, key, vel]);
       }, Math.max(0, whenOn - performance.now())));
 
       __midi.timers.add(setTimeout(() => {
@@ -2433,11 +2494,11 @@ function get_filename(pathOrUrl) {
 
     // Auto-stop slightly after last note
     __midi.timers.add(setTimeout(() => Score.stop_play_midi(),
-                                 Math.ceil(msFromBeats(__midi.totalBeats, bpm) + 50)));
+      Math.ceil(msFromBeats(__midi.totalBeats, bpm) + 50)));
   };
 
   // Optional: convenience alias (static) to play any score
-  Score.play_midi = async function(score, opts) {
+  Score.play_midi = async function (score, opts) {
     if (!score || typeof score.play_midi !== 'function') {
       throw new Error('Score.play_midi(score, opts): invalid score object');
     }
