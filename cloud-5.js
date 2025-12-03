@@ -983,6 +983,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
         strudel_view?.startPlaying();
       }
     }
+    this?.piano_roll_overlay?.draw_csoundac_score(this.score);
     this?.piano_roll_overlay?.show_score_time();
     this?.csound_message_callback("Csound is playing...\n");
   }

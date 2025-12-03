@@ -119,22 +119,22 @@ pre {
         wrapper.className = 'wrapper';
         wrapper.innerHTML = `
   <div class="bar">
-    <label>Exponent p:
+    <label>Exponent:
       <input id="expP" type="number" step="0.01" value="2.0">
     </label>
-    <label>MaxIter M:
+    <label>Max iterations  M:
       <input id="iterM" type="number" value="500">
     </label>
-    <label>MaxIter J:
+    <label>Max iterations  J:
       <input id="iterJ" type="number" value="1000">
     </label>
-    <label>N time:
-      <input id="binsN" type="number" value="4096">
+    <label>Timesteps:
+      <input id="binsN" type="number" value="4096"> 
     </label>
-    <label>M pitch:
+    <label>Range:
       <input id="binsM" type="number" value="60">
     </label>
-    <label>K inst:
+    <label>Instruments:
       <input id="binsK" type="number" value="4">
     </label>
     <label>BPM:
