@@ -141,11 +141,11 @@ pre {
       <input id="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
     </label>
     <label>Density:
-      <input id="density" type="range" min="0" max="100" value="100" />
+      <input id="density" type="range" min="0" max="100" value="5" />
       <span id="densityVal">100%</span>
     </label>
     <label>Max voices/slice:
-      <input id="maxVoices" type="number" value="999" min="1" step="1" style="width:4.5rem">
+      <input id="maxVoices" type="number" value="4" min="1" step="1" style="width:4.5rem">
     </label>
     <label>MIDI Out:
       <select id="midiOut">
@@ -1226,6 +1226,16 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
     }
 
+    async on_generate()
+    {
+      const generated_score = await this.makeScore();
+      // Layout of this score's notes is: [channel, startBeat, durationBeats, midiKey, velocity]
+      // Signature of append_note is:
+      // virtual void append_note(double time, double duration, double status, double instrument, double key, double velocity, double phase=0, double pan=0, double depth=0, double height=0, double pitches=4095);
+      for (const note of generated_score) {
+        this.cloud5_piece.score.append(note[1], note[2], 144, note[0], note[3], note[4], 0, 0, 0, 0, 4095);
+      }
+    }
 }
 
 customElements.define('mandelbrot-julia', MandelbrotJulia);

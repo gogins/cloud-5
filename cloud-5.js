@@ -195,6 +195,7 @@ class Cloud5Piece extends HTMLElement {
     super();
     this.csound = null;
     this.csoundac = null;
+    this.score = null
     this.is_rendering = false;
     // Default duration and fadeout for rendering to a soundfile.
     // These may be overridden by control parameters, and are somewhat less 
@@ -909,16 +910,19 @@ class Cloud5Piece extends HTMLElement {
     }
     let csd = this.csound_code_addon.slice();
     if (this.score_generator_function_addon) {
-      let score = await this.score_generator_function_addon();
-      if (score) {
-        // Generate score from all components.
-        for (const overlay of this._get_all_overlays()) {
-          await overlay?.on_generate(score);
-        }
-        let csound_score = await score.getCsoundScore(12., false);
-        csound_score = csound_score.concat("\n</CsScore>");
-        csd = this.csound_code_addon.replace("</CsScore>", csound_score);
+       this.score = await this.score_generator_function_addon();
+    
+    } else {
+       this.score = new globalThis.csound_ac.Score();
+    }
+    if (this.score) {
+      // Generate score from all components.
+      for (const overlay of this._get_all_overlays()) {
+        await overlay?.on_generate(this.score);
       }
+      let csound_score = await this.score.getCsoundScore(12., false);
+      csound_score = csound_score.concat("\n</CsScore>");
+      csd = this.csound_code_addon.replace("</CsScore>", csound_score);
     }
     const output_soundfile_name = document.title + ".wav";
     const orc_globals = `
