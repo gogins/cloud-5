@@ -695,11 +695,15 @@ class Cloud5Piece extends HTMLElement {
           el.id ||
           el.tagName.toLowerCase();
 
+        const isDefault =
+          el.hasAttribute('data-cloud5-default-visible') ||
+          el.hasAttribute('data-cloud5-default-overlay');
+
         overlays.push({
           element: el,
           existingMenuId: null,
           label,
-          stayVisible: this._read_stay_visible_flag(el)
+          isDefault
         });
       });
 
@@ -756,6 +760,12 @@ class Cloud5Piece extends HTMLElement {
     });
 
     this._registered_overlays = registered;
+
+    // Show whichever overlay is marked as default, if any.
+    const defaultCfg = overlays.find(o => o.isDefault && o.element);
+    if (defaultCfg) {
+      this.show(defaultCfg.element);
+    }
   }
 
   /**
@@ -914,10 +924,10 @@ class Cloud5Piece extends HTMLElement {
     }
     let csd = this.csound_code_addon.slice();
     if (this.score_generator_function_addon) {
-       this.score = await this.score_generator_function_addon();
-    
+      this.score = await this.score_generator_function_addon();
+
     } else {
-       this.score = new globalThis.csound_ac.Score();
+      this.score = new globalThis.csound_ac.Score();
     }
     if (this.score) {
       // Generate score from all components.

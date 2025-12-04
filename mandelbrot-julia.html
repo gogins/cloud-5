@@ -1884,7 +1884,8 @@
         </CsoundSynthesizer>
     </textarea>
     <cloud5-piece></cloud5-piece>
-    <mandelbrot-julia id="mandelbrot_julia" class="cloud5-overlay" data-cloud5-label="Mandelbrot/Julia">
+    <mandelbrot-julia id="mandelbrot_julia" class="cloud5-overlay" data-cloud5-label="Mandelbrot/Julia"
+        data-cloud5-default-visible="true">
     </mandelbrot-julia>
     <cloud5-piano-roll id="piano_roll" class="cloud5-overlay" data-cloud5-label="Piano Roll">
     </cloud5-piano-roll>
@@ -1903,13 +1904,13 @@
 
             <p>This is an online piece of electroacoustic music, rendered in your Web
                 browser using high-resolution audio. The piece demonstrates "parametric composition,"
-                the art of composition by interactively exploring the parametric map of a complex 
+                the art of composition by interactively exploring the parametric map of a complex
                 dynamical system. In this case, the dynamical system is the iteration of complex quadratic
-                polynomials, which generates the famous Mandelbrot and Julia sets. Each point in the 
-                Mandelbrot set corresponds to a different Julia set. Selecting a point of the 
-                Mandelbrot set (on the left) generates the correspondng Julia set (on the right). The 
-                user may then click and drag the mouse to select a ration of the Julia set, and 
-                that will be translated into music in real time. 
+                polynomials, which generates the famous Mandelbrot and Julia sets. Each point in the
+                Mandelbrot set corresponds to a different Julia set. Selecting a point of the
+                Mandelbrot set (on the left) generates the correspondng Julia set (on the right). The
+                user may then click and drag the mouse to select a ration of the Julia set, and
+                that will be translated into music in real time.
 
             <p>The notes are played by a Csound orchestra that is embedded in this Web page using my <a
                     href="https://github.com/gogins/csound-wasm">WebAssembly build of Csound</a>. This in turn includes
@@ -1920,7 +1921,8 @@
                 that
                 are applied to the generated notes.
 
-            <p>The viewer may exercise a certain amount of control over the Csound orchestra by opening the <i>Controls</i>.
+            <p>The viewer may exercise a certain amount of control over the Csound orchestra by opening the
+                <i>Controls</i>.
                 Changing
                 the hue will change the arrangement of instruments. The tempo of both note generation and the visuals
                 may be controlled.
@@ -1954,7 +1956,7 @@
             <p>My code in CsoundAC for working with chords, scales, and voice-leading implements basic ideas from <a
                     href="http://dmitri.tymoczko.com/">Dmitri Tymoczko's work in music theory</a>.
 
-             <p>Csound instruments are adapted from <a href="https://kunstmusik.com/">Steven Yi</a> (YiString and
+            <p>Csound instruments are adapted from <a href="https://kunstmusik.com/">Steven Yi</a> (YiString and
                 FMWaterBell), Joseph T. Kung (Kung2 and Kung4), <a href="http://www.jlpublishing.com/">Lee Zakian</a>
                 (ZakianFlute), and others.
 
