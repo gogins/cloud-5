@@ -434,6 +434,19 @@ repository root directory! That is required for building cloud-5.
 
 ## Release Notes
 
+### [v2.1](https://github.com/gogins/cloud-5/releases/tag/v2.1)
+
+ - Created `Cloud5Element` base class for defining new custom HTML elements 
+   for the cloud-5 system. Elements derived from this can simply be included 
+   on the page of a cloud-5 piece and will automatically register a menu 
+   button and show/hide behavior.
+
+ - Added `mandelbrot-julia.html`, demonstrating how to define a new custom 
+   element for cloud-5. The piece enables interactive composition by exploring 
+   the Mandelbrot set and generating scores from the Julia sets associated 
+   with each point in the Mandelbrot set. This is a form of parametric 
+   composition.
+
 ### [v2.0](https://github.com/gogins/cloud-5/releases/tag/v2.0)
 
  - Moved cloud-5's Web root directory from `cloud-5` to 

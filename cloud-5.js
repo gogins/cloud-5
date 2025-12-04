@@ -4,10 +4,14 @@
  * its DOM object can be obtained, and then not only DOM methods but also 
  * custom methods can be called.
  * 
- * In general, rather than subclassing these custom elements (although that 
- * is possible), users should define and set addon functions, code text, and 
- * other properties of the custom elements. All such user-defined properties 
- * have names ending in `_addon`.
+ * There are two methods of extending the cloud-5 system:
+ * 
+ * 1. Set addon functions, code text, and other properties of the custom 
+ *    elements. All such user-defined properties have names ending in 
+ *    `_addon`.
+ * 2. Define new custom elements that derive from the `Cloud5Element` base 
+ *    class, or from other cloud-5 custom elements. These new custom elements 
+ *    will automatically be given menu buttons and show/hide behavior by the
  * 
  * To simplify both usage and maintenance, internal styles are usually not 
  * used. Default styles are defined in the csound-5.css cascading style sheet. 
