@@ -419,6 +419,8 @@ class Cloud5Piece extends HTMLElement {
       $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
       $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_right));
       $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
+      this?.piano_roll_overlay?.show_score_time();
+
     };
   }
   /**
