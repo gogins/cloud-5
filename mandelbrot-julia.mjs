@@ -1260,8 +1260,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // Signature of append_note is:
     // virtual void append_note(double time, double duration, double status, double instrument, double key, double velocity, double phase=0, double pan=0, double depth=0, double height=0, double pitches=4095);
     for (const note of generated_score) {
-      /// this.cloud5_piece.score.append(note[1], note[2], 144, note[0] + 1, note[3], note[4], 0, 0, 0, 0, 4095);
-      this.cloud5_piece.score.append(note[1], note[2], 144, 3, note[3], note[4], 0, 0, 0, 0, 4095);
+      this.cloud5_piece.score.append(note[1], note[2], 144, note[0] + 1, note[3], note[4], 0, 0, 0, 0, 4095);
+      /// this.cloud5_piece.score.append(note[1], note[2], 144, 3, note[3], note[4], 0, 0, 0, 0, 4095);
     }
   }
 }
