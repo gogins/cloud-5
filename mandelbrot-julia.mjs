@@ -943,6 +943,164 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     });
   }
 
+  // --- Tonalization helpers driven by Julia rotation (inst) ---
+
+  _scaleDegrees(major = true) { // pitch classes
+    return major ? [0, 2, 4, 5, 7, 9, 11] : [0, 2, 3, 5, 7, 8, 10];
+  }
+  _pcNearestInScale(pc, scale) {
+    // return the closest pitch-class in scale (ties prefer upward)
+    let best = scale[0], bestDist = 12;
+    for (const d of scale) {
+      let dist = Math.min((pc - d + 12) % 12, (d - pc + 12) % 12);
+      if (dist < bestDist || (dist === bestDist && ((d - pc + 12) % 12) < ((best - pc + 12) % 12))) {
+        best = d; bestDist = dist;
+      }
+    }
+    return best;
+  }
+  _quantizeToKey(pc, tonic_pc, major = true) {
+    const scale = this._scaleDegrees(major);
+    // shift to relative to tonic, snap, then unshift
+    const rel = (pc - tonic_pc + 120) % 12;
+    const snapped = this._pcNearestInScale(rel, scale);
+    return (snapped + tonic_pc) % 12;
+  }
+  _circleOfFifths(pc, steps) { // steps can be +/-; each step is +7 mod 12
+    let x = pc;
+    for (let i = 0; i < Math.abs(steps); i++) x = (x + (steps > 0 ? 7 : 5)) % 12;
+    return x;
+  }
+
+  // Build a per-slice plan: tonic_pc[i], majorMinor[i], chordFunction[i]
+  _buildKeyPlanFromGrid(active, vel, inst, N, M, K) {
+    const plan = new Array(N);
+    const smoothWin = 8; // slices
+    let tRotBuf = new Array(N).fill(0);
+    let bright = new Array(N).fill(0);
+
+    for (let i = 0; i < N; i++) {
+      let sumW = 0, sumInst = 0, sumVel = 0;
+      for (let j = 0; j < M; j++) if (active[i][j]) {
+        const v = vel[i][j] | 0;
+        const k = inst[i][j] | 0;
+        sumW += v;
+        sumVel += v;
+        sumInst += v * (k + 0.5) / Math.max(1, K); // proxy for tRot via inst
+      }
+      const tRot = sumW ? (sumInst / sumW) % 1.0 : 0.0;
+      const vMean = sumW ? (sumVel / sumW) : 0;
+      tRotBuf[i] = tRot;
+      bright[i] = vMean;
+    }
+
+    // Smooth tRot
+    const tRotSm = new Array(N).fill(0);
+    for (let i = 0; i < N; i++) {
+      let s = 0, w = 0;
+      for (let d = -smoothWin; d <= smoothWin; d++) {
+        const k = i + d; if (k < 0 || k >= N) continue;
+        const wt = 1 / (1 + Math.abs(d));
+        s += tRotBuf[k] * wt; w += wt;
+      }
+      tRotSm[i] = s / Math.max(1e-6, w);
+    }
+
+    // Map to key and mode
+    for (let i = 0; i < N; i++) {
+      const t = tRotSm[i];
+      const fifthSteps = Math.round(12 * t);                // circle of fifths
+      const tonic_pc = (7 * (fifthSteps % 12) + 120) % 12;  // 0=C, 7=G, etc.
+      const maj = bright[i] >= 80; // threshold; tune to taste
+      plan[i] = { tonic_pc, major: maj, func: 'I' };
+    }
+
+    // Harmonic rhythm + cadences
+    const barBeats = 4;
+    const binsPerBar = Math.round(barBeats / this._stepBeats()); // e.g., 32
+    for (let i = 0; i < N; i += binsPerBar) {
+      const end = Math.min(N - 1, i + binsPerBar - 1);
+      // pick a function around trend: favor I, IV, V; drift with tRot change
+      const keys = ['I', 'vi', 'IV', 'ii', 'V'];
+      plan[i].func = (i / binsPerBar) % 4 === 3 ? 'V' : keys[(Math.round(tRotSm[i] * 4)) % keys.length];
+      // cadence: every 4 bars enforce V→I
+      if ((i / binsPerBar) % 4 === 3) plan[end].func = 'V';
+      if ((i / binsPerBar) % 4 === 0 && i > 0) plan[i].func = 'I';
+    }
+
+    return { plan, binsPerBar };
+  }
+
+  // Given a function and key, return allowed chord-tone pitch classes
+  _chordPCs(func, tonic_pc, major = true) {
+    // triads + sevenths common tones
+    // in major: I(0,4,7,11), IV(5,9,0,2), V(7,11,2,5), vi(9,0,4,7), ii(2,5,9,0)
+    // in minor: approximate harmonic minor functions
+    const MAJ = {
+      I: [0, 4, 7, 11],
+      IV: [5, 9, 0, 2],
+      V: [7, 11, 2, 5],
+      vi: [9, 0, 4, 7],
+      ii: [2, 5, 9, 0],
+    };
+    const MIN = {
+      i: [0, 3, 7, 10],
+      iv: [5, 8, 0, 2],
+      V: [7, 11, 2, 5],  // harmonic dominant
+      VI: [8, 0, 3, 7],
+      ii7b5: [2, 5, 8, 11],  // half-diminished flavor
+    };
+    const bank = major ? MAJ : MIN;
+    const name = major ? (['I', 'IV', 'V', 'vi', 'ii'].includes(func) ? func : 'I')
+      : (['i', 'iv', 'V', 'VI', 'ii7b5'].includes(func) ? func : 'i');
+    const pcs = bank[name].map(pc => (pc + tonic_pc) % 12);
+    return pcs;
+  }
+
+  // Nudges each note to a scale/chord pitch with light voice-leading cost
+  _tonalizeScore(score, plan, binsPerBar) {
+    if (!score.length) return score;
+
+    // Build a slice index for each event
+    const step = this._stepBeats();
+    const out = [];
+    const lastPitchByChan = new Map();
+
+    for (const ev of score) {
+      const [ch, tBeats, dBeats, key, vel] = ev;
+      const slice = Math.max(0, Math.floor(tBeats / step));
+      const { tonic_pc, major, func } = plan[Math.min(plan.length - 1, slice)];
+
+      // base: quantize to scale
+      const pc = key % 12;
+      const pcScale = this._quantizeToKey(pc, tonic_pc, major);
+
+      // chord push near barlines / cadence
+      const inBarPos = (slice % binsPerBar);
+      let pcsChord = null;
+      if (inBarPos >= binsPerBar - 4) { // last half-beat of bar: prefer chord tones
+        pcsChord = this._chordPCs(func, tonic_pc, major);
+      }
+
+      // choose target pc with minimal voice-leading
+      const prev = lastPitchByChan.has(ch) ? lastPitchByChan.get(ch) : key;
+      const targets = pcsChord ?? [pcScale];
+      let bestKey = key, bestCost = 1e9;
+      for (const tgtPC of targets) {
+        // search nearby octaves (±2 octaves)
+        for (let o = -2; o <= 2; o++) {
+          const cand = (Math.floor(key / 12) + o) * 12 + tgtPC;
+          const cost = Math.abs(cand - prev) + (pcsChord ? 0 : 2); // favor chord over scale at cadences
+          if (cost < bestCost) { bestCost = cost; bestKey = cand; }
+        }
+      }
+
+      lastPitchByChan.set(ch, bestKey);
+      out.push([ch, tBeats, dBeats, bestKey, vel]);
+    }
+    return out;
+  }
+
   async makeScore() {
     const N = this.nTime, M = this.nPitch, K = this.nInst;
     const roi = this.roiJ ?? {
@@ -1027,21 +1185,27 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       score.slice(0, 32).map(n => JSON.stringify(n)).join('\n') +
       (score.length > 32 ? `\n… (${score.length - 32} more)` : '');
     console.log('SCORE [instrument, time, duration, key, velocity]:', score);
-    const thinned = this._thinScore(score);
-    this._lastScore = thinned;
+    // Build the per-slice tonal plan from Julia-driven 'inst' and velocities
+    const { plan, binsPerBar } = this._buildKeyPlanFromGrid(active, vel, inst, N, M, K);
 
-    // Auto export & download: MIDI + JSON snapshot (paired by timestamp)
+    // Your existing thinning:
+    const thinned = this._thinScore(score);
+
+    // Tonalize (quantize to slice key/scale, add cadences, light voice-leading)
+    const tonal = this._tonalizeScore(thinned, plan, binsPerBar);
+
+    this._lastScore = tonal;
+
+    // Export / play from 'tonal' instead of 'thinned'
     try {
       const effectiveROI = roi;
       const state = this._collectState(effectiveROI);
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      this._exportMIDI(thinned, ts);
+      this._exportMIDI(tonal, ts);
       this._exportStateJSON(state, ts);
-    } catch (e) {
-      console.warn('Export failed:', e);
-    }
+    } catch (e) { console.warn('Export failed:', e); }
 
-    return thinned;
+    return tonal;
   }
 
   _thinScore(score) {
@@ -1271,7 +1435,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       let instrument = note[0] + this.base_instrument;
       let pitch = note[3];
       let loudness = note[4];
-      loudness = (loudness / 5.0) + 50; 
+      loudness = (loudness / 5.0) + 50;
       this.cloud5_piece.score.append(time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095);
       /// this.cloud5_piece.score.append(note[1], note[2], 144, 3, note[3], note[4], 0, 0, 0, 0, 4095);
     }

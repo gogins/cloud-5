@@ -2346,7 +2346,7 @@ function get_filename(pathOrUrl) {
 
 // --- Monkey-patch CsoundAC.Score with Web MIDI playback (mirrors MandelbrotJulia.playMIDIFromScore) ---
 (function attachScoreMIDIPatch(root = (typeof window !== "undefined" ? window : globalThis)) {
-  const C = root.CsoundAC;
+  const C = globalThis?.CsoundAC;
   if (!C || !C.Score) {
     console.warn('CsoundAC.Score not found; MIDI patch skipped.');
     return;
