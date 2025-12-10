@@ -155,7 +155,7 @@ pre {
         <option value="">(no MIDI outputs)</option>
       </select>
     </label>
-    <button id="btnScore">Make &amp; Play (Alt+S)</button>
+    <button id="btnScore">Play MIDI (Alt+S)</button>
     <button id="btnStop" title="Stop / panic (All Notes Off)">Stop</button>
     <span>
       Click Mandelbrot = set Julia point • Option-Click = zoom in • Shift+Option-Click = zoom out • Drag on Julia = ROI
