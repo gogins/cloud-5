@@ -371,7 +371,7 @@ class Cloud5Piece extends HTMLElement {
    */
   update_display = async () => {
     this.csound_message_callback();
-    this?.piano_roll_overlay?.show_score_time();
+    //this?.piano_roll_overlay?.show_score_time();
   }
   /**
      * Called by Csound during performance, and prints the message to the 
@@ -419,8 +419,7 @@ class Cloud5Piece extends HTMLElement {
       $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
       $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_right));
       $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
-      this?.piano_roll_overlay?.show_score_time();
-
+      this?.piano_roll_overlay?.update_score_time(score_time);
     };
   }
   /**
@@ -1343,17 +1342,41 @@ class Cloud5PianoRoll extends Cloud5Element {
     this.silencio_score = score;
     this.silencio_score.draw3D(this.canvas);
   }
+
+  update_score_time(score_time) {
+    if (!this.silencio_score) return;
+    this.silencio_score.progress3D(score_time);
+  }
+
   /**
    * Called by a timer during performance to update the play 
    * position in the piano roll display.
    */
+
+  _raf_guard = false;
+
   show_score_time = async () => {
-    if (non_csound(this?.cloud5_piece?.csound)) {
-      return;
-    }
-    let score_time = await this?.cloud5_piece?.csound?.GetScoreTime();
-    this?.silencio_score.progress3D(score_time);
-  }
+    // Skip if piano-roll not visible
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) return;
+
+    // Need a piece & Silencio score
+    const piece = this.cloud5_piece;
+    if (!piece || typeof piece.latest_score_time !== 'number') return;
+    if (!this.silencio_score) return;
+
+    // Throttle to one progress3D per animation frame
+    if (this._raf_guard) return;
+    this._raf_guard = true;
+    const t = piece.latest_score_time;
+    requestAnimationFrame(() => {
+      this._raf_guard = false;
+      this.silencio_score.progress3D(t);
+    });
+  };
+
   /**
    * Stops the timer that is updating the play position of the score.
    */
