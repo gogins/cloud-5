@@ -134,6 +134,9 @@ pre {
     <label>Range:
       <input id="binsM" type="number" value="60">
     </label>
+    <label>Base instrument:
+      <input id="base_instrument" type="number" value="1">
+    </label>
     <label>Instruments:
       <input id="binsK" type="number" value="4">
     </label>
@@ -772,6 +775,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const jIn = this.shadowRoot.getElementById('iterJ');
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
+    const base_instrument = this.shadowRoot.getElementById('base_instrument');
     const kIn = this.shadowRoot.getElementById('binsK');
     const btnS = this.shadowRoot.getElementById('btnScore');
     const bpmIn = this.shadowRoot.getElementById('bpm');
@@ -786,6 +790,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       this.maxIterJ = parseInt(jIn.value);
       this.nTime = parseInt(nIn.value);
       this.nPitch = parseInt(MIn.value);
+      this.base_instrument = parseInt(base_instrument.value);
       this.nInst = parseInt(kIn.value);
 
       this.bpm = Math.max(20, Math.min(300, parseInt(bpmIn.value) || 120));
@@ -793,7 +798,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       denVal.textContent = `${Math.round(this.density * 100)}%`;
       this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
     };
-    [pIn, mIn, jIn, nIn, MIn, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', sync));
+    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', sync));
     sync();
 
     btnStop.addEventListener('click', () => this.stopPlayback());
@@ -1260,7 +1265,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // Signature of append_note is:
     // virtual void append_note(double time, double duration, double status, double instrument, double key, double velocity, double phase=0, double pan=0, double depth=0, double height=0, double pitches=4095);
     for (const note of generated_score) {
-      this.cloud5_piece.score.append(note[1], note[2], 144, note[0] + 1, note[3], note[4], 0, 0, 0, 0, 4095);
+      let time = note[1];
+      let duration = note[2];
+      let status = 144;
+      let instrument = note[0] + this.base_instrument;
+      let pitch = note[3];
+      let loudness = note[4];
+      loudness = (loudness / 5.0) + 50; 
+      this.cloud5_piece.score.append(time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095);
       /// this.cloud5_piece.score.append(note[1], note[2], 144, 3, note[3], note[4], 0, 0, 0, 0, 4095);
     }
   }
