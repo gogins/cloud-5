@@ -130,6 +130,47 @@ function obtainWebGL2(container, {
   return { gl, canvas, isWebGL2 };
 }
 
+function is_nw_environment() {
+  return typeof process !== 'undefined'
+    && process.versions
+    && !!process.versions['nw'];
+}
+
+function is_loopback_host(hostname) {
+  if (!hostname) {
+    return false;
+  }
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '::1'
+    || hostname === '[::1]'
+    || hostname.endsWith('.localhost');
+}
+
+function should_persist_state_files() {
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+
+  // Local file URLs are always local.
+  if (protocol === 'file:') {
+    return true;
+  }
+
+  // Localhost/loopback servers are local.
+  if ((protocol === 'http:' || protocol === 'https:') && is_loopback_host(hostname)) {
+    return true;
+  }
+
+  // NW.js: allow persistence only if content is not remote.
+  // That means: allow file: and localhost (already handled above), disallow everything else.
+  if (is_nw_environment()) {
+    return false;
+  }
+
+  // Remote browser contexts (GitHub Pages, etc.)
+  return false;
+}
+
 /**
  * Base class for Cloud5 overlay-like elements.
  * Centralizes common conventions:
