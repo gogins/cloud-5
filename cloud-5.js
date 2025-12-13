@@ -130,165 +130,63 @@ function obtainWebGL2(container, {
   return { gl, canvas, isWebGL2 };
 }
 
-function is_nw_environment() {
-  return typeof process !== 'undefined'
-    && process.versions
-    && !!process.versions['nw'];
-}
-
-function is_loopback_host(hostname) {
-  if (!hostname) {
-    return false;
-  }
-  return hostname === 'localhost'
-    || hostname === '127.0.0.1'
-    || hostname === '::1'
-    || hostname === '[::1]'
-    || hostname.endsWith('.localhost');
-}
-
-function should_persist_state_files() {
-  const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
-
-  // Local file URLs are always local.
-  if (protocol === 'file:') {
-    return true;
-  }
-
-  // Localhost/loopback servers are local.
-  if ((protocol === 'http:' || protocol === 'https:') && is_loopback_host(hostname)) {
-    return true;
-  }
-
-  // NW.js: allow persistence only if content is not remote.
-  // That means: allow file: and localhost (already handled above), disallow everything else.
-  if (is_nw_environment()) {
-    return false;
-  }
-
-  // Remote browser contexts (GitHub Pages, etc.)
-  return false;
-}
-
 /**
  * Base class for Cloud5 overlay-like elements.
- * Centralizes common conventions:
+ * Currently lightweight, but centralizes a few common conventions:
  * - Optional `data-cloud5-stay-visible` attribute parsed into `cloud5_stay_visible`.
- * - Optional lifecycle hooks.
- * - Strict JSON-only, detached-only state import/export with explicit whitelists for:
- *   - regular fields
- *   - addon fields (e.g. control_parameters_addon, csound_code_addon)
+ * - Optional `on_shown()` / `on_hidden()` lifecycle hooks.
  *
  * Subclasses should call `super.connectedCallback()` if they override it.
- * Subclasses should override `get_state_field_names()` and/or
- * `get_state_addon_field_names()` to declare persisted fields.
  */
 class Cloud5Element extends HTMLElement {
   constructor() {
     super();
+    // If true, this overlay will not be auto-hidden when another overlay
+    // is toggled via the main menu (you can use this manually later).
     this.cloud5_stay_visible = false;
   }
 
   connectedCallback() {
+    // Allow an attribute-based opt-in for "stay visible" behavior.
     const attr = this.getAttribute('data-cloud5-stay-visible');
     if (attr !== null) {
       const v = String(attr).toLowerCase();
       this.cloud5_stay_visible = (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
   }
-
   /**
-   * Override in subclasses: regular instance fields to be persisted.
+   * Optional lifecycle hook called by the piece when this element is shown.
+   * Subclasses may override this method to change behavior when shown.
    */
-  get_state_field_names() {
-    return [];
-  }
-
-  /**
-   * Override in subclasses: addon fields to be persisted.
-   * Examples:
-   * - control_parameters_addon
-   * - csound_code_addon
-   */
-  get_state_addon_field_names() {
-    return [];
-  }
-
-  /**
-   * Strict JSON-only deep clone.
-   * Returns a detached JSON value (object/array/scalar/null) or undefined if not JSON-serializable.
-   */
-  cloud5_clone_json_value_strict(value) {
-    if (value === undefined) {
-      return undefined;
-    }
-    try {
-      return JSON.parse(JSON.stringify(value));
-    } catch (e) {
-      return undefined;
-    }
-  }
-
-  assign_fields_from_object(obj, field_names) {
-    if (!obj || typeof obj !== 'object') {
-      return;
-    }
-    if (!Array.isArray(field_names) || field_names.length === 0) {
-      return;
-    }
-
-    for (const key of field_names) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        this[key] = obj[key];
-      }
-    }
-  }
-
-  export_fields_to_object_detached_json(field_names, target_obj) {
-    const out = target_obj || {};
-
-    if (!Array.isArray(field_names) || field_names.length === 0) {
-      return out;
-    }
-
-    for (const key of field_names) {
-      const cloned = this.cloud5_clone_json_value_strict(this[key]);
-
-      // Strict behavior: omit fields that cannot be represented as JSON.
-      if (cloned !== undefined) {
-        out[key] = cloned;
-      }
-    }
-
-    return out;
-  }
-
-  /**
-   * Assign both regular state fields and addon fields from `obj`.
-   * Intended for restoring from a parsed JSON state file.
-   */
-  assign_state_from_object(obj) {
-    this.assign_fields_from_object(obj, this.get_state_field_names());
-    this.assign_fields_from_object(obj, this.get_state_addon_field_names());
-  }
-
-  /**
-   * Export a strict JSON-only detached snapshot of this element's declared state.
-   * This is the only supported export semantics (no shared references).
-   */
-  export_state_to_object(target_obj) {
-    const out = target_obj || {};
-    this.export_fields_to_object_detached_json(this.get_state_field_names(), out);
-    this.export_fields_to_object_detached_json(this.get_state_addon_field_names(), out);
-    return out;
-  }
-
   on_shown() { }
+  /** 
+   * Optional lifecycle hook called by the piece when this element is hidden.
+   * Subclasses may override this method to change behavior when hidden.
+   */
   on_hidden() { }
+  /**
+   * Optional lifecycle hook called by the piece when it stops its performance. 
+   * Subclasses may override this method to change behavior when the piece stops.  
+   */
   on_stop() { }
+  /**
+   * Optional lifecycle hook called by the piece when it is cleared. 
+   * Subclasses may override this method to change behavior when the piece is 
+   * cleared, such as clearing any performance-related internal state in 
+   * preparation for a new performance.
+   */
   on_clear() { }
+  /**
+   * Optional lifecycle hook called by the piece when it generates a new 
+   * Score. Subclasses may override this method to add new Events to the 
+   * Score, or to modify existing Events.
+   */
   on_generate() { }
+  /**
+   * Optional lifecycle hook called by the piece when it starts its 
+   * performance. Subclasses may override this method to change behavior when 
+   * the piece starts, such as to schedule real-time events.
+   */
   on_play() { }
 }
 
