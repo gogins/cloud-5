@@ -130,6 +130,128 @@ function obtainWebGL2(container, {
   return { gl, canvas, isWebGL2 };
 }
 
+function cloud5_is_local_context() {
+  const protocol = window.location.protocol;
+  const host = window.location.hostname;
+
+  if (protocol === 'file:') {
+    return true;
+  }
+
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return true;
+  }
+
+  // NW.js but loading remote content → not local
+  if (typeof process !== 'undefined' && process.versions?.nw) {
+    return false;
+  }
+
+  return false;
+}
+
+function cloud5_snapshot_fields(obj, field_names) {
+  const out = {};
+  for (const name of field_names) {
+    try {
+      out[name] = JSON.parse(JSON.stringify(obj[name]));
+    } catch {
+      // omit non-serializable fields
+    }
+  }
+  return out;
+}
+
+async function cloud5_clipboard_and_download(json_text, filename) {
+  // Clipboard
+  try {
+    await navigator.clipboard.writeText(json_text);
+  } catch (e) {
+    console.warn('Clipboard write failed:', e);
+  }
+
+  // Automatic download
+  const blob = new Blob([json_text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
+async function cloud5_save_state_if_needed(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const json_text = JSON.stringify(state_obj, null, 2);
+
+  // Try filesystem first
+  if (typeof fs !== 'undefined' && fs?.writeFileSync) {
+    try {
+      const tmp = filename + '.tmp';
+      fs.writeFileSync(tmp, json_text, 'utf8');
+      fs.renameSync(tmp, filename);
+      return;
+    } catch (e) {
+      console.warn('fs write failed, falling back to clipboard:', e);
+    }
+  }
+
+  // Fallback: clipboard + download
+  await cloud5_clipboard_and_download(json_text, filename);
+}
+
+function cloud5_load_state_if_present(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  if (typeof fs === 'undefined' || !fs?.readFileSync) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+
+  try {
+    if (!fs.existsSync(filename)) {
+      return;
+    }
+    const text = fs.readFileSync(filename, 'utf8');
+    const obj = JSON.parse(text);
+
+    for (const name of piece.fields_to_serialize) {
+      if (Object.prototype.hasOwnProperty.call(obj, name)) {
+        piece[name] = obj[name];
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load state file:', e);
+  }
+}
+
 /**
  * Base class for Cloud5 overlay-like elements.
  * Currently lightweight, but centralizes a few common conventions:
@@ -144,6 +266,18 @@ class Cloud5Element extends HTMLElement {
     // If true, this overlay will not be auto-hidden when another overlay
     // is toggled via the main menu (you can use this manually later).
     this.cloud5_stay_visible = false;
+    /**
+     * Subclasses can populate this array with the names of fields to 
+     * serialize. They must be class fields, and can be addons. The fields 
+     * will be serialized as a detached JSON object. If that cannot be done 
+     * the field will be omitted. 
+     * 
+     * Just before te piece is performed, the serialized fields will be 
+     * written to local filesystem as <piece>.state.json; when the piece 
+     * first loads, it will look for <piece>.state.jason and deserialize it 
+     * to the class fields.
+     */
+    this.fields_to_serialize = [];  
   }
 
   connectedCallback() {
@@ -153,6 +287,7 @@ class Cloud5Element extends HTMLElement {
       const v = String(attr).toLowerCase();
       this.cloud5_stay_visible = (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
+    cloud5_load_state_if_present(this);
   }
   /**
    * Optional lifecycle hook called by the piece when this element is shown.
@@ -964,6 +1099,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     } catch (e) {
       alert(e);
     }
+    await cloud5_save_state_if_needed(this);
     await this.csound.start();
     if (gk_cloud5_performance_mode == 4) {
       this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
