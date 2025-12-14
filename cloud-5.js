@@ -150,16 +150,86 @@ function cloud5_is_local_context() {
   return false;
 }
 
+function cloud5_get_by_path(obj, path) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return undefined;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (const part of parts) {
+    if (current === null || (typeof current !== 'object' && typeof current !== 'function')) {
+      return undefined;
+    }
+    if (!(part in current)) {
+      return undefined;
+    }
+    current = current[part]; // supports prototype getters
+  }
+
+  return current;
+}
+
+function cloud5_set_by_path(obj, path, value) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+
+    if (current === null || (typeof current !== 'object' && typeof current !== 'function')) {
+      return;
+    }
+
+    // Use existing value if it looks like an object; otherwise create.
+    if (!(part in current) || current[part] === null || typeof current[part] !== 'object') {
+      current[part] = {};
+    }
+
+    current = current[part];
+  }
+
+  // Final assignment: will invoke a setter if present.
+  current[parts[parts.length - 1]] = value;
+}
+
 function cloud5_snapshot_fields(obj, field_names) {
-  const out = {};
-  for (const name of field_names) {
+  const values = {};
+
+  for (const path of field_names) {
     try {
-      out[name] = JSON.parse(JSON.stringify(obj[name]));
+      const raw_value = cloud5_get_by_path(obj, path);
+      if (raw_value === undefined) {
+        continue;
+      }
+
+      const detached = JSON.parse(JSON.stringify(raw_value));
+      values[path] = detached;
     } catch {
-      // omit non-serializable fields
+      console.warn(`cloud5_snapshot_fields: field ${path} could not be serialized; skipping.`);
     }
   }
-  return out;
+
+  return values;
+}
+
+function cloud5_restore_fields(obj, values) {
+  if (!obj || !values || typeof values !== 'object') {
+    return;
+  }
+
+  for (const path of Object.keys(values)) {
+    try {
+      cloud5_set_by_path(obj, path, values[path]);
+    } catch {
+      console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
+    }
+  }
 }
 
 async function cloud5_clipboard_and_download(json_text, filename) {
@@ -329,7 +399,7 @@ class Cloud5Element extends HTMLElement {
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
  * objects of other cloud-5 elements to the `_overlay` properties. 
  */
-class Cloud5Piece extends HTMLElement {
+class Cloud5Piece extends Cloud5Element {
   constructor() {
     super();
     this.csound = null;
