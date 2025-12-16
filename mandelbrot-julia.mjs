@@ -1230,6 +1230,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   getScore() { return this._lastScore ?? []; }
 
   async playMIDIFromScore() {
+    await cloud5_save_state_if_needed(this.cloud5_piece);
+
     const score = await this.makeScore();
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
 
