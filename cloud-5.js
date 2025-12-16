@@ -259,6 +259,7 @@ async function cloud5_clipboard_and_download(json_text, filename) {
 }
 
 async function cloud5_save_state_if_needed(piece) {
+  console.info("cloud5_save_state_if_needed...");
   if (!cloud5_is_local_context()) {
     return;
   }
@@ -284,12 +285,12 @@ async function cloud5_save_state_if_needed(piece) {
       console.warn('fs write failed, falling back to clipboard:', e);
     }
   }
-
   // Fallback: clipboard + download
   await cloud5_clipboard_and_download(json_text, filename);
 }
 
 function cloud5_load_state_if_present(piece) {
+  console.info("cloud5_load_state_if_present...");
   if (!cloud5_is_local_context()) {
     return;
   }
@@ -347,7 +348,7 @@ class Cloud5Element extends HTMLElement {
      * first loads, it will look for <piece>.state.jason and deserialize it 
      * to the class fields.
      */
-    this.fields_to_serialize = [];  
+    this.fields_to_serialize = [];
   }
 
   connectedCallback() {
@@ -357,7 +358,9 @@ class Cloud5Element extends HTMLElement {
       const v = String(attr).toLowerCase();
       this.cloud5_stay_visible = (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
-    cloud5_load_state_if_present(this);
+    queueMicrotask(() => {
+      cloud5_load_state_if_present(this);
+    });
   }
   /**
    * Optional lifecycle hook called by the piece when this element is shown.
