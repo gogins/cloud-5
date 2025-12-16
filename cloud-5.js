@@ -289,8 +289,9 @@ async function cloud5_save_state_if_needed(piece) {
   await cloud5_clipboard_and_download(json_text, filename);
 }
 
-function cloud5_load_state_if_present(piece) {
+async function cloud5_load_state_if_present(piece) {
   console.info("cloud5_load_state_if_present...");
+
   if (!cloud5_is_local_context()) {
     return;
   }
@@ -299,29 +300,38 @@ function cloud5_load_state_if_present(piece) {
     return;
   }
 
-  if (typeof fs === 'undefined' || !fs?.readFileSync) {
-    return;
-  }
-
   const base = document.title || 'piece';
   const filename = `${base}.state.json`;
 
   try {
-    if (!fs.existsSync(filename)) {
+    const response = await fetch(filename, {
+      method: 'GET',
+      cache: 'no-store'
+    });
+
+    // File not present → normal, silent no-op
+    if (!response.ok) {
       return;
     }
-    const text = fs.readFileSync(filename, 'utf8');
-    const obj = JSON.parse(text);
 
-    for (const name of piece.fields_to_serialize) {
-      if (Object.prototype.hasOwnProperty.call(obj, name)) {
-        piece[name] = obj[name];
+    const obj = await response.json();
+
+    for (const path of piece.fields_to_serialize) {
+      if (Object.prototype.hasOwnProperty.call(obj, path)) {
+        try {
+          // Supports dotted paths if you already use cloud5_set_by_path
+          cloud5_set_by_path(piece, path, obj[path]);
+        } catch (e) {
+          console.warn(`Failed to restore field ${path}:`, e);
+        }
       }
     }
   } catch (e) {
-    console.warn('Failed to load state file:', e);
+    // Network errors, parse errors, etc.
+    console.warn('Failed to load state file via fetch:', e);
   }
 }
+
 
 /**
  * Base class for Cloud5 overlay-like elements.
@@ -334,21 +344,26 @@ function cloud5_load_state_if_present(piece) {
 class Cloud5Element extends HTMLElement {
   constructor() {
     super();
+
     // If true, this overlay will not be auto-hidden when another overlay
     // is toggled via the main menu (you can use this manually later).
     this.cloud5_stay_visible = false;
-    /**
-     * Subclasses can populate this array with the names of fields to 
-     * serialize. They must be class fields, and can be addons. The fields 
-     * will be serialized as a detached JSON object. If that cannot be done 
-     * the field will be omitted. 
-     * 
-     * Just before te piece is performed, the serialized fields will be 
-     * written to local filesystem as <piece>.state.json; when the piece 
-     * first loads, it will look for <piece>.state.jason and deserialize it 
-     * to the class fields.
-     */
-    this.fields_to_serialize = [];
+
+    // Backing storage for fields_to_serialize (do not set public field here).
+    this._fields_to_serialize = [];
+
+    // One-shot load guards.
+    this._state_load_scheduled = false;
+    this._state_loaded = false;
+  }
+
+  get fields_to_serialize() {
+    return this._fields_to_serialize;
+  }
+
+  set fields_to_serialize(value) {
+    this._fields_to_serialize = Array.isArray(value) ? value : [];
+    this._schedule_state_load_if_ready();
   }
 
   connectedCallback() {
@@ -358,42 +373,84 @@ class Cloud5Element extends HTMLElement {
       const v = String(attr).toLowerCase();
       this.cloud5_stay_visible = (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
+
+    // If subclass set fields_to_serialize before connection, still load once connected.
+    this._schedule_state_load_if_ready();
+  }
+
+  _schedule_state_load_if_ready() {
+    if (this._state_loaded || this._state_load_scheduled) {
+      return;
+    }
+
+    // Must be connected (DOM initialized enough to safely restore into elements).
+    if (!this.isConnected) {
+      return;
+    }
+
+    // Must have something to restore.
+    if (!this._fields_to_serialize || this._fields_to_serialize.length === 0) {
+      return;
+    }
+
+    this._state_load_scheduled = true;
+
+    // Microtask: run after current synchronous setup completes.
     queueMicrotask(() => {
+      this._state_load_scheduled = false;
+
+      if (this._state_loaded) {
+        return;
+      }
+      if (!this.isConnected) {
+        return;
+      }
+      if (!this._fields_to_serialize || this._fields_to_serialize.length === 0) {
+        return;
+      }
+
+      this._state_loaded = true;
       cloud5_load_state_if_present(this);
     });
   }
+
   /**
    * Optional lifecycle hook called by the piece when this element is shown.
    * Subclasses may override this method to change behavior when shown.
    */
   on_shown() { }
-  /** 
+
+  /**
    * Optional lifecycle hook called by the piece when this element is hidden.
    * Subclasses may override this method to change behavior when hidden.
    */
   on_hidden() { }
+
   /**
-   * Optional lifecycle hook called by the piece when it stops its performance. 
-   * Subclasses may override this method to change behavior when the piece stops.  
+   * Optional lifecycle hook called by the piece when it stops its performance.
+   * Subclasses may override this method to change behavior when the piece stops.
    */
   on_stop() { }
+
   /**
-   * Optional lifecycle hook called by the piece when it is cleared. 
-   * Subclasses may override this method to change behavior when the piece is 
-   * cleared, such as clearing any performance-related internal state in 
+   * Optional lifecycle hook called by the piece when it is cleared.
+   * Subclasses may override this method to change behavior when the piece is
+   * cleared, such as clearing any performance-related internal state in
    * preparation for a new performance.
    */
   on_clear() { }
+
   /**
-   * Optional lifecycle hook called by the piece when it generates a new 
-   * Score. Subclasses may override this method to add new Events to the 
-   * Score, or to modify existing Events.
+   * Optional lifecycle hook called by the piece when it generates a new Score.
+   * Subclasses may override this method to add new Events to the Score,
+   * or to modify existing Events.
    */
   on_generate() { }
+
   /**
-   * Optional lifecycle hook called by the piece when it starts its 
-   * performance. Subclasses may override this method to change behavior when 
-   * the piece starts, such as to schedule real-time events.
+   * Optional lifecycle hook called by the piece when it starts its performance.
+   * Subclasses may override this method to change behavior when the piece starts,
+   * such as to schedule real-time events.
    */
   on_play() { }
 }
