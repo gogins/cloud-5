@@ -20,12 +20,10 @@
     <script src='ChordSpace.js'></script>
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
-    <script type="module" src="mandelbrot-julia.mjs"></script>
-
     <link rel="stylesheet" href="w3.css">
     <link rel="stylesheet" href="cloud-5.css">
-    <!-- Disable caching to speed up debugging. -->
-    <script src='cloud-5.js?time=<?= time() ?'></script>
+    <script src="cloud-5.js"></script>
+    <script type="module" src="mandelbrot-julia.mjs"></script>
 </head>
 
 <body class="w3-medium w3-text-sand cloud5-body">
@@ -1915,6 +1913,9 @@
         // #region Csound Code
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
         // #endregion
+        // Grab the overlay element so we can call its methods safely.
+        const mjOverlay = document.querySelector('#mandelbrot-julia');
+
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
             "NoteTempo": 54.46511149933203,
@@ -2058,7 +2059,7 @@
         cloud5_piece.menu_slider_addon(Plucked, 'gk_Plucked_level', -50, 50);
         var SeidelHarmonicOsc = cloud5_piece.menu_folder_addon('14 SeidelHarmonicOsc');
         cloud5_piece.menu_slider_addon(SeidelHarmonicOsc, 'gk_SeidelHarmonicOsc_level', -50, 50);
-         var TubularBell = cloud5_piece.menu_folder_addon('15 TubularBell');
+        var TubularBell = cloud5_piece.menu_folder_addon('15 TubularBell');
         cloud5_piece.menu_slider_addon(TubularBell, 'gk_TubularBell_level', -50, 50);
         var YiString = cloud5_piece.menu_folder_addon('16 YiString');
         cloud5_piece.menu_slider_addon(YiString, 'gk_YiString_level', -50, 50);
@@ -2072,9 +2073,6 @@
         // #region About
         let cloud5_about = document.querySelector('cloud5-about');
         cloud5_piece.about_overlay = cloud5_about;
-        // Grab the overlay element so we can call its methods safely.
-        cloud5_piece.mandelbrot_julia_overlay = document.querySelector('#mandelbrot_julia');
-        cloud5_piece.fields_to_serialize = ['control_parameters_addon', 'mandelbrot_julia_overlay.base_instrument', 'mandelbrot_julia_overlay.bpm'];
         // #endregion
     </script>
 </body>

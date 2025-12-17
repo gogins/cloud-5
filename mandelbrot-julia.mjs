@@ -238,6 +238,7 @@ pre {
   }
 
   async connectedCallback() {
+    super.connectedCallback();
     if (!('gpu' in navigator)) {
       this.shadowRoot.innerHTML = `<div style="padding:1rem;color:#f88">WebGPU not available. Use Chrome/Edge with WebGPU enabled.</div>`;
       return;
