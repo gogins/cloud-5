@@ -2073,6 +2073,10 @@
         // #region About
         let cloud5_about = document.querySelector('cloud5-about');
         cloud5_piece.about_overlay = cloud5_about;
+        cloud5_piece.fields_to_serialize = ['this.control_parameters_addon',
+            'this.mandelbrot_julia.bpm',
+            'this.mandelbrot_julia.base_instrument',
+        ];
         // #endregion
     </script>
 </body>

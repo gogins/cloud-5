@@ -130,124 +130,297 @@ function obtainWebGL2(container, {
   return { gl, canvas, isWebGL2 };
 }
 
+function cloud5_can_persist_state() {
+  return cloud5_is_local_context();
+}
+
+function cloud5_state_filename_for_piece() {
+  const base = document.title || 'piece';
+  return `${base}.state.json`;
+}
+
+function cloud5_is_local_context() {
+  const protocol = window.location.protocol;
+  const host = window.location.hostname;
+
+  if (protocol === 'file:') {
+    return true;
+  }
+
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return true;
+  }
+
+  // NW.js but loading remote content → not local
+  if (typeof process !== 'undefined' && process.versions?.nw) {
+    return false;
+  }
+
+  return false;
+}
+
+function cloud5_get_by_path(obj, path) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return undefined;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (const part of parts) {
+    if (current === null || (typeof current !== 'object' && typeof current !== 'function')) {
+      return undefined;
+    }
+    if (!(part in current)) {
+      return undefined;
+    }
+    current = current[part]; // supports prototype getters
+  }
+
+  return current;
+}
+
+function cloud5_set_by_path(obj, path, value) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+
+    if (current === null || (typeof current !== 'object' && typeof current !== 'function')) {
+      return;
+    }
+
+    // Use existing value if it looks like an object; otherwise create.
+    if (!(part in current) || current[part] === null || typeof current[part] !== 'object') {
+      current[part] = {};
+    }
+
+    current = current[part];
+  }
+
+  // Final assignment: will invoke a setter if present.
+  current[parts[parts.length - 1]] = value;
+}
+
+function cloud5_snapshot_fields(obj, field_names) {
+  const values = {};
+
+  for (const path of field_names) {
+    try {
+      const raw_value = cloud5_get_by_path(obj, path);
+      if (raw_value === undefined) {
+        continue;
+      }
+
+      const detached = JSON.parse(JSON.stringify(raw_value));
+      values[path] = detached;
+    } catch {
+      console.warn(`cloud5_snapshot_fields: field ${path} could not be serialized; skipping.`);
+    }
+  }
+
+  return values;
+}
+
+function cloud5_restore_fields(obj, values) {
+  if (!obj || !values || typeof values !== 'object') {
+    return;
+  }
+
+  for (const path of Object.keys(values)) {
+    try {
+      cloud5_set_by_path(obj, path, values[path]);
+    } catch {
+      console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
+    }
+  }
+}
+
+async function cloud5_clipboard_and_download(json_text, filename) {
+  // Clipboard
+  try {
+    await navigator.clipboard.writeText(json_text);
+  } catch (e) {
+    console.warn('Clipboard write failed:', e);
+  }
+
+  // Automatic download
+  const blob = new Blob([json_text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
+async function cloud5_save_state_if_needed(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const json_text = JSON.stringify(state_obj, null, 2);
+
+  // Try filesystem first
+  if (typeof fs !== 'undefined' && fs?.writeFileSync) {
+    try {
+      const tmp = filename + '.tmp';
+      fs.writeFileSync(tmp, json_text, 'utf8');
+      fs.renameSync(tmp, filename);
+      return;
+    } catch (e) {
+      console.warn('fs write failed, falling back to clipboard:', e);
+    }
+  }
+
+  // Fallback: clipboard + download
+  await cloud5_clipboard_and_download(json_text, filename);
+}
+
+async function cloud5_load_state_if_present(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+
+  if (!piece?.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+
+  // 1) Try filesystem (NW.js / node context)
+  if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
+    try {
+      if (!fs.existsSync(filename)) {
+        return;
+      }
+      const text = fs.readFileSync(filename, 'utf8');
+      const obj = JSON.parse(text);
+      cloud5_restore_fields(piece, obj);
+      return;
+    } catch (e) {
+      console.warn('Failed to load state via fs; falling back to fetch:', e);
+    }
+  }
+
+  // 2) Try fetch (localhost served file)
+  try {
+    const url = `${filename}?t=${Date.now()}`;
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      return;
+    }
+    const text = await response.text();
+    const obj = JSON.parse(text);
+    cloud5_restore_fields(piece, obj);
+    return;
+  } catch (e) {
+    // 3) Nothing
+    console.warn('Failed to load state via fetch; no persisted state loaded:', e);
+  }
+}
+
 /**
  * Base class for Cloud5 overlay-like elements.
- * Centralizes common conventions:
+ * Currently lightweight, but centralizes a few common conventions:
  * - Optional `data-cloud5-stay-visible` attribute parsed into `cloud5_stay_visible`.
- * - Optional lifecycle hooks.
- * - Strict JSON-only, detached-only state import/export with explicit whitelists for:
- *   - regular fields
- *   - addon fields (e.g. control_parameters_addon, csound_code_addon)
+ * - Optional `on_shown()` / `on_hidden()` lifecycle hooks.
  *
  * Subclasses should call `super.connectedCallback()` if they override it.
- * Subclasses should override `get_state_field_names()` and/or
- * `get_state_addon_field_names()` to declare persisted fields.
  */
 class Cloud5Element extends HTMLElement {
+  #fields_to_serialize = [];
+  #cloud5_state_restored = false;
+
   constructor() {
     super();
     this.cloud5_stay_visible = false;
+  }
+
+  set fields_to_serialize(fields) {
+    if (!Array.isArray(fields)) {
+      this.#fields_to_serialize = [];
+    } else {
+      this.#fields_to_serialize = fields.slice();
+    }
+    // Do NOT restore here — overlays may not exist yet.
+  }
+
+  get fields_to_serialize() {
+    // Lazy, one-shot restore
+    if (!this.#cloud5_state_restored) {
+      this.#cloud5_state_restored = true;
+
+      if (cloud5_can_persist_state() && this.#fields_to_serialize.length > 0) {
+        cloud5_load_state_if_present(this);
+      }
+    }
+    return this.#fields_to_serialize;
   }
 
   connectedCallback() {
     const attr = this.getAttribute('data-cloud5-stay-visible');
     if (attr !== null) {
       const v = String(attr).toLowerCase();
-      this.cloud5_stay_visible = (v === '' || v === 'true' || v === '1' || v === 'yes');
+      this.cloud5_stay_visible =
+        (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
   }
-
   /**
-   * Override in subclasses: regular instance fields to be persisted.
+   * Optional lifecycle hook called by the piece when this element is shown.
+   * Subclasses may override this method to change behavior when shown.
    */
-  get_state_field_names() {
-    return [];
-  }
-
-  /**
-   * Override in subclasses: addon fields to be persisted.
-   * Examples:
-   * - control_parameters_addon
-   * - csound_code_addon
-   */
-  get_state_addon_field_names() {
-    return [];
-  }
-
-  /**
-   * Strict JSON-only deep clone.
-   * Returns a detached JSON value (object/array/scalar/null) or undefined if not JSON-serializable.
-   */
-  cloud5_clone_json_value_strict(value) {
-    if (value === undefined) {
-      return undefined;
-    }
-    try {
-      return JSON.parse(JSON.stringify(value));
-    } catch (e) {
-      return undefined;
-    }
-  }
-
-  assign_fields_from_object(obj, field_names) {
-    if (!obj || typeof obj !== 'object') {
-      return;
-    }
-    if (!Array.isArray(field_names) || field_names.length === 0) {
-      return;
-    }
-
-    for (const key of field_names) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        this[key] = obj[key];
-      }
-    }
-  }
-
-  export_fields_to_object_detached_json(field_names, target_obj) {
-    const out = target_obj || {};
-
-    if (!Array.isArray(field_names) || field_names.length === 0) {
-      return out;
-    }
-
-    for (const key of field_names) {
-      const cloned = this.cloud5_clone_json_value_strict(this[key]);
-
-      // Strict behavior: omit fields that cannot be represented as JSON.
-      if (cloned !== undefined) {
-        out[key] = cloned;
-      }
-    }
-
-    return out;
-  }
-
-  /**
-   * Assign both regular state fields and addon fields from `obj`.
-   * Intended for restoring from a parsed JSON state file.
-   */
-  assign_state_from_object(obj) {
-    this.assign_fields_from_object(obj, this.get_state_field_names());
-    this.assign_fields_from_object(obj, this.get_state_addon_field_names());
-  }
-
-  /**
-   * Export a strict JSON-only detached snapshot of this element's declared state.
-   * This is the only supported export semantics (no shared references).
-   */
-  export_state_to_object(target_obj) {
-    const out = target_obj || {};
-    this.export_fields_to_object_detached_json(this.get_state_field_names(), out);
-    this.export_fields_to_object_detached_json(this.get_state_addon_field_names(), out);
-    return out;
-  }
-
   on_shown() { }
+  /** 
+   * Optional lifecycle hook called by the piece when this element is hidden.
+   * Subclasses may override this method to change behavior when hidden.
+   */
   on_hidden() { }
+  /**
+   * Optional lifecycle hook called by the piece when it stops its performance. 
+   * Subclasses may override this method to change behavior when the piece stops.  
+   */
   on_stop() { }
+  /**
+   * Optional lifecycle hook called by the piece when it is cleared. 
+   * Subclasses may override this method to change behavior when the piece is 
+   * cleared, such as clearing any performance-related internal state in 
+   * preparation for a new performance.
+   */
   on_clear() { }
+  /**
+   * Optional lifecycle hook called by the piece when it generates a new 
+   * Score. Subclasses may override this method to add new Events to the 
+   * Score, or to modify existing Events.
+   */
   on_generate() { }
+  /**
+   * Optional lifecycle hook called by the piece when it starts its 
+   * performance. Subclasses may override this method to change behavior when 
+   * the piece starts, such as to schedule real-time events.
+   */
   on_play() { }
 }
 
@@ -255,7 +428,7 @@ class Cloud5Element extends HTMLElement {
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
  * objects of other cloud-5 elements to the `_overlay` properties. 
  */
-class Cloud5Piece extends HTMLElement {
+class Cloud5Piece extends Cloud5Element {
   constructor() {
     super();
     this.csound = null;
@@ -658,6 +831,9 @@ class Cloud5Piece extends HTMLElement {
     } else {
       wireOverlays();
     }
+    queueMicrotask(() => {
+      cloud5_load_state_if_present(this);
+    });
   }
 
   /**
@@ -822,6 +998,8 @@ class Cloud5Piece extends HTMLElement {
     });
 
     this._registered_overlays = registered;
+    // Now that overlay references exist, restore state once.
+    cloud5_load_state_if_present(this);
 
     // Show whichever overlay is marked as default, if any.
     const defaultCfg = overlays.find(o => o.isDefault && o.element);
@@ -1025,6 +1203,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     } catch (e) {
       alert(e);
     }
+    await cloud5_save_state_if_needed(this);
     await this.csound.start();
     if (gk_cloud5_performance_mode == 4) {
       this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
