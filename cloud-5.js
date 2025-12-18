@@ -388,6 +388,14 @@ class Cloud5Element extends HTMLElement {
         (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback?.();
+    if (this._display_timer) {
+      clearInterval(this._display_timer);
+      this._display_timer = null;
+    }
+  }
   /**
    * Optional lifecycle hook called by the piece when this element is shown.
    * Subclasses may override this method to change behavior when shown.
@@ -604,8 +612,18 @@ class Cloud5Piece extends Cloud5Element {
    * Called on a timer as long as the piece exists.
    */
   update_display = async () => {
-    this.csound_message_callback();
-    //this?.piano_roll_overlay?.show_score_time();
+    // Keep UI elements (VU meters, time displays, overlays) in sync with
+    // the current performance.
+    await this.csound_message_callback();
+
+    // Drive score-following overlays (piano roll, ROI playhead, etc.).
+    this?.piano_roll_overlay?.show_score_time?.();
+    const t = this.latest_score_time;
+    if (typeof t === 'number') {
+      for (const overlay of this._get_all_overlays()) {
+        overlay?.on_score_time?.(t, this.total_duration ?? this.duration ?? 0);
+      }
+    }
   }
   /**
      * Called by Csound during performance, and prints the message to the 
@@ -622,6 +640,9 @@ class Cloud5Piece extends Cloud5Element {
     let level_right = -100;
     if (globalThis.csound) {
       let score_time = await csound.getScoreTime();
+      // Make the latest score time available to any overlays that want to
+      // follow playback position.
+      this.latest_score_time = score_time;
       level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
       level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
       let delta = score_time;
@@ -830,6 +851,18 @@ class Cloud5Piece extends Cloud5Element {
       window.addEventListener('DOMContentLoaded', wireOverlays, { once: true });
     } else {
       wireOverlays();
+    }
+
+    // Drive UI updates (VU meters, score following, ROI playhead, etc.) even
+    // when Csound is not printing messages.
+    if (!this._display_timer) {
+      this._display_timer = setInterval(() => {
+        try {
+          this.update_display();
+        } catch (e) {
+          console.warn('update_display failed:', e);
+        }
+      }, 33);
     }
     // queueMicrotask(() => {
     //   cloud5_load_state_if_present(this);
