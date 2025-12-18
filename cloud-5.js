@@ -831,9 +831,9 @@ class Cloud5Piece extends Cloud5Element {
     } else {
       wireOverlays();
     }
-    queueMicrotask(() => {
-      cloud5_load_state_if_present(this);
-    });
+    // queueMicrotask(() => {
+    //   cloud5_load_state_if_present(this);
+    // });
   }
 
   /**
@@ -2796,3 +2796,68 @@ function get_filename(pathOrUrl) {
   console.info('CsoundAC.Score MIDI monkey-patch installed.');
 })();
 
+function is_plain_object(value) {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)
+  );
+}
+
+function deep_merge_into(target, patch, options = {}) {
+  const {
+    ignore_null = true,          // if true: JSON null does not overwrite
+    overwrite_arrays = true,     // if true: arrays are replaced, not merged
+    allow_new_keys = true        // if false: only update keys that already exist on target
+  } = options;
+
+  if (patch === null) {
+    return target;
+  }
+
+  for (const key of Object.keys(patch)) {
+    if (!allow_new_keys && !(key in target)) {
+      continue;
+    }
+
+    const incoming = patch[key];
+    if (incoming === null && ignore_null) {
+      continue;
+    }
+
+    const current = target[key];
+
+    if (Array.isArray(incoming)) {
+      if (overwrite_arrays || !Array.isArray(current)) {
+        target[key] = incoming.slice();
+      } else {
+        // simple “append” semantics; replace with your desired array policy
+        target[key] = current.concat(incoming);
+      }
+      continue;
+    }
+
+    // Deep-merge plain objects into existing plain objects
+    if (is_plain_object(incoming) && is_plain_object(current)) {
+      deep_merge_into(current, incoming, options);
+      continue;
+    }
+
+    // If the target property is a class instance and incoming is a plain object,
+    // merge fields into that instance (preserves prototype/methods).
+    if (is_plain_object(incoming) && current && typeof current === 'object' && !is_plain_object(current)) {
+      deep_merge_into(current, incoming, options);
+      continue;
+    }
+
+    // Primitive, function, Date (as string), or replacement object
+    target[key] = incoming;
+  }
+
+  return target;
+}
+
+function merge_json_into_instance(instance, json_string, options) {
+  const patch = JSON.parse(json_string);
+  return deep_merge_into(instance, patch, options);
+}
