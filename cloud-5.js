@@ -1363,20 +1363,54 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
   }
 
   create_dat_gui_menu(parameters) {
-    let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };
+    // Preserve a single, stable parameters object instance for dat.gui bindings.
+    if (!this.parameters) {
+      this.parameters = this.get_default_preset();
+    }
+
+    // Merge incoming (e.g., JSON-deserialized) parameters into the existing instance.
     if (parameters) {
-      dat_gui_parameters = Object.assign(this.get_default_preset(), dat_gui_parameters);
+      apply_params_into_existing(this.parameters, parameters, {
+        allow_new_keys: false,
+        ignore_null: true
+      });
     }
-    this.gui = new dat.GUI(dat_gui_parameters);
-    let dat_gui = document.getElementById('menu_item_dat_gui');
-    // The following assumes that there is only ever one child node of the 
-    // menu item.
-    if (dat_gui.children.length == 0) {
-      dat_gui.appendChild(this.gui.domElement);
-    } else {
-      // Replaces the existing dat.gui root node with the new one.
-      dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+
+    // Create dat.gui once; do not recreate/replace DOM on subsequent updates.
+    if (!this.gui) {
+      let dat_gui_parameters = {
+        autoPlace: false,
+        closeOnTop: true,
+        closed: true,
+        width: 400,
+        useLocalStorage: false
+      };
+
+      // Preserve your original behavior of incorporating defaults when parameters exist.
+      // If you intended something else, remove/adjust this.
+      if (parameters) {
+        dat_gui_parameters = Object.assign(this.get_default_preset(), dat_gui_parameters);
+      }
+
+      this.gui = new dat.GUI(dat_gui_parameters);
+
+      const dat_gui = document.getElementById('menu_item_dat_gui');
+      if (dat_gui.children.length === 0) {
+        dat_gui.appendChild(this.gui.domElement);
+      } else if (dat_gui.children.item(0) !== this.gui.domElement) {
+        // Only replace if something else is currently mounted there.
+        dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+      }
+
+      // IMPORTANT: create controllers/folders ONCE here (or in a called helper),
+      // and bind them to this.parameters (and its nested objects), e.g.:
+      // this.gui.add(this.parameters, 'foo', 0, 1);
+      // const f = this.gui.addFolder('bar');
+      // f.add(this.parameters.bar, 'baz', 0, 10);
     }
+
+    // Refresh controller displays to reflect merged values.
+    update_gui_displays(this.gui);
   }
 
   get_default_preset() {
@@ -2861,3 +2895,51 @@ function merge_json_into_instance(instance, json_string, options) {
   const patch = JSON.parse(json_string);
   return deep_merge_into(instance, patch, options);
 }
+
+function is_object(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function apply_params_into_existing(existing, incoming, options = {}) {
+  const { allow_new_keys = false, ignore_null = true } = options;
+
+  if (!is_object(incoming)) {
+    return existing;
+  }
+
+  for (const key of Object.keys(incoming)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    if (!allow_new_keys && !(key in existing)) {
+      continue;
+    }
+
+    const v = incoming[key];
+    if (v === null && ignore_null) {
+      continue;
+    }
+
+    if (is_object(v) && is_object(existing[key])) {
+      apply_params_into_existing(existing[key], v, options);
+    } else {
+      existing[key] = v;
+    }
+  }
+
+  return existing;
+}
+
+function update_gui_displays(gui) {
+  if (gui.__controllers) {
+    for (const c of gui.__controllers) {
+      c.updateDisplay();
+    }
+  }
+  if (gui.__folders) {
+    for (const name of Object.keys(gui.__folders)) {
+      update_gui_displays(gui.__folders[name]);
+    }
+  }
+}
+
