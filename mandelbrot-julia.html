@@ -1914,7 +1914,7 @@
         cloud5_piece.csound_code_addon = document.querySelector('#csd').value;
         // #endregion
         // Grab the overlay element so we can call its methods safely.
-        const mjOverlay = document.querySelector('#mandelbrot-julia');
+        const mandelbrot_julia_overlay = document.querySelector('#mandelbrot_julia');
 
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
@@ -2073,6 +2073,7 @@
         // #region About
         let cloud5_about = document.querySelector('cloud5-about');
         cloud5_piece.about_overlay = cloud5_about;
+        cloud5_piece.mandelbrot_julia_overlay = mandelbrot_julia_overlay;
         cloud5_piece.fields_to_serialize = ['control_parameters_addon',
             'mandelbrot_julia.bpm',
             'mandelbrot_julia.base_instrument',
