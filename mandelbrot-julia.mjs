@@ -755,11 +755,38 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     });
   }
 
-  _updatePlayheadOverlay() {
-    if (!this._playing || this._playTotalBeats <= 0) {
-      this.playHead.style.display = 'none';
-      return;
+_updatePlayheadOverlay() {
+  // Two playhead drivers:
+  //   1) MIDI playback in this class (this._playing === true)
+  //   2) External/Csound playback via cloud5_piece.latest_score_time
+  if (!this._playing) {
+    try {
+      const piece = this.cloud5_piece;
+      const score_time_sec = piece?.latest_score_time;
+      if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0) {
+        let total_duration_sec = piece?.total_duration;
+        if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+          total_duration_sec = piece?.score?.getDuration?.();
+        }
+        if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+          total_duration_sec = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
+        }
+        if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+          this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
+        }
+        try { piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) {}
+        return;
+      }
+    } catch (e) {
     }
+    this.playHead.style.display = 'none';
+    return;
+  }
+
+  if (this._playTotalBeats <= 0) {
+    this.playHead.style.display = 'none';
+    return;
+  }
     // Compute elapsed beats since start
     const now = performance.now();
     const elapsedBeats = this._beatsForMillis(now - this._playStartMS);
@@ -826,8 +853,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       maxy: this.viewJ.cy + this.viewJ.scale,
     };
 
-    const topLeft = this._complexToCanvJ(roi.minx, roi.maxy);
-    const botRight = this._complexToCanvJ(roi.maxx, roi.miny);
+    const topLeft = this._complexToCanvasCss(roi.minx, roi.maxy);
+    const botRight = this._complexToCanvasCss(roi.maxx, roi.miny);
     const L = Math.min(topLeft.x, botRight.x);
     const T = Math.min(topLeft.y, botRight.y);
     const W = Math.abs(botRight.x - topLeft.x);
@@ -1304,11 +1331,43 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   getScore() { return this._lastScore ?? []; }
 
+_publish_midi_score_to_piano_roll(score) {
+  const piece = this.cloud5_piece;
+  const piano_roll = piece?.piano_roll_overlay;
+  if (!piece || !piano_roll) return;
+  const SilencioScore = globalThis.Silencio?.Score;
+  if (!SilencioScore) return;
+
+  const silencio_score = new SilencioScore();
+  for (const note of score) {
+    const ch = (note[0] | 0) & 0x0f;
+    const t_beats = +note[1];
+    const d_beats = +note[2];
+    const key = note[3] | 0;
+    const vel = note[4] | 0;
+
+    const t_sec = this._secondsForBeats(t_beats);
+    const d_sec = this._secondsForBeats(d_beats);
+
+    // Silencio.Score.add signature:
+    // add(time, duration, status, channel, key, velocity, x, y, z, phase)
+    silencio_score.add(t_sec, d_sec, 144, ch, key, vel, 0, 0, 0, 0);
+  }
+
+  try { piano_roll.draw_silencio_score(silencio_score); } catch (e) {}
+  try { piano_roll.recenter?.(); } catch (e) {}
+  try { piano_roll.on_shown?.(); } catch (e) {}
+}
+
+
   async playMIDIFromScore() {
     await cloud5_save_state_if_needed(this.cloud5_piece);
 
     const score = await this.makeScore();
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
+
+    // Ensure the piano roll has geometry to draw (progress3D alone does not render notes).
+    this._publish_midi_score_to_piano_roll(score);
 
     this._playing = true;
     this._clearTimers();

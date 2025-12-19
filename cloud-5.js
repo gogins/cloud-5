@@ -1614,6 +1614,10 @@ class Cloud5PianoRoll extends Cloud5Element {
   disconnectedCallback() {
     window.removeEventListener('resize', this._onWindowResize);
     window.visualViewport?.removeEventListener('resize', this._onWindowResize);
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
   }
   /**
    * Called by the browser to update the display of the Score. It is 
@@ -1827,6 +1831,24 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
      <canvas id="display" class="cloud5-shader-canvas">
     `;
     this.canvas = this.querySelector('#display');
+
+    // Attach WebGL context-loss handlers to this canvas (Cloud5ShaderToy does not
+    // use obtainWebGL2, so we must handle this here).
+    if (!this._context_listeners_installed) {
+      this._context_listeners_installed = true;
+      this.canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        this._context_lost = true;
+        if (this._raf) {
+          cancelAnimationFrame(this._raf);
+          this._raf = 0;
+        }
+      }, false);
+      this.canvas.addEventListener('webglcontextrestored', () => {
+        this._context_lost = false;
+        this._rebuild_after_context_restore();
+      }, false);
+    }
     window.addEventListener('resize', this._onWindowResize, { passive: true });
     window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
   }
@@ -2083,9 +2105,11 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this?.write_audio_texture(this.analyser, this.channel0_texture_unit, this.channel0_texture, this.channel0_sampler);
-    window.onresize = ((event) => this.resize(event));
+    // Do not overwrite the page's global resize handler.
     this.resize();
-    requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+    if (!this._raf) {
+      this._raf = requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+    }
   }
 
   set_attributes() {
@@ -2119,6 +2143,10 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
    * @param {number} milliseconds The time since the start of the loop.
    */
   async render_frame(milliseconds) {
+    if (this._context_lost || !this.gl) {
+      this._raf = 0;
+      return;
+    }
     // Here we create an AnalyserNode as soon as Csound is available.
     if (this.analyser) {
     } else {
@@ -2157,7 +2185,7 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
       this.post_draw_frame_function_addon();
     }
     this.rendering_frame++;
-    requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+    this._raf = requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
   }
 
   on_shown() {
@@ -2220,6 +2248,25 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
     if (!visible) return;
     requestAnimationFrame(() => this.on_shown?.());
   };
+
+_raf = 0;
+_context_lost = false;
+_context_listeners_installed = false;
+
+_rebuild_after_context_restore() {
+  // GL resources are invalidated on context restore; rebuild program/buffers.
+  try {
+    this.prepare_canvas?.();
+    this.compile_shader?.();
+    this.get_uniforms?.();
+    this.set_attributes?.();
+    this.on_shown?.();
+  } catch (e) {
+    console.warn('Cloud5ShaderToy: rebuild after context restore failed:', e);
+  }
+}
+
+
 }
 customElements.define("cloud5-shadertoy", Cloud5ShaderToy);
 
@@ -2509,13 +2556,21 @@ var rgb_to_hsv = function (rgb) {
 }
 
 async function read_pixels_async(gl, x, y, w, h, format, type, sample) {
-  const buffer = gl.createBuffer();
+  // Reuse a single PBO per context rather than creating/deleting one per call.
+  // Frequent buffer churn + sync readback is a common trigger for WebGL context loss.
+  if (!gl.__cloud5_read_pbo) {
+    gl.__cloud5_read_pbo = gl.createBuffer();
+    gl.__cloud5_read_pbo_size = 0;
+  }
+  const buffer = gl.__cloud5_read_pbo;
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
-  gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
+  if ((gl.__cloud5_read_pbo_size | 0) < sample.byteLength) {
+    gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.DYNAMIC_READ);
+    gl.__cloud5_read_pbo_size = sample.byteLength;
+  }
   gl.readPixels(x, y, w, h, format, type, 0);
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
   await get_buffer_sub_data_async(gl, gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
-  gl.deleteBuffer(buffer);
 }
 
 /**
