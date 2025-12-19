@@ -388,14 +388,6 @@ class Cloud5Element extends HTMLElement {
         (v === '' || v === 'true' || v === '1' || v === 'yes');
     }
   }
-
-  disconnectedCallback() {
-    super.disconnectedCallback?.();
-    if (this._display_timer) {
-      clearInterval(this._display_timer);
-      this._display_timer = null;
-    }
-  }
   /**
    * Optional lifecycle hook called by the piece when this element is shown.
    * Subclasses may override this method to change behavior when shown.
@@ -612,16 +604,40 @@ class Cloud5Piece extends Cloud5Element {
    * Called on a timer as long as the piece exists.
    */
   update_display = async () => {
-    // Keep UI elements (VU meters, time displays, overlays) in sync with
-    // the current performance.
-    await this.csound_message_callback();
+    // Refresh metering/time and drive any overlays that follow score position.
+    try {
+      await this.csound_message_callback();
+    } catch (e) {
+      // Csound may not be running; keep UI responsive regardless.
+    }
 
-    // Drive score-following overlays (piano roll, ROI playhead, etc.).
-    this?.piano_roll_overlay?.show_score_time?.();
+    // Update piano-roll progress (red ball) if present.
+    try {
+      this?.piano_roll_overlay?.show_score_time?.();
+    } catch (e) {
+    }
+
     const t = this.latest_score_time;
-    if (typeof t === 'number') {
+    if (typeof t === 'number' && isFinite(t)) {
+      // Prefer an accurate total duration from an actual score if available.
+      let total = this.total_duration ?? this.duration;
+
+      const is_good_total = (v) => (typeof v === 'number' && isFinite(v) && v > 0);
+
+      if (!is_good_total(total)) {
+        const sdur = this.score?.getDuration?.();
+        if (is_good_total(sdur)) total = sdur;
+      }
+      if (!is_good_total(total)) {
+        const pdur = this.piano_roll_overlay?.silencio_score?.getDuration?.();
+        if (is_good_total(pdur)) total = pdur;
+      }
+
       for (const overlay of this._get_all_overlays()) {
-        overlay?.on_score_time?.(t, this.total_duration ?? this.duration ?? 0);
+        try {
+          overlay?.on_score_time?.(t, total || 0);
+        } catch (e) {
+        }
       }
     }
   }
@@ -640,9 +656,6 @@ class Cloud5Piece extends Cloud5Element {
     let level_right = -100;
     if (globalThis.csound) {
       let score_time = await csound.getScoreTime();
-      // Make the latest score time available to any overlays that want to
-      // follow playback position.
-      this.latest_score_time = score_time;
       level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
       level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
       let delta = score_time;
@@ -852,21 +865,10 @@ class Cloud5Piece extends Cloud5Element {
     } else {
       wireOverlays();
     }
-
-    // Drive UI updates (VU meters, score following, ROI playhead, etc.) even
-    // when Csound is not printing messages.
-    if (!this._display_timer) {
-      this._display_timer = setInterval(() => {
-        try {
-          this.update_display();
-        } catch (e) {
-          console.warn('update_display failed:', e);
-        }
-      }, 33);
-    }
     // queueMicrotask(() => {
     //   cloud5_load_state_if_present(this);
     // });
+
   }
 
   /**

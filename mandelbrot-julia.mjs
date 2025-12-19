@@ -210,6 +210,28 @@ pre {
       this.resize();
       this._updateSelectionOverlay();
       this._updatePlayheadOverlay();
+
+    // If Csound is playing (Cloud5Piece is updating latest_score_time), advance
+    // the Julia ROI playhead and the piano-roll playhead without requiring a
+    // separate timer.
+    if (!this._playing) {
+      try {
+        const piece = this.cloud5_piece;
+        const t = piece?.latest_score_time;
+        if (typeof t === 'number' && isFinite(t) && t >= 0) {
+          let total = piece?.score?.getDuration?.();
+          if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
+            total = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
+          }
+          if (typeof total === 'number' && isFinite(total) && total > 0) {
+            this._updatePlayheadFromSeconds(t, total);
+          }
+          // Keep piano-roll progress synced as well.
+          piece?.piano_roll_overlay?.show_score_time?.();
+        }
+      } catch (e) {
+      }
+    }
     });
   }
 
@@ -741,6 +763,23 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // Compute elapsed beats since start
     const now = performance.now();
     const elapsedBeats = this._beatsForMillis(now - this._playStartMS);
+
+    // Drive the piano-roll playhead (red ball) during MIDI playback by
+    // publishing score time in seconds to the Cloud5Piece.
+    try {
+      if (this.cloud5_piece) {
+        this.cloud5_piece.latest_score_time = this._secondsForBeats(elapsedBeats);
+        // Also publish a reasonable total duration for any other followers.
+        if (this._playTotalBeats > 0) {
+          this.cloud5_piece.total_duration = this._secondsForBeats(this._playTotalBeats);
+        }
+      }
+        // Ensure the piano-roll playhead (red ball) advances during MIDI playback.
+        try { this.cloud5_piece.piano_roll_overlay?.show_score_time?.(); } catch (e) {}
+      ///}
+    } catch (e) {
+    }
+
     const frac = Math.max(0, Math.min(1, elapsedBeats / this._playTotalBeats));
 
     // Use ROI if present; otherwise use full Julia viewport bounds
@@ -770,25 +809,25 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (frac >= 1) this.playHead.style.display = 'none';
   }
 
-  _update_playhead_from_seconds(score_time_sec, total_duration_sec) {
+
+  _updatePlayheadFromSeconds(score_time_sec, total_duration_sec) {
     const total = Math.max(0, total_duration_sec || 0);
     if (!(total > 0)) {
-      // Without a total duration, we cannot compute a stable sweep.
       this.playHead.style.display = 'none';
       return;
     }
     const frac = Math.max(0, Math.min(1, (score_time_sec || 0) / total));
 
-    // Use ROI if present; otherwise use full Julia viewport bounds.
+    // Use ROI if present; otherwise use full Julia viewport bounds
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
       miny: this.viewJ.cy - this.viewJ.scale,
-      maxy: this.viewJ.cy + this.viewJ.scale
+      maxy: this.viewJ.cy + this.viewJ.scale,
     };
 
-    const topLeft = this._complexToCanvasCss(roi.minx, roi.maxy);
-    const botRight = this._complexToCanvasCss(roi.maxx, roi.miny);
+    const topLeft = this._complexToCanvJ(roi.minx, roi.maxy);
+    const botRight = this._complexToCanvJ(roi.maxx, roi.miny);
     const L = Math.min(topLeft.x, botRight.x);
     const T = Math.min(topLeft.y, botRight.y);
     const W = Math.abs(botRight.x - topLeft.x);
@@ -798,8 +837,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     Object.assign(this.playHead.style, {
       display: 'block',
       left: `${Math.round(x)}px`,
-      top: `${T}px`,
-      height: `${H}px`,
+      top: `${Math.round(T)}px`,
+      height: `${Math.round(H)}px`,
     });
 
     if (frac >= 1) this.playHead.style.display = 'none';
@@ -1265,60 +1304,11 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   getScore() { return this._lastScore ?? []; }
 
-  _draw_piano_roll_from_midi_score(score) {
-    const piece = this.cloud5_piece;
-    const piano_roll = piece?.piano_roll_overlay;
-    if (!piano_roll || !globalThis.Silencio?.Score) {
-      return;
-    }
-
-    // score is [channel, time_beats, duration_beats, key, velocity]
-    // Convert beat-times to seconds for the piano roll.
-    const silencio_score = new globalThis.Silencio.Score();
-    for (const ev of score) {
-      const ch = (ev[0] | 0) & 0x0f;
-      const t_sec = this._secondsForBeats(parseFloat(ev[1]) || 0);
-      const d_sec = this._secondsForBeats(parseFloat(ev[2]) || 0);
-      const key = (ev[3] | 0) & 0x7f;
-      const vel = Math.max(1, Math.min(127, ev[4] | 0));
-
-      // Match the Silencio event fields used by Cloud5PianoRoll.draw_csoundac_score.
-      // status 144 (=0x90) is sufficient for note visualization.
-      silencio_score.add(t_sec, d_sec, 144, ch, key, vel, 0, 0, 0, 0);
-    }
-    piano_roll.draw_silencio_score?.(silencio_score);
-  }
-
-  // Called by Cloud5Piece.update_display(...) while Csound is performing.
-  // Keeps the ROI play cursor in sync with the current Csound score time.
-  on_score_time(score_time_sec, total_duration_sec) {
-    if (!this._csound_playing) {
-      return;
-    }
-    const t = typeof score_time_sec === 'number' ? score_time_sec : 0;
-    const total = Math.max(0, (typeof total_duration_sec === 'number' ? total_duration_sec : 0));
-    this._update_playhead_from_seconds(t, total);
-  }
-
-  on_play() {
-    // Csound has started; follow its score time.
-    this._csound_playing = true;
-  }
-
-  on_stop() {
-    this._csound_playing = false;
-    this.playHead.style.display = 'none';
-  }
-
   async playMIDIFromScore() {
     await cloud5_save_state_if_needed(this.cloud5_piece);
 
     const score = await this.makeScore();
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
-
-    // Draw the piano roll for generated MIDI scores (mirrors Csound-score behavior).
-    // The Mandelbrot/Julia generator expresses time in beats; the piano roll expects seconds.
-    this._draw_piano_roll_from_midi_score(score);
 
     this._playing = true;
     this._clearTimers();
@@ -1383,91 +1373,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this._clearTimers();
     this._panicMIDI();
     this._stopWebAudio();
-  }
-
-  // ------------------------------------------------------------
-  // Cloud5 overlay hooks (called by cloud-5 during Csound renders)
-  // ------------------------------------------------------------
-
-  on_play() {
-    // Csound performances should advance the ROI playhead using the Csound score time.
-    this._csound_playing = true;
-    this._csound_total_seconds = this.cloud5_piece?.total_duration ?? this.cloud5_piece?.duration ?? 0;
-    this._updatePlayheadFromScoreSeconds(this.cloud5_piece?.latest_score_time ?? 0);
-  }
-
-  on_stop() {
-    this._csound_playing = false;
-    this._csound_total_seconds = 0;
-    if (this.playHead) this.playHead.style.display = 'none';
-  }
-
-  on_clear() {
-    this.on_stop();
-  }
-
-  // Called by Cloud5Piece.update_display() during Csound performance.
-  on_score_time(score_time_seconds, total_seconds) {
-    if (!this._csound_playing) return;
-    this._csound_total_seconds = total_seconds || this._csound_total_seconds || 0;
-    this._updatePlayheadFromScoreSeconds(score_time_seconds);
-  }
-
-  // ------------------------------------------------------------
-  // Piano roll + ROI playhead helpers
-  // ------------------------------------------------------------
-
-  _draw_piano_roll_from_midi_score(midi_score) {
-    const piece = this.cloud5_piece;
-    const piano = piece?.piano_roll_overlay;
-    if (!piano || !globalThis.Silencio?.Score) return;
-
-    const s = new globalThis.Silencio.Score();
-    for (const ev of midi_score) {
-      const [ch, tBeats, dBeats, key, vel] = ev;
-      const t = this._secondsForBeats(tBeats);
-      const d = this._secondsForBeats(dBeats);
-      const status = 144; // MIDI note-on
-      const channel = (ch | 0) & 0x0f;
-      const k = (key | 0) & 0x7f;
-      const v = Math.max(1, Math.min(127, vel | 0));
-      s.add(t, d, status, channel, k, v, 0, 0, 0, 0);
-    }
-    piano.draw_silencio_score(s);
-  }
-
-  _updatePlayheadFromScoreSeconds(score_time_seconds) {
-    // If MIDI is currently driving the playhead, do not fight it.
-    if (this._playing) return;
-    if (!this._csound_total_seconds || this._csound_total_seconds <= 0) {
-      this.playHead.style.display = 'none';
-      return;
-    }
-    // Mirror the MIDI playhead behavior, but use absolute Csound score seconds.
-    const frac = Math.max(0, Math.min(1, (score_time_seconds || 0) / this._csound_total_seconds));
-
-    const roi = this.roiJ ?? {
-      minx: this.viewJ.cx - this.viewJ.scale,
-      maxx: this.viewJ.cx + this.viewJ.scale,
-      miny: this.viewJ.cy - this.viewJ.scale,
-      maxy: this.viewJ.cy + this.viewJ.scale
-    };
-    const topLeft = this._complexToCanvasCss(roi.minx, roi.maxy);
-    const botRight = this._complexToCanvasCss(roi.maxx, roi.miny);
-    const L = Math.min(topLeft.x, botRight.x);
-    const T = Math.min(topLeft.y, botRight.y);
-    const W = Math.abs(botRight.x - topLeft.x);
-    const H = Math.abs(botRight.y - topLeft.y);
-    const x = L + W * frac;
-
-    Object.assign(this.playHead.style, {
-      display: 'block',
-      left: `${Math.round(x)}px`,
-      top: `${T}px`,
-      height: `${H}px`,
-    });
-
-    if (frac >= 1) this.playHead.style.display = 'none';
   }
 
   _timestamp() {
