@@ -3,6 +3,10 @@ class MandelbrotJulia extends Cloud5Element {
     super();
     this.attachShadow({ mode: 'open' });
 
+    this._rendering_active = false;
+    this._raf_id = 0;
+    this._render_loop = () => this.render();
+ 
     const style = document.createElement('style');
     style.textContent = `
 :host {
@@ -270,12 +274,42 @@ pre {
     this.initPipelines();
     this.initInteractions();
     this.resize();
-    this.render();
+    this._start_rendering();
 
     // Initialize Web MIDI and prefer IAC
     this.initMIDI();
   }
-  disconnectedCallback() { this._resizeObserver.disconnect(); }
+  disconnectedCallback() {
+    this._stop_rendering();
+    this._resizeObserver.disconnect();
+  }
+
+  on_shown() {
+    // The overlay became visible; resume GPU work.
+    this.resize();
+    this._start_rendering();
+  }
+
+  on_hidden() {
+    // The overlay is invisible; stop the render loop to prevent GPU load.
+    this._stop_rendering();
+  }
+
+  _start_rendering() {
+    if (this._rendering_active) return;
+    this._rendering_active = true;
+    if (!this._raf_id) {
+      this._raf_id = requestAnimationFrame(this._render_loop);
+    }
+  }
+
+  _stop_rendering() {
+    this._rendering_active = false;
+    if (this._raf_id) {
+      cancelAnimationFrame(this._raf_id);
+      this._raf_id = 0;
+    }
+  }
 
   _isActuallyVisible() {
     // Not in the document?
@@ -668,11 +702,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
   }
 
-  render() {
+   render() {
+    if (!this._rendering_active) {
+      this._raf_id = 0;
+      return;
+    }
     // If we are not in the DOM yet, or the overlay is hidden/collapsed,
     // skip all GPU work and just check again on the next frame.
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
-      requestAnimationFrame(() => this.render());
+     this._raf_id = requestAnimationFrame(this._render_loop);
       return;
     }
 
@@ -718,7 +756,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this._updateSelectionOverlay();
     this._updatePlayheadOverlay();
 
-    requestAnimationFrame(() => this.render());
+    this._raf_id = requestAnimationFrame(this._render_loop);
   }
 
   // ---- Overlay helpers ----

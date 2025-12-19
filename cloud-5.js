@@ -1356,6 +1356,11 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     if (!overlay) return;
     // Force hidden even in the presence of CSS !important.
     overlay.style.setProperty('display', 'none', 'important');
+    // Give overlays a chance to stop expensive work (e.g. GPU render loops)
+    // while they are not visible.
+    if (typeof overlay.on_hidden === 'function') {
+      try { overlay.on_hidden(); } catch (e) { }
+    }
   }
 
   /**
