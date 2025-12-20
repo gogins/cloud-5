@@ -6,6 +6,11 @@ class MandelbrotJulia extends Cloud5Element {
     this._rendering_active = false;
     this._raf_id = 0;
     this._render_loop = () => this.render();
+
+    // Playhead ticker (runs even when WebGPU rendering is paused/hidden).
+    this._playhead_raf_id = 0;
+    this._playhead_loop = () => this._tick_playheads();
+    this._visibility_poll_id = 0;
  
     const style = document.createElement('style');
     style.textContent = `
@@ -215,27 +220,6 @@ pre {
       this._updateSelectionOverlay();
       this._updatePlayheadOverlay();
 
-    // If Csound is playing (Cloud5Piece is updating latest_score_time), advance
-    // the Julia ROI playhead and the piano-roll playhead without requiring a
-    // separate timer.
-    if (!this._playing) {
-      try {
-        const piece = this.cloud5_piece;
-        const t = piece?.latest_score_time;
-        if (typeof t === 'number' && isFinite(t) && t >= 0) {
-          let total = piece?.score?.getDuration?.();
-          if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
-            total = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
-          }
-          if (typeof total === 'number' && isFinite(total) && total > 0) {
-            this._updatePlayheadFromSeconds(t, total);
-          }
-          // Keep piano-roll progress synced as well.
-          piece?.piano_roll_overlay?.show_score_time?.();
-        }
-      } catch (e) {
-      }
-    }
     });
   }
 
@@ -294,9 +278,54 @@ pre {
     // The overlay is invisible; stop the render loop to prevent GPU load.
     this._stop_rendering();
   }
+  on_score_time(score_time_sec, total_duration_sec) {
+    // Called by Cloud5Piece.update_display() during Csound performance.
+    // Updates the Julia ROI playhead and keeps the piano roll in sync.
+    if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0 &&
+        typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+      this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
+    } else {
+      this.playHead.style.display = 'none';
+    }
+    try { this.cloud5_piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) {}
+  }
+
+  _tick_playheads() {
+    // Keep the MIDI playhead (and piano roll) advancing even if WebGPU rendering is paused.
+    if (!this._playing) {
+      this._playhead_raf_id = 0;
+      return;
+    }
+    try { this._updatePlayheadOverlay(); } catch (e) {}
+    this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
+  }
+
+  _start_playhead_ticker() {
+    if (this._playhead_raf_id) return;
+    this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
+  }
+
+  _stop_playhead_ticker() {
+    if (this._playhead_raf_id) {
+      cancelAnimationFrame(this._playhead_raf_id);
+      this._playhead_raf_id = 0;
+    }
+  }
+
+  _schedule_visibility_poll() {
+    if (this._visibility_poll_id) return;
+    this._visibility_poll_id = window.setInterval(() => {
+      if (this._isActuallyVisible()) {
+        window.clearInterval(this._visibility_poll_id);
+        this._visibility_poll_id = 0;
+        this._start_rendering();
+      }
+    }, 250);
+  }
+
 
   _start_rendering() {
-    if (this._rendering_active) return;
+    if (this._rendering_active && this._raf_id) return;
     this._rendering_active = true;
     if (!this._raf_id) {
       this._raf_id = requestAnimationFrame(this._render_loop);
@@ -308,6 +337,10 @@ pre {
     if (this._raf_id) {
       cancelAnimationFrame(this._raf_id);
       this._raf_id = 0;
+    }
+    if (this._visibility_poll_id) {
+      window.clearInterval(this._visibility_poll_id);
+      this._visibility_poll_id = 0;
     }
   }
 
@@ -710,7 +743,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // If we are not in the DOM yet, or the overlay is hidden/collapsed,
     // skip all GPU work and just check again on the next frame.
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
-     this._raf_id = requestAnimationFrame(this._render_loop);
+      // Do not keep submitting frames while hidden; this can trigger GPU/device loss
+      // on some platforms when canvases are detached or display:none.
+      this._raf_id = 0;
+      this._schedule_visibility_poll();
       return;
     }
 
@@ -1414,6 +1450,8 @@ _publish_midi_score_to_piano_roll(score) {
     const step = (beats) => this._secondsForBeats(beats) * 1000; // ms
 
     this._playStartMS = performance.now();
+
+    this._start_playhead_ticker();
     this._playTotalBeats = Math.max(0, ...score.map(n => n[1] + n[2]));
 
     if (out) {
@@ -1465,6 +1503,7 @@ _publish_midi_score_to_piano_roll(score) {
 
   stopPlayback() {
     this._playing = false;
+    this._stop_playhead_ticker();
     this._playTotalBeats = 0;
     this.playHead.style.display = 'none';
     this._clearTimers();
