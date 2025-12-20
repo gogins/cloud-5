@@ -9,6 +9,8 @@ class MandelbrotJulia extends Cloud5Element {
 
     // Playhead ticker (runs even when WebGPU rendering is paused/hidden).
     this._playhead_raf_id = 0;
+    this._ext_total_duration_sec = 0;
+    
     this._playhead_loop = () => this._tick_playheads();
     this._visibility_poll_id = 0;
  
@@ -845,6 +847,45 @@ _updatePlayheadOverlay() {
         if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
           total_duration_sec = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
         }
+
+        
+        // Additional duration fallbacks (Silencio.Score implementations vary).
+        if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+          const ss = piece?.piano_roll_overlay?.silencio_score;
+          try {
+            let cand = null;
+            if (ss) {
+              if (typeof ss.getDuration === 'function') cand = ss.getDuration();
+              else if (typeof ss.getDurationSeconds === 'function') cand = ss.getDurationSeconds();
+              else if (typeof ss.duration === 'number') cand = ss.duration;
+              else if (typeof ss.duration_seconds === 'number') cand = ss.duration_seconds;
+              else if (typeof ss.total_duration === 'number') cand = ss.total_duration;
+              if (!(typeof cand === 'number' && isFinite(cand) && cand > 0) && Array.isArray(ss.events)) {
+                let mx = 0;
+                for (const ev of ss.events) {
+                  const t = (typeof ev?.time === 'number') ? ev.time : (typeof ev?.start === 'number') ? ev.start : 0;
+                  const d = (typeof ev?.duration === 'number') ? ev.duration : (typeof ev?.dur === 'number') ? ev.dur : 0;
+                  mx = Math.max(mx, (t || 0)  (d || 0));
+                }
+                cand = mx;
+              }
+            }
+            if (typeof cand === 'number' && isFinite(cand) && cand > 0) {
+              total_duration_sec = cand;
+            }
+          } catch (e) {}
+        }
+
+        // Cache any valid duration; otherwise fall back to the last known duration.
+        if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+          this._ext_total_duration_sec = total_duration_sec;
+        } else if (typeof this._ext_total_duration_sec === 'number' && isFinite(this._ext_total_duration_sec) && this._ext_total_duration_sec > 0) {
+          total_duration_sec = this._ext_total_duration_sec;
+        } else {
+          // Last resort: keep the playhead moving even if the total duration is unavailable.
+          total_duration_sec = Math.max(1, (score_time_sec || 0) + 1);
+        }
+
         if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
           this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
         }
