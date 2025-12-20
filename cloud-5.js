@@ -1860,6 +1860,10 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
 
   // ...rest of Cloud5ShaderToy unchanged...
   disconnectedCallback() {
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
     window.removeEventListener('resize', this._onWindowResize);
     window.visualViewport?.removeEventListener('resize', this._onWindowResize);
   }
@@ -2148,6 +2152,16 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
    * @param {number} milliseconds The time since the start of the loop.
    */
   async render_frame(milliseconds) {
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) {
+      if (this._raf) {
+        cancelAnimationFrame(this._raf);
+        this._raf = 0;
+      }
+      return;
+    }
     if (this._context_lost || !this.gl) {
       this._raf = 0;
       return;
@@ -2245,6 +2259,13 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
       this._raf = requestAnimationFrame(ms => this.render_frame(ms));
     }
   }
+  on_hidden() {
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
+  }
+
   _raf = 0;
   _onWindowResize = () => {
     const visible = this.checkVisibility
