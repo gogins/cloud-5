@@ -131,35 +131,35 @@ pre {
     wrapper.innerHTML = `
   <div class="bar">
     <label>Exponent:
-      <input id="expP" type="number" step="0.01" value="2.0">
+      <input id="expP" data-cloud5-bind="exponent" type="number" step="0.01" value="2.0">
     </label>
     <label>Max iterations  M:
-      <input id="iterM" type="number" value="500">
+      <input id="iterM" data-cloud5-bind="maxIterM" type="number" value="500">
     </label>
     <label>Max iterations  J:
-      <input id="iterJ" type="number" value="1000">
+      <input id="iterJ" data-cloud5-bind="maxIterJ" type="number" value="1000">
     </label>
     <label>Timesteps:
-      <input id="binsN" type="number" value="4096"> 
+      <input id="binsN" data-cloud5-bind="nTime" type="number" value="4096"> 
     </label>
     <label>Range:
-      <input id="binsM" type="number" value="60">
+      <input id="binsM" data-cloud5-bind="nPitch" type="number" value="60">
     </label>
     <label>Base instrument:
-      <input id="base_instrument" type="number" value="1">
+      <input id="base_instrument" data-cloud5-bind="base_instrument" type="number" value="1">
     </label>
     <label>Instruments:
-      <input id="binsK" type="number" value="4">
+      <input id="binsK" data-cloud5-bind="nInst" type="number" value="4">
     </label>
     <label>BPM:
-      <input id="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
+      <input id="bpm" data-cloud5-bind="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
     </label>
     <label>Density:
-      <input id="density" type="range" min="0" max="100" value="5" />
+      <input id="density" data-cloud5-bind="density" data-cloud5-bind-scale="100" type="range" min="0" max="100" value="5" />
       <span id="densityVal">100%</span>
     </label>
     <label>Max voices/slice:
-      <input id="maxVoices" type="number" value="4" min="1" step="1" style="width:4.5rem">
+      <input id="maxVoices" data-cloud5-bind="maxVoicesPerSlice" type="number" value="4" min="1" step="1" style="width:4.5rem">
     </label>
     <label>MIDI Out:
       <select id="midiOut">
@@ -249,8 +249,16 @@ pre {
     this._activeAudio.clear();
   }
 
+  async on_state_restored(restored_state) {
+    if (super.on_state_restored) {
+      super.on_state_restored(restored_state);
+    }
+    this._sync_to_controls();
+  }
+
+
   async connectedCallback() {
-    super.connectedCallback();
+    await super.connectedCallback();
     if (!('gpu' in navigator)) {
       this.shadowRoot.innerHTML = `<div style="padding:1rem;color:#f88">WebGPU not available. Use Chrome/Edge with WebGPU enabled.</div>`;
       return;
@@ -265,6 +273,7 @@ pre {
     // Initialize Web MIDI and prefer IAC
     this.initMIDI();
   }
+
   disconnectedCallback() {
     this._stop_rendering();
     this._resizeObserver.disconnect();
@@ -1106,7 +1115,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const btnStop = this.shadowRoot.getElementById('btnStop');
 
-    const sync = () => {
+    const sync_from_controls = () => {
       this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
       this.maxIterM = parseInt(mIn.value);
       this.maxIterJ = parseInt(jIn.value);
@@ -1120,8 +1129,25 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       denVal.textContent = `${Math.round(this.density * 100)}%`;
       this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
     };
-    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', sync));
-    sync();
+
+    const sync_to_controls = () => {
+      pIn.value = `${this.exponent ?? 2.0}`;
+      mIn.value = `${this.maxIterM ?? 500}`;
+      jIn.value = `${this.maxIterJ ?? 1000}`;
+      nIn.value = `${this.nTime ?? 4096}`;
+      MIn.value = `${this.nPitch ?? 60}`;
+      base_instrument.value = `${this.base_instrument ?? 1}`;
+      kIn.value = `${this.nInst ?? 4}`;
+      bpmIn.value = `${this.bpm ?? 120}`;
+      denIn.value = `${Math.round((this.density ?? 1) * 100)}`;
+      denVal.textContent = `${Math.round((this.density ?? 1) * 100)}%`;
+      maxVIn.value = `${this.maxVoicesPerSlice ?? 999}`;
+    };
+
+    this._sync_from_controls = sync_from_controls;
+    this._sync_to_controls = sync_to_controls;
+    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', sync_from_controls));
+    sync_from_controls();
 
     btnStop.addEventListener('click', () => this.stopPlayback());
 

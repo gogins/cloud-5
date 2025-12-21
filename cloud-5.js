@@ -241,6 +241,91 @@ function cloud5_restore_fields(obj, values) {
   }
 }
 
+function cloud5_apply_state_bindings(host, options = {}) {
+  if (!host) return;
+
+  const include_shadow = options.include_shadow !== false;
+  const roots = [];
+  roots.push(host);
+  if (include_shadow && host.shadowRoot) {
+    roots.push(host.shadowRoot);
+  }
+
+  const apply_to_element = (el, value) => {
+    if (!el) return;
+
+    // Optional affine transform: value' = value * scale + offset
+    let v = value;
+    const scale_attr = el.getAttribute?.('data-cloud5-bind-scale');
+    const offset_attr = el.getAttribute?.('data-cloud5-bind-offset');
+    const scale = scale_attr !== null ? parseFloat(scale_attr) : NaN;
+    const offset = offset_attr !== null ? parseFloat(offset_attr) : NaN;
+    if (typeof v === 'number') {
+      if (!Number.isNaN(scale)) v = v * scale;
+      if (!Number.isNaN(offset)) v = v + offset;
+    }
+
+    const explicit_prop = el.getAttribute?.('data-cloud5-bind-prop');
+    if (explicit_prop) {
+      try {
+        el[explicit_prop] = v;
+      } catch (e) { }
+      return;
+    }
+
+    // Default mapping.
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'input') {
+      const type = (el.getAttribute('type') || 'text').toLowerCase();
+      if (type === 'checkbox' || type === 'radio') {
+        el.checked = !!v;
+      } else {
+        el.value = (v ?? '').toString();
+      }
+      return;
+    }
+
+    if (tag === 'textarea' || tag === 'select') {
+      el.value = (v ?? '').toString();
+      return;
+    }
+
+    el.textContent = (v ?? '').toString();
+  };
+
+  for (const root of roots) {
+    const bound = root.querySelectorAll?.('[data-cloud5-bind]') || [];
+    for (const el of bound) {
+      const bind_path = el.getAttribute('data-cloud5-bind');
+      if (!bind_path) continue;
+      const value = cloud5_get_by_path(host, bind_path);
+      if (value === undefined) continue;
+      apply_to_element(el, value);
+    }
+  }
+}
+
+function cloud5_notify_state_restored(piece, restored_state) {
+  const notify_one = (obj) => {
+    if (!obj) return;
+    try {
+      obj.on_state_restored?.(restored_state);
+    } catch (e) {
+      console.warn('on_state_restored failed:', e);
+    }
+  };
+
+  notify_one(piece);
+
+  try {
+    if (typeof piece?._get_all_overlays === 'function') {
+      for (const overlay of piece._get_all_overlays()) {
+        notify_one(overlay);
+      }
+    }
+  } catch (e) { }
+}
+
 async function cloud5_clipboard_and_download(json_text, filename) {
   // Clipboard
   try {
@@ -319,6 +404,7 @@ async function cloud5_load_state_if_present(piece) {
       const text = fs.readFileSync(filename, 'utf8');
       const obj = JSON.parse(text);
       cloud5_restore_fields(piece, obj);
+      cloud5_notify_state_restored(piece, obj);
       return;
     } catch (e) {
       console.warn('Failed to load state via fs; falling back to fetch:', e);
@@ -335,6 +421,7 @@ async function cloud5_load_state_if_present(piece) {
     const text = await response.text();
     const obj = JSON.parse(text);
     cloud5_restore_fields(piece, obj);
+    cloud5_notify_state_restored(piece, obj);
     return;
   } catch (e) {
     // 3) Nothing
@@ -422,6 +509,28 @@ class Cloud5Element extends HTMLElement {
    * the piece starts, such as to schedule real-time events.
    */
   on_play() { }
+
+  /**
+   * Optional lifecycle hook called after a persisted state has been restored
+   * into this element (or the owning piece).
+   *
+   * Default behavior: update any DOM elements that declare a
+   * `data-cloud5-bind="path"` attribute, where `path` is resolved relative to
+   * `this`.
+   *
+   * Subclasses may override. If you still want the default binding behavior,
+   * call `super.on_state_restored(restored_state)`.
+   */
+  on_state_restored(restored_state) {
+    this.cloud5_refresh_dom_from_state();
+  }
+
+  /**
+   * Applies `data-cloud5-bind` updates for this element.
+   */
+  cloud5_refresh_dom_from_state(options = {}) {
+    cloud5_apply_state_bindings(this, options);
+  }
 }
 
 /**
