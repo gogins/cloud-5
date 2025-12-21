@@ -280,16 +280,76 @@ pre {
     // The overlay is invisible; stop the render loop to prevent GPU load.
     this._stop_rendering();
   }
-  on_score_time(score_time_sec, total_duration_sec) {
+
+  on_score_time(a_sec, b_sec) {
     // Called by Cloud5Piece.update_display() during Csound performance.
-    // Updates the Julia ROI playhead and keeps the piano roll in sync.
-    if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0 &&
-      typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
-      this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
-    } else {
+
+    // Heuristic: some callers pass (total, now) instead of (now, total).
+    // Choose "now" as the smaller non-negative number when both look valid.
+    let score_time_sec = a_sec;
+    let total_duration_sec = b_sec;
+
+    const a_ok = (typeof a_sec === 'number' && isFinite(a_sec) && a_sec >= 0);
+    const b_ok = (typeof b_sec === 'number' && isFinite(b_sec) && b_sec >= 0);
+
+    if (!a_ok && !b_ok) {
       this.playHead.style.display = 'none';
+      return;
     }
+
+    if (a_ok && b_ok) {
+      // If one is clearly "total" (larger) and the other is "now" (smaller), swap if needed.
+      if (a_sec > b_sec) {
+        score_time_sec = b_sec;
+        total_duration_sec = a_sec;
+      }
+    } else if (a_ok) {
+      score_time_sec = a_sec;
+      total_duration_sec = 0;
+    } else {
+      score_time_sec = b_sec;
+      total_duration_sec = 0;
+    }
+
+    // Publish external driver values so _updatePlayheadOverlay() can work too.
     try {
+      if (this.cloud5_piece) {
+        this.cloud5_piece.latest_score_time = score_time_sec;
+        if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+          this.cloud5_piece.total_duration = total_duration_sec;
+        }
+      }
+    } catch (e) { }
+
+    // Resolve a usable total duration (allow fallbacks; do not hide on missing duration).
+    let total = total_duration_sec;
+
+    if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
+      // Prefer any duration already published on the piece.
+      try { total = this.cloud5_piece?.total_duration; } catch (e) { }
+    }
+    if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
+      // Try score durations already used elsewhere in this class.
+      try { total = this.cloud5_piece?.score?.getDuration?.(); } catch (e) { }
+    }
+    if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
+      try { total = this.cloud5_piece?.piano_roll_overlay?.silencio_score?.getDuration?.(); } catch (e) { }
+    }
+
+    // Cache last-known duration; otherwise keep playhead drawable.
+    if (typeof total === 'number' && isFinite(total) && total > 0) {
+      this._ext_total_duration_sec = total;
+    } else if (typeof this._ext_total_duration_sec === 'number' && isFinite(this._ext_total_duration_sec) && this._ext_total_duration_sec > 0) {
+      total = this._ext_total_duration_sec;
+    } else {
+      total = Math.max(1, (score_time_sec || 0) + 1);
+    }
+
+    // Draw immediately (do not depend on render loop).
+    this._updatePlayheadFromSeconds(score_time_sec, total);
+
+    // Reset if we reached the end (only when a real duration is known).
+    if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
       if (score_time_sec >= total_duration_sec) {
         try {
           if (this.cloud5_piece) {
@@ -301,9 +361,10 @@ pre {
         this.playHead.style.display = 'none';
         return;
       }
-      this._start_playhead_ticker();
-      this.cloud5_piece?.piano_roll_overlay?.show_score_time?.();
-    } catch (e) { }
+    }
+
+    // Keep other UI followers in sync.
+    try { this.cloud5_piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
   }
 
   _tick_playheads() {
