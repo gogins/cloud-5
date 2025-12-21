@@ -289,18 +289,49 @@ pre {
     } else {
       this.playHead.style.display = 'none';
     }
-    try { this.cloud5_piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
+    try {
+      if (score_time_sec >= total_duration_sec) {
+        try {
+          if (this.cloud5_piece) {
+            this.cloud5_piece.latest_score_time = 0;
+            this.cloud5_piece.total_duration = 0;
+          }
+        } catch (e) { }
+        this._ext_total_duration_sec = 0;
+        this.playHead.style.display = 'none';
+        return;
+      }
+      this._start_playhead_ticker();
+      this.cloud5_piece?.piano_roll_overlay?.show_score_time?.();
+    } catch (e) { }
   }
 
   _tick_playheads() {
-    // Keep the MIDI playhead (and piano roll) advancing even if WebGPU rendering is paused.
-    if (!this._playing) {
+    const piece = this.cloud5_piece;
+
+    const ext_time = piece?.latest_score_time;
+    const ext_total = piece?.total_duration;
+
+    const ext_active =
+      typeof ext_time === 'number' &&
+      isFinite(ext_time) &&
+      ext_time >= 0 &&
+      (
+        // if we know total duration, keep ticking until we reach it
+        (typeof ext_total === 'number' && isFinite(ext_total) && ext_total > 0 && ext_time <= ext_total) ||
+        // otherwise tick as long as time is moving forward
+        true
+      );
+
+    if (!this._playing && !ext_active) {
       this._playhead_raf_id = 0;
       return;
     }
+
     try { this._updatePlayheadOverlay(); } catch (e) { }
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
   }
+
 
   _start_playhead_ticker() {
     if (this._playhead_raf_id) return;
@@ -878,7 +909,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
                   for (const ev of ss.events) {
                     const t = (typeof ev?.time === 'number') ? ev.time : (typeof ev?.start === 'number') ? ev.start : 0;
                     const d = (typeof ev?.duration === 'number') ? ev.duration : (typeof ev?.dur === 'number') ? ev.dur : 0;
-                    mx = Math.max(mx, (t || 0)(d || 0));
+                    mx = Math.max(mx, (t || 0) + (d || 0));
                   }
                   cand = mx;
                 }
@@ -1563,6 +1594,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this._clearTimers();
     this._panicMIDI();
     this._stopWebAudio();
+    // Reset external/Csound playhead state so the next performance starts at 0.
+    try {
+      if (this.cloud5_piece) {
+        this.cloud5_piece.latest_score_time = 0;
+        this.cloud5_piece.total_duration = 0;
+      }
+    } catch (e) { }
+    this._ext_total_duration_sec = 0;
   }
 
   _timestamp() {
