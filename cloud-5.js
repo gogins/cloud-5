@@ -442,6 +442,12 @@ class Cloud5Piece extends Cloud5Element {
     this.fadeout = 6;
     this.safe_tail = 4;
     this.total_duration = this.duration + this.fadeout + this.safe_tail;
+
+    // Performance/UI state.
+    this.is_performing = false;
+    this.latest_score_time = 0;
+    this._display_raf_id = 0;
+    this._display_last_ms = 0;
   }
   #csound_code_addon = null;
   /**
@@ -640,7 +646,70 @@ class Cloud5Piece extends Cloud5Element {
         }
       }
     }
+  };
+
+  _is_overlay_visible(overlay) {
+    if (!overlay) return false;
+    try {
+      if (typeof overlay.checkVisibility === 'function') {
+        return overlay.checkVisibility();
+      }
+    } catch (e) { }
+    try {
+      return getComputedStyle(overlay).display !== 'none';
+    } catch (e) {
+      return false;
+    }
   }
+
+  _any_score_time_overlay_visible() {
+    for (const overlay of this._get_all_overlays()) {
+      if (!overlay) continue;
+      if (typeof overlay.on_score_time !== 'function') continue;
+      if (this._is_overlay_visible(overlay)) return true;
+    }
+    // Piano roll follows score time even if it does not implement on_score_time.
+    if (this.piano_roll_overlay && this._is_overlay_visible(this.piano_roll_overlay)) return true;
+    return false;
+  }
+
+  _reset_score_time_followers() {
+    try { this.latest_score_time = 0; } catch (e) { }
+    try {
+      this?.piano_roll_overlay?.update_score_time?.(0);
+      this?.piano_roll_overlay?.show_score_time?.();
+    } catch (e) { }
+    try {
+      // Notify overlays that follow score time (e.g. ROI playheads).
+      for (const overlay of this._get_all_overlays()) {
+        overlay?.on_score_time?.(0, this.total_duration ?? this.duration ?? 0);
+      }
+    } catch (e) { }
+  }
+
+  _start_display_loop() {
+    if (this._display_raf_id) return;
+    const tick = async (now_ms) => {
+      // Throttle to reduce overhead while still smooth enough for playheads.
+      if (!this._display_last_ms) this._display_last_ms = now_ms;
+      const elapsed_ms = now_ms - this._display_last_ms;
+
+      const should_update = this.is_performing && this._any_score_time_overlay_visible();
+      if (should_update && elapsed_ms >= 33) { // ~30 Hz
+        this._display_last_ms = now_ms;
+        try { await this.update_display(); } catch (e) { }
+      }
+      this._display_raf_id = requestAnimationFrame(tick);
+    };
+    this._display_raf_id = requestAnimationFrame(tick);
+  }
+
+  _stop_display_loop() {
+    if (!this._display_raf_id) return;
+    try { cancelAnimationFrame(this._display_raf_id); } catch (e) { }
+    this._display_raf_id = 0;
+  }
+
   /**
      * Called by Csound during performance, and prints the message to the 
      * scrolling text area of a <csound5-log> element overlay. This function may 
@@ -656,6 +725,7 @@ class Cloud5Piece extends Cloud5Element {
     let level_right = -100;
     if (globalThis.csound) {
       let score_time = await csound.getScoreTime();
+      this.latest_score_time = score_time;
       level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
       level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
       let delta = score_time;
@@ -689,7 +759,8 @@ class Cloud5Piece extends Cloud5Element {
       $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
       this?.piano_roll_overlay?.update_score_time(score_time);
     };
-  }
+  };
+
   /**
    * A convenience function for printing the message in the 
    * scrolling <csound5-log> element overlay.
@@ -864,6 +935,8 @@ class Cloud5Piece extends Cloud5Element {
       window.addEventListener('DOMContentLoaded', wireOverlays, { once: true });
     } else {
       wireOverlays();
+    // Lightweight UI update loop; does work only while performing and when needed.
+    this._start_display_loop();
     }
     // queueMicrotask(() => {
     //   cloud5_load_state_if_present(this);
@@ -1182,11 +1255,17 @@ class Cloud5Piece extends Cloud5Element {
     for (const overlay of this._get_all_overlays()) {
       overlay?.on_stop();
     }
+    this._reset_score_time_followers();
     // Clear performance-related state from all components.
     await this?.log_overlay?.clear?.();
     for (const overlay of this._get_all_overlays()) {
       overlay?.on_clear();
     }
+
+    // Reset score-following UI for a fresh performance.
+    this.is_performing = false;
+    this._display_last_ms = 0;
+    this._reset_score_time_followers();
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -1240,6 +1319,10 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     }
     await cloud5_save_state_if_needed(this);
     await this.csound.start();
+
+    this.is_performing = true;
+    this._start_display_loop();
+    try { await this.update_display(); } catch (e) { }
     if (gk_cloud5_performance_mode == 4) {
       this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
       this.schedule_stop_after(this.total_duration);
@@ -1282,6 +1365,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
    */
   stop = async function () {
     this.csound_message_callback("cloud-5 is stopping...\n");
+    this.is_performing = false;
     // Stop performance in all components.
     await this.csound.stop();
     await this.csound.cleanup();
