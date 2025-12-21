@@ -10,10 +10,10 @@ class MandelbrotJulia extends Cloud5Element {
     // Playhead ticker (runs even when WebGPU rendering is paused/hidden).
     this._playhead_raf_id = 0;
     this._ext_total_duration_sec = 0;
-    
+
     this._playhead_loop = () => this._tick_playheads();
     this._visibility_poll_id = 0;
- 
+
     const style = document.createElement('style');
     style.textContent = `
 :host {
@@ -284,12 +284,12 @@ pre {
     // Called by Cloud5Piece.update_display() during Csound performance.
     // Updates the Julia ROI playhead and keeps the piano roll in sync.
     if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0 &&
-        typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+      typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
       this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
     } else {
       this.playHead.style.display = 'none';
     }
-    try { this.cloud5_piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) {}
+    try { this.cloud5_piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
   }
 
   _tick_playheads() {
@@ -298,7 +298,7 @@ pre {
       this._playhead_raf_id = 0;
       return;
     }
-    try { this._updatePlayheadOverlay(); } catch (e) {}
+    try { this._updatePlayheadOverlay(); } catch (e) { }
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
   }
 
@@ -584,8 +584,21 @@ fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     return vec4<f32>(col, 1.0);
   }
 
-  let col = palette(t) * (1.0 - 0.65 * t); // darken towards black
-  return vec4<f32>(col, 1.0);
+let col = palette(t) * (1.0 - 0.65 * t); // base darkening
+
+// Fade-in so the far exterior stays black
+let fade0 = smoothstep(0.03, 0.15, t);
+
+// Brightness boost centered on the boundary
+// Peaks around t ≈ 0.2–0.4 and falls off smoothly
+let boundary_boost =
+    smoothstep(0.05, 0.20, t) *
+    (1.0 - smoothstep(0.45, 0.70, t));
+
+let bright_col = col * (1.0 + 1.2 * boundary_boost);
+
+return vec4<f32>(bright_col * fade0, 1.0);
+
 }
 `;
 
@@ -737,7 +750,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
   }
 
-   render() {
+  render() {
     if (!this._rendering_active) {
       this._raf_id = 0;
       return;
@@ -831,77 +844,77 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     });
   }
 
-_updatePlayheadOverlay() {
-  // Two playhead drivers:
-  //   1) MIDI playback in this class (this._playing === true)
-  //   2) External/Csound playback via cloud5_piece.latest_score_time
-  if (!this._playing) {
-    try {
-      const piece = this.cloud5_piece;
-      const score_time_sec = piece?.latest_score_time;
-      if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0) {
-        let total_duration_sec = piece?.total_duration;
-        if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
-          total_duration_sec = piece?.score?.getDuration?.();
-        }
-        if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
-          total_duration_sec = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
-        }
+  _updatePlayheadOverlay() {
+    // Two playhead drivers:
+    //   1) MIDI playback in this class (this._playing === true)
+    //   2) External/Csound playback via cloud5_piece.latest_score_time
+    if (!this._playing) {
+      try {
+        const piece = this.cloud5_piece;
+        const score_time_sec = piece?.latest_score_time;
+        if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0) {
+          let total_duration_sec = piece?.total_duration;
+          if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+            total_duration_sec = piece?.score?.getDuration?.();
+          }
+          if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+            total_duration_sec = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
+          }
 
-        
-        // Additional duration fallbacks (Silencio.Score implementations vary).
-        if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
-          const ss = piece?.piano_roll_overlay?.silencio_score;
-          try {
-            let cand = null;
-            if (ss) {
-              if (typeof ss.getDuration === 'function') cand = ss.getDuration();
-              else if (typeof ss.getDurationSeconds === 'function') cand = ss.getDurationSeconds();
-              else if (typeof ss.duration === 'number') cand = ss.duration;
-              else if (typeof ss.duration_seconds === 'number') cand = ss.duration_seconds;
-              else if (typeof ss.total_duration === 'number') cand = ss.total_duration;
-              if (!(typeof cand === 'number' && isFinite(cand) && cand > 0) && Array.isArray(ss.events)) {
-                let mx = 0;
-                for (const ev of ss.events) {
-                  const t = (typeof ev?.time === 'number') ? ev.time : (typeof ev?.start === 'number') ? ev.start : 0;
-                  const d = (typeof ev?.duration === 'number') ? ev.duration : (typeof ev?.dur === 'number') ? ev.dur : 0;
-                  mx = Math.max(mx, (t || 0)  (d || 0));
+
+          // Additional duration fallbacks (Silencio.Score implementations vary).
+          if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+            const ss = piece?.piano_roll_overlay?.silencio_score;
+            try {
+              let cand = null;
+              if (ss) {
+                if (typeof ss.getDuration === 'function') cand = ss.getDuration();
+                else if (typeof ss.getDurationSeconds === 'function') cand = ss.getDurationSeconds();
+                else if (typeof ss.duration === 'number') cand = ss.duration;
+                else if (typeof ss.duration_seconds === 'number') cand = ss.duration_seconds;
+                else if (typeof ss.total_duration === 'number') cand = ss.total_duration;
+                if (!(typeof cand === 'number' && isFinite(cand) && cand > 0) && Array.isArray(ss.events)) {
+                  let mx = 0;
+                  for (const ev of ss.events) {
+                    const t = (typeof ev?.time === 'number') ? ev.time : (typeof ev?.start === 'number') ? ev.start : 0;
+                    const d = (typeof ev?.duration === 'number') ? ev.duration : (typeof ev?.dur === 'number') ? ev.dur : 0;
+                    mx = Math.max(mx, (t || 0)(d || 0));
+                  }
+                  cand = mx;
                 }
-                cand = mx;
               }
-            }
-            if (typeof cand === 'number' && isFinite(cand) && cand > 0) {
-              total_duration_sec = cand;
-            }
-          } catch (e) {}
-        }
+              if (typeof cand === 'number' && isFinite(cand) && cand > 0) {
+                total_duration_sec = cand;
+              }
+            } catch (e) { }
+          }
 
-        // Cache any valid duration; otherwise fall back to the last known duration.
-        if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
-          this._ext_total_duration_sec = total_duration_sec;
-        } else if (typeof this._ext_total_duration_sec === 'number' && isFinite(this._ext_total_duration_sec) && this._ext_total_duration_sec > 0) {
-          total_duration_sec = this._ext_total_duration_sec;
-        } else {
-          // Last resort: keep the playhead moving even if the total duration is unavailable.
-          total_duration_sec = Math.max(1, (score_time_sec || 0) + 1);
-        }
+          // Cache any valid duration; otherwise fall back to the last known duration.
+          if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+            this._ext_total_duration_sec = total_duration_sec;
+          } else if (typeof this._ext_total_duration_sec === 'number' && isFinite(this._ext_total_duration_sec) && this._ext_total_duration_sec > 0) {
+            total_duration_sec = this._ext_total_duration_sec;
+          } else {
+            // Last resort: keep the playhead moving even if the total duration is unavailable.
+            total_duration_sec = Math.max(1, (score_time_sec || 0) + 1);
+          }
 
-        if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
-          this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
+          if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+            this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
+          }
+          try { piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
+          return;
         }
-        try { piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) {}
-        return;
+      } catch (e) {
       }
-    } catch (e) {
+      this.playHead.style.display = 'none';
+      return;
     }
-    this.playHead.style.display = 'none';
-    return;
-  }
 
-  if (this._playTotalBeats <= 0) {
-    this.playHead.style.display = 'none';
-    return;
-  }
+    if (this._playTotalBeats <= 0) {
+      this.playHead.style.display = 'none';
+      return;
+    }
     // Compute elapsed beats since start
     const now = performance.now();
     const elapsedBeats = this._beatsForMillis(now - this._playStartMS);
@@ -916,8 +929,8 @@ _updatePlayheadOverlay() {
           this.cloud5_piece.total_duration = this._secondsForBeats(this._playTotalBeats);
         }
       }
-        // Ensure the piano-roll playhead (red ball) advances during MIDI playback.
-        try { this.cloud5_piece.piano_roll_overlay?.show_score_time?.(); } catch (e) {}
+      // Ensure the piano-roll playhead (red ball) advances during MIDI playback.
+      try { this.cloud5_piece.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
       ///}
     } catch (e) {
     }
@@ -1446,33 +1459,33 @@ _updatePlayheadOverlay() {
 
   getScore() { return this._lastScore ?? []; }
 
-_publish_midi_score_to_piano_roll(score) {
-  const piece = this.cloud5_piece;
-  const piano_roll = piece?.piano_roll_overlay;
-  if (!piece || !piano_roll) return;
-  const SilencioScore = globalThis.Silencio?.Score;
-  if (!SilencioScore) return;
+  _publish_midi_score_to_piano_roll(score) {
+    const piece = this.cloud5_piece;
+    const piano_roll = piece?.piano_roll_overlay;
+    if (!piece || !piano_roll) return;
+    const SilencioScore = globalThis.Silencio?.Score;
+    if (!SilencioScore) return;
 
-  const silencio_score = new SilencioScore();
-  for (const note of score) {
-    const ch = (note[0] | 0) & 0x0f;
-    const t_beats = +note[1];
-    const d_beats = +note[2];
-    const key = note[3] | 0;
-    const vel = note[4] | 0;
+    const silencio_score = new SilencioScore();
+    for (const note of score) {
+      const ch = (note[0] | 0) & 0x0f;
+      const t_beats = +note[1];
+      const d_beats = +note[2];
+      const key = note[3] | 0;
+      const vel = note[4] | 0;
 
-    const t_sec = this._secondsForBeats(t_beats);
-    const d_sec = this._secondsForBeats(d_beats);
+      const t_sec = this._secondsForBeats(t_beats);
+      const d_sec = this._secondsForBeats(d_beats);
 
-    // Silencio.Score.add signature:
-    // add(time, duration, status, channel, key, velocity, x, y, z, phase)
-    silencio_score.add(t_sec, d_sec, 144, ch, key, vel, 0, 0, 0, 0);
+      // Silencio.Score.add signature:
+      // add(time, duration, status, channel, key, velocity, x, y, z, phase)
+      silencio_score.add(t_sec, d_sec, 144, ch, key, vel, 0, 0, 0, 0);
+    }
+
+    try { piano_roll.draw_silencio_score(silencio_score); } catch (e) { }
+    try { piano_roll.recenter?.(); } catch (e) { }
+    try { piano_roll.on_shown?.(); } catch (e) { }
   }
-
-  try { piano_roll.draw_silencio_score(silencio_score); } catch (e) {}
-  try { piano_roll.recenter?.(); } catch (e) {}
-  try { piano_roll.on_shown?.(); } catch (e) {}
-}
 
 
   async playMIDIFromScore() {
