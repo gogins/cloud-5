@@ -531,6 +531,12 @@ class Cloud5Element extends HTMLElement {
   cloud5_refresh_dom_from_state(options = {}) {
     cloud5_apply_state_bindings(this, options);
   }
+
+  sync_to_controls() { 
+    cloud6_apply_state_bindings(this);
+  }
+
+  sync_from_controls() {} 
 }
 
 /**
@@ -1397,6 +1403,9 @@ class Cloud5Piece extends Cloud5Element {
       for (const overlay of this._get_all_overlays()) {
         await overlay?.on_generate(this.score);
       }
+      if (this.piano_roll_overlay && this.piano_roll_overlay.silencio_score) {
+        this.piano_roll_overlay.csoundac_score = this.score;
+      }
       let csound_score = await this.score.getCsoundScore(12., false);
       csound_score = csound_score.concat("\n</CsScore>");
       csd = this.csound_code_addon.replace("</CsScore>", csound_score);
@@ -1466,6 +1475,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
       }
     }
     this?.piano_roll_overlay?.draw_csoundac_score(this.score);
+    this?.piano_roll_overlay?.on_shown?.()
     this?.piano_roll_overlay?.show_score_time();
     this?.csound_message_callback("Csound is playing...\n");
   }
@@ -1804,7 +1814,7 @@ class Cloud5PianoRoll extends Cloud5Element {
     window.addEventListener('resize', this._onWindowResize, { passive: true });
     window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
     if (this.csoundac_score !== null) {
-      this.draw(this.csoundac_score);
+      this.draw_csoundac_score(this.csoundac_score);
     }
     let menu_button = document.getElementById("menu_item_piano_roll");
     menu_button.style.display = 'inline';

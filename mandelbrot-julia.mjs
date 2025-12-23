@@ -253,9 +253,8 @@ pre {
     if (super.on_state_restored) {
       super.on_state_restored(restored_state);
     }
-    this._sync_to_controls();
+    this.sync_to_controls();
   }
-
 
   async connectedCallback() {
     await super.connectedCallback();
@@ -962,7 +961,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             total_duration_sec = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
           }
 
-
           // Additional duration fallbacks (Silencio.Score implementations vary).
           if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
             const ss = piece?.piano_roll_overlay?.silencio_score;
@@ -1065,7 +1063,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (frac >= 1) this.playHead.style.display = 'none';
   }
 
-
   _updatePlayheadFromSeconds(score_time_sec, total_duration_sec) {
     const total = Math.max(0, total_duration_sec || 0);
     if (!(total > 0)) {
@@ -1100,54 +1097,73 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (frac >= 1) this.playHead.style.display = 'none';
   }
 
+  sync_from_controls() {
+    const pIn = this.shadowRoot.getElementById('expP');
+    const mIn = this.shadowRoot.getElementById('iterM');
+    const jIn = this.shadowRoot.getElementById('iterJ');
+    const nIn = this.shadowRoot.getElementById('binsN');
+    const MIn = this.shadowRoot.getElementById('binsM');
+    const kIn = this.shadowRoot.getElementById('binsK');
+    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const denIn = this.shadowRoot.getElementById('density');
+    const denVal = this.shadowRoot.getElementById('densityVal');
+    const maxVIn = this.shadowRoot.getElementById('maxVoices');
+    const base_instrument = this.shadowRoot.getElementById('base_instrument');
+
+    this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
+    this.maxIterM = parseInt(mIn.value);
+    this.maxIterJ = parseInt(jIn.value);
+    this.nTime = parseInt(nIn.value);
+    this.nPitch = parseInt(MIn.value);
+    this.base_instrument = parseInt(base_instrument.value);
+    this.nInst = parseInt(kIn.value);
+
+    this.bpm = Math.max(20, Math.min(300, parseInt(bpmIn.value) || 120));
+    this.density = Math.max(0, Math.min(1, (parseInt(denIn.value) || 100) / 100));
+    denVal.textContent = `${Math.round(this.density * 100)}%`;
+    this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
+  };
+
+  sync_to_controls() {
+    const pIn = this.shadowRoot.getElementById('expP');
+    const mIn = this.shadowRoot.getElementById('iterM');
+    const jIn = this.shadowRoot.getElementById('iterJ');
+    const nIn = this.shadowRoot.getElementById('binsN');
+    const MIn = this.shadowRoot.getElementById('binsM');
+    const kIn = this.shadowRoot.getElementById('binsK');
+    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const denIn = this.shadowRoot.getElementById('density');
+    const denVal = this.shadowRoot.getElementById('densityVal');
+    const maxVIn = this.shadowRoot.getElementById('maxVoices');
+    const base_instrument = this.shadowRoot.getElementById('base_instrument');
+    pIn.value = `${this.exponent ?? 2.0}`;
+    mIn.value = `${this.maxIterM ?? 500}`;
+    jIn.value = `${this.maxIterJ ?? 1000}`;
+    nIn.value = `${this.nTime ?? 4096}`;
+    MIn.value = `${this.nPitch ?? 60}`;
+    base_instrument.value = `${this.base_instrument ?? 1}`;
+    kIn.value = `${this.nInst ?? 4}`;
+    bpmIn.value = `${this.bpm ?? 120}`;
+    denIn.value = `${Math.round((this.density ?? 1) * 100)}`;
+    denVal.textContent = `${Math.round((this.density ?? 1) * 100)}%`;
+    maxVIn.value = `${this.maxVoicesPerSlice ?? 999}`;
+  };
+
   initInteractions() {
     const pIn = this.shadowRoot.getElementById('expP');
     const mIn = this.shadowRoot.getElementById('iterM');
     const jIn = this.shadowRoot.getElementById('iterJ');
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
-    const base_instrument = this.shadowRoot.getElementById('base_instrument');
     const kIn = this.shadowRoot.getElementById('binsK');
     const btnS = this.shadowRoot.getElementById('btnScore');
     const bpmIn = this.shadowRoot.getElementById('bpm');
     const denIn = this.shadowRoot.getElementById('density');
-    const denVal = this.shadowRoot.getElementById('densityVal');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const btnStop = this.shadowRoot.getElementById('btnStop');
-
-    const sync_from_controls = () => {
-      this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
-      this.maxIterM = parseInt(mIn.value);
-      this.maxIterJ = parseInt(jIn.value);
-      this.nTime = parseInt(nIn.value);
-      this.nPitch = parseInt(MIn.value);
-      this.base_instrument = parseInt(base_instrument.value);
-      this.nInst = parseInt(kIn.value);
-
-      this.bpm = Math.max(20, Math.min(300, parseInt(bpmIn.value) || 120));
-      this.density = Math.max(0, Math.min(1, (parseInt(denIn.value) || 100) / 100));
-      denVal.textContent = `${Math.round(this.density * 100)}%`;
-      this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
-    };
-
-    const sync_to_controls = () => {
-      pIn.value = `${this.exponent ?? 2.0}`;
-      mIn.value = `${this.maxIterM ?? 500}`;
-      jIn.value = `${this.maxIterJ ?? 1000}`;
-      nIn.value = `${this.nTime ?? 4096}`;
-      MIn.value = `${this.nPitch ?? 60}`;
-      base_instrument.value = `${this.base_instrument ?? 1}`;
-      kIn.value = `${this.nInst ?? 4}`;
-      bpmIn.value = `${this.bpm ?? 120}`;
-      denIn.value = `${Math.round((this.density ?? 1) * 100)}`;
-      denVal.textContent = `${Math.round((this.density ?? 1) * 100)}%`;
-      maxVIn.value = `${this.maxVoicesPerSlice ?? 999}`;
-    };
-
-    this._sync_from_controls = sync_from_controls;
-    this._sync_to_controls = sync_to_controls;
-    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', sync_from_controls));
-    sync_from_controls();
+    const base_instrument = this.shadowRoot.getElementById('base_instrument');
+    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', this.sync_from_controls));
+    this.sync_from_controls();
 
     btnStop.addEventListener('click', () => this.stopPlayback());
 
