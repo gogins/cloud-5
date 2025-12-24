@@ -532,11 +532,11 @@ class Cloud5Element extends HTMLElement {
     cloud5_apply_state_bindings(this, options);
   }
 
-  sync_to_controls() { 
+  sync_to_controls() {
     cloud6_apply_state_bindings(this);
   }
 
-  sync_from_controls() {} 
+  sync_from_controls() { }
 }
 
 /**
@@ -729,13 +729,14 @@ class Cloud5Piece extends Cloud5Element {
     try {
       await this.csound_message_callback();
     } catch (e) {
-      // Csound may not be running; keep UI responsive regardless.
+      console.warn(e);
     }
 
     // Update piano-roll progress (red ball) if present.
     try {
       this?.piano_roll_overlay?.show_score_time?.();
     } catch (e) {
+      console.warn(e);
     }
 
     const t = this.latest_score_time;
@@ -1050,8 +1051,8 @@ class Cloud5Piece extends Cloud5Element {
       window.addEventListener('DOMContentLoaded', wireOverlays, { once: true });
     } else {
       wireOverlays();
-    // Lightweight UI update loop; does work only while performing and when needed.
-    this._start_display_loop();
+      // Lightweight UI update loop; does work only while performing and when needed.
+      this._start_display_loop();
     }
     // queueMicrotask(() => {
     //   cloud5_load_state_if_present(this);
@@ -1394,7 +1395,6 @@ class Cloud5Piece extends Cloud5Element {
     let csd = this.csound_code_addon.slice();
     if (this.score_generator_function_addon) {
       this.score = await this.score_generator_function_addon();
-
     } else {
       this.score = new globalThis.csound_ac.Score();
     }
@@ -1404,7 +1404,9 @@ class Cloud5Piece extends Cloud5Element {
         await overlay?.on_generate(this.score);
       }
       if (this.piano_roll_overlay && this.piano_roll_overlay.silencio_score) {
-        this.piano_roll_overlay.csoundac_score = this.score;
+        this?.piano_roll_overlay?.draw_csoundac_score(this.score);
+        this?.piano_roll_overlay?.on_shown?.()
+        this?.piano_roll_overlay?.show_score_time();
       }
       let csound_score = await this.score.getCsoundScore(12., false);
       csound_score = csound_score.concat("\n</CsScore>");
@@ -1474,9 +1476,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
         strudel_view?.startPlaying();
       }
     }
-    this?.piano_roll_overlay?.draw_csoundac_score(this.score);
-    this?.piano_roll_overlay?.on_shown?.()
-    this?.piano_roll_overlay?.show_score_time();
     this?.csound_message_callback("Csound is playing...\n");
   }
   /**
@@ -2478,22 +2477,22 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
     requestAnimationFrame(() => this.on_shown?.());
   };
 
-_raf = 0;
-_context_lost = false;
-_context_listeners_installed = false;
+  _raf = 0;
+  _context_lost = false;
+  _context_listeners_installed = false;
 
-_rebuild_after_context_restore() {
-  // GL resources are invalidated on context restore; rebuild program/buffers.
-  try {
-    this.prepare_canvas?.();
-    this.compile_shader?.();
-    this.get_uniforms?.();
-    this.set_attributes?.();
-    this.on_shown?.();
-  } catch (e) {
-    console.warn('Cloud5ShaderToy: rebuild after context restore failed:', e);
+  _rebuild_after_context_restore() {
+    // GL resources are invalidated on context restore; rebuild program/buffers.
+    try {
+      this.prepare_canvas?.();
+      this.compile_shader?.();
+      this.get_uniforms?.();
+      this.set_attributes?.();
+      this.on_shown?.();
+    } catch (e) {
+      console.warn('Cloud5ShaderToy: rebuild after context restore failed:', e);
+    }
   }
-}
 
 
 }
