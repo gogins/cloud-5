@@ -249,12 +249,20 @@ pre {
     this._activeAudio.clear();
   }
 
-  async on_state_restored(restored_state) {
-    if (super.on_state_restored) {
-      super.on_state_restored(restored_state);
-    }
+  on_state_restored(restored_state) {
+    super.on_state_restored(restored_state);
+
+    // Your existing behavior (you already have something like this)
     this.sync_to_controls();
+
+    // Ensure layout is ready, then draw the ROI as if it had been dragged.
+    requestAnimationFrame(() => {
+      // If you rely on resize() elsewhere, it is safe to call here too.
+      this.resize?.();
+      this._updateSelectionOverlay();
+    });
   }
+
 
   async connectedCallback() {
     await super.connectedCallback();
