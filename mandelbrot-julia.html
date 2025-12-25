@@ -2076,12 +2076,21 @@
         cloud5_piece.mandelbrot_julia_overlay = mandelbrot_julia_overlay;
         cloud5_piece.fields_to_serialize = [
             'control_parameters_addon',
-            'mandelbrot_julia.bpm',
-            'mandelbrot_julia.base_instrument',
-            'mandelbrot_julia.roiJ',
-            // optionally:
-            'mandelbrot_julia.viewJ',
-            'mandelbrot_julia.c',
+            'mandelbrot_julia_overlay.exponent',
+            'mandelbrot_julia_overlay.maxIterM',
+            'mandelbrot_julia_overlay.maxIterJ',
+            'mandelbrot_julia_overlay.nTime',
+            'mandelbrot_julia_overlay.nPitch',
+            'mandelbrot_julia_overlay.nInst',
+            'mandelbrot_julia_overlay.bpm',
+            'mandelbrot_julia_overlay.density',
+            'mandelbrot_julia_overlay.maxVoicesPerSlice',
+            'mandelbrot_julia_overlay._stepBeats',
+            'mandelbrot_julia_overlay.viewM',
+            'mandelbrot_julia_overlay.viewJ',
+            'mandelbrot_julia_overlay.c',
+            'mandelbrot_julia_overlay.roiJ',
+            'mandelbrot_julia_overlay._midiOutId',
         ];
         // #endregion
     </script>

@@ -155,7 +155,7 @@ pre {
       <input id="bpm" data-cloud5-bind="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
     </label>
     <label>Density:
-      <input id="density" data-cloud5-bind="density" data-cloud5-bind-scale="100" type="range" min="0" max="100" value="5" />
+      <input id="density" data-cloud5-bind="density" type="range" min="0" max="100" value="5" />
       <span id="densityVal">100%</span>
     </label>
     <label>Max voices/slice:
@@ -1756,7 +1756,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     };
   }
 
-  _exportStateJSON(state, baseName) {
+  _exportStateJSONX(state, baseName) {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
