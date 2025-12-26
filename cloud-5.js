@@ -414,6 +414,7 @@ async function cloud5_load_state_if_present(piece) {
   // 2) Try fetch (localhost served file)
   try {
     const url = `${filename}?t=${Date.now()}`;
+    console.log('Loading state from:', new URL(filename, location.href).href);
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) {
       return;
@@ -1492,6 +1493,8 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     for (const overlay of this._get_all_overlays()) {
       overlay?.on_stop();
     }
+    await cloud5_save_state_if_needed(this);
+    this._stop_display_loop();
     this.csound_message_callback("cloud-5 has stopped.\n");
   };
 

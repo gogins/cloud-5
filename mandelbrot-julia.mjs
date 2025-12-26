@@ -155,8 +155,7 @@ pre {
       <input id="bpm" data-cloud5-bind="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
     </label>
     <label>Density:
-      <input id="density" data-cloud5-bind="density" type="range" min="0" max="100" value="5" />
-      <span id="densityVal">100%</span>
+      <input id="density" data-cloud5-bind="density" type="number" min=".001" max="1" value="0.01" step="0.001"/>
     </label>
     <label>Max voices/slice:
       <input id="maxVoices" data-cloud5-bind="maxVoicesPerSlice" type="number" value="4" min="1" step="1" style="width:4.5rem">
@@ -198,7 +197,7 @@ pre {
     this.exponent = 2.0;
 
     this.bpm = 120;
-    this.density = 1.0;     // 0..1
+    this.density = 0.02;     // 0..1
     this.maxVoicesPerSlice = 999; // top-K per time slice by velocity
 
     // playback bookkeeping
@@ -1114,7 +1113,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const kIn = this.shadowRoot.getElementById('binsK');
     const bpmIn = this.shadowRoot.getElementById('bpm');
     const denIn = this.shadowRoot.getElementById('density');
-    const denVal = this.shadowRoot.getElementById('densityVal');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
 
@@ -1127,8 +1125,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this.nInst = parseInt(kIn.value);
 
     this.bpm = Math.max(20, Math.min(300, parseInt(bpmIn.value) || 120));
-    this.density = Math.max(0, Math.min(1, (parseInt(denIn.value) || 100) / 100));
-    denVal.textContent = `${Math.round(this.density * 100)}%`;
+    this.density = parseFloat(denIn.value);
     this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
   };
 
@@ -1141,7 +1138,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const kIn = this.shadowRoot.getElementById('binsK');
     const bpmIn = this.shadowRoot.getElementById('bpm');
     const denIn = this.shadowRoot.getElementById('density');
-    const denVal = this.shadowRoot.getElementById('densityVal');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
     pIn.value = `${this.exponent ?? 2.0}`;
@@ -1152,8 +1148,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     base_instrument.value = `${this.base_instrument ?? 1}`;
     kIn.value = `${this.nInst ?? 4}`;
     bpmIn.value = `${this.bpm ?? 120}`;
-    denIn.value = `${Math.round((this.density ?? 1) * 100)}`;
-    denVal.textContent = `${Math.round((this.density ?? 1) * 100)}%`;
+    denIn.value = `${this.density ?? 0.01}`;
     maxVIn.value = `${this.maxVoicesPerSlice ?? 999}`;
   };
 
@@ -1726,7 +1721,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     return s;
   }
 
-  _currentState() {
+  _currentStatex() {
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
