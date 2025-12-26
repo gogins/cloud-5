@@ -7,7 +7,10 @@ class MandelbrotJulia extends Cloud5Element {
     this._raf_id = 0;
     this._render_loop = () => this.render();
 
-    // Playhead ticker (runs even when WebGPU rendering is paused/hidden).
+    
+    this._render_interval_ms = 100; // match Cloud5Piece display loop (~10 Hz)
+    this._last_render_ms = 0;
+// Playhead ticker (runs even when WebGPU rendering is paused/hidden).
     this._playhead_raf_id = 0;
     this._ext_total_duration_sec = 0;
 
@@ -871,6 +874,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       this._schedule_visibility_poll();
       return;
     }
+
+
+    const now_ms = performance.now();
+    if (this._last_render_ms && (now_ms - this._last_render_ms) < this._render_interval_ms) {
+      this._raf_id = requestAnimationFrame(this._render_loop);
+      return;
+    }
+    this._last_render_ms = now_ms;
 
     const enc = this.device.createCommandEncoder();
 

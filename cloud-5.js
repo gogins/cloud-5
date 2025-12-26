@@ -564,6 +564,8 @@ class Cloud5Piece extends Cloud5Element {
     this.latest_score_time = 0;
     this._display_raf_id = 0;
     this._display_last_ms = 0;
+    this._ui_timer_id = 0;
+    this.ui_timer_interval_ms = 250; // 4 Hz UI/log/meter drain independent of RAF.
 
     // Csound message / UI throttling to avoid main-thread overload that can
     // induce GPU device/context loss.
@@ -827,7 +829,7 @@ class Cloud5Piece extends Cloud5Element {
       const elapsed_ms = now_ms - this._display_last_ms;
 
       const should_update = this.is_performing && this._any_score_time_overlay_visible();
-      if (should_update && elapsed_ms >= 33) { // ~30 Hz
+      if (should_update && elapsed_ms >= 100) { // ~10 Hz
         this._display_last_ms = now_ms;
         try { await this.update_display(); } catch (e) { }
       }
@@ -1580,6 +1582,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
 
     this.is_performing = true;
     this._start_display_loop();
+    this._start_ui_timer();
     try { await this.update_display(); } catch (e) { }
     if (gk_cloud5_performance_mode == 4) {
       this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
@@ -1632,6 +1635,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     }
     await cloud5_save_state_if_needed(this);
     this._stop_display_loop();
+    this._stop_ui_timer();
     this.csound_message_callback("cloud-5 has stopped.\n");
   };
 
@@ -1919,6 +1923,32 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     control_parameters_addon['name'] = onclick;
     gui_folder.add(this.control_parameters_addon, name)
   }
+  _start_ui_timer() {
+    if (this._ui_timer_id) {
+      return;
+    }
+    const tick = () => {
+      // Drain log queue + meter polling at a modest cadence without tying it to RAF
+      // or overlay visibility.
+      try {
+        this.process_csnd_messages_and_meters(performance.now());
+      } catch (e) {
+      }
+    };
+    this._ui_timer_id = setInterval(tick, this.ui_timer_interval_ms || 250);
+  }
+
+  _stop_ui_timer() {
+    if (!this._ui_timer_id) {
+      return;
+    }
+    try {
+      clearInterval(this._ui_timer_id);
+    } catch (e) {
+    }
+    this._ui_timer_id = 0;
+  }
+
 }
 customElements.define("cloud5-piece", Cloud5Piece);
 
@@ -2665,7 +2695,7 @@ class Cloud5Log extends Cloud5Element {
     // When the log overlay has been display:none, Ace often needs a resize
     // before its scroller metrics are valid.
     try { editor.resize(true); } catch (e) { }
-    const lastRow = session.getLength();
+    const lastRow = Math.max(0, session.getLength() - 1);
     // Ace's own helper is more reliable than manual Y math when soft-wrap is enabled.
     try {
       editor.scrollToLine(lastRow, true, true, function () { });
