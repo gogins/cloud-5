@@ -564,6 +564,21 @@ class Cloud5Piece extends Cloud5Element {
     this.latest_score_time = 0;
     this._display_raf_id = 0;
     this._display_last_ms = 0;
+
+    // Csound message / UI throttling to avoid main-thread overload that can
+    // induce GPU device/context loss.
+    this.csound_message_queue = [];
+    this.csound_message_queue_limit = 2000;
+    this.csound_message_max_per_tick = 200;
+    this.log_flush_max_chars = 12000;
+    this.log_flush_max_messages = 400;
+    this.log_flush_interval_ms = 200;
+    this._last_log_flush_ms = 0;
+    this.meter_update_interval_ms = 50; // 20 Hz
+    this._last_meter_update_ms = 0;
+    this._meter_poll_in_flight = false;
+    this._last_meter_poll_start_ms = 0;
+    this._meter_poll_token = 0;
   }
   #csound_code_addon = null;
   /**
@@ -728,7 +743,7 @@ class Cloud5Piece extends Cloud5Element {
   update_display = async () => {
     // Refresh metering/time and drive any overlays that follow score position.
     try {
-      await this.csound_message_callback();
+      this.process_csnd_messages_and_meters(performance.now());
     } catch (e) {
       console.warn(e);
     }
@@ -835,48 +850,170 @@ class Cloud5Piece extends Cloud5Element {
      * @param {string} message 
      */
   csound_message_callback = async (message) => {
-    if (message && this.log_overlay) {
-      this.log_overlay.log(message);
+    // Keep this callback extremely cheap. Csound can emit messages at a high
+    // rate during performance; doing awaits/DOM writes per message can starve
+    // the main thread and trigger GPU device/context loss.
+    if (!message) {
+      return;
     }
-    let level_left = -100;
-    let level_right = -100;
-    if (globalThis.csound) {
-      let score_time = await csound.getScoreTime();
-      this.latest_score_time = score_time;
-      level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
-      level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
-      let delta = score_time;
-      // calculate (and subtract) whole days
-      let days = Math.floor(delta / 86400);
-      delta -= days * 86400;
-      // calculate (and subtract) whole hours
-      let hours = Math.floor(delta / 3600) % 24;
-      delta -= hours * 3600;
-      // calculate (and subtract) whole minutes
-      let minutes = Math.floor(delta / 60) % 60;
-      delta -= minutes * 60;
-      // what's left is seconds
-      let seconds = delta % 60;  // in theory the modulus is not required
-      if (level_left > 0) {
-        $("#vu_meter_left").css("color", "red");
-      } else if (level_left > -12) {
-        $("#vu_meter_left").css("color", "orange")
-      } else {
-        $("#vu_meter_left").css("color", "lightgreen");
-      }
-      if (level_right > 0) {
-        $("#vu_meter_right").css("color", "red");
-      } else if (level_right > -12) {
-        $("#vu_meter_right").css("color", "orange")
-      } else {
-        $("#vu_meter_right").css("color", "lightgreen");
-      }
-      $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
-      $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_right));
-      $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
-      this?.piano_roll_overlay?.update_score_time(score_time);
-    };
+    if (!this.csound_message_queue) {
+      this.csound_message_queue = [];
+    }
+    if (this.csound_message_queue.length >= (this.csound_message_queue_limit || 2000)) {
+      // Drop oldest to cap memory and prevent feedback loops.
+      this.csound_message_queue.shift();
+    }
+    this.csound_message_queue.push(message);
   };
+
+  /**
+   * Drain queued Csound messages and update metering/time at a bounded rate.
+   * Call this from update_display (RAF) rather than doing expensive work from
+   * the realtime Csound message callback.
+   *
+   * @param {number} now_ms performance.now()
+   */
+process_csnd_messages_and_meters = async (now_ms) => {
+    // 1) Flush queued messages at a controlled cadence (default: 2 Hz).
+    // This keeps the log responsive without forcing an Ace reflow per message.
+    this.maybe_flush_log_queue(now_ms);
+
+    // 2) Meter/time polling must not block RAF. If it is time, kick off an
+    // async poll but never await it here.
+    this.maybe_start_meter_poll(now_ms);
+  };
+
+maybe_flush_log_queue = (now_ms) => {
+    const q = this.csound_message_queue || [];
+    if (!q.length || !this.log_overlay) {
+      return;
+    }
+    const interval = this.log_flush_interval_ms || 500;
+    const last = this._last_log_flush_ms || 0;
+    if ((now_ms - last) < interval) {
+      return;
+    }
+    this._last_log_flush_ms = now_ms;
+    const max_messages = this.log_flush_max_messages || 400;
+    const max_chars = this.log_flush_max_chars || 12000;
+    let chunk = "";
+    for (let i = 0; i < max_messages && q.length > 0; i++) {
+      const msg = q.shift();
+      if (!msg) {
+        continue;
+      }
+      const line = msg.endsWith("\n") ? msg : (msg + "\n");
+      if ((chunk.length + line.length) > max_chars) {
+        // If we have at least one line, flush now; otherwise take the line anyway.
+        if (chunk.length > 0) {
+          break;
+        }
+      }
+      chunk += line;
+      if (chunk.length >= max_chars) {
+        break;
+      }
+    }
+    if (chunk) {
+      try {
+        this.log_overlay.log(chunk);
+      } catch (e) {
+      }
+    }
+  };
+
+maybe_start_meter_poll = (now_ms) => {
+  if (!globalThis.csound) {
+    return;
+  }
+  const interval = this.meter_update_interval_ms || 50;
+  const last = this._last_meter_update_ms || 0;
+  if ((now_ms - last) < interval) {
+    return;
+  }
+
+  // Watchdog: if a prior poll wedged, allow recovery.
+  if (this._meter_poll_in_flight) {
+    const started = this._last_meter_poll_start_ms || 0;
+    if ((now_ms - started) > 2000) {
+      console.warn("meter poll watchdog: releasing wedged poll");
+      this._meter_poll_in_flight = false;
+    } else {
+      return;
+    }
+  }
+
+  this._last_meter_update_ms = now_ms;
+  this._meter_poll_in_flight = true;
+  this._last_meter_poll_start_ms = now_ms;
+
+  // Token prevents late completions from writing stale UI.
+  const token = (this._meter_poll_token = (this._meter_poll_token || 0) + 1);
+
+  // Fire-and-forget; completion updates UI.
+  this.poll_meters_and_update_ui(token).finally(() => {
+    // Only clear if this is still the most recent poll.
+    if (this._meter_poll_token === token) {
+      this._meter_poll_in_flight = false;
+    }
+  });
+};
+
+poll_meters_and_update_ui = async (token) => {
+  let level_left = -100;
+  let level_right = -100;
+
+  const score_time = await csound.getScoreTime();
+  this.latest_score_time = score_time;
+
+  level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
+  level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
+
+  let delta = score_time;
+
+  // calculate (and subtract) whole days
+  let days = Math.floor(delta / 86400);
+  delta -= days * 86400;
+  // calculate (and subtract) whole hours
+  let hours = Math.floor(delta / 3600) % 24;
+  delta -= hours * 3600;
+  // calculate (and subtract) whole minutes
+  let minutes = Math.floor(delta / 60) % 60;
+  delta -= minutes * 60;
+  // what's left is seconds
+  let seconds = delta % 60;
+
+
+  // If a newer poll has started, ignore these results.
+  if ((this._meter_poll_token || 0) !== token) {
+    return;
+  }
+
+  if (level_left > 0) {
+    $("#vu_meter_left").css("color", "red");
+  } else if (level_left > -12) {
+    $("#vu_meter_left").css("color", "orange");
+  } else {
+    $("#vu_meter_left").css("color", "lightgreen");
+  }
+  if (level_right > 0) {
+    $("#vu_meter_right").css("color", "red");
+  } else if (level_right > -12) {
+    $("#vu_meter_right").css("color", "orange");
+  } else {
+    $("#vu_meter_right").css("color", "lightgreen");
+  }
+
+  $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
+  $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_left));
+  $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
+
+  try {
+    this?.piano_roll_overlay?.update_score_time?.(score_time);
+  } catch (e) {
+  }
+};
+
 
   /**
    * A convenience function for printing the message in the 
@@ -2525,18 +2662,24 @@ class Cloud5Log extends Cloud5Element {
     }
     const editor = this.console_editor;
     const session = editor.getSession();
-    const renderer = editor.renderer;
-    // If the editor is hidden (display:none), scroller height can be 0.
-    const scroller = renderer.scroller;
-    const scrollerHeight =
-      (renderer.$size && renderer.$size.scrollerHeight) ||
-      (scroller && scroller.clientHeight) ||
-      0;
-    if (scrollerHeight <= 0) return;
-    const lineHeight = renderer.lineHeight || 16;
-    const totalRows = session.getLength();
-    const maxY = Math.max(0, totalRows * lineHeight - scrollerHeight);
-    renderer.scrollToY(maxY);
+    // When the log overlay has been display:none, Ace often needs a resize
+    // before its scroller metrics are valid.
+    try { editor.resize(true); } catch (e) { }
+    const lastRow = session.getLength();
+    // Ace's own helper is more reliable than manual Y math when soft-wrap is enabled.
+    try {
+      editor.scrollToLine(lastRow, true, true, function () { });
+    } catch (e) {
+      // Fallback: best-effort renderer scroll.
+      const renderer = editor.renderer;
+      const scroller = renderer && renderer.scroller;
+      const scrollerHeight = (renderer && renderer.$size && renderer.$size.scrollerHeight) || (scroller && scroller.clientHeight) || 0;
+      if (scrollerHeight > 0) {
+        const lineHeight = (renderer && renderer.lineHeight) || 16;
+        const maxY = Math.max(0, lastRow * lineHeight - scrollerHeight);
+        try { renderer.scrollToY(maxY); } catch (e2) { }
+      }
+    }
   }
 
   /**
@@ -2559,6 +2702,8 @@ class Cloud5Log extends Cloud5Element {
     const lastCol = (session.getLine(lastRow) || "").length;
     session.insert({ row: lastRow, column: lastCol }, message);
     this._pin_to_bottom();
+    // Some browsers/Ace builds only settle scroll metrics after paint.
+    requestAnimationFrame(() => this._pin_to_bottom());
   }
 }
 customElements.define("cloud5-log", Cloud5Log);
