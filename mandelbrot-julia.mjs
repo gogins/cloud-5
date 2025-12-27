@@ -1195,14 +1195,30 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       const zx = this.viewM.cx + ndc.x * this.viewM.scale;
       const zy = this.viewM.cy - ndc.y * this.viewM.scale / aspect;
 
+
       this.c = { x: zx, y: zy };
+
+      // Zooming with Option-click should recenter the Mandelbrot view on the
+      // selected point (c) and persist the updated view into the piece state.
+      let did_zoom = false;
 
       if (altKey && shiftKey) {
         this.viewM.cx = zx; this.viewM.cy = zy;
         this.viewM.scale *= 1.5;
+        did_zoom = true;
       } else if (altKey) {
         this.viewM.cx = zx; this.viewM.cy = zy;
         this.viewM.scale *= 0.6667;
+        did_zoom = true;
+      }
+
+      if (did_zoom) {
+        try {
+          // Persist viewM (and c) to the local *.state.json used by Cloud5.
+          cloud5_save_state_if_needed(this.cloud5_piece);
+        } catch (err) {
+          console.warn('Failed to persist Mandelbrot view state:', err);
+        }
       }
 
       // Keep Julia centered logically (we just set c); selection overlay will re-map itself each frame
