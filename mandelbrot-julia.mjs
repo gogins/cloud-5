@@ -411,7 +411,6 @@ pre {
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
   }
 
-
   _start_playhead_ticker() {
     if (this._playhead_raf_id) return;
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
