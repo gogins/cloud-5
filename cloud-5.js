@@ -782,15 +782,25 @@ class Cloud5Piece extends Cloud5Element {
     }
   };
 
-  _is_overlay_visible(overlay) {
+   _is_overlay_visible(overlay) {
     if (!overlay) return false;
+
+    // Treat checkVisibility() as advisory: only short-circuit on true.
     try {
       if (typeof overlay.checkVisibility === 'function') {
-        return overlay.checkVisibility();
+        if (overlay.checkVisibility()) {
+          return true;
+        }
+        // Fall through to style-based checks if it says "not visible".
       }
     } catch (e) { }
+
     try {
-      return getComputedStyle(overlay).display !== 'none';
+      const style = getComputedStyle(overlay);
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+      }
+      return true;
     } catch (e) {
       return false;
     }
