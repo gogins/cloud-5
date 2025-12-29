@@ -102,9 +102,19 @@ function obtainWebGL2(container, {
   // Context loss / restore
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
+    const msg = 'WebGL context lost (obtainWebGL2)';
+    console.error(msg);
+    try {
+      globalThis.cloud5_piece?.csound_message_callback?.(msg + '\n');
+    } catch { }
     // stop anim loops / releases as needed
   });
   canvas.addEventListener('webglcontextrestored', () => {
+    const msg = 'WebGL context restored (obtainWebGL2)';
+    console.log(msg);
+    try {
+      globalThis.cloud5_piece?.csound_message_callback?.(msg + '\n');
+    } catch { }
     // re-create programs/buffers/textures, then:
     resize();
   });
@@ -2226,12 +2236,25 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
       this.canvas.addEventListener('webglcontextlost', (e) => {
         e.preventDefault();
         this._context_lost = true;
+
+        const msg = 'WebGL context lost (Cloud5ShaderToy)';
+        console.error(msg);
+        try {
+          this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+        } catch { }
+
         if (this._raf) {
           cancelAnimationFrame(this._raf);
           this._raf = 0;
         }
       }, false);
       this.canvas.addEventListener('webglcontextrestored', () => {
+        const msg = 'WebGL context restored (Cloud5ShaderToy)';
+        console.log(msg);
+        try {
+          this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+        } catch { }
+
         this._context_lost = false;
         this._rebuild_after_context_restore();
       }, false);

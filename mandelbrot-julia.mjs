@@ -539,6 +539,13 @@ pre {
   async initGPU() {
     this.adapter = await navigator.gpu.requestAdapter();
     this.device = await this.adapter.requestDevice();
+    this.device.lost.then((info) => {
+      const msg = `WebGPU device lost: ${info?.message || info?.reason || 'unknown reason'}`;
+      console.error(msg);
+      try {
+        this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+      } catch { }
+    });
     const format = navigator.gpu.getPreferredCanvasFormat();
     this.ctxM = this.canvasM.getContext('webgpu');
     this.ctxJ = this.canvasJ.getContext('webgpu');
@@ -827,7 +834,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   // ------- uniforms writers (vec4-only) -------
   writeDrawUniforms({ mode, canvas, center, scale, maxIter, cParam, targetBuffer }) {
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     const w = Math.floor(canvas.clientWidth * dpr);
     const h = Math.floor(canvas.clientHeight * dpr);
     const aspect = w / Math.max(1, h);
@@ -852,7 +859,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   resize() {
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     for (const c of [this.canvasM, this.canvasJ]) {
       const w = Math.floor(c.clientWidth * dpr), h = Math.floor(c.clientHeight * dpr);
       if (w && h && (c.width !== w || c.height !== h)) { c.width = w; c.height = h; }
@@ -931,7 +938,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   _complexToCanvasCss(x, y) {
     const rJ = this.canvasJ.getBoundingClientRect();
     const rRoot = this._rootDiv.getBoundingClientRect();
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     const w = Math.max(1, this.canvasJ.width), h = Math.max(1, this.canvasJ.height);
     const aspect = w / h;
 
@@ -1183,7 +1190,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // --- Mandelbrot click/zoom ---
     this.canvasM.addEventListener('click', (e) => {
       const { altKey, shiftKey } = e;
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
       const rect = this.canvasM.getBoundingClientRect();
       const x = (e.clientX - rect.left) * dpr;
       const y = (e.clientY - rect.top) * dpr;
@@ -1200,11 +1207,11 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       // Zooming with Option-click should recenter the Mandelbrot view on the
       // selected point (c) and persist the updated view into the piece state.
 
-      this.viewM.cx = zx; 
+      this.viewM.cx = zx;
       this.viewM.cy = zy;
       if (altKey && shiftKey) {
         this.viewM.scale *= 1.5;
-     } else if (altKey) {
+      } else if (altKey) {
         this.viewM.scale *= 0.6667;
       }
 
@@ -1247,7 +1254,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       if (!dragging) return;
       dragging = false;
       const rJ = this.canvasJ.getBoundingClientRect();
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
       const x0 = (Math.min(startPx.x, curPx.x) - rJ.left) * dpr;
       const y0 = (Math.min(startPx.y, curPx.y) - rJ.top) * dpr;
       const x1 = (Math.max(startPx.x, curPx.x) - rJ.left) * dpr;
