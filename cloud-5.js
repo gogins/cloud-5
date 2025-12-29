@@ -769,18 +769,29 @@ class Cloud5Piece extends Cloud5Element {
 
     const t = this.latest_score_time;
     if (typeof t === 'number' && isFinite(t)) {
-      // Prefer an accurate total duration from an actual score if available.
-      let total = this.total_duration ?? this.duration;
-
+      // Total duration policy:
+      // - During Csound performance: use ONLY the CsoundAC score duration.
+      // - During MIDI playback: use ONLY the Silencio score duration, or (if absent)
+      //   a derived duration from the MIDI scheduler.
       const is_good_total = (v) => (typeof v === 'number' && isFinite(v) && v > 0);
 
-      if (!is_good_total(total)) {
-        const sdur = this.score?.getDuration?.();
-        if (is_good_total(sdur)) total = sdur;
-      }
-      if (!is_good_total(total)) {
+      let total = 0;
+
+      // MIDI playback path.
+      if (typeof __midi !== 'undefined' && __midi?.playing) {
         const pdur = this.piano_roll_overlay?.silencio_score?.getDuration?.();
-        if (is_good_total(pdur)) total = pdur;
+        if (is_good_total(pdur)) {
+          total = pdur;
+        } else if (is_good_total(__midi?.totalBeats) && is_good_total(__midi?.bpm)) {
+          // __midi.totalBeats is in beats; convert to seconds using the playback bpm.
+          total = (msFromBeats(__midi.totalBeats, __midi.bpm) / 1000.0);
+        }
+      } else {
+        // Csound performance path.
+        const sdur = this.score?.getDuration?.();
+        if (is_good_total(sdur)) {
+          total = sdur;
+        }
       }
 
       for (const overlay of this._get_all_overlays()) {
@@ -3192,6 +3203,7 @@ function get_filename(pathOrUrl) {
     timers: new Set(),
     startMS: 0,
     totalBeats: 0,
+    bpm: 120,
   };
 
   function clearTimers() {
@@ -3322,6 +3334,7 @@ function get_filename(pathOrUrl) {
       notes.push([(ch | 0) & 0x0F, t, d, (key | 0) & 0x7F, Math.max(1, Math.min(127, vel | 0))]);
     }
 
+    __midi.bpm = bpm;
     __midi.playing = true;
     clearTimers();
     __midi.startMS = performance.now();
