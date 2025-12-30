@@ -904,6 +904,7 @@ if (typeof console === 'undefined') {
         }
 
         const note_mesh = new THREE.Mesh(geometry, material);
+        note_mesh.renderOrder = 1;
         note_mesh.position.x = begin + duration / 2;
         note_mesh.position.y = key;
         note_mesh.position.z = channel;
@@ -921,7 +922,19 @@ if (typeof console === 'undefined') {
         let key_minimum = this.minima.key;
         const key_maximum = this.maxima.key;
 
+
+        const channel_minimum = this.minima.channel;
+        const channel_maximum = this.maxima.channel;
+        const channel_span = Math.max(0, channel_maximum - channel_minimum);
+
         const line_material = new THREE.LineBasicMaterial();
+        // Draw the grid as an overlay so that it remains visible through
+        // translucent note meshes.
+        line_material.transparent = true;
+        line_material.opacity = 0.35;
+        // Render grid lines on top of filled geometry.
+        line_material.depthTest = false;
+        line_material.depthWrite = false;
 
         time_minimum = 0;
 
@@ -932,21 +945,20 @@ if (typeof console === 'undefined') {
         const grid_geometry_ctor = THREE.BoxGeometry || THREE.BoxBufferGeometry;
         const grid_geometry = new grid_geometry_ctor(10, 12, 1);
 
-        // Avoid creating singular matrices (and associated warnings) by not using
-        // a zero scale on any axis.
-        const z_scale_epsilon = 1e-6;
-
         for (let t = time_minimum; t <= time_maximum + 10; t += 10) {
             for (let k = key_minimum; k <= key_maximum; k += 12) {
-                const box = new THREE.LineSegments(new THREE.EdgesGeometry(grid_geometry), line_material);
-                box.material.color.setRGB(0, 0.25, 0);
-                box.material.opacity = 0.25;
-                box.material.transparent = true;
-                box.position.x = t + 5;
-                box.position.y = k + 6;
-                box.position.z = 0;
-                box.scale.z = z_scale_epsilon;
-                this.scene.add(box);
+                for (let c = 0; c <= channel_span; c += 1) {
+                    const box = new THREE.LineSegments(new THREE.EdgesGeometry(grid_geometry), line_material);
+                    box.material.color.setRGB(0, 0.25, 0);
+                    box.position.x = t + 5;
+                    box.position.y = k + 6;
+                    // Notes are plotted with channel_minimum subtracted, so the first
+                    // channel is at z = 0. Cells are 1 channel deep and centered at z+0.5.
+                    box.position.z = c + 0.5;
+                    // Render after notes so the grid is always visible.
+                    box.renderOrder = 2;
+                    this.scene.add(box);
+                }
             }
         }
 
@@ -993,7 +1005,9 @@ if (typeof console === 'undefined') {
         this.camera.fov = 2 * Math.atan((safe_x / aspect) / (2 * safe_y)) * (180 / Math.PI);
 
         this.camera.position.copy(center);
-        this.camera.position.z = 1.125 * Math.min(safe_x, safe_y);
+        const z_distance = 1.125 * Math.min(safe_x, safe_y);
+        this.camera.position.z = center.z + z_distance;
+
 
         if (this.controls && this.controls.target) {
             this.controls.target.copy(center);
@@ -1024,7 +1038,9 @@ if (typeof console === 'undefined') {
         this.camera.fov = 2 * Math.atan((safe_y / aspect) / (2 * safe_z)) * (180 / Math.PI);
 
         this.camera.position.copy(center);
-        this.camera.position.x = 1.125 * Math.max(size.x || 1, safe_y);
+        const x_distance = 1.125 * Math.max(size.x || 1, safe_y);
+        this.camera.position.x = center.x + x_distance;
+
 
         if (this.controls && this.controls.target) {
             this.controls.target.copy(center);
