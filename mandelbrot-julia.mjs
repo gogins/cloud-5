@@ -599,9 +599,10 @@ pre {
 
     const fsWGSL = /*wgsl*/`
 struct DrawUniforms {
-  a: vec4<f32>,  // center.xy, scale, p
-  b: vec4<f32>,  // cParam.xy, viewport.xy
-  c: vec4<f32>,  // maxIter, mode, aspect, 0
+  a: vec4<f32>,  // center_hi.xy, scale, p
+  b: vec4<f32>,  // center_lo.xy, viewport.xy
+  c: vec4<f32>,  // cParam.xy, maxIter, mode
+  d: vec4<f32>,  // aspect, 0, 0, 0
 };
 @group(0) @binding(0) var<uniform> U : DrawUniforms;
 
@@ -649,20 +650,27 @@ fn palette(t: f32) -> vec3<f32> {
 
 @fragment
 fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
-  let center   = U.a.xy;
-  let scale    = U.a.z;
-  let p        = U.a.w;
-  let cParam   = U.b.xy;
-  let viewport = U.b.zw;
-  let maxIter  = u32(U.c.x);
-  let mode     = u32(U.c.y);
-  let aspect   = U.c.z;
+  let center_hi = U.a.xy;
+  let center_lo = U.b.xy;
+  let center    = center_hi + center_lo;
+
+  let scale     = U.a.z;
+  let p         = U.a.w;
+
+  let viewport  = U.b.zw;
+
+  let cParam    = U.c.xy;
+  let maxIter   = u32(U.c.z);
+  let mode      = u32(U.c.w);
+
+  let aspect    = U.d.x;
 
   let ndc = (pos.xy / viewport) * 2.0 - vec2<f32>(1.0,1.0);
-  var z = vec2<f32>(
-    center.x + ndc.x * scale,
-    center.y - ndc.y * scale / aspect
-  );
+
+  // Compute pixel deltas in f32 and add them to a split (hi+lo) center.
+  let dx = ndc.x * scale;
+  let dy = -ndc.y * scale / aspect;
+  var z = center + vec2<f32>(dx, dy);
 
   var c = vec2<f32>(0.0, 0.0);
   if (mode == 0u) {
@@ -720,10 +728,10 @@ return vec4<f32>(bright_col * fade0, 1.0);
 
     const csWGSL = /*wgsl*/`
 struct CsUniforms {
-  u0: vec4<f32>, // cParam.xy, roiMin.xy
-  u1: vec4<f32>, // roiMax.xy, p, maxIter (as float)
+  u0: vec4<f32>, // cParam.xy, roi_center_hi.xy
+  u1: vec4<f32>, // roi_center_lo.xy, roi_half.xy
   u2: vec4<f32>, // N, M, K, ton
-  u3: vec4<f32>, // gamma, -, -, -
+  u3: vec4<f32>, // p, maxIter (as float), gamma, -
 };
 @group(0) @binding(0) var<uniform> U : CsUniforms;
 
@@ -752,19 +760,24 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   if (gid.x >= N || gid.y >= M) { return; }
 
   let cParam = U.u0.xy;
-  let roiMin = U.u0.zw;
-  let roiMax = U.u1.xy;
-  let p      = U.u1.z;
-  let maxIter= u32(U.u1.w);
+  let roi_center_hi = U.u0.zw;
+  let roi_center_lo = U.u1.xy;
+  let roi_center = roi_center_hi + roi_center_lo;
+  let roi_half = U.u1.zw;
+
+  let p      = U.u3.x;
+  let maxIter= u32(U.u3.y);
   let ton    = U.u2.w;
-  let gamma  = U.u3.x;
+  let gamma  = U.u3.z;
 
   let tx = (f32(gid.x) + 0.5) / f32(N);
   let ty = (f32(gid.y) + 0.5) / f32(M);
-  let z0 = vec2<f32>(
-    mix(roiMin.x, roiMax.x, tx),
-    mix(roiMin.y, roiMax.y, ty)   // low pitch (j=0) -> bottom (miny)
-  );
+
+  // Compute deltas in the local ROI coordinate system, then add to split center.
+  let dx = mix(-roi_half.x, roi_half.x, tx);
+  let dy = mix(-roi_half.y, roi_half.y, ty);   // low pitch (j=0) -> bottom (negative dy)
+
+  let z0 = roi_center + vec2<f32>(dx, dy);
   var z = z0;
   var th_prev = atan2(z.y, z.x);
   var sumTh = 0.0;
@@ -833,16 +846,36 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   // ------- uniforms writers (vec4-only) -------
+  _split_f64_to_f32_pair(x) {
+    // Represent a JS float64 value as hi+lo float32 parts for deep zoom stability.
+    const hi = Math.fround(x);
+    const lo = Math.fround(x - hi);
+    return { hi, lo };
+  }
+
   writeDrawUniforms({ mode, canvas, center, scale, maxIter, cParam, targetBuffer }) {
     const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     const w = Math.floor(canvas.clientWidth * dpr);
     const h = Math.floor(canvas.clientHeight * dpr);
     const aspect = w / Math.max(1, h);
 
-    const f = new Float32Array(12);
-    f[0] = center.cx; f[1] = center.cy; f[2] = scale; f[3] = this.exponent;
-    f[4] = cParam?.x ?? 0; f[5] = cParam?.y ?? 0; f[6] = w; f[7] = h;
-    f[8] = maxIter; f[9] = mode; f[10] = aspect; f[11] = 0;
+    const cx = this._split_f64_to_f32_pair(center.cx);
+    const cy = this._split_f64_to_f32_pair(center.cy);
+
+    // 4 vec4<f32> = 16 floats
+    const f = new Float32Array(16);
+
+    // a: center_hi.xy, scale, p
+    f[0] = cx.hi; f[1] = cy.hi; f[2] = scale; f[3] = this.exponent;
+
+    // b: center_lo.xy, viewport.xy
+    f[4] = cx.lo; f[5] = cy.lo; f[6] = w; f[7] = h;
+
+    // c: cParam.xy, maxIter, mode
+    f[8] = cParam?.x ?? 0; f[9] = cParam?.y ?? 0; f[10] = maxIter; f[11] = mode;
+
+    // d: aspect, 0, 0, 0
+    f[12] = aspect; f[13] = 0; f[14] = 0; f[15] = 0;
 
     this.device.queue.writeBuffer(targetBuffer, 0, f.buffer);
     return { w, h };
@@ -850,11 +883,30 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   writeComputeUniforms(roi, N, M, K) {
     const ton = 0.2, gamma = 0.9;
+
+    // Encode ROI as split center + half-extents to preserve precision at deep zoom.
+    const roi_cx = (roi.minx + roi.maxx) * 0.5;
+    const roi_cy = (roi.miny + roi.maxy) * 0.5;
+    const roi_hx = (roi.maxx - roi.minx) * 0.5;
+    const roi_hy = (roi.maxy - roi.miny) * 0.5;
+
+    const cx = this._split_f64_to_f32_pair(roi_cx);
+    const cy = this._split_f64_to_f32_pair(roi_cy);
+
     const f = new Float32Array(16);
-    f[0] = this.c.x; f[1] = this.c.y; f[2] = roi.minx; f[3] = roi.miny;
-    f[4] = roi.maxx; f[5] = roi.maxy; f[6] = this.exponent; f[7] = this.maxIterJ;
+
+    // u0: cParam.xy, roi_center_hi.xy
+    f[0] = this.c.x; f[1] = this.c.y; f[2] = cx.hi; f[3] = cy.hi;
+
+    // u1: roi_center_lo.xy, roi_half.xy
+    f[4] = cx.lo; f[5] = cy.lo; f[6] = roi_hx; f[7] = roi_hy;
+
+    // u2: N, M, K, ton
     f[8] = N; f[9] = M; f[10] = K; f[11] = ton;
-    f[12] = gamma; f[13] = 0; f[14] = 0; f[15] = 0;
+
+    // u3: p, maxIter, gamma, -
+    f[12] = this.exponent; f[13] = this.maxIterJ; f[14] = gamma; f[15] = 0;
+
     this.device.queue.writeBuffer(this.csUniformBuf, 0, f.buffer);
   }
 
