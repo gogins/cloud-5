@@ -771,25 +771,54 @@ if (typeof console === 'undefined') {
      */
     Score.prototype.prepareScene3D = function(canvas) {
         this.canvas = canvas;
+        // Keep the canvas drawing buffer in sync with its CSS size.
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
+
         this.findScales();
+
         this.scene = new THREE.Scene();
-        var scene = this.scene;
+
         this.renderer = new THREE.WebGLRenderer({
             canvas: canvas,
-            antialias: true
+            antialias: true,
+            alpha: true,
+            powerPreference: 'high-performance',
+            preserveDrawingBuffer: false
         });
-        var renderer = this.renderer;
-        renderer.setClearColor(0);
+
+        const renderer = this.renderer;
+        // Use modern renderer configuration when available, but remain compatible
+        // with older THREE builds.
         renderer.sortObjects = false;
-        renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-        renderer.setPixelRatio(canvas.devicePixelRatio);
+
+        const pixel_ratio = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+        if (typeof renderer.setPixelRatio === 'function') {
+            renderer.setPixelRatio(pixel_ratio);
+        }
+        if (typeof renderer.setSize === 'function') {
+            // Do not modify CSS sizing; only update the drawing buffer size.
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+        } else if (typeof renderer.setViewport === 'function') {
+            renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+        }
+
+        if (typeof renderer.setClearColor === 'function') {
+            renderer.setClearColor(0x000000, 1);
+        }
+
+        // Color space management (newer three.js).
+        if (typeof THREE !== 'undefined' && THREE.SRGBColorSpace && 'outputColorSpace' in renderer) {
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+        } else if ('outputEncoding' in renderer && typeof THREE !== 'undefined' && THREE.sRGBEncoding) {
+            renderer.outputEncoding = THREE.sRGBEncoding;
+        }
+
         // Wire up the view controls to the camera.
         this.camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 1, 10000);
-        var camera = this.camera;
-        this.controls = new THREE.TrackballControls(camera, canvas);
-        var controls = this.controls;
+
+        this.controls = new THREE.TrackballControls(this.camera, canvas);
+        const controls = this.controls;
         controls.rotateSpeed = 8.0;
         controls.zoomSpeed = 8.0;
         controls.panSpeed = 8.0;
@@ -797,20 +826,45 @@ if (typeof console === 'undefined') {
         controls.noPan = false;
         controls.staticMoving = true;
         controls.dynamicDampingFactor = 0.3;
+
         // Ensure that all sides are lighted.
-        var light = new THREE.DirectionalLight(0xffffff, 1);
+        const light = new THREE.DirectionalLight(0xffffff, 1);
         light.position.set(1, 1, 1).normalize();
         this.scene.add(light);
-        var light2 = new THREE.AmbientLight(0x404040, 0.5);
+
+        const light2 = new THREE.AmbientLight(0x404040, 0.5);
         this.scene.add(light2);
-        window.addEventListener('resize', ((event) => this.onResize(event)), false);
+
+        // Reuse the same bound handler to avoid leaking listeners on re-init.
+        if (!this._bound_on_resize) {
+            this._bound_on_resize = (event) => this.onResize(event);
+            window.addEventListener('resize', this._bound_on_resize, false);
+        }
     };
     Score.prototype.onResize = function(event) {
+        if (!this.canvas || !this.renderer || !this.camera) {
+            return;
+        }
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
-        this.renderer.setViewport(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
+
+        if (typeof this.renderer.setSize === 'function') {
+            this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight, false);
+        } else if (typeof this.renderer.setViewport === 'function') {
+            this.renderer.setViewport(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
+        }
+
         this.camera.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
-        this.controls.handleResize();
+
+        // TrackballControls has changed across three.js releases.
+        if (this.controls) {
+            if (typeof this.controls.handleResize === 'function') {
+                this.controls.handleResize();
+            } else if (typeof this.controls.update === 'function') {
+                this.controls.update();
+            }
+        }
+
         this.camera.updateProjectionMatrix();
         this.renderer.render(this.scene, this.camera);
     };
@@ -818,31 +872,39 @@ if (typeof console === 'undefined') {
      * Adds the note to the 3D scene. Can be used with a fixed or a real-time score.
      */
     Score.prototype.plotNote3D = function(note, channel_minimum, channel_range, velocity_minimum, velocity_range) {
-        var begin = note.time;
-        var end = note.end;
-        var duration = end - begin;
-        var key = note.key;
-        var channel = note.channel - channel_minimum;
-        var geometry = new THREE.BoxBufferGeometry(duration, 1, 1);
-        if (channel_range === 0) {
-            channel_range = 1;
-        }
-        if (velocity_range === 0) {
-            velocity_range = 1;
-        }
-        hue = channel / channel_range;
-        var value = note.velocity - velocity_minimum;
-        value = value / velocity_range;
+        const begin = note.time;
+        const end = note.end;
+        const duration = end - begin;
+        const key = note.key;
+        const channel = note.channel - channel_minimum;
+
+        // BoxBufferGeometry was renamed to BoxGeometry in newer three.js builds.
+        const geometry_ctor = THREE.BoxGeometry || THREE.BoxBufferGeometry;
+        const geometry = new geometry_ctor(duration, 1, 1);
+
+        const safe_channel_range = (channel_range === 0) ? 1 : channel_range;
+        const safe_velocity_range = (velocity_range === 0) ? 1 : velocity_range;
+
+        const hue = channel / safe_channel_range;
+        let value = note.velocity - velocity_minimum;
+        value = value / safe_velocity_range;
         value = 0.5 + value / 2;
-        var material = new THREE.MeshLambertMaterial();
+
+        const material = new THREE.MeshLambertMaterial({
+            transparent: true,
+            opacity: 0.5,
+            reflectivity: 0.5
+        });
         material.color.setHSL(hue, 1, value);
-        material.opacity = 0.5;
-        material.reflectivity = 0.5;
-        material.transparent = true;
-        material.emissive = material.color;
-        material.emissiveIntensity = 2 / 3;
-        var note_mesh = new THREE.Mesh(geometry, material);
-        note_mesh.position.x = begin + duration / 2; // + note.scale.x;
+
+        // MeshLambertMaterial supports emissive; keep it consistent with older code.
+        if ('emissive' in material) {
+            material.emissive.copy(material.color);
+            material.emissiveIntensity = 2 / 3;
+        }
+
+        const note_mesh = new THREE.Mesh(geometry, material);
+        note_mesh.position.x = begin + duration / 2;
         note_mesh.position.y = key;
         note_mesh.position.z = channel;
         this.scene.add(note_mesh);
@@ -854,46 +916,53 @@ if (typeof console === 'undefined') {
     Score.prototype.plotGrid3D = function() {
         // Generate the grid. Its origin for time is 0 and for pitch its origin is the
         // first C lower than or equal to the lowest pitch in the score.
-        var time_minimum = this.minima.time;
-        var time_maximum = this.getDuration();
-        var key_minimum = this.minima.key;
-        var key_maximum = this.maxima.key;
-        var channel_minimum = this.minima.channel;
-        var channel_maximum = this.maxima.channel;
-        var line_material = new THREE.LineBasicMaterial();
+        let time_minimum = this.minima.time;
+        const time_maximum = this.getDuration();
+        let key_minimum = this.minima.key;
+        const key_maximum = this.maxima.key;
+
+        const line_material = new THREE.LineBasicMaterial();
+
         time_minimum = 0;
-        instrument_minimum = 0;
+
         if (key_minimum % 12 !== 0) {
             key_minimum -= (key_minimum % 12);
         }
-        var grid_geometry = new THREE.BoxBufferGeometry(10, 12, 1);
-        for (var t = time_minimum; t <= time_maximum + 10; t = t + 10) {
-            for (var k = key_minimum; k <= key_maximum; k = k + 12) {
-                var box = new THREE.LineSegments(new THREE.EdgesGeometry(grid_geometry), line_material);
-                ///box = new THREE.EdgesGeometry(box);
+
+        const grid_geometry_ctor = THREE.BoxGeometry || THREE.BoxBufferGeometry;
+        const grid_geometry = new grid_geometry_ctor(10, 12, 1);
+
+        // Avoid creating singular matrices (and associated warnings) by not using
+        // a zero scale on any axis.
+        const z_scale_epsilon = 1e-6;
+
+        for (let t = time_minimum; t <= time_maximum + 10; t += 10) {
+            for (let k = key_minimum; k <= key_maximum; k += 12) {
+                const box = new THREE.LineSegments(new THREE.EdgesGeometry(grid_geometry), line_material);
                 box.material.color.setRGB(0, 0.25, 0);
                 box.material.opacity = 0.25;
                 box.material.transparent = true;
                 box.position.x = t + 5;
                 box.position.y = k + 6;
                 box.position.z = 0;
-                box.scale.z = 0;
+                box.scale.z = z_scale_epsilon;
                 this.scene.add(box);
             }
         }
+
         // Put a ball at the origin, to indicate the orientation of the score.
-        var origin_geometry = new THREE.SphereGeometry(1, 10, 10);
-        var origin_material = new THREE.MeshLambertMaterial();
+        const origin_geometry = new THREE.SphereGeometry(1, 10, 10);
+        const origin_material = new THREE.MeshLambertMaterial();
         origin_material.color.setRGB(0, 255, 0);
-        var origin = new THREE.Mesh(origin_geometry, origin_material);
+        const origin = new THREE.Mesh(origin_geometry, origin_material);
         origin.position.x = time_minimum;
         origin.position.y = key_minimum;
         origin.position.z = 0;
         this.scene.add(origin);
-        // Put a ball at the start of middle C, to indicate the current Csound
-        // score time.
-        var cursor_geometry = new THREE.SphereGeometry(1, 10, 10);
-        var cursor_material = new THREE.MeshLambertMaterial();
+
+        // Put a ball at the start of middle C, to indicate the current Csound score time.
+        const cursor_geometry = new THREE.SphereGeometry(1, 10, 10);
+        const cursor_material = new THREE.MeshLambertMaterial();
         cursor_material.color.setRGB(255, 0, 0);
         this.score_cursor = new THREE.Mesh(cursor_geometry, cursor_material);
         this.score_cursor.position.x = time_minimum;
@@ -906,13 +975,31 @@ if (typeof console === 'undefined') {
      * Looks at a full fixed score.
      */
     Score.prototype.lookAtFullScore3D = function() {
-        var bounding_box = new THREE.Box3().setFromObject(this.scene);
-        this.camera.lookAt(bounding_box.getCenter());
-        this.camera.fov = 2 * Math.atan((bounding_box.getSize().x / (this.canvas.width / this.canvas.height)) / (2 * bounding_box.getSize().y)) * (180 / Math.PI);
-        this.camera.position.copy(bounding_box.getCenter());
-        this.camera.position.z = 1.125 * Math.min(bounding_box.getSize().x, bounding_box.getSize().y);
-        this.controls.target.copy(bounding_box.getCenter());
-        this.controls.update();
+        const bounding_box = new THREE.Box3().setFromObject(this.scene);
+
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        bounding_box.getCenter(center);
+        bounding_box.getSize(size);
+
+        this.camera.lookAt(center);
+
+        // Guard against degenerate bounding boxes (e.g. flat/empty scenes).
+        const aspect = this.canvas.width / this.canvas.height;
+        const safe_y = (size.y > 0) ? size.y : 1;
+        const safe_x = (size.x > 0) ? size.x : 1;
+
+        // Fit the score into the viewport.
+        this.camera.fov = 2 * Math.atan((safe_x / aspect) / (2 * safe_y)) * (180 / Math.PI);
+
+        this.camera.position.copy(center);
+        this.camera.position.z = 1.125 * Math.min(safe_x, safe_y);
+
+        if (this.controls && this.controls.target) {
+            this.controls.target.copy(center);
+            this.controls.update();
+        }
+
         this.camera.updateProjectionMatrix();
         this.renderer.render(this.scene, this.camera);
     };
@@ -921,13 +1008,29 @@ if (typeof console === 'undefined') {
      * Looks at the front (current notes) of a real-time score.
      */
     Score.prototype.lookAtFront3D = function() {
-        var bounding_box = new THREE.Box3().setFromObject(this.scene);
-        this.camera.lookAt(bounding_box.getCenter());
-        this.camera.fov = 2 * Math.atan((bounding_box.getSize().y / (this.canvas.width / this.canvas.height)) / (2 * bounding_box.getSize().z)) * (180 / Math.PI);
-        this.camera.position.copy(bounding_box.getCenter());
-        this.camera.position.x = 1.125 * Math.max(bounding_box.getSize().x, bounding_box.getSize().y);
-        this.controls.target.copy(bounding_box.getCenter());
-        this.controls.update();
+        const bounding_box = new THREE.Box3().setFromObject(this.scene);
+
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        bounding_box.getCenter(center);
+        bounding_box.getSize(size);
+
+        this.camera.lookAt(center);
+
+        const aspect = this.canvas.width / this.canvas.height;
+        const safe_z = (size.z > 0) ? size.z : 1;
+        const safe_y = (size.y > 0) ? size.y : 1;
+
+        this.camera.fov = 2 * Math.atan((safe_y / aspect) / (2 * safe_z)) * (180 / Math.PI);
+
+        this.camera.position.copy(center);
+        this.camera.position.x = 1.125 * Math.max(size.x || 1, safe_y);
+
+        if (this.controls && this.controls.target) {
+            this.controls.target.copy(center);
+            this.controls.update();
+        }
+
         this.camera.updateProjectionMatrix();
         this.renderer.render(this.scene, this.camera);
     };
@@ -936,7 +1039,9 @@ if (typeof console === 'undefined') {
      * Redraws the scene using the camera updated from the controls.
      */
     Score.prototype.render3D = function() {
-        this.controls.update();
+        if (this.controls && typeof this.controls.update === 'function') {
+            this.controls.update();
+        }
         this.camera.updateProjectionMatrix();
         this.renderer.render(this.scene, this.camera);
     };
