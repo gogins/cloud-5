@@ -58,7 +58,7 @@ so on.
 <li><a href="cloud5-example-score-generator.html">cloud5-example-score-generator.html</a></li>
 <li><a href="cloud5-example-strudel.html">cloud5-example-strudel.html</a></li>
 <li><a href="cloud5-example-visual-music.html">cloud5-example-visual-music.html</a></li>
-<li><a href="cloud5-example-web.html">cloud5-example-web.html</a></li>
+<li><a href="mandelbrot-julia.html">mandelbrot-julia.html, demonstrates parametric composition.</a></li>
 <li><a href="cloud_music_no_1.html">cloud_music_no_1.html</a></li>
 <li><a href="cloud_music_no_2.html">cloud_music_no_2.html, can take a very long time to find an attractor</a></li>
 <li><a href="cloud_music_no_3.html">cloud_music_no_3.html</a></li>

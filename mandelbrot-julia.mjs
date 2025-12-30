@@ -1,10 +1,24 @@
-class MandelbrotJulia extends HTMLElement {
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
+class MandelbrotJulia extends Cloud5Element {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
 
-        const style = document.createElement('style');
-        style.textContent = `
+    this._rendering_active = false;
+    this._raf_id = 0;
+    this._render_loop = () => this.render();
+
+
+    this._render_interval_ms = 100; // match Cloud5Piece display loop (~10 Hz)
+    this._last_render_ms = 0;
+    // Playhead ticker (runs even when WebGPU rendering is paused/hidden).
+    this._playhead_raf_id = 0;
+    this._ext_total_duration_sec = 0;
+
+    this._playhead_loop = () => this._tick_playheads();
+    this._visibility_poll_id = 0;
+
+    const style = document.createElement('style');
+    style.textContent = `
 :host {
   display: block;
   height: 100%;
@@ -115,44 +129,46 @@ pre {
 }
         `;
 
-        const wrapper = document.createElement('div');
-        wrapper.className = 'wrapper';
-        wrapper.innerHTML = `
+    const wrapper = document.createElement('div');
+    wrapper.className = 'wrapper';
+    wrapper.innerHTML = `
   <div class="bar">
-    <label>Exponent p:
-      <input id="expP" type="number" step="0.01" value="2.0">
+    <label>Exponent:
+      <input id="expP" data-cloud5-bind="exponent" type="number" step="0.01" value="2.0">
     </label>
-    <label>MaxIter M:
-      <input id="iterM" type="number" value="500">
+    <label>Max iterations  M:
+      <input id="iterM" data-cloud5-bind="maxIterM" type="number" value="500">
     </label>
-    <label>MaxIter J:
-      <input id="iterJ" type="number" value="1000">
+    <label>Max iterations  J:
+      <input id="iterJ" data-cloud5-bind="maxIterJ" type="number" value="1000">
     </label>
-    <label>N time:
-      <input id="binsN" type="number" value="4096">
+    <label>Timesteps:
+      <input id="binsN" data-cloud5-bind="nTime" type="number" value="4096"> 
     </label>
-    <label>M pitch:
-      <input id="binsM" type="number" value="60">
+    <label>Range:
+      <input id="binsM" data-cloud5-bind="nPitch" type="number" value="60">
     </label>
-    <label>K inst:
-      <input id="binsK" type="number" value="4">
+    <label>Base instrument:
+      <input id="base_instrument" data-cloud5-bind="base_instrument" type="number" value="1">
+    </label>
+    <label>Instruments:
+      <input id="binsK" data-cloud5-bind="nInst" type="number" value="4">
     </label>
     <label>BPM:
-      <input id="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
+      <input id="bpm" data-cloud5-bind="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
     </label>
     <label>Density:
-      <input id="density" type="range" min="0" max="100" value="100" />
-      <span id="densityVal">100%</span>
+      <input id="density" data-cloud5-bind="density" type="number" min=".001" max="1" value="0.01" step="0.001"/>
     </label>
     <label>Max voices/slice:
-      <input id="maxVoices" type="number" value="999" min="1" step="1" style="width:4.5rem">
+      <input id="maxVoices" data-cloud5-bind="maxVoicesPerSlice" type="number" value="4" min="1" step="1" style="width:4.5rem">
     </label>
     <label>MIDI Out:
       <select id="midiOut">
         <option value="">(no MIDI outputs)</option>
       </select>
     </label>
-    <button id="btnScore">Make &amp; Play (Alt+S)</button>
+    <button id="btnScore">Play MIDI (Alt+S)</button>
     <button id="btnStop" title="Stop / panic (All Notes Off)">Stop</button>
     <span>
       Click Mandelbrot = set Julia point • Option-Click = zoom in • Shift+Option-Click = zoom out • Drag on Julia = ROI
@@ -167,192 +183,408 @@ pre {
   <pre id="log">score will print here…</pre>
         `;
 
-        this.shadowRoot.append(style, wrapper);
+    this.shadowRoot.append(style, wrapper);
 
-        this.canvasM = this.shadowRoot.getElementById('canvasM');
-        this.canvasJ = this.shadowRoot.getElementById('canvasJ');
-        this.sel = this.shadowRoot.getElementById('sel');
-        this.playHead = this.shadowRoot.getElementById('playHead');
-        this._rootDiv = this.shadowRoot.getElementById('gridRoot');
+    this.canvasM = this.shadowRoot.getElementById('canvasM');
+    this.canvasJ = this.shadowRoot.getElementById('canvasJ');
+    this.sel = this.shadowRoot.getElementById('sel');
+    this.playHead = this.shadowRoot.getElementById('playHead');
+    this._rootDiv = this.shadowRoot.getElementById('gridRoot');
 
-        // Defaults
-        this.nTime = 4096;  // N time default
-        this.nPitch = 60;   // M pitch default
-        this.nInst = 4;
-        this.maxIterM = 500;
-        this.maxIterJ = 1000;
-        this.exponent = 2.0;
+    // Defaults
+    this.nTime = 4096;  // N time default
+    this.nPitch = 60;   // M pitch default
+    this.nInst = 4;
+    this.maxIterM = 500;
+    this.maxIterJ = 1000;
+    this.exponent = 2.0;
 
-        this.bpm = 120;
-        this.density = 1.0;     // 0..1
-        this.maxVoicesPerSlice = 999; // top-K per time slice by velocity
+    this.bpm = 120;
+    this.density = 0.02;     // 0..1
+    this.maxVoicesPerSlice = 999; // top-K per time slice by velocity
 
-        // playback bookkeeping
-        this._timers = [];
-        this._activeAudio = new Set();
-        this._playing = false;
-        this._playStartMS = 0;
-        this._playTotalBeats = 0;
+    // playback bookkeeping
+    this._timers = [];
+    this._activeAudio = new Set();
+    this._playing = false;
+    this._playStartMS = 0;
+    this._playTotalBeats = 0;
 
-        this.viewM = { cx: -0.5, cy: 0.0, scale: 2.5 };
-        this.viewJ = { cx: 0.0, cy: 0.0, scale: 1.5 };
-        this.c = { x: -0.8, y: 0.156 };
-        this.roiJ = null; // {minx,maxx,miny,maxy} in Julia complex space
+    this.viewM = { cx: -0.5, cy: 0.0, scale: 2.5 };
+    this.viewJ = { cx: 0.0, cy: 0.0, scale: 1.5 };
+    this.c = { x: -0.8, y: 0.156 };
+    this.roiJ = null; // {minx,maxx,miny,maxy} in Julia complex space
 
-        // MIDI state
-        this._midi = null;
-        this._midiOutId = localStorage.getItem('mj.midiOutId') || '';
+    // MIDI state
+    this._midi = null;
+    this._midiOutId = localStorage.getItem('mj.midiOutId') || '';
 
-        this._resizeObserver = new ResizeObserver(() => {
-            this.resize();
-            this._updateSelectionOverlay();
-            this._updatePlayheadOverlay();
-        });
+    this._resizeObserver = new ResizeObserver(() => {
+      this.resize();
+      this._updateSelectionOverlay();
+      this._updatePlayheadOverlay();
+
+    });
+  }
+
+  _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
+  _secondsForBeats(beats) { return beats * 60 / Math.max(20, this.bpm | 0); }
+  _beatsForMillis(ms) { return (ms / 1000) * (Math.max(20, this.bpm | 0) / 60); }
+  _clearTimers() { for (const id of this._timers) clearTimeout(id); this._timers.length = 0; }
+
+  _panicMIDI() {
+    const out = this._currentMIDIOutput();
+    if (!out) return;
+    for (let ch = 0; ch < 16; ch++) {
+      out.send([0xB0 | ch, 120, 0]); // All Sound Off
+      out.send([0xB0 | ch, 123, 0]); // All Notes Off
+      out.send([0xB0 | ch, 121, 0]); // Reset All Controllers
+      for (let k = 0; k < 128; k += 8) out.send([0x80 | ch, k, 0]);
+    }
+  }
+
+  _stopWebAudio() {
+    for (const node of this._activeAudio) {
+      try { node.stop(0); } catch { }
+      try { node.disconnect(); } catch { }
+    }
+    this._activeAudio.clear();
+  }
+
+  on_state_restored(restored_state) {
+    super.on_state_restored(restored_state);
+
+    // Your existing behavior (you already have something like this)
+    this.sync_to_controls();
+
+    // Ensure layout is ready, then draw the ROI as if it had been dragged.
+    requestAnimationFrame(() => {
+      // If you rely on resize() elsewhere, it is safe to call here too.
+      this.resize?.();
+      this._updateSelectionOverlay();
+    });
+  }
+
+
+  async connectedCallback() {
+    await super.connectedCallback();
+    if (!('gpu' in navigator)) {
+      this.shadowRoot.innerHTML = `<div style="padding:1rem;color:#f88">WebGPU not available. Use Chrome/Edge with WebGPU enabled.</div>`;
+      return;
+    }
+    this._resizeObserver.observe(this);
+    await this.initGPU();
+    this.initPipelines();
+    this.initInteractions();
+    this.resize();
+    this._start_rendering();
+
+    // Initialize Web MIDI and prefer IAC
+    this.initMIDI();
+  }
+
+  disconnectedCallback() {
+    this._stop_rendering();
+    this._resizeObserver.disconnect();
+  }
+
+  on_shown() {
+    // The overlay became visible; resume GPU work.
+    this.resize();
+    this._start_rendering();
+  }
+
+  on_hidden() {
+    // The overlay is invisible; stop the render loop to prevent GPU load.
+    this._stop_rendering();
+  }
+
+  on_score_time(a_sec, b_sec) {
+    // Called by Cloud5Piece.update_display() during Csound performance.
+
+    // Heuristic: some callers pass (total, now) instead of (now, total).
+    // Choose "now" as the smaller non-negative number when both look valid.
+    let score_time_sec = a_sec;
+    let total_duration_sec = b_sec;
+
+    const a_ok = (typeof a_sec === 'number' && isFinite(a_sec) && a_sec >= 0);
+    const b_ok = (typeof b_sec === 'number' && isFinite(b_sec) && b_sec >= 0);
+
+    if (!a_ok && !b_ok) {
+      this.playHead.style.display = 'none';
+      return;
     }
 
-    _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
-    _secondsForBeats(beats) { return beats * 60 / Math.max(20, this.bpm | 0); }
-    _beatsForMillis(ms) { return (ms / 1000) * (Math.max(20, this.bpm | 0) / 60); }
-    _clearTimers() { for (const id of this._timers) clearTimeout(id); this._timers.length = 0; }
+    if (a_ok && b_ok) {
+      // If one is clearly "total" (larger) and the other is "now" (smaller), swap if needed.
+      if (a_sec > b_sec) {
+        score_time_sec = b_sec;
+        total_duration_sec = a_sec;
+      }
+    } else if (a_ok) {
+      score_time_sec = a_sec;
+      total_duration_sec = 0;
+    } else {
+      score_time_sec = b_sec;
+      total_duration_sec = 0;
+    }
 
-    _panicMIDI() {
-        const out = this._currentMIDIOutput();
-        if (!out) return;
-        for (let ch = 0; ch < 16; ch++) {
-            out.send([0xB0 | ch, 120, 0]); // All Sound Off
-            out.send([0xB0 | ch, 123, 0]); // All Notes Off
-            out.send([0xB0 | ch, 121, 0]); // Reset All Controllers
-            for (let k = 0; k < 128; k += 8) out.send([0x80 | ch, k, 0]);
+    // Publish external driver values so _updatePlayheadOverlay() can work too.
+    try {
+      if (this.cloud5_piece) {
+        this.cloud5_piece.latest_score_time = score_time_sec;
+        if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+          this.cloud5_piece.total_duration = total_duration_sec;
         }
+      }
+    } catch (e) { }
+
+    // Resolve a usable total duration (allow fallbacks; do not hide on missing duration).
+    let total = total_duration_sec;
+
+    if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
+      // Prefer any duration already published on the piece.
+      try { total = this.cloud5_piece?.total_duration; } catch (e) { }
+    }
+    if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
+      // Try score durations already used elsewhere in this class.
+      try { total = this.cloud5_piece?.score?.getDuration?.(); } catch (e) { }
+    }
+    if (!(typeof total === 'number' && isFinite(total) && total > 0)) {
+      try { total = this.cloud5_piece?.piano_roll_overlay?.silencio_score?.getDuration?.(); } catch (e) { }
     }
 
-    _stopWebAudio() {
-        for (const node of this._activeAudio) {
-            try { node.stop(0); } catch { }
-            try { node.disconnect(); } catch { }
-        }
-        this._activeAudio.clear();
+    // Cache last-known duration; otherwise keep playhead drawable.
+    if (typeof total === 'number' && isFinite(total) && total > 0) {
+      this._ext_total_duration_sec = total;
+    } else if (typeof this._ext_total_duration_sec === 'number' && isFinite(this._ext_total_duration_sec) && this._ext_total_duration_sec > 0) {
+      total = this._ext_total_duration_sec;
+    } else {
+      total = Math.max(1, (score_time_sec || 0) + 1);
     }
 
-    async connectedCallback() {
-        if (!('gpu' in navigator)) {
-            this.shadowRoot.innerHTML = `<div style="padding:1rem;color:#f88">WebGPU not available. Use Chrome/Edge with WebGPU enabled.</div>`;
-            return;
-        }
-        this._resizeObserver.observe(this);
-        await this.initGPU();
-        this.initPipelines();
-        this.initInteractions();
-        this.resize();
-        this.render();
+    // Draw immediately (do not depend on render loop).
+    this._updatePlayheadFromSeconds(score_time_sec, total);
 
-        // Initialize Web MIDI and prefer IAC
-        this.initMIDI();
-    }
-    disconnectedCallback() { this._resizeObserver.disconnect(); }
-
-    // ---------- MIDI (IAC) ----------
-    async initMIDI() {
-        const sel = this.shadowRoot.getElementById('midiOut');
-
-        const rebuildOptions = () => {
-            const previous = this._midiOutId;
-            sel.innerHTML = '';
-            const outs = this._midi ? Array.from(this._midi.outputs.values()) : [];
-            if (!outs.length) {
-                sel.appendChild(new Option('(no MIDI outputs)', '', true, true));
-                this._midiOutId = '';
-                return;
-            }
-            outs.sort((a, b) => {
-                const ia = /iac|loop|bus/i.test(a.name) ? 0 : 1;
-                const ib = /iac|loop|bus/i.test(b.name) ? 0 : 1;
-                return ia - ib || a.name.localeCompare(b.name);
-            });
-            let toSelect = previous;
-            if (!toSelect) {
-                const iac = outs.find(o => /iac|loop|bus/i.test(o.name));
-                if (iac) toSelect = iac.id; else toSelect = outs[0].id;
-            }
-            for (const o of outs) {
-                const opt = new Option(o.name, o.id, false, o.id === toSelect);
-                sel.appendChild(opt);
-            }
-            this._midiOutId = toSelect;
-            localStorage.setItem('mj.midiOutId', this._midiOutId);
-        };
-
+    // Reset if we reached the end (only when a real duration is known).
+    if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+      if (score_time_sec >= total_duration_sec) {
         try {
-            if (!navigator.requestMIDIAccess) throw new Error('Web MIDI not supported in this browser.');
-            if (!this._midi) {
-                this._midi = await navigator.requestMIDIAccess({ sysex: false });
-                this._midi.addEventListener('statechange', rebuildOptions);
-            }
-            rebuildOptions();
-        } catch (err) {
-            console.warn('MIDI init failed:', err);
-            sel.innerHTML = '';
-            sel.appendChild(new Option('(Web MIDI unsupported)', '', true, true));
-            this._midiOutId = '';
-        }
-
-        sel.addEventListener('change', () => {
-            this._midiOutId = sel.value || '';
-            localStorage.setItem('mj.midiOutId', this._midiOutId);
-        });
-    }
-    _currentMIDIOutput() {
-        if (!this._midi) return null;
-        const outs = this._midi.outputs;
-        if (!outs) return null;
-        if (this._midiOutId && outs.has(this._midiOutId)) return outs.get(this._midiOutId);
-        for (const o of outs.values()) if (/iac|loop|bus/i.test(o.name)) return o;
-        for (const o of outs.values()) return o;
-        return null;
+          if (this.cloud5_piece) {
+            this.cloud5_piece.latest_score_time = 0;
+            this.cloud5_piece.total_duration = 0;
+          }
+        } catch (e) { }
+        this._ext_total_duration_sec = 0;
+        this.playHead.style.display = 'none';
+        return;
+      }
     }
 
-    async initGPU() {
-        this.adapter = await navigator.gpu.requestAdapter();
-        this.device = await this.adapter.requestDevice();
-        const format = navigator.gpu.getPreferredCanvasFormat();
-        this.ctxM = this.canvasM.getContext('webgpu');
-        this.ctxJ = this.canvasJ.getContext('webgpu');
-        this.ctxM.configure({ device: this.device, format, alphaMode: 'premultiplied' });
-        this.ctxJ.configure({ device: this.device, format, alphaMode: 'premultiplied' });
-        this.format = format;
+    // Keep other UI followers in sync.
+    try { this.cloud5_piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
+  }
 
-        // Two separate uniform buffers (one per pass)
-        this.uniformSize = 256;
-        this.uniformBufM = this.device.createBuffer({
-            size: this.uniformSize,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        this.uniformBufJ = this.device.createBuffer({
-            size: this.uniformSize,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+  _tick_playheads() {
+    const piece = this.cloud5_piece;
 
-        // Compute uniforms buffer
-        this.csUniformSize = 256;
-        this.csUniformBuf = this.device.createBuffer({
-            size: this.csUniformSize,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+    const ext_time = piece?.latest_score_time;
+    const ext_total = piece?.total_duration;
 
-        // BGLs
-        this.drawBGL = this.device.createBindGroupLayout({
-            entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }]
-        });
-        this.csBGL0 = this.device.createBindGroupLayout({
-            entries: [{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } }]
-        });
-        this.csBGL1 = this.device.createBindGroupLayout({
-            entries: [{ binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } }]
-        });
+    const ext_active =
+      typeof ext_time === 'number' &&
+      isFinite(ext_time) &&
+      ext_time >= 0 &&
+      (
+        // if we know total duration, keep ticking until we reach it
+        (typeof ext_total === 'number' && isFinite(ext_total) && ext_total > 0 && ext_time <= ext_total) ||
+        // otherwise tick as long as time is moving forward
+        true
+      );
+
+    if (!this._playing && !ext_active) {
+      this._playhead_raf_id = 0;
+      return;
     }
 
-    initPipelines() {
-        const vsWGSL = /*wgsl*/`
+    try { this._updatePlayheadOverlay(); } catch (e) { }
+    this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
+  }
+
+  _start_playhead_ticker() {
+    if (this._playhead_raf_id) return;
+    this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
+  }
+
+  _stop_playhead_ticker() {
+    if (this._playhead_raf_id) {
+      cancelAnimationFrame(this._playhead_raf_id);
+      this._playhead_raf_id = 0;
+    }
+  }
+
+  _schedule_visibility_poll() {
+    if (this._visibility_poll_id) return;
+    this._visibility_poll_id = window.setInterval(() => {
+      if (this._isActuallyVisible()) {
+        window.clearInterval(this._visibility_poll_id);
+        this._visibility_poll_id = 0;
+        this._start_rendering();
+      }
+    }, 250);
+  }
+
+
+  _start_rendering() {
+    if (this._rendering_active && this._raf_id) return;
+    this._rendering_active = true;
+    if (!this._raf_id) {
+      this._raf_id = requestAnimationFrame(this._render_loop);
+    }
+  }
+
+  _stop_rendering() {
+    this._rendering_active = false;
+    if (this._raf_id) {
+      cancelAnimationFrame(this._raf_id);
+      this._raf_id = 0;
+    }
+    if (this._visibility_poll_id) {
+      window.clearInterval(this._visibility_poll_id);
+      this._visibility_poll_id = 0;
+    }
+  }
+
+  _isActuallyVisible() {
+    // Not in the document?
+    if (!this.isConnected) return false;
+
+    // If the overlay is hidden via display:none or visibility:hidden,
+    // there is no point in rendering.
+    const style = getComputedStyle(this);
+    if (style.display === 'none' || style.visibility === 'hidden') {
+      return false;
+    }
+
+    // If the layout has collapsed to zero size (e.g. overlay hidden),
+    // skip rendering until it gets a real size again.
+    const rect = this.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // ---------- MIDI (IAC) ----------
+  async initMIDI() {
+    const sel = this.shadowRoot.getElementById('midiOut');
+
+    const rebuildOptions = () => {
+      const previous = this._midiOutId;
+      sel.innerHTML = '';
+      const outs = this._midi ? Array.from(this._midi.outputs.values()) : [];
+      if (!outs.length) {
+        sel.appendChild(new Option('(no MIDI outputs)', '', true, true));
+        this._midiOutId = '';
+        return;
+      }
+      outs.sort((a, b) => {
+        const ia = /iac|loop|bus/i.test(a.name) ? 0 : 1;
+        const ib = /iac|loop|bus/i.test(b.name) ? 0 : 1;
+        return ia - ib || a.name.localeCompare(b.name);
+      });
+      let toSelect = previous;
+      if (!toSelect) {
+        const iac = outs.find(o => /iac|loop|bus/i.test(o.name));
+        if (iac) toSelect = iac.id; else toSelect = outs[0].id;
+      }
+      for (const o of outs) {
+        const opt = new Option(o.name, o.id, false, o.id === toSelect);
+        sel.appendChild(opt);
+      }
+      this._midiOutId = toSelect;
+      localStorage.setItem('mj.midiOutId', this._midiOutId);
+    };
+
+    try {
+      if (!navigator.requestMIDIAccess) throw new Error('Web MIDI not supported in this browser.');
+      if (!this._midi) {
+        this._midi = await navigator.requestMIDIAccess({ sysex: false });
+        this._midi.addEventListener('statechange', rebuildOptions);
+      }
+      rebuildOptions();
+    } catch (err) {
+      console.warn('MIDI init failed:', err);
+      sel.innerHTML = '';
+      sel.appendChild(new Option('(Web MIDI unsupported)', '', true, true));
+      this._midiOutId = '';
+    }
+
+    sel.addEventListener('change', () => {
+      this._midiOutId = sel.value || '';
+      localStorage.setItem('mj.midiOutId', this._midiOutId);
+    });
+  }
+  _currentMIDIOutput() {
+    if (!this._midi) return null;
+    const outs = this._midi.outputs;
+    if (!outs) return null;
+    if (this._midiOutId && outs.has(this._midiOutId)) return outs.get(this._midiOutId);
+    for (const o of outs.values()) if (/iac|loop|bus/i.test(o.name)) return o;
+    for (const o of outs.values()) return o;
+    return null;
+  }
+
+  async initGPU() {
+    this.adapter = await navigator.gpu.requestAdapter();
+    this.device = await this.adapter.requestDevice();
+    this.device.lost.then((info) => {
+      const msg = `WebGPU device lost: ${info?.message || info?.reason || 'unknown reason'}`;
+      console.error(msg);
+      try {
+        this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+      } catch { }
+    });
+    const format = navigator.gpu.getPreferredCanvasFormat();
+    this.ctxM = this.canvasM.getContext('webgpu');
+    this.ctxJ = this.canvasJ.getContext('webgpu');
+    this.ctxM.configure({ device: this.device, format, alphaMode: 'premultiplied' });
+    this.ctxJ.configure({ device: this.device, format, alphaMode: 'premultiplied' });
+    this.format = format;
+
+    // Two separate uniform buffers (one per pass)
+    this.uniformSize = 256;
+    this.uniformBufM = this.device.createBuffer({
+      size: this.uniformSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    this.uniformBufJ = this.device.createBuffer({
+      size: this.uniformSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // Compute uniforms buffer
+    this.csUniformSize = 256;
+    this.csUniformBuf = this.device.createBuffer({
+      size: this.csUniformSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // BGLs
+    this.drawBGL = this.device.createBindGroupLayout({
+      entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }]
+    });
+    this.csBGL0 = this.device.createBindGroupLayout({
+      entries: [{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } }]
+    });
+    this.csBGL1 = this.device.createBindGroupLayout({
+      entries: [{ binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } }]
+    });
+  }
+
+  initPipelines() {
+    const vsWGSL = /*wgsl*/`
       @vertex
       fn main(@builtin(vertex_index) vid: u32) -> @builtin(position) vec4<f32> {
         var pos = array<vec2<f32>,3>(
@@ -365,7 +597,7 @@ pre {
       }
     `;
 
-        const fsWGSL = /*wgsl*/`
+    const fsWGSL = /*wgsl*/`
 struct DrawUniforms {
   a: vec4<f32>,  // center.xy, scale, p
   b: vec4<f32>,  // cParam.xy, viewport.xy
@@ -468,12 +700,25 @@ fn main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     return vec4<f32>(col, 1.0);
   }
 
-  let col = palette(t) * (1.0 - 0.65 * t); // darken towards black
-  return vec4<f32>(col, 1.0);
+let col = palette(t) * (1.0 - 0.65 * t); // base darkening
+
+// Fade-in so the far exterior stays black
+let fade0 = smoothstep(0.03, 0.15, t);
+
+// Brightness boost centered on the boundary
+// Peaks around t ≈ 0.2–0.4 and falls off smoothly
+let boundary_boost =
+    smoothstep(0.05, 0.20, t) *
+    (1.0 - smoothstep(0.45, 0.70, t));
+
+let bright_col = col * (1.0 + 1.2 * boundary_boost);
+
+return vec4<f32>(bright_col * fade0, 1.0);
+
 }
 `;
 
-        const csWGSL = /*wgsl*/`
+    const csWGSL = /*wgsl*/`
 struct CsUniforms {
   u0: vec4<f32>, // cParam.xy, roiMin.xy
   u1: vec4<f32>, // roiMax.xy, p, maxIter (as float)
@@ -560,672 +805,1081 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 }
     `;
 
-        this.shaderVS = this.device.createShaderModule({ code: vsWGSL });
-        this.shaderFS = this.device.createShaderModule({ code: fsWGSL });
-        this.shaderCS = this.device.createShaderModule({ code: csWGSL });
+    this.shaderVS = this.device.createShaderModule({ code: vsWGSL });
+    this.shaderFS = this.device.createShaderModule({ code: fsWGSL });
+    this.shaderCS = this.device.createShaderModule({ code: csWGSL });
 
-        this.pipeline = this.device.createRenderPipeline({
-            layout: this.device.createPipelineLayout({ bindGroupLayouts: [this.drawBGL] }),
-            vertex: { module: this.shaderVS, entryPoint: 'main' },
-            fragment: { module: this.shaderFS, entryPoint: 'main', targets: [{ format: this.format }] },
-            primitive: { topology: 'triangle-list' }
-        });
+    this.pipeline = this.device.createRenderPipeline({
+      layout: this.device.createPipelineLayout({ bindGroupLayouts: [this.drawBGL] }),
+      vertex: { module: this.shaderVS, entryPoint: 'main' },
+      fragment: { module: this.shaderFS, entryPoint: 'main', targets: [{ format: this.format }] },
+      primitive: { topology: 'triangle-list' }
+    });
 
-        // Two draw bind groups (one per canvas)
-        this.drawBindGroupM = this.device.createBindGroup({
-            layout: this.drawBGL,
-            entries: [{ binding: 0, resource: { buffer: this.uniformBufM } }]
-        });
-        this.drawBindGroupJ = this.device.createBindGroup({
-            layout: this.drawBGL,
-            entries: [{ binding: 0, resource: { buffer: this.uniformBufJ } }]
-        });
+    // Two draw bind groups (one per canvas)
+    this.drawBindGroupM = this.device.createBindGroup({
+      layout: this.drawBGL,
+      entries: [{ binding: 0, resource: { buffer: this.uniformBufM } }]
+    });
+    this.drawBindGroupJ = this.device.createBindGroup({
+      layout: this.drawBGL,
+      entries: [{ binding: 0, resource: { buffer: this.uniformBufJ } }]
+    });
 
-        this.csPipeline = this.device.createComputePipeline({
-            layout: this.device.createPipelineLayout({ bindGroupLayouts: [this.csBGL0, this.csBGL1] }),
-            compute: { module: this.shaderCS, entryPoint: 'main' }
-        });
+    this.csPipeline = this.device.createComputePipeline({
+      layout: this.device.createPipelineLayout({ bindGroupLayouts: [this.csBGL0, this.csBGL1] }),
+      compute: { module: this.shaderCS, entryPoint: 'main' }
+    });
+  }
+
+  // ------- uniforms writers (vec4-only) -------
+  writeDrawUniforms({ mode, canvas, center, scale, maxIter, cParam, targetBuffer }) {
+    const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
+    const w = Math.floor(canvas.clientWidth * dpr);
+    const h = Math.floor(canvas.clientHeight * dpr);
+    const aspect = w / Math.max(1, h);
+
+    const f = new Float32Array(12);
+    f[0] = center.cx; f[1] = center.cy; f[2] = scale; f[3] = this.exponent;
+    f[4] = cParam?.x ?? 0; f[5] = cParam?.y ?? 0; f[6] = w; f[7] = h;
+    f[8] = maxIter; f[9] = mode; f[10] = aspect; f[11] = 0;
+
+    this.device.queue.writeBuffer(targetBuffer, 0, f.buffer);
+    return { w, h };
+  }
+
+  writeComputeUniforms(roi, N, M, K) {
+    const ton = 0.2, gamma = 0.9;
+    const f = new Float32Array(16);
+    f[0] = this.c.x; f[1] = this.c.y; f[2] = roi.minx; f[3] = roi.miny;
+    f[4] = roi.maxx; f[5] = roi.maxy; f[6] = this.exponent; f[7] = this.maxIterJ;
+    f[8] = N; f[9] = M; f[10] = K; f[11] = ton;
+    f[12] = gamma; f[13] = 0; f[14] = 0; f[15] = 0;
+    this.device.queue.writeBuffer(this.csUniformBuf, 0, f.buffer);
+  }
+
+  resize() {
+    const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
+    for (const c of [this.canvasM, this.canvasJ]) {
+      const w = Math.floor(c.clientWidth * dpr), h = Math.floor(c.clientHeight * dpr);
+      if (w && h && (c.width !== w || c.height !== h)) { c.width = w; c.height = h; }
+    }
+  }
+
+  render() {
+    if (!this._rendering_active) {
+      this._raf_id = 0;
+      return;
+    }
+    // If we are not in the DOM yet, or the overlay is hidden/collapsed,
+    // skip all GPU work and just check again on the next frame.
+    if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
+      // Do not keep submitting frames while hidden; this can trigger GPU/device loss
+      // on some platforms when canvases are detached or display:none.
+      this._raf_id = 0;
+      this._schedule_visibility_poll();
+      return;
     }
 
-    // ------- uniforms writers (vec4-only) -------
-    writeDrawUniforms({ mode, canvas, center, scale, maxIter, cParam, targetBuffer }) {
-        const dpr = Math.max(1, window.devicePixelRatio || 1);
-        const w = Math.floor(canvas.clientWidth * dpr);
-        const h = Math.floor(canvas.clientHeight * dpr);
-        const aspect = w / Math.max(1, h);
 
-        const f = new Float32Array(12);
-        f[0] = center.cx; f[1] = center.cy; f[2] = scale; f[3] = this.exponent;
-        f[4] = cParam?.x ?? 0; f[5] = cParam?.y ?? 0; f[6] = w; f[7] = h;
-        f[8] = maxIter; f[9] = mode; f[10] = aspect; f[11] = 0;
-
-        this.device.queue.writeBuffer(targetBuffer, 0, f.buffer);
-        return { w, h };
+    const now_ms = performance.now();
+    if (this._last_render_ms && (now_ms - this._last_render_ms) < this._render_interval_ms) {
+      this._raf_id = requestAnimationFrame(this._render_loop);
+      return;
     }
+    this._last_render_ms = now_ms;
 
-    writeComputeUniforms(roi, N, M, K) {
-        const ton = 0.2, gamma = 0.9;
-        const f = new Float32Array(16);
-        f[0] = this.c.x; f[1] = this.c.y; f[2] = roi.minx; f[3] = roi.miny;
-        f[4] = roi.maxx; f[5] = roi.maxy; f[6] = this.exponent; f[7] = this.maxIterJ;
-        f[8] = N; f[9] = M; f[10] = K; f[11] = ton;
-        f[12] = gamma; f[13] = 0; f[14] = 0; f[15] = 0;
-        this.device.queue.writeBuffer(this.csUniformBuf, 0, f.buffer);
-    }
+    const enc = this.device.createCommandEncoder();
 
-    resize() {
-        const dpr = Math.max(1, window.devicePixelRatio || 1);
-        for (const c of [this.canvasM, this.canvasJ]) {
-            const w = Math.floor(c.clientWidth * dpr), h = Math.floor(c.clientHeight * dpr);
-            if (w && h && (c.width !== w || c.height !== h)) { c.width = w; c.height = h; }
-        }
-    }
+    // Mandelbrot (left)
+    this.writeDrawUniforms({
+      mode: 0, canvas: this.canvasM,
+      center: this.viewM, scale: this.viewM.scale,
+      maxIter: this.maxIterM, cParam: null, targetBuffer: this.uniformBufM
+    });
+    const passM = enc.beginRenderPass({
+      colorAttachments: [{
+        view: this.ctxM.getCurrentTexture().createView(),
+        loadOp: 'clear', storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 1 }
+      }]
+    });
+    passM.setPipeline(this.pipeline);
+    passM.setBindGroup(0, this.drawBindGroupM);
+    passM.draw(3, 1, 0, 0);
+    passM.end();
 
-    render() {
-        const enc = this.device.createCommandEncoder();
+    // Julia (right)
+    this.writeDrawUniforms({
+      mode: 1, canvas: this.canvasJ,
+      center: this.viewJ, scale: this.viewJ.scale,
+      maxIter: this.maxIterJ, cParam: this.c, targetBuffer: this.uniformBufJ
+    });
+    const passJ = enc.beginRenderPass({
+      colorAttachments: [{
+        view: this.ctxJ.getCurrentTexture().createView(),
+        loadOp: 'clear', storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 1 }
+      }]
+    });
+    passJ.setPipeline(this.pipeline);
+    passJ.setBindGroup(0, this.drawBindGroupJ);
+    passJ.draw(3, 1, 0, 0);
+    passJ.end();
 
-        // Mandelbrot (left)
-        this.writeDrawUniforms({
-            mode: 0, canvas: this.canvasM,
-            center: this.viewM, scale: this.viewM.scale,
-            maxIter: this.maxIterM, cParam: null, targetBuffer: this.uniformBufM
-        });
-        const passM = enc.beginRenderPass({
-            colorAttachments: [{
-                view: this.ctxM.getCurrentTexture().createView(),
-                loadOp: 'clear', storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 1 }
-            }]
-        });
-        passM.setPipeline(this.pipeline);
-        passM.setBindGroup(0, this.drawBindGroupM);
-        passM.draw(3, 1, 0, 0);
-        passM.end();
+    this.device.queue.submit([enc.finish()]);
 
-        // Julia (right)
-        this.writeDrawUniforms({
-            mode: 1, canvas: this.canvasJ,
-            center: this.viewJ, scale: this.viewJ.scale,
-            maxIter: this.maxIterJ, cParam: this.c, targetBuffer: this.uniformBufJ
-        });
-        const passJ = enc.beginRenderPass({
-            colorAttachments: [{
-                view: this.ctxJ.getCurrentTexture().createView(),
-                loadOp: 'clear', storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 1 }
-            }]
-        });
-        passJ.setPipeline(this.pipeline);
-        passJ.setBindGroup(0, this.drawBindGroupJ);
-        passJ.draw(3, 1, 0, 0);
-        passJ.end();
+    // Keep overlays aligned every frame
+    this._updateSelectionOverlay();
+    this._updatePlayheadOverlay();
 
-        this.device.queue.submit([enc.finish()]);
+    this._raf_id = requestAnimationFrame(this._render_loop);
+  }
 
-        // Keep overlays aligned every frame
-        this._updateSelectionOverlay();
-        this._updatePlayheadOverlay();
+  // ---- Overlay helpers ----
+  _complexToCanvasCss(x, y) {
+    const rJ = this.canvasJ.getBoundingClientRect();
+    const rRoot = this._rootDiv.getBoundingClientRect();
+    const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
+    const w = Math.max(1, this.canvasJ.width), h = Math.max(1, this.canvasJ.height);
+    const aspect = w / h;
 
-        requestAnimationFrame(() => this.render());
-    }
+    const ndcX = (x - this.viewJ.cx) / this.viewJ.scale;             // -1..1
+    const ndcY = - (y - this.viewJ.cy) * (aspect / this.viewJ.scale);
+    const pxX = (ndcX * 0.5 + 0.5) * w;                               // device px
+    const pxY = (ndcY * 0.5 + 0.5) * h;
 
-    // ---- Overlay helpers ----
-    _complexToCanvasCss(x, y) {
-        const rJ = this.canvasJ.getBoundingClientRect();
-        const rRoot = this._rootDiv.getBoundingClientRect();
-        const dpr = Math.max(1, window.devicePixelRatio || 1);
-        const w = Math.max(1, this.canvasJ.width), h = Math.max(1, this.canvasJ.height);
-        const aspect = w / h;
+    const cssX = rJ.left - rRoot.left + pxX / dpr;
+    const cssY = rJ.top - rRoot.top + pxY / dpr;
+    return { x: cssX, y: cssY };
+  }
 
-        const ndcX = (x - this.viewJ.cx) / this.viewJ.scale;             // -1..1
-        const ndcY = - (y - this.viewJ.cy) * (aspect / this.viewJ.scale);
-        const pxX = (ndcX * 0.5 + 0.5) * w;                               // device px
-        const pxY = (ndcY * 0.5 + 0.5) * h;
+  _updateSelectionOverlay() {
+    if (!this.roiJ) { this.sel.style.display = 'none'; return; }
+    const { minx, maxx, miny, maxy } = this.roiJ;
+    const a = this._complexToCanvasCss(minx, maxy); // top-left
+    const b = this._complexToCanvasCss(maxx, miny); // bottom-right
+    const L = Math.min(a.x, b.x), T = Math.min(a.y, b.y);
+    const W = Math.abs(b.x - a.x), H = Math.abs(b.y - a.y);
+    Object.assign(this.sel.style, {
+      display: 'block',
+      left: `${L}px`,
+      top: `${T}px`,
+      width: `${W}px`,
+      height: `${H}px`,
+    });
+  }
 
-        const cssX = rJ.left - rRoot.left + pxX / dpr;
-        const cssY = rJ.top - rRoot.top + pxY / dpr;
-        return { x: cssX, y: cssY };
-    }
+  _updatePlayheadOverlay() {
+    // Two playhead drivers:
+    //   1) MIDI playback in this class (this._playing === true)
+    //   2) External/Csound playback via cloud5_piece.latest_score_time
+    if (!this._playing) {
+      try {
+        const piece = this.cloud5_piece;
+        const score_time_sec = piece?.latest_score_time;
+        if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0) {
+          let total_duration_sec = piece?.total_duration;
+          if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+            total_duration_sec = piece?.score?.getDuration?.();
+          }
+          if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+            total_duration_sec = piece?.piano_roll_overlay?.silencio_score?.getDuration?.();
+          }
 
-    _updateSelectionOverlay() {
-        if (!this.roiJ) { this.sel.style.display = 'none'; return; }
-        const { minx, maxx, miny, maxy } = this.roiJ;
-        const a = this._complexToCanvasCss(minx, maxy); // top-left
-        const b = this._complexToCanvasCss(maxx, miny); // bottom-right
-        const L = Math.min(a.x, b.x), T = Math.min(a.y, b.y);
-        const W = Math.abs(b.x - a.x), H = Math.abs(b.y - a.y);
-        Object.assign(this.sel.style, {
-            display: 'block',
-            left: `${L}px`,
-            top: `${T}px`,
-            width: `${W}px`,
-            height: `${H}px`,
-        });
-    }
-
-    _updatePlayheadOverlay() {
-        if (!this._playing || this._playTotalBeats <= 0) {
-            this.playHead.style.display = 'none';
-            return;
-        }
-        // Compute elapsed beats since start
-        const now = performance.now();
-        const elapsedBeats = this._beatsForMillis(now - this._playStartMS);
-        const frac = Math.max(0, Math.min(1, elapsedBeats / this._playTotalBeats));
-
-        // Use ROI if present; otherwise use full Julia viewport bounds
-        const roi = this.roiJ ?? {
-            minx: this.viewJ.cx - this.viewJ.scale,
-            maxx: this.viewJ.cx + this.viewJ.scale,
-            miny: this.viewJ.cy - this.viewJ.scale,
-            maxy: this.viewJ.cy + this.viewJ.scale
-        };
-
-        const topLeft = this._complexToCanvasCss(roi.minx, roi.maxy);
-        const botRight = this._complexToCanvasCss(roi.maxx, roi.miny);
-        const L = Math.min(topLeft.x, botRight.x);
-        const T = Math.min(topLeft.y, botRight.y);
-        const W = Math.abs(botRight.x - topLeft.x);
-        const H = Math.abs(botRight.y - topLeft.y);
-
-        const x = L + W * frac;
-        Object.assign(this.playHead.style, {
-            display: 'block',
-            left: `${Math.round(x)}px`,
-            top: `${T}px`,
-            height: `${H}px`,
-        });
-
-        // Hide after the sweep completes
-        if (frac >= 1) this.playHead.style.display = 'none';
-    }
-
-    initInteractions() {
-        const pIn = this.shadowRoot.getElementById('expP');
-        const mIn = this.shadowRoot.getElementById('iterM');
-        const jIn = this.shadowRoot.getElementById('iterJ');
-        const nIn = this.shadowRoot.getElementById('binsN');
-        const MIn = this.shadowRoot.getElementById('binsM');
-        const kIn = this.shadowRoot.getElementById('binsK');
-        const btnS = this.shadowRoot.getElementById('btnScore');
-        const bpmIn = this.shadowRoot.getElementById('bpm');
-        const denIn = this.shadowRoot.getElementById('density');
-        const denVal = this.shadowRoot.getElementById('densityVal');
-        const maxVIn = this.shadowRoot.getElementById('maxVoices');
-        const btnStop = this.shadowRoot.getElementById('btnStop');
-
-        const sync = () => {
-            this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
-            this.maxIterM = parseInt(mIn.value);
-            this.maxIterJ = parseInt(jIn.value);
-            this.nTime = parseInt(nIn.value);
-            this.nPitch = parseInt(MIn.value);
-            this.nInst = parseInt(kIn.value);
-
-            this.bpm = Math.max(20, Math.min(300, parseInt(bpmIn.value) || 120));
-            this.density = Math.max(0, Math.min(1, (parseInt(denIn.value) || 100) / 100));
-            denVal.textContent = `${Math.round(this.density * 100)}%`;
-            this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
-        };
-        [pIn, mIn, jIn, nIn, MIn, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', sync));
-        sync();
-
-        btnStop.addEventListener('click', () => this.stopPlayback());
-
-        // --- Mandelbrot click/zoom ---
-        this.canvasM.addEventListener('click', (e) => {
-            const { altKey, shiftKey } = e;
-            const dpr = Math.max(1, window.devicePixelRatio || 1);
-            const rect = this.canvasM.getBoundingClientRect();
-            const x = (e.clientX - rect.left) * dpr;
-            const y = (e.clientY - rect.top) * dpr;
-            const w = this.canvasM.width, h = this.canvasM.height;
-            const ndc = { x: x / w * 2 - 1, y: y / h * 2 - 1 };
-            const aspect = w / Math.max(1, h);
-
-            const zx = this.viewM.cx + ndc.x * this.viewM.scale;
-            const zy = this.viewM.cy - ndc.y * this.viewM.scale / aspect;
-
-            this.c = { x: zx, y: zy };
-
-            if (altKey && shiftKey) {
-                this.viewM.cx = zx; this.viewM.cy = zy;
-                this.viewM.scale *= 1.5;
-            } else if (altKey) {
-                this.viewM.cx = zx; this.viewM.cy = zy;
-                this.viewM.scale *= 0.6667;
-            }
-
-            // Keep Julia centered logically (we just set c); selection overlay will re-map itself each frame
-            this._updateSelectionOverlay();
-        });
-
-        // --- Julia drag ROI (lasso persists) ---
-        let dragging = false;
-        let startPx = { x: 0, y: 0 };
-        let curPx = { x: 0, y: 0 };
-
-        const beginDrag = (e) => {
-            if (e.button !== 0) return;
-            dragging = true;
-            const rJ = this.canvasJ.getBoundingClientRect();
-            startPx.x = e.clientX;
-            startPx.y = e.clientY;
-            curPx.x = e.clientX;
-            curPx.y = e.clientY;
-            this.sel.style.display = 'block';
-            this._placeSelRect(rJ, startPx, curPx);
-            e.preventDefault();
-        };
-        const moveDrag = (e) => {
-            if (!dragging) return;
-            const rJ = this.canvasJ.getBoundingClientRect();
-            curPx.x = Math.min(Math.max(e.clientX, rJ.left), rJ.right);
-            curPx.y = Math.min(Math.max(e.clientY, rJ.top), rJ.bottom);
-            this._placeSelRect(rJ, startPx, curPx);
-        };
-        const endDrag = (e) => {
-            if (!dragging) return;
-            dragging = false;
-            const rJ = this.canvasJ.getBoundingClientRect();
-            const dpr = Math.max(1, window.devicePixelRatio || 1);
-            const x0 = (Math.min(startPx.x, curPx.x) - rJ.left) * dpr;
-            const y0 = (Math.min(startPx.y, curPx.y) - rJ.top) * dpr;
-            const x1 = (Math.max(startPx.x, curPx.x) - rJ.left) * dpr;
-            const y1 = (Math.max(startPx.y, curPx.y) - rJ.top) * dpr;
-
-            if (Math.abs(x1 - x0) < 3 || Math.abs(y1 - y0) < 3) return;
-
-            const w = this.canvasJ.width, h = this.canvasJ.height;
-            const aspect = w / Math.max(1, h);
-
-            const toComplex = (px, py) => {
-                const ndcX = px / w * 2 - 1;
-                const ndcY = py / h * 2 - 1;
-                return {
-                    x: this.viewJ.cx + ndcX * this.viewJ.scale,
-                    y: this.viewJ.cy - ndcY * this.viewJ.scale / aspect
-                };
-            };
-
-            const zA = toComplex(x0, y0);
-            const zB = toComplex(x1, y1);
-            this.roiJ = {
-                minx: Math.min(zA.x, zB.x),
-                maxx: Math.max(zA.x, zB.x),
-                miny: Math.min(zA.y, zB.y),
-                maxy: Math.max(zA.y, zB.y),
-            };
-
-            // Do NOT hide the lasso; keep it visible
-            this._updateSelectionOverlay();
-        };
-
-        this.canvasJ.addEventListener('mousedown', beginDrag);
-        window.addEventListener('mousemove', moveDrag);
-        window.addEventListener('mouseup', endDrag);
-
-        // --- Hotkeys ---
-        window.addEventListener('keydown', async (e) => {
-            const key = (e.key || '').toLowerCase();
-
-            if ((key === 's') && (e.altKey || e.metaKey)) {
-                e.preventDefault(); e.stopPropagation();
-                const score = this.makeScore(); // auto-download happens there
-                this.playMIDIFromScore();
-            }
-
-            if ((key === 'r') && (e.altKey || e.metaKey)) {
-                e.preventDefault(); e.stopPropagation();
-                this.roiJ = null;
-                this.sel.style.display = 'none';
-            }
-
-            if ((key === 'm') && (e.altKey && e.ctrlKey)) {
-                e.preventDefault(); e.stopPropagation();
-                this.playMIDIFromScore();
-            }
-        }, { capture: true });
-
-        btnS.addEventListener('click', () => { this.makeScore(); this.playMIDIFromScore(); });
-    }
-
-    _placeSelRect(rJ, startPx, curPx) {
-        const rRoot = this._rootDiv.getBoundingClientRect();
-        const left = Math.min(startPx.x, curPx.x) - rRoot.left;
-        const top = Math.min(startPx.y, curPx.y) - rRoot.top;
-        const width = Math.abs(curPx.x - startPx.x);
-        const height = Math.abs(curPx.y - startPx.y);
-
-        const jl = rJ.left - rRoot.left, jt = rJ.top - rRoot.top;
-        const jr = rJ.right - rRoot.left, jb = rJ.bottom - rRoot.top;
-        const L = Math.max(left, jl);
-        const T = Math.max(top, jt);
-        const R = Math.min(left + width, jr);
-        const B = Math.min(top + height, jb);
-
-        Object.assign(this.sel.style, {
-            left: `${L}px`,
-            top: `${T}px`,
-            width: `${Math.max(0, R - L)}px`,
-            height: `${Math.max(0, B - T)}px`,
-        });
-    }
-
-    async makeScore() {
-        const N = this.nTime, M = this.nPitch, K = this.nInst;
-        const roi = this.roiJ ?? {
-            minx: this.viewJ.cx - this.viewJ.scale,
-            maxx: this.viewJ.cx + this.viewJ.scale,
-            miny: this.viewJ.cy - this.viewJ.scale,
-            maxy: this.viewJ.cy + this.viewJ.scale
-        };
-        this.writeComputeUniforms(roi, N, M, K);
-
-        const gridSize = N * M * 4;
-        const grid = this.device.createBuffer({ size: gridSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-        const csBG0 = this.device.createBindGroup({ layout: this.csBGL0, entries: [{ binding: 0, resource: { buffer: this.csUniformBuf } }] });
-        const csBG1 = this.device.createBindGroup({ layout: this.csBGL1, entries: [{ binding: 1, resource: { buffer: grid } }] });
-
-        const enc = this.device.createCommandEncoder();
-        const pass = enc.beginComputePass();
-        pass.setPipeline(this.csPipeline);
-        pass.setBindGroup(0, csBG0);
-        pass.setBindGroup(1, csBG1);
-        pass.dispatchWorkgroups(Math.ceil(N / 8), Math.ceil(M / 8), 1);
-        pass.end();
-
-        const readBuf = this.device.createBuffer({ size: gridSize, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
-        enc.copyBufferToBuffer(grid, 0, readBuf, 0, gridSize);
-        this.device.queue.submit([enc.finish()]);
-        await readBuf.mapAsync(GPUMapMode.READ);
-        const u32grid = new Uint32Array(readBuf.getMappedRange().slice(0));
-        readBuf.unmap();
-
-        const dtBeats = this._stepBeats(); // 1/8 beat per time bin
-        const pmin = 36;
-        const active = Array.from({ length: N }, _ => new Uint8Array(M));
-        const vel = Array.from({ length: N }, _ => new Uint8Array(M));
-        const inst = Array.from({ length: N }, _ => new Uint8Array(M));
-        for (let i = 0; i < N; i++) {
-            for (let j = 0; j < M; j++) {
-                const v = u32grid[i * M + j];
-                active[i][j] = v & 0xFF;
-                vel[i][j] = (v >>> 8) & 0xFF;
-                inst[i][j] = (v >>> 16) & 0xFF;
-            }
-        }
-
-        // --- Adaptive per-slice normalization of density ---
-        const perSliceKeep = Math.max(1, Math.min(this.maxVoicesPerSlice, Math.round(this.density * M)));
-        for (let i = 0; i < N; i++) {
-            const pairs = new Array(M);
-            for (let j = 0; j < M; j++) pairs[j] = [j, vel[i][j]];
-            pairs.sort((a, b) => (b[1] | 0) - (a[1] | 0));
-            const cutoff = pairs[Math.min(perSliceKeep - 1, pairs.length - 1)][1] | 0;
-            for (let j = 0; j < M; j++) active[i][j] = (vel[i][j] | 0) >= cutoff ? 1 : 0;
-        }
-
-        const runOn = Array.from({ length: M }, _ => Array(K).fill(false));
-        const runI0 = Array.from({ length: M }, _ => Array(K).fill(0));
-        const runVmax = Array.from({ length: M }, _ => Array(K).fill(0));
-        const score = [];
-
-        for (let i = 0; i <= N; i++) {
-            for (let j = 0; j < M; j++) {
-                const on = (i < N) ? active[i][j] : 0;
-                const vv = (i < N) ? vel[i][j] : 0;
-                const kk = (i < N) ? inst[i][j] : 0;
-
-                for (let k = 0; k < K; k++) {
-                    if (runOn[j][k] && (i === N || k !== kk || !on)) {
-                        const i0 = runI0[j][k], i1 = i - 1;
-                        score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, pmin + j, runVmax[j][k]]);
-                        runOn[j][k] = false;
-                    }
+          // Additional duration fallbacks (Silencio.Score implementations vary).
+          if (!(typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0)) {
+            const ss = piece?.piano_roll_overlay?.silencio_score;
+            try {
+              let cand = null;
+              if (ss) {
+                if (typeof ss.getDuration === 'function') cand = ss.getDuration();
+                else if (typeof ss.getDurationSeconds === 'function') cand = ss.getDurationSeconds();
+                else if (typeof ss.duration === 'number') cand = ss.duration;
+                else if (typeof ss.duration_seconds === 'number') cand = ss.duration_seconds;
+                else if (typeof ss.total_duration === 'number') cand = ss.total_duration;
+                if (!(typeof cand === 'number' && isFinite(cand) && cand > 0) && Array.isArray(ss.events)) {
+                  let mx = 0;
+                  for (const ev of ss.events) {
+                    const t = (typeof ev?.time === 'number') ? ev.time : (typeof ev?.start === 'number') ? ev.start : 0;
+                    const d = (typeof ev?.duration === 'number') ? ev.duration : (typeof ev?.dur === 'number') ? ev.dur : 0;
+                    mx = Math.max(mx, (t || 0) + (d || 0));
+                  }
+                  cand = mx;
                 }
-                if (i < N && on) {
-                    if (!runOn[j][kk]) { runOn[j][kk] = true; runI0[j][kk] = i; runVmax[j][kk] = vv; }
-                    else { runVmax[j][kk] = Math.max(runVmax[j][kk], vv); }
-                }
-            }
+              }
+              if (typeof cand === 'number' && isFinite(cand) && cand > 0) {
+                total_duration_sec = cand;
+              }
+            } catch (e) { }
+          }
+
+          // Cache any valid duration; otherwise fall back to the last known duration.
+          if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+            this._ext_total_duration_sec = total_duration_sec;
+          } else if (typeof this._ext_total_duration_sec === 'number' && isFinite(this._ext_total_duration_sec) && this._ext_total_duration_sec > 0) {
+            total_duration_sec = this._ext_total_duration_sec;
+          } else {
+            // Last resort: keep the playhead moving even if the total duration is unavailable.
+            total_duration_sec = Math.max(1, (score_time_sec || 0) + 1);
+          }
+
+          if (typeof total_duration_sec === 'number' && isFinite(total_duration_sec) && total_duration_sec > 0) {
+            this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
+          }
+          try { piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
+          return;
         }
-
-        const log = this.shadowRoot.getElementById('log');
-        log.textContent = `Score notes: ${score.length}\n` +
-            score.slice(0, 32).map(n => JSON.stringify(n)).join('\n') +
-            (score.length > 32 ? `\n… (${score.length - 32} more)` : '');
-        console.log('SCORE [instrument, time, duration, key, velocity]:', score);
-        const thinned = this._thinScore(score);
-        this._lastScore = thinned;
-
-        // Auto export & download: MIDI + JSON snapshot (paired by timestamp)
-        try {
-            const effectiveROI = roi;
-            const state = this._collectState(effectiveROI);
-            const ts = new Date().toISOString().replace(/[:.]/g, '-');
-            this._exportMIDI(thinned, ts);
-            this._exportStateJSON(state, ts);
-        } catch (e) {
-            console.warn('Export failed:', e);
-        }
-
-        return thinned;
+      } catch (e) {
+      }
+      this.playHead.style.display = 'none';
+      return;
     }
 
-    _thinScore(score) {
-        if (!score.length) return score;
-        const keep = [];
-        const q = new Map(); // integer slice index -> array of notes
-        for (const n of score) {
-            const [ch, t, d, key, vel] = n;
-            const tKey = Math.round(t / this._stepBeats());
-            if (!q.has(tKey)) q.set(tKey, []);
-            q.get(tKey).push(n);
+    if (this._playTotalBeats <= 0) {
+      this.playHead.style.display = 'none';
+      return;
+    }
+    // Compute elapsed beats since start
+    const now = performance.now();
+    const elapsedBeats = this._beatsForMillis(now - this._playStartMS);
+
+    // Drive the piano-roll playhead (red ball) during MIDI playback by
+    // publishing score time in seconds to the Cloud5Piece.
+    try {
+      if (this.cloud5_piece) {
+        this.cloud5_piece.latest_score_time = this._secondsForBeats(elapsedBeats);
+        // Also publish a reasonable total duration for any other followers.
+        if (this._playTotalBeats > 0) {
+          this.cloud5_piece.total_duration = this._secondsForBeats(this._playTotalBeats);
         }
-        for (const [, arr] of q.entries()) {
-            arr.sort((a, b) => (b[4] | 0) - (a[4] | 0));
-            const top = arr.slice(0, this.maxVoicesPerSlice);
-            keep.push(...top);
-        }
-        keep.sort((a, b) => a[1] - b[1] || a[0] - b[0] || a[3] - b[3]);
-        return keep;
+      }
+      // Ensure the piano-roll playhead (red ball) advances during MIDI playback.
+      try { this.cloud5_piece.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
+      ///}
+    } catch (e) {
     }
 
-    getScore() { return this._lastScore ?? []; }
+    const frac = Math.max(0, Math.min(1, elapsedBeats / this._playTotalBeats));
 
-    async playMIDIFromScore() {
-        const score = await this.makeScore();
-        if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
+    // Use ROI if present; otherwise use full Julia viewport bounds
+    const roi = this.roiJ ?? {
+      minx: this.viewJ.cx - this.viewJ.scale,
+      maxx: this.viewJ.cx + this.viewJ.scale,
+      miny: this.viewJ.cy - this.viewJ.scale,
+      maxy: this.viewJ.cy + this.viewJ.scale
+    };
 
-        this._playing = true;
-        this._clearTimers();
+    const topLeft = this._complexToCanvasCss(roi.minx, roi.maxy);
+    const botRight = this._complexToCanvasCss(roi.maxx, roi.miny);
+    const L = Math.min(topLeft.x, botRight.x);
+    const T = Math.min(topLeft.y, botRight.y);
+    const W = Math.abs(botRight.x - topLeft.x);
+    const H = Math.abs(botRight.y - topLeft.y);
 
-        const out = this._currentMIDIOutput();
-        const step = (beats) => this._secondsForBeats(beats) * 1000; // ms
+    const x = L + W * frac;
+    Object.assign(this.playHead.style, {
+      display: 'block',
+      left: `${Math.round(x)}px`,
+      top: `${T}px`,
+      height: `${H}px`,
+    });
 
-        this._playStartMS = performance.now();
-        this._playTotalBeats = Math.max(0, ...score.map(n => n[1] + n[2]));
+    // Hide after the sweep completes
+    if (frac >= 1) this.playHead.style.display = 'none';
+  }
 
-        if (out) {
-            const t0 = this._playStartMS;
-            for (const [ch, tBeats, dBeats, key, vel] of score) {
-                const c = (ch | 0) & 0x0f;
-                const on = 0x90 | c;
-                const off = 0x80 | c;
-                const whenOn = t0 + step(tBeats);
-                const whenOff = t0 + step(tBeats + dBeats);
-
-                this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel | 0))]); }, Math.max(0, whenOn - performance.now())));
-                this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
-            }
-            this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(step(this._playTotalBeats) + 50)));
-            return;
-        }
-
-        // ---- WebAudio fallback ----
-        if (!this._audio) {
-            this._audio = new (window.AudioContext || window.webkitAudioContext)();
-            this._master = this._audio.createGain();
-            this._master.gain.value = 0.2;
-            this._master.connect(this._audio.destination);
-        }
-        const ac = this._audio;
-        const start = ac.currentTime;
-        const mtof = (n) => 440 * Math.pow(2, (n - 69) / 12);
-
-        for (const [_ch, tBeats, dBeats, key, vel] of score) {
-            const t0 = start + this._secondsForBeats(tBeats);
-            const t1 = t0 + this._secondsForBeats(dBeats);
-            const osc = ac.createOscillator();
-            const amp = ac.createGain();
-            const v = Math.max(0.02, Math.min(1, (vel | 0) / 127));
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(mtof(key | 0), t0);
-            amp.gain.setValueAtTime(0.0001, t0);
-            amp.gain.linearRampToValueAtTime(v, t0 + 0.01);
-            amp.gain.exponentialRampToValueAtTime(0.001, t1);
-            osc.connect(amp).connect(this._master);
-            osc.start(t0);
-            osc.stop(t1 + 0.05);
-            this._activeAudio.add(osc);
-            this._timers.push(setTimeout(() => this._activeAudio.delete(osc), Math.ceil((t1 - ac.currentTime + 0.1) * 1000)));
-        }
-        this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(this._secondsForBeats(this._playTotalBeats) * 1000 + 50)));
+  _updatePlayheadFromSeconds(score_time_sec, total_duration_sec) {
+    const total = Math.max(0, total_duration_sec || 0);
+    if (!(total > 0)) {
+      this.playHead.style.display = 'none';
+      return;
     }
+    const frac = Math.max(0, Math.min(1, (score_time_sec || 0) / total));
 
-    stopPlayback() {
-        this._playing = false;
-        this._playTotalBeats = 0;
-        this.playHead.style.display = 'none';
-        this._clearTimers();
-        this._panicMIDI();
-        this._stopWebAudio();
-    }
+    // Use ROI if present; otherwise use full Julia viewport bounds
+    const roi = this.roiJ ?? {
+      minx: this.viewJ.cx - this.viewJ.scale,
+      maxx: this.viewJ.cx + this.viewJ.scale,
+      miny: this.viewJ.cy - this.viewJ.scale,
+      maxy: this.viewJ.cy + this.viewJ.scale,
+    };
 
-    _timestamp() {
-        return new Date().toISOString().replace(/[:.]/g, '-');
-    }
+    const topLeft = this._complexToCanvasCss(roi.minx, roi.maxy);
+    const botRight = this._complexToCanvasCss(roi.maxx, roi.miny);
+    const L = Math.min(topLeft.x, botRight.x);
+    const T = Math.min(topLeft.y, botRight.y);
+    const W = Math.abs(botRight.x - topLeft.x);
+    const H = Math.abs(botRight.y - topLeft.y);
 
-    _collectState(roi) {
-        const s = this._currentState();
-        if (roi) s.roiJ = { ...roi };
-        s.timestamp = this._timestamp();
-        return s;
-    }
+    const x = L + W * frac;
+    Object.assign(this.playHead.style, {
+      display: 'block',
+      left: `${Math.round(x)}px`,
+      top: `${Math.round(T)}px`,
+      height: `${Math.round(H)}px`,
+    });
 
-    _currentState() {
-        const roi = this.roiJ ?? {
-            minx: this.viewJ.cx - this.viewJ.scale,
-            maxx: this.viewJ.cx + this.viewJ.scale,
-            miny: this.viewJ.cy - this.viewJ.scale,
-            maxy: this.viewJ.cy + this.viewJ.scale
-        };
-        const outName = this._currentMIDIOutput();
+    if (frac >= 1) this.playHead.style.display = 'none';
+  }
+
+  sync_from_controls() {
+    const pIn = this.shadowRoot.getElementById('expP');
+    const mIn = this.shadowRoot.getElementById('iterM');
+    const jIn = this.shadowRoot.getElementById('iterJ');
+    const nIn = this.shadowRoot.getElementById('binsN');
+    const MIn = this.shadowRoot.getElementById('binsM');
+    const kIn = this.shadowRoot.getElementById('binsK');
+    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const denIn = this.shadowRoot.getElementById('density');
+    const maxVIn = this.shadowRoot.getElementById('maxVoices');
+    const base_instrument = this.shadowRoot.getElementById('base_instrument');
+
+    this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
+    this.maxIterM = parseInt(mIn.value);
+    this.maxIterJ = parseInt(jIn.value);
+    this.nTime = parseInt(nIn.value);
+    this.nPitch = parseInt(MIn.value);
+    this.base_instrument = parseInt(base_instrument.value);
+    this.nInst = parseInt(kIn.value);
+
+    this.bpm = Math.max(20, Math.min(300, parseInt(bpmIn.value) || 120));
+    this.density = parseFloat(denIn.value);
+    this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
+  };
+
+  sync_to_controls() {
+    const pIn = this.shadowRoot.getElementById('expP');
+    const mIn = this.shadowRoot.getElementById('iterM');
+    const jIn = this.shadowRoot.getElementById('iterJ');
+    const nIn = this.shadowRoot.getElementById('binsN');
+    const MIn = this.shadowRoot.getElementById('binsM');
+    const kIn = this.shadowRoot.getElementById('binsK');
+    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const denIn = this.shadowRoot.getElementById('density');
+    const maxVIn = this.shadowRoot.getElementById('maxVoices');
+    const base_instrument = this.shadowRoot.getElementById('base_instrument');
+    pIn.value = `${this.exponent ?? 2.0}`;
+    mIn.value = `${this.maxIterM ?? 500}`;
+    jIn.value = `${this.maxIterJ ?? 1000}`;
+    nIn.value = `${this.nTime ?? 4096}`;
+    MIn.value = `${this.nPitch ?? 60}`;
+    base_instrument.value = `${this.base_instrument ?? 1}`;
+    kIn.value = `${this.nInst ?? 4}`;
+    bpmIn.value = `${this.bpm ?? 120}`;
+    denIn.value = `${this.density ?? 0.01}`;
+    maxVIn.value = `${this.maxVoicesPerSlice ?? 999}`;
+  };
+
+  initInteractions() {
+    const pIn = this.shadowRoot.getElementById('expP');
+    const mIn = this.shadowRoot.getElementById('iterM');
+    const jIn = this.shadowRoot.getElementById('iterJ');
+    const nIn = this.shadowRoot.getElementById('binsN');
+    const MIn = this.shadowRoot.getElementById('binsM');
+    const kIn = this.shadowRoot.getElementById('binsK');
+    const btnS = this.shadowRoot.getElementById('btnScore');
+    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const denIn = this.shadowRoot.getElementById('density');
+    const maxVIn = this.shadowRoot.getElementById('maxVoices');
+    const btnStop = this.shadowRoot.getElementById('btnStop');
+    const base_instrument = this.shadowRoot.getElementById('base_instrument');
+    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', this.sync_from_controls));
+    this.sync_from_controls();
+
+    btnStop.addEventListener('click', () => this.stopPlayback());
+
+    // --- Mandelbrot click/zoom ---
+    this.canvasM.addEventListener('click', (e) => {
+      const { altKey, shiftKey } = e;
+      const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
+      const rect = this.canvasM.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * dpr;
+      const y = (e.clientY - rect.top) * dpr;
+      const w = this.canvasM.width, h = this.canvasM.height;
+      const ndc = { x: x / w * 2 - 1, y: y / h * 2 - 1 };
+      const aspect = w / Math.max(1, h);
+
+      const zx = this.viewM.cx + ndc.x * this.viewM.scale;
+      const zy = this.viewM.cy - ndc.y * this.viewM.scale / aspect;
+
+
+      this.c = { x: zx, y: zy };
+
+      // Zooming with Option-click should recenter the Mandelbrot view on the
+      // selected point (c) and persist the updated view into the piece state.
+
+      this.viewM.cx = zx;
+      this.viewM.cy = zy;
+      if (altKey && shiftKey) {
+        this.viewM.scale *= 1.5;
+      } else if (altKey) {
+        this.viewM.scale *= 0.6667;
+      }
+
+      try {
+        // Persist viewM (and c) to the local *.state.json used by Cloud5.
+        cloud5_save_state_if_needed(this.cloud5_piece);
+      } catch (err) {
+        console.warn('Failed to persist Mandelbrot view state:', err);
+      }
+
+      // Keep Julia centered logically (we just set c); selection overlay will re-map itself each frame
+      this._updateSelectionOverlay();
+    });
+
+    // --- Julia drag ROI (lasso persists) ---
+    let dragging = false;
+    let startPx = { x: 0, y: 0 };
+    let curPx = { x: 0, y: 0 };
+
+    const beginDrag = (e) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      const rJ = this.canvasJ.getBoundingClientRect();
+      startPx.x = e.clientX;
+      startPx.y = e.clientY;
+      curPx.x = e.clientX;
+      curPx.y = e.clientY;
+      this.sel.style.display = 'block';
+      this._placeSelRect(rJ, startPx, curPx);
+      e.preventDefault();
+    };
+    const moveDrag = (e) => {
+      if (!dragging) return;
+      const rJ = this.canvasJ.getBoundingClientRect();
+      curPx.x = Math.min(Math.max(e.clientX, rJ.left), rJ.right);
+      curPx.y = Math.min(Math.max(e.clientY, rJ.top), rJ.bottom);
+      this._placeSelRect(rJ, startPx, curPx);
+    };
+    const endDrag = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      const rJ = this.canvasJ.getBoundingClientRect();
+      const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
+      const x0 = (Math.min(startPx.x, curPx.x) - rJ.left) * dpr;
+      const y0 = (Math.min(startPx.y, curPx.y) - rJ.top) * dpr;
+      const x1 = (Math.max(startPx.x, curPx.x) - rJ.left) * dpr;
+      const y1 = (Math.max(startPx.y, curPx.y) - rJ.top) * dpr;
+
+      if (Math.abs(x1 - x0) < 3 || Math.abs(y1 - y0) < 3) return;
+
+      const w = this.canvasJ.width, h = this.canvasJ.height;
+      const aspect = w / Math.max(1, h);
+
+      const toComplex = (px, py) => {
+        const ndcX = px / w * 2 - 1;
+        const ndcY = py / h * 2 - 1;
         return {
-            timestamp: new Date().toISOString(),
-            exponent: this.exponent,
-            maxIterM: this.maxIterM,
-            maxIterJ: this.maxIterJ,
-            nTime: this.nTime,
-            nPitch: this.nPitch,
-            nInst: this.nInst,
-            bpm: this.bpm,
-            density: this.density,
-            maxVoicesPerSlice: this.maxVoicesPerSlice,
-            stepBeats: this._stepBeats(),
-            viewM: { ...this.viewM },
-            viewJ: { ...this.viewJ },
-            c: { ...this.c },
-            roiJ: this.roiJ ? { ...this.roiJ } : null,
-            midiOutId: this._midiOutId || null,
-            midiOutName: outName ? outName.name : null,
-            version: 1
+          x: this.viewJ.cx + ndcX * this.viewJ.scale,
+          y: this.viewJ.cy - ndcY * this.viewJ.scale / aspect
         };
+      };
+
+      const zA = toComplex(x0, y0);
+      const zB = toComplex(x1, y1);
+      this.roiJ = {
+        minx: Math.min(zA.x, zB.x),
+        maxx: Math.max(zA.x, zB.x),
+        miny: Math.min(zA.y, zB.y),
+        maxy: Math.max(zA.y, zB.y),
+      };
+
+      // Do NOT hide the lasso; keep it visible
+      this._updateSelectionOverlay();
+    };
+
+    this.canvasJ.addEventListener('mousedown', beginDrag);
+    window.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', endDrag);
+
+    // --- Hotkeys ---
+    window.addEventListener('keydown', async (e) => {
+      const key = (e.key || '').toLowerCase();
+
+      if ((key === 's') && (e.altKey || e.metaKey)) {
+        e.preventDefault(); e.stopPropagation();
+        const score = this.makeScore(); // auto-download happens there
+        this.playMIDIFromScore();
+      }
+
+      if ((key === 'r') && (e.altKey || e.metaKey)) {
+        e.preventDefault(); e.stopPropagation();
+        this.roiJ = null;
+        this.sel.style.display = 'none';
+      }
+
+      if ((key === 'm') && (e.altKey && e.ctrlKey)) {
+        e.preventDefault(); e.stopPropagation();
+        this.playMIDIFromScore();
+      }
+    }, { capture: true });
+
+    btnS.addEventListener('click', () => { this.makeScore(); this.playMIDIFromScore(); });
+  }
+
+  _placeSelRect(rJ, startPx, curPx) {
+    const rRoot = this._rootDiv.getBoundingClientRect();
+    const left = Math.min(startPx.x, curPx.x) - rRoot.left;
+    const top = Math.min(startPx.y, curPx.y) - rRoot.top;
+    const width = Math.abs(curPx.x - startPx.x);
+    const height = Math.abs(curPx.y - startPx.y);
+
+    const jl = rJ.left - rRoot.left, jt = rJ.top - rRoot.top;
+    const jr = rJ.right - rRoot.left, jb = rJ.bottom - rRoot.top;
+    const L = Math.max(left, jl);
+    const T = Math.max(top, jt);
+    const R = Math.min(left + width, jr);
+    const B = Math.min(top + height, jb);
+
+    Object.assign(this.sel.style, {
+      left: `${L}px`,
+      top: `${T}px`,
+      width: `${Math.max(0, R - L)}px`,
+      height: `${Math.max(0, B - T)}px`,
+    });
+  }
+
+  // --- Tonalization helpers driven by Julia rotation (inst) ---
+
+  _scaleDegrees(major = true) { // pitch classes
+    return major ? [0, 2, 4, 5, 7, 9, 11] : [0, 2, 3, 5, 7, 8, 10];
+  }
+  _pcNearestInScale(pc, scale) {
+    // return the closest pitch-class in scale (ties prefer upward)
+    let best = scale[0], bestDist = 12;
+    for (const d of scale) {
+      let dist = Math.min((pc - d + 12) % 12, (d - pc + 12) % 12);
+      if (dist < bestDist || (dist === bestDist && ((d - pc + 12) % 12) < ((best - pc + 12) % 12))) {
+        best = d; bestDist = dist;
+      }
+    }
+    return best;
+  }
+  _quantizeToKey(pc, tonic_pc, major = true) {
+    const scale = this._scaleDegrees(major);
+    // shift to relative to tonic, snap, then unshift
+    const rel = (pc - tonic_pc + 120) % 12;
+    const snapped = this._pcNearestInScale(rel, scale);
+    return (snapped + tonic_pc) % 12;
+  }
+  _circleOfFifths(pc, steps) { // steps can be +/-; each step is +7 mod 12
+    let x = pc;
+    for (let i = 0; i < Math.abs(steps); i++) x = (x + (steps > 0 ? 7 : 5)) % 12;
+    return x;
+  }
+
+  // Build a per-slice plan: tonic_pc[i], majorMinor[i], chordFunction[i]
+  _buildKeyPlanFromGrid(active, vel, inst, N, M, K) {
+    const plan = new Array(N);
+    const smoothWin = 8; // slices
+    let tRotBuf = new Array(N).fill(0);
+    let bright = new Array(N).fill(0);
+
+    for (let i = 0; i < N; i++) {
+      let sumW = 0, sumInst = 0, sumVel = 0;
+      for (let j = 0; j < M; j++) if (active[i][j]) {
+        const v = vel[i][j] | 0;
+        const k = inst[i][j] | 0;
+        sumW += v;
+        sumVel += v;
+        sumInst += v * (k + 0.5) / Math.max(1, K); // proxy for tRot via inst
+      }
+      const tRot = sumW ? (sumInst / sumW) % 1.0 : 0.0;
+      const vMean = sumW ? (sumVel / sumW) : 0;
+      tRotBuf[i] = tRot;
+      bright[i] = vMean;
     }
 
-    _exportStateJSON(state, baseName) {
-        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${baseName}.json`;
-        this.shadowRoot.appendChild(a);
-        a.click();
-        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+    // Smooth tRot
+    const tRotSm = new Array(N).fill(0);
+    for (let i = 0; i < N; i++) {
+      let s = 0, w = 0;
+      for (let d = -smoothWin; d <= smoothWin; d++) {
+        const k = i + d; if (k < 0 || k >= N) continue;
+        const wt = 1 / (1 + Math.abs(d));
+        s += tRotBuf[k] * wt; w += wt;
+      }
+      tRotSm[i] = s / Math.max(1e-6, w);
     }
 
-    // --------- MIDI file export ---------
-    _exportMIDI(score, baseName) {
-        if (!score || !score.length) return;
-        const PPQ = 480;
-        const tempoMicro = Math.round(60000000 / Math.max(20, this.bpm | 0));
+    // Map to key and mode
+    for (let i = 0; i < N; i++) {
+      const t = tRotSm[i];
+      const fifthSteps = Math.round(12 * t);                // circle of fifths
+      const tonic_pc = (7 * (fifthSteps % 12) + 120) % 12;  // 0=C, 7=G, etc.
+      const maj = bright[i] >= 80; // threshold; tune to taste
+      plan[i] = { tonic_pc, major: maj, func: 'I' };
+    }
 
-        const events = [];
-        for (const [ch, tBeats, dBeats, key, vel] of score) {
-            const start = Math.max(0, Math.round(tBeats * PPQ));
-            const end = Math.max(start + 1, Math.round((tBeats + dBeats) * PPQ));
-            const c = (ch | 0) & 0x0f;
-            const v = Math.max(1, Math.min(127, vel | 0));
-            events.push({ tick: start, type: 1, ch: c, key: key & 0x7f, vel: v });
-            events.push({ tick: end, type: 0, ch: c, key: key & 0x7f, vel: 0 });
+    // Harmonic rhythm + cadences
+    const barBeats = 4;
+    const binsPerBar = Math.round(barBeats / this._stepBeats()); // e.g., 32
+    for (let i = 0; i < N; i += binsPerBar) {
+      const end = Math.min(N - 1, i + binsPerBar - 1);
+      // pick a function around trend: favor I, IV, V; drift with tRot change
+      const keys = ['I', 'vi', 'IV', 'ii', 'V'];
+      plan[i].func = (i / binsPerBar) % 4 === 3 ? 'V' : keys[(Math.round(tRotSm[i] * 4)) % keys.length];
+      // cadence: every 4 bars enforce V→I
+      if ((i / binsPerBar) % 4 === 3) plan[end].func = 'V';
+      if ((i / binsPerBar) % 4 === 0 && i > 0) plan[i].func = 'I';
+    }
+
+    return { plan, binsPerBar };
+  }
+
+  // Given a function and key, return allowed chord-tone pitch classes
+  _chordPCs(func, tonic_pc, major = true) {
+    // triads + sevenths common tones
+    // in major: I(0,4,7,11), IV(5,9,0,2), V(7,11,2,5), vi(9,0,4,7), ii(2,5,9,0)
+    // in minor: approximate harmonic minor functions
+    const MAJ = {
+      I: [0, 4, 7, 11],
+      IV: [5, 9, 0, 2],
+      V: [7, 11, 2, 5],
+      vi: [9, 0, 4, 7],
+      ii: [2, 5, 9, 0],
+    };
+    const MIN = {
+      i: [0, 3, 7, 10],
+      iv: [5, 8, 0, 2],
+      V: [7, 11, 2, 5],  // harmonic dominant
+      VI: [8, 0, 3, 7],
+      ii7b5: [2, 5, 8, 11],  // half-diminished flavor
+    };
+    const bank = major ? MAJ : MIN;
+    const name = major ? (['I', 'IV', 'V', 'vi', 'ii'].includes(func) ? func : 'I')
+      : (['i', 'iv', 'V', 'VI', 'ii7b5'].includes(func) ? func : 'i');
+    const pcs = bank[name].map(pc => (pc + tonic_pc) % 12);
+    return pcs;
+  }
+
+  // Nudges each note to a scale/chord pitch with light voice-leading cost
+  _tonalizeScore(score, plan, binsPerBar) {
+    if (!score.length) return score;
+
+    // Build a slice index for each event
+    const step = this._stepBeats();
+    const out = [];
+    const lastPitchByChan = new Map();
+
+    for (const ev of score) {
+      const [ch, tBeats, dBeats, key, vel] = ev;
+      const slice = Math.max(0, Math.floor(tBeats / step));
+      const { tonic_pc, major, func } = plan[Math.min(plan.length - 1, slice)];
+
+      // base: quantize to scale
+      const pc = key % 12;
+      const pcScale = this._quantizeToKey(pc, tonic_pc, major);
+
+      // chord push near barlines / cadence
+      const inBarPos = (slice % binsPerBar);
+      let pcsChord = null;
+      if (inBarPos >= binsPerBar - 4) { // last half-beat of bar: prefer chord tones
+        pcsChord = this._chordPCs(func, tonic_pc, major);
+      }
+
+      // choose target pc with minimal voice-leading
+      const prev = lastPitchByChan.has(ch) ? lastPitchByChan.get(ch) : key;
+      const targets = pcsChord ?? [pcScale];
+      let bestKey = key, bestCost = 1e9;
+      for (const tgtPC of targets) {
+        // search nearby octaves (±2 octaves)
+        for (let o = -2; o <= 2; o++) {
+          const cand = (Math.floor(key / 12) + o) * 12 + tgtPC;
+          const cost = Math.abs(cand - prev) + (pcsChord ? 0 : 2); // favor chord over scale at cadences
+          if (cost < bestCost) { bestCost = cost; bestKey = cand; }
         }
-        events.sort((a, b) => a.tick - b.tick || a.type - b.type);
+      }
 
-        const VLQ = (n) => {
-            let buffer = n & 0x7f;
-            const bytes = [];
-            while ((n >>= 7)) { buffer <<= 8; buffer |= ((n & 0x7f) | 0x80); }
-            while (true) { bytes.push(buffer & 0xff); if (buffer & 0x80) buffer >>= 8; else break; }
-            return bytes;
-        };
+      lastPitchByChan.set(ch, bestKey);
+      out.push([ch, tBeats, dBeats, bestKey, vel]);
+    }
+    return out;
+  }
 
-        const track = [];
-        const push = (...xs) => track.push(...xs);
+  async makeScore() {
+    const N = this.nTime, M = this.nPitch, K = this.nInst;
+    const roi = this.roiJ ?? {
+      minx: this.viewJ.cx - this.viewJ.scale,
+      maxx: this.viewJ.cx + this.viewJ.scale,
+      miny: this.viewJ.cy - this.viewJ.scale,
+      maxy: this.viewJ.cy + this.viewJ.scale
+    };
+    this.writeComputeUniforms(roi, N, M, K);
 
-        push(...VLQ(0), 0xFF, 0x51, 0x03,
-            (tempoMicro >> 16) & 0xFF,
-            (tempoMicro >> 8) & 0xFF,
-            tempoMicro & 0xFF);
+    const gridSize = N * M * 4;
+    const grid = this.device.createBuffer({ size: gridSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+    const csBG0 = this.device.createBindGroup({ layout: this.csBGL0, entries: [{ binding: 0, resource: { buffer: this.csUniformBuf } }] });
+    const csBG1 = this.device.createBindGroup({ layout: this.csBGL1, entries: [{ binding: 1, resource: { buffer: grid } }] });
 
-        let lastTick = 0;
-        for (const ev of events) {
-            const dt = ev.tick - lastTick; lastTick = ev.tick;
-            push(...VLQ(dt));
-            if (ev.type === 1) {
-                push(0x90 | ev.ch, ev.key, ev.vel);
-            } else {
-                push(0x80 | ev.ch, ev.key, 0);
-            }
-        }
-        push(...VLQ(0), 0xFF, 0x2F, 0x00);
+    const enc = this.device.createCommandEncoder();
+    const pass = enc.beginComputePass();
+    pass.setPipeline(this.csPipeline);
+    pass.setBindGroup(0, csBG0);
+    pass.setBindGroup(1, csBG1);
+    pass.dispatchWorkgroups(Math.ceil(N / 8), Math.ceil(M / 8), 1);
+    pass.end();
 
-        const header = new Uint8Array([
-            0x4d, 0x54, 0x68, 0x64,
-            0x00, 0x00, 0x00, 0x06,
-            0x00, 0x00,
-            0x00, 0x01,
-            (PPQ >> 8) & 0xFF, PPQ & 0xFF,
-        ]);
-        const trkLen = track.length;
-        const trkHeader = new Uint8Array([
-            0x4d, 0x54, 0x72, 0x6b,
-            (trkLen >>> 24) & 0xFF, (trkLen >>> 16) & 0xFF, (trkLen >>> 8) & 0xFF, trkLen & 0xFF,
-        ]);
-        const bytes = new Uint8Array(header.length + trkHeader.length + trkLen);
-        bytes.set(header, 0);
-        bytes.set(trkHeader, header.length);
-        bytes.set(new Uint8Array(track), header.length + trkHeader.length);
+    const readBuf = this.device.createBuffer({ size: gridSize, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    enc.copyBufferToBuffer(grid, 0, readBuf, 0, gridSize);
+    this.device.queue.submit([enc.finish()]);
+    await readBuf.mapAsync(GPUMapMode.READ);
+    const u32grid = new Uint32Array(readBuf.getMappedRange().slice(0));
+    readBuf.unmap();
 
-        const blob = new Blob([bytes], { type: 'audio/midi' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const ts = baseName || new Date().toISOString().replace(/[:.]/g, '-');
-        a.href = url;
-        a.download = `mandelbrot-julia-${ts}.mid`;
-        this.shadowRoot.appendChild(a);
-        a.click();
-        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+    const dtBeats = this._stepBeats(); // 1/8 beat per time bin
+    const pmin = 36;
+    const active = Array.from({ length: N }, _ => new Uint8Array(M));
+    const vel = Array.from({ length: N }, _ => new Uint8Array(M));
+    const inst = Array.from({ length: N }, _ => new Uint8Array(M));
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < M; j++) {
+        const v = u32grid[i * M + j];
+        active[i][j] = v & 0xFF;
+        vel[i][j] = (v >>> 8) & 0xFF;
+        inst[i][j] = (v >>> 16) & 0xFF;
+      }
     }
 
+    // --- Adaptive per-slice normalization of density ---
+    const perSliceKeep = Math.max(1, Math.min(this.maxVoicesPerSlice, Math.round(this.density * M)));
+    for (let i = 0; i < N; i++) {
+      const pairs = new Array(M);
+      for (let j = 0; j < M; j++) pairs[j] = [j, vel[i][j]];
+      pairs.sort((a, b) => (b[1] | 0) - (a[1] | 0));
+      const cutoff = pairs[Math.min(perSliceKeep - 1, pairs.length - 1)][1] | 0;
+      for (let j = 0; j < M; j++) active[i][j] = (vel[i][j] | 0) >= cutoff ? 1 : 0;
+    }
+
+    const runOn = Array.from({ length: M }, _ => Array(K).fill(false));
+    const runI0 = Array.from({ length: M }, _ => Array(K).fill(0));
+    const runVmax = Array.from({ length: M }, _ => Array(K).fill(0));
+    const score = [];
+
+    for (let i = 0; i <= N; i++) {
+      for (let j = 0; j < M; j++) {
+        const on = (i < N) ? active[i][j] : 0;
+        const vv = (i < N) ? vel[i][j] : 0;
+        const kk = (i < N) ? inst[i][j] : 0;
+
+        for (let k = 0; k < K; k++) {
+          if (runOn[j][k] && (i === N || k !== kk || !on)) {
+            const i0 = runI0[j][k], i1 = i - 1;
+            score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, pmin + j, runVmax[j][k]]);
+            runOn[j][k] = false;
+          }
+        }
+        if (i < N && on) {
+          if (!runOn[j][kk]) { runOn[j][kk] = true; runI0[j][kk] = i; runVmax[j][kk] = vv; }
+          else { runVmax[j][kk] = Math.max(runVmax[j][kk], vv); }
+        }
+      }
+    }
+
+    const log = this.shadowRoot.getElementById('log');
+    log.textContent = `Score notes: ${score.length}\n` +
+      score.slice(0, 32).map(n => JSON.stringify(n)).join('\n') +
+      (score.length > 32 ? `\n… (${score.length - 32} more)` : '');
+    console.log('SCORE [instrument, time, duration, key, velocity]:', score);
+    // Build the per-slice tonal plan from Julia-driven 'inst' and velocities
+    const { plan, binsPerBar } = this._buildKeyPlanFromGrid(active, vel, inst, N, M, K);
+
+    // Your existing thinning:
+    const thinned = this._thinScore(score);
+
+    // Tonalize (quantize to slice key/scale, add cadences, light voice-leading)
+    const tonal = this._tonalizeScore(thinned, plan, binsPerBar);
+
+    this._lastScore = tonal;
+
+    // Export / play from 'tonal' instead of 'thinned'
+    try {
+      const effectiveROI = roi;
+      const state = this._collectState(effectiveROI);
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      this._exportMIDI(tonal, ts);
+      this._exportStateJSON(state, ts);
+    } catch (e) { console.warn('Export failed:', e); }
+
+    return tonal;
+  }
+
+  _thinScore(score) {
+    if (!score.length) return score;
+    const keep = [];
+    const q = new Map(); // integer slice index -> array of notes
+    for (const n of score) {
+      const [ch, t, d, key, vel] = n;
+      const tKey = Math.round(t / this._stepBeats());
+      if (!q.has(tKey)) q.set(tKey, []);
+      q.get(tKey).push(n);
+    }
+    for (const [, arr] of q.entries()) {
+      arr.sort((a, b) => (b[4] | 0) - (a[4] | 0));
+      const top = arr.slice(0, this.maxVoicesPerSlice);
+      keep.push(...top);
+    }
+    keep.sort((a, b) => a[1] - b[1] || a[0] - b[0] || a[3] - b[3]);
+    return keep;
+  }
+
+  getScore() { return this._lastScore ?? []; }
+
+  _publish_midi_score_to_piano_roll(score) {
+    const piece = this.cloud5_piece;
+    const piano_roll = piece?.piano_roll_overlay;
+    if (!piece || !piano_roll) return;
+    const SilencioScore = globalThis.Silencio?.Score;
+    if (!SilencioScore) return;
+
+    const silencio_score = new SilencioScore();
+    for (const note of score) {
+      const ch = (note[0] | 0) & 0x0f;
+      const t_beats = +note[1];
+      const d_beats = +note[2];
+      const key = note[3] | 0;
+      const vel = note[4] | 0;
+
+      const t_sec = this._secondsForBeats(t_beats);
+      const d_sec = this._secondsForBeats(d_beats);
+
+      // Silencio.Score.add signature:
+      // add(time, duration, status, channel, key, velocity, x, y, z, phase)
+      silencio_score.add(t_sec, d_sec, 144, ch, key, vel, 0, 0, 0, 0);
+    }
+
+    try { piano_roll.draw_silencio_score(silencio_score); } catch (e) { }
+    try { piano_roll.recenter?.(); } catch (e) { }
+    try { piano_roll.on_shown?.(); } catch (e) { }
+  }
+
+
+  async playMIDIFromScore() {
+    await cloud5_save_state_if_needed(this.cloud5_piece);
+
+    const score = await this.makeScore();
+    if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
+
+    // Ensure the piano roll has geometry to draw (progress3D alone does not render notes).
+    this._publish_midi_score_to_piano_roll(score);
+
+    this._playing = true;
+    this._clearTimers();
+
+    const out = this._currentMIDIOutput();
+    const step = (beats) => this._secondsForBeats(beats) * 1000; // ms
+
+    this._playStartMS = performance.now();
+
+    this._start_playhead_ticker();
+    this._playTotalBeats = Math.max(0, ...score.map(n => n[1] + n[2]));
+
+    if (out) {
+      const t0 = this._playStartMS;
+      for (const [ch, tBeats, dBeats, key, vel] of score) {
+        const c = (ch | 0) & 0x0f;
+        const on = 0x90 | c;
+        const off = 0x80 | c;
+        const whenOn = t0 + step(tBeats);
+        const whenOff = t0 + step(tBeats + dBeats);
+
+        this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel | 0))]); }, Math.max(0, whenOn - performance.now())));
+        this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
+      }
+      this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(step(this._playTotalBeats) + 50)));
+      return;
+    }
+
+    // ---- WebAudio fallback ----
+    if (!this._audio) {
+      this._audio = new (window.AudioContext || window.webkitAudioContext)();
+      this._master = this._audio.createGain();
+      this._master.gain.value = 0.2;
+      this._master.connect(this._audio.destination);
+    }
+    const ac = this._audio;
+    const start = ac.currentTime;
+    const mtof = (n) => 440 * Math.pow(2, (n - 69) / 12);
+
+    for (const [_ch, tBeats, dBeats, key, vel] of score) {
+      const t0 = start + this._secondsForBeats(tBeats);
+      const t1 = t0 + this._secondsForBeats(dBeats);
+      const osc = ac.createOscillator();
+      const amp = ac.createGain();
+      const v = Math.max(0.02, Math.min(1, (vel | 0) / 127));
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(mtof(key | 0), t0);
+      amp.gain.setValueAtTime(0.0001, t0);
+      amp.gain.linearRampToValueAtTime(v, t0 + 0.01);
+      amp.gain.exponentialRampToValueAtTime(0.001, t1);
+      osc.connect(amp).connect(this._master);
+      osc.start(t0);
+      osc.stop(t1 + 0.05);
+      this._activeAudio.add(osc);
+      this._timers.push(setTimeout(() => this._activeAudio.delete(osc), Math.ceil((t1 - ac.currentTime + 0.1) * 1000)));
+    }
+    this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(this._secondsForBeats(this._playTotalBeats) * 1000 + 50)));
+  }
+
+  stopPlayback() {
+    this._playing = false;
+    this._stop_playhead_ticker();
+    this._playTotalBeats = 0;
+    this.playHead.style.display = 'none';
+    this._clearTimers();
+    this._panicMIDI();
+    this._stopWebAudio();
+    // Reset external/Csound playhead state so the next performance starts at 0.
+    try {
+      if (this.cloud5_piece) {
+        this.cloud5_piece.latest_score_time = 0;
+        this.cloud5_piece.total_duration = 0;
+      }
+    } catch (e) { }
+    this._ext_total_duration_sec = 0;
+  }
+
+  _timestamp() {
+    return new Date().toISOString().replace(/[:.]/g, '-');
+  }
+
+  _collectState(roi) {
+    const s = this._currentState();
+    if (roi) s.roiJ = { ...roi };
+    s.timestamp = this._timestamp();
+    return s;
+  }
+
+  _currentStatex() {
+    const roi = this.roiJ ?? {
+      minx: this.viewJ.cx - this.viewJ.scale,
+      maxx: this.viewJ.cx + this.viewJ.scale,
+      miny: this.viewJ.cy - this.viewJ.scale,
+      maxy: this.viewJ.cy + this.viewJ.scale
+    };
+    const outName = this._currentMIDIOutput();
+    return {
+      timestamp: new Date().toISOString(),
+      exponent: this.exponent,
+      maxIterM: this.maxIterM,
+      maxIterJ: this.maxIterJ,
+      nTime: this.nTime,
+      nPitch: this.nPitch,
+      nInst: this.nInst,
+      bpm: this.bpm,
+      density: this.density,
+      maxVoicesPerSlice: this.maxVoicesPerSlice,
+      stepBeats: this._stepBeats(),
+      viewM: { ...this.viewM },
+      viewJ: { ...this.viewJ },
+      c: { ...this.c },
+      roiJ: this.roiJ ? { ...this.roiJ } : null,
+      midiOutId: this._midiOutId || null,
+      midiOutName: outName ? outName.name : null,
+      version: 1
+    };
+  }
+
+  _exportStateJSONX(state, baseName) {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${baseName}.json`;
+    this.shadowRoot.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+  }
+
+  // --------- MIDI file export ---------
+  _exportMIDI(score, baseName) {
+    if (!score || !score.length) return;
+    const PPQ = 480;
+    const tempoMicro = Math.round(60000000 / Math.max(20, this.bpm | 0));
+
+    const events = [];
+    for (const [ch, tBeats, dBeats, key, vel] of score) {
+      const start = Math.max(0, Math.round(tBeats * PPQ));
+      const end = Math.max(start + 1, Math.round((tBeats + dBeats) * PPQ));
+      const c = (ch | 0) & 0x0f;
+      const v = Math.max(1, Math.min(127, vel | 0));
+      events.push({ tick: start, type: 1, ch: c, key: key & 0x7f, vel: v });
+      events.push({ tick: end, type: 0, ch: c, key: key & 0x7f, vel: 0 });
+    }
+    events.sort((a, b) => a.tick - b.tick || a.type - b.type);
+
+    const VLQ = (n) => {
+      let buffer = n & 0x7f;
+      const bytes = [];
+      while ((n >>= 7)) { buffer <<= 8; buffer |= ((n & 0x7f) | 0x80); }
+      while (true) { bytes.push(buffer & 0xff); if (buffer & 0x80) buffer >>= 8; else break; }
+      return bytes;
+    };
+
+    const track = [];
+    const push = (...xs) => track.push(...xs);
+
+    push(...VLQ(0), 0xFF, 0x51, 0x03,
+      (tempoMicro >> 16) & 0xFF,
+      (tempoMicro >> 8) & 0xFF,
+      tempoMicro & 0xFF);
+
+    let lastTick = 0;
+    for (const ev of events) {
+      const dt = ev.tick - lastTick; lastTick = ev.tick;
+      push(...VLQ(dt));
+      if (ev.type === 1) {
+        push(0x90 | ev.ch, ev.key, ev.vel);
+      } else {
+        push(0x80 | ev.ch, ev.key, 0);
+      }
+    }
+    push(...VLQ(0), 0xFF, 0x2F, 0x00);
+
+    const header = new Uint8Array([
+      0x4d, 0x54, 0x68, 0x64,
+      0x00, 0x00, 0x00, 0x06,
+      0x00, 0x00,
+      0x00, 0x01,
+      (PPQ >> 8) & 0xFF, PPQ & 0xFF,
+    ]);
+    const trkLen = track.length;
+    const trkHeader = new Uint8Array([
+      0x4d, 0x54, 0x72, 0x6b,
+      (trkLen >>> 24) & 0xFF, (trkLen >>> 16) & 0xFF, (trkLen >>> 8) & 0xFF, trkLen & 0xFF,
+    ]);
+    const bytes = new Uint8Array(header.length + trkHeader.length + trkLen);
+    bytes.set(header, 0);
+    bytes.set(trkHeader, header.length);
+    bytes.set(new Uint8Array(track), header.length + trkHeader.length);
+
+    const blob = new Blob([bytes], { type: 'audio/midi' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = baseName || new Date().toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `mandelbrot-julia-${ts}.mid`;
+    this.shadowRoot.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+  }
+
+  async on_generate() {
+    const generated_score = await this.makeScore();
+    // Layout of this score's notes is: [channel, startBeat, durationBeats, midiKey, velocity]
+    // Signature of append_note is:
+    // virtual void append_note(double time, double duration, double status, double instrument, double key, double velocity, double phase=0, double pan=0, double depth=0, double height=0, double pitches=4095);
+    for (const note of generated_score) {
+      let time = note[1];
+      let duration = note[2];
+      let status = 144;
+      let instrument = note[0] + this.base_instrument;
+      let pitch = note[3];
+      let loudness = note[4];
+      loudness = (loudness / 5.0) + 50;
+      this.cloud5_piece.score.append(time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095);
+      /// this.cloud5_piece.score.append(note[1], note[2], 144, 3, note[3], note[4], 0, 0, 0, 0, 4095);
+    }
+  }
 }
 
 customElements.define('mandelbrot-julia', MandelbrotJulia);

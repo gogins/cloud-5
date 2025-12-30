@@ -59,7 +59,6 @@ html::-webkit-scrollbar {
   overflow: hidden;
   position: relative;
   background-color: black;
-
 }
 
 /**
@@ -91,6 +90,18 @@ cloud5-about {
   width: 100vw;
   height: 100vh;
   isolation: isolate;
+}
+
+/* Generic overlays (e.g. <mandelbrot-julia class="cloud5-overlay">)
+   that are auto-registered by cloud-5.js. */
+.cloud5-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;          /* shown by Cloud5Piece.show(...) */
+  width: 100vw;
+  height: 100vh;
+  isolation: isolate;
+  z-index: 1300;          /* above shader (100), below menu (8000) */
 }
 
 /* Must be on top to permit editing text fields. */

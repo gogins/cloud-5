@@ -4,10 +4,14 @@
  * its DOM object can be obtained, and then not only DOM methods but also 
  * custom methods can be called.
  * 
- * In general, rather than subclassing these custom elements (although that 
- * is possible), users should define and set addon functions, code text, and 
- * other properties of the custom elements. All such user-defined properties 
- * have names ending in `_addon`.
+ * There are two methods of extending the cloud-5 system:
+ * 
+ * 1. Set addon functions, code text, and other properties of the custom 
+ *    elements. All such user-defined properties have names ending in 
+ *    `_addon`.
+ * 2. Define new custom elements that derive from the `Cloud5Element` base 
+ *    class, or from other cloud-5 custom elements. These new custom elements 
+ *    will automatically be given menu buttons and show/hide behavior by the
  * 
  * To simplify both usage and maintenance, internal styles are usually not 
  * used. Default styles are defined in the csound-5.css cascading style sheet. 
@@ -98,9 +102,19 @@ function obtainWebGL2(container, {
   // Context loss / restore
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
+    const msg = 'WebGL context lost (obtainWebGL2)';
+    console.error(msg);
+    try {
+      globalThis.cloud5_piece?.csound_message_callback?.(msg + '\n');
+    } catch { }
     // stop anim loops / releases as needed
   });
   canvas.addEventListener('webglcontextrestored', () => {
+    const msg = 'WebGL context restored (obtainWebGL2)';
+    console.log(msg);
+    try {
+      globalThis.cloud5_piece?.csound_message_callback?.(msg + '\n');
+    } catch { }
     // re-create programs/buffers/textures, then:
     resize();
   });
@@ -126,15 +140,426 @@ function obtainWebGL2(container, {
   return { gl, canvas, isWebGL2 };
 }
 
+function cloud5_can_persist_state() {
+  return cloud5_is_local_context();
+}
+
+function cloud5_state_filename_for_piece() {
+  const base = document.title || 'piece';
+  return `${base}.state.json`;
+}
+
+function cloud5_is_local_context() {
+  const protocol = window.location.protocol;
+  const host = window.location.hostname;
+
+  if (protocol === 'file:') {
+    return true;
+  }
+
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return true;
+  }
+
+  // NW.js but loading remote content → not local
+  if (typeof process !== 'undefined' && process.versions?.nw) {
+    return false;
+  }
+
+  return false;
+}
+
+function cloud5_get_by_path(obj, path) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return undefined;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (const part of parts) {
+    if (current === null || (typeof current !== 'object' && typeof current !== 'function')) {
+      return undefined;
+    }
+    if (!(part in current)) {
+      return undefined;
+    }
+    current = current[part]; // supports prototype getters
+  }
+
+  return current;
+}
+
+function cloud5_set_by_path(obj, path, value) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+
+    if (current === null || (typeof current !== 'object' && typeof current !== 'function')) {
+      return;
+    }
+
+    // Use existing value if it looks like an object; otherwise create.
+    if (!(part in current) || current[part] === null || typeof current[part] !== 'object') {
+      current[part] = {};
+    }
+
+    current = current[part];
+  }
+
+  // Final assignment: will invoke a setter if present.
+  current[parts[parts.length - 1]] = value;
+}
+
+function cloud5_snapshot_fields(obj, field_names) {
+  const values = {};
+
+  for (const path of field_names) {
+    try {
+      const raw_value = cloud5_get_by_path(obj, path);
+      if (raw_value === undefined) {
+        continue;
+      }
+
+      const detached = JSON.parse(JSON.stringify(raw_value));
+      values[path] = detached;
+    } catch {
+      console.warn(`cloud5_snapshot_fields: field ${path} could not be serialized; skipping.`);
+    }
+  }
+
+  return values;
+}
+
+function cloud5_restore_fields(obj, values) {
+  if (!obj || !values || typeof values !== 'object') {
+    return;
+  }
+
+  for (const path of Object.keys(values)) {
+    try {
+      cloud5_set_by_path(obj, path, values[path]);
+    } catch {
+      console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
+    }
+  }
+}
+
+function cloud5_apply_state_bindings(host, options = {}) {
+  if (!host) return;
+
+  const include_shadow = options.include_shadow !== false;
+  const roots = [];
+  roots.push(host);
+  if (include_shadow && host.shadowRoot) {
+    roots.push(host.shadowRoot);
+  }
+
+  const apply_to_element = (el, value) => {
+    if (!el) return;
+
+    // Optional affine transform: value' = value * scale + offset
+    let v = value;
+    const scale_attr = el.getAttribute?.('data-cloud5-bind-scale');
+    const offset_attr = el.getAttribute?.('data-cloud5-bind-offset');
+    const scale = scale_attr !== null ? parseFloat(scale_attr) : NaN;
+    const offset = offset_attr !== null ? parseFloat(offset_attr) : NaN;
+    if (typeof v === 'number') {
+      if (!Number.isNaN(scale)) v = v * scale;
+      if (!Number.isNaN(offset)) v = v + offset;
+    }
+
+    const explicit_prop = el.getAttribute?.('data-cloud5-bind-prop');
+    if (explicit_prop) {
+      try {
+        el[explicit_prop] = v;
+      } catch (e) { }
+      return;
+    }
+
+    // Default mapping.
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'input') {
+      const type = (el.getAttribute('type') || 'text').toLowerCase();
+      if (type === 'checkbox' || type === 'radio') {
+        el.checked = !!v;
+      } else {
+        el.value = (v ?? '').toString();
+      }
+      return;
+    }
+
+    if (tag === 'textarea' || tag === 'select') {
+      el.value = (v ?? '').toString();
+      return;
+    }
+
+    el.textContent = (v ?? '').toString();
+  };
+
+  for (const root of roots) {
+    const bound = root.querySelectorAll?.('[data-cloud5-bind]') || [];
+    for (const el of bound) {
+      const bind_path = el.getAttribute('data-cloud5-bind');
+      if (!bind_path) continue;
+      const value = cloud5_get_by_path(host, bind_path);
+      if (value === undefined) continue;
+      apply_to_element(el, value);
+    }
+  }
+}
+
+function cloud5_notify_state_restored(piece, restored_state) {
+  const notify_one = (obj) => {
+    if (!obj) return;
+    try {
+      obj.on_state_restored?.(restored_state);
+    } catch (e) {
+      console.warn('on_state_restored failed:', e);
+    }
+  };
+
+  notify_one(piece);
+
+  try {
+    if (typeof piece?._get_all_overlays === 'function') {
+      for (const overlay of piece._get_all_overlays()) {
+        notify_one(overlay);
+      }
+    }
+  } catch (e) { }
+}
+
+async function cloud5_clipboard_and_download(json_text, filename) {
+  // Clipboard
+  try {
+    await navigator.clipboard.writeText(json_text);
+  } catch (e) {
+    console.warn('Clipboard write failed:', e);
+  }
+
+  // Automatic download
+  const blob = new Blob([json_text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
+async function cloud5_save_state_if_needed(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const json_text = JSON.stringify(state_obj, null, 2);
+
+  // Try filesystem first
+  if (typeof fs !== 'undefined' && fs?.writeFileSync) {
+    try {
+      const tmp = filename + '.tmp';
+      fs.writeFileSync(tmp, json_text, 'utf8');
+      fs.renameSync(tmp, filename);
+      return;
+    } catch (e) {
+      console.warn('fs write failed, falling back to clipboard:', e);
+    }
+  }
+
+  // Fallback: clipboard + download
+  await cloud5_clipboard_and_download(json_text, filename);
+}
+
+async function cloud5_load_state_if_present(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+
+  if (!piece?.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+
+  // 1) Try filesystem (NW.js / node context)
+  if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
+    try {
+      if (!fs.existsSync(filename)) {
+        return;
+      }
+      const text = fs.readFileSync(filename, 'utf8');
+      const obj = JSON.parse(text);
+      cloud5_restore_fields(piece, obj);
+      cloud5_notify_state_restored(piece, obj);
+      return;
+    } catch (e) {
+      console.warn('Failed to load state via fs; falling back to fetch:', e);
+    }
+  }
+
+  // 2) Try fetch (localhost served file)
+  try {
+    const url = `${filename}?t=${Date.now()}`;
+    console.log('Loading state from:', new URL(filename, location.href).href);
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      return;
+    }
+    const text = await response.text();
+    const obj = JSON.parse(text);
+    cloud5_restore_fields(piece, obj);
+    cloud5_notify_state_restored(piece, obj);
+    return;
+  } catch (e) {
+    // 3) Nothing
+    console.warn('Failed to load state via fetch; no persisted state loaded:', e);
+  }
+}
+
+/**
+ * Base class for Cloud5 overlay-like elements.
+ * Currently lightweight, but centralizes a few common conventions:
+ * - Optional `data-cloud5-stay-visible` attribute parsed into `cloud5_stay_visible`.
+ * - Optional `on_shown()` / `on_hidden()` lifecycle hooks.
+ *
+ * Subclasses should call `super.connectedCallback()` if they override it.
+ */
+class Cloud5Element extends HTMLElement {
+  #fields_to_serialize = [];
+  #cloud5_state_restored = false;
+
+  constructor() {
+    super();
+    this.cloud5_stay_visible = false;
+  }
+
+  set fields_to_serialize(fields) {
+    if (!Array.isArray(fields)) {
+      this.#fields_to_serialize = [];
+    } else {
+      this.#fields_to_serialize = fields.slice();
+    }
+    // Do NOT restore here — overlays may not exist yet.
+  }
+
+  get fields_to_serialize() {
+    // Lazy, one-shot restore
+    if (!this.#cloud5_state_restored) {
+      this.#cloud5_state_restored = true;
+
+      if (cloud5_can_persist_state() && this.#fields_to_serialize.length > 0) {
+        cloud5_load_state_if_present(this);
+      }
+    }
+    return this.#fields_to_serialize;
+  }
+
+  connectedCallback() {
+    const attr = this.getAttribute('data-cloud5-stay-visible');
+    if (attr !== null) {
+      const v = String(attr).toLowerCase();
+      this.cloud5_stay_visible =
+        (v === '' || v === 'true' || v === '1' || v === 'yes');
+    }
+  }
+  /**
+   * Optional lifecycle hook called by the piece when this element is shown.
+   * Subclasses may override this method to change behavior when shown.
+   */
+  on_shown() { }
+  /** 
+   * Optional lifecycle hook called by the piece when this element is hidden.
+   * Subclasses may override this method to change behavior when hidden.
+   */
+  on_hidden() { }
+  /**
+   * Optional lifecycle hook called by the piece when it stops its performance. 
+   * Subclasses may override this method to change behavior when the piece stops.  
+   */
+  on_stop() { }
+  /**
+   * Optional lifecycle hook called by the piece when it is cleared. 
+   * Subclasses may override this method to change behavior when the piece is 
+   * cleared, such as clearing any performance-related internal state in 
+   * preparation for a new performance.
+   */
+  on_clear() { }
+  /**
+   * Optional lifecycle hook called by the piece when it generates a new 
+   * Score. Subclasses may override this method to add new Events to the 
+   * Score, or to modify existing Events.
+   */
+  on_generate() { }
+  /**
+   * Optional lifecycle hook called by the piece when it starts its 
+   * performance. Subclasses may override this method to change behavior when 
+   * the piece starts, such as to schedule real-time events.
+   */
+  on_play() { }
+
+  /**
+   * Optional lifecycle hook called after a persisted state has been restored
+   * into this element (or the owning piece).
+   *
+   * Default behavior: update any DOM elements that declare a
+   * `data-cloud5-bind="path"` attribute, where `path` is resolved relative to
+   * `this`.
+   *
+   * Subclasses may override. If you still want the default binding behavior,
+   * call `super.on_state_restored(restored_state)`.
+   */
+  on_state_restored(restored_state) {
+    this.cloud5_refresh_dom_from_state();
+  }
+
+  /**
+   * Applies `data-cloud5-bind` updates for this element.
+   */
+  cloud5_refresh_dom_from_state(options = {}) {
+    cloud5_apply_state_bindings(this, options);
+  }
+
+  sync_to_controls() {
+    cloud6_apply_state_bindings(this);
+  }
+
+  sync_from_controls() { }
+}
+
 /**
  * Sets up the piece, and defines menu buttons. The user may assign the DOM 
  * objects of other cloud-5 elements to the `_overlay` properties. 
  */
-class Cloud5Piece extends HTMLElement {
+class Cloud5Piece extends Cloud5Element {
   constructor() {
     super();
     this.csound = null;
     this.csoundac = null;
+    this.score = null
     this.is_rendering = false;
     // Default duration and fadeout for rendering to a soundfile.
     // These may be overridden by control parameters, and are somewhat less 
@@ -143,6 +568,29 @@ class Cloud5Piece extends HTMLElement {
     this.fadeout = 6;
     this.safe_tail = 4;
     this.total_duration = this.duration + this.fadeout + this.safe_tail;
+
+    // Performance/UI state.
+    this.is_performing = false;
+    this.latest_score_time = 0;
+    this._display_raf_id = 0;
+    this._display_last_ms = 0;
+    this._ui_timer_id = 0;
+    this.ui_timer_interval_ms = 250; // 4 Hz UI/log/meter drain independent of RAF.
+
+    // Csound message / UI throttling to avoid main-thread overload that can
+    // induce GPU device/context loss.
+    this.csound_message_queue = [];
+    this.csound_message_queue_limit = 2000;
+    this.csound_message_max_per_tick = 200;
+    this.log_flush_max_chars = 12000;
+    this.log_flush_max_messages = 400;
+    this.log_flush_interval_ms = 200;
+    this._last_log_flush_ms = 0;
+    this.meter_update_interval_ms = 50; // 20 Hz
+    this._last_meter_update_ms = 0;
+    this._meter_poll_in_flight = false;
+    this._last_meter_poll_start_ms = 0;
+    this._meter_poll_token = 0;
   }
   #csound_code_addon = null;
   /**
@@ -240,6 +688,7 @@ class Cloud5Piece extends HTMLElement {
   get score_generator_function_addon() {
     return this.#score_generator_function_addon;
   }
+
   #piano_roll_overlay = null;
   /**
    * May be assigned the DOM object of a <cloud5-piano-roll> element overlay. 
@@ -248,37 +697,184 @@ class Cloud5Piece extends HTMLElement {
    */
   set piano_roll_overlay(piano_roll) {
     this.#piano_roll_overlay = piano_roll;
-    this.#piano_roll_overlay.cloud5_piece = this;
+    if (this.#piano_roll_overlay) {
+      this.#piano_roll_overlay.cloud5_piece = this;
+    }
   }
   get piano_roll_overlay() {
     return this.#piano_roll_overlay;
   }
+
   /**
    * May be assigned the DOM object of a <cloud5-log> element overlay. If so, 
    * the Log button will show or hide a scrolling view of messages from Csound or 
    * other sources.
    */
   #log_overlay = null;
-  #about_overlay = null;
+  set log_overlay(overlay) {
+    this.#log_overlay = overlay;
+    if (this.#log_overlay) {
+      this.#log_overlay.cloud5_piece = this;
+    }
+  }
+  get log_overlay() {
+    return this.#log_overlay;
+  }
+
   /**
    * May be assigned the DOM object of a <cloud5-about> element overlay. If 
    * so, the About button will show or hide the overlay. The inner HTML of 
    * this element may contain license information, authorship, credits, 
    * program notes for the piece, or other information.
    */
+  #about_overlay = null;
   set about_overlay(overlay) {
     this.#about_overlay = overlay;
   }
   get about_overlay() {
     return this.#about_overlay;
   }
+
+  /**
+   * May be assigned the DOM object of a <cloud5-strudel> element overlay. If 
+   * so, the Strudel button will show or hide the Strudel REPL.
+   */
+  #strudel_overlay = null;
+  set strudel_overlay(overlay) {
+    this.#strudel_overlay = overlay;
+    if (this.#strudel_overlay) {
+      this.#strudel_overlay.cloud5_piece = this;
+    }
+  }
+  get strudel_overlay() {
+    return this.#strudel_overlay;
+  }
   /**
    * Called on a timer as long as the piece exists.
    */
   update_display = async () => {
-    this.csound_message_callback();
-    this?.piano_roll_overlay?.show_score_time();
+    // Refresh metering/time and drive any overlays that follow score position.
+    try {
+      this.process_csnd_messages_and_meters(performance.now());
+    } catch (e) {
+      console.warn(e);
+    }
+
+    // Update piano-roll progress (red ball) if present.
+    try {
+      this?.piano_roll_overlay?.show_score_time?.();
+    } catch (e) {
+      console.warn(e);
+    }
+
+    const t = this.latest_score_time;
+    if (typeof t === 'number' && isFinite(t)) {
+      // Total duration policy:
+      // - During Csound performance: use ONLY the CsoundAC score duration.
+      // - During MIDI playback: use ONLY the Silencio score duration, or (if absent)
+      //   a derived duration from the MIDI scheduler.
+      const is_good_total = (v) => (typeof v === 'number' && isFinite(v) && v > 0);
+
+      let total = 0;
+
+      // MIDI playback path.
+      if (typeof __midi !== 'undefined' && __midi?.playing) {
+        const pdur = this.piano_roll_overlay?.silencio_score?.getDuration?.();
+        if (is_good_total(pdur)) {
+          total = pdur;
+        } else if (is_good_total(__midi?.totalBeats) && is_good_total(__midi?.bpm)) {
+          // __midi.totalBeats is in beats; convert to seconds using the playback bpm.
+          total = (msFromBeats(__midi.totalBeats, __midi.bpm) / 1000.0);
+        }
+      } else {
+        // Csound performance path.
+        const sdur = this.score?.getDuration?.();
+        if (is_good_total(sdur)) {
+          total = sdur;
+        }
+      }
+
+      for (const overlay of this._get_all_overlays()) {
+        try {
+          overlay?.on_score_time?.(t, total || 0);
+        } catch (e) {
+        }
+      }
+    }
+  };
+
+   _is_overlay_visible(overlay) {
+    if (!overlay) return false;
+
+    // Treat checkVisibility() as advisory: only short-circuit on true.
+    try {
+      if (typeof overlay.checkVisibility === 'function') {
+        if (overlay.checkVisibility()) {
+          return true;
+        }
+        // Fall through to style-based checks if it says "not visible".
+      }
+    } catch (e) { }
+
+    try {
+      const style = getComputedStyle(overlay);
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
+
+  _any_score_time_overlay_visible() {
+    for (const overlay of this._get_all_overlays()) {
+      if (!overlay) continue;
+      if (typeof overlay.on_score_time !== 'function') continue;
+      if (this._is_overlay_visible(overlay)) return true;
+    }
+    // Piano roll follows score time even if it does not implement on_score_time.
+    if (this.piano_roll_overlay && this._is_overlay_visible(this.piano_roll_overlay)) return true;
+    return false;
+  }
+
+  _reset_score_time_followers() {
+    try { this.latest_score_time = 0; } catch (e) { }
+    try {
+      this?.piano_roll_overlay?.update_score_time?.(0);
+      this?.piano_roll_overlay?.show_score_time?.();
+    } catch (e) { }
+    try {
+      // Notify overlays that follow score time (e.g. ROI playheads).
+      for (const overlay of this._get_all_overlays()) {
+        overlay?.on_score_time?.(0, this.total_duration ?? this.duration ?? 0);
+      }
+    } catch (e) { }
+  }
+
+  _start_display_loop() {
+    if (this._display_raf_id) return;
+    const tick = async (now_ms) => {
+      // Throttle to reduce overhead while still smooth enough for playheads.
+      if (!this._display_last_ms) this._display_last_ms = now_ms;
+      const elapsed_ms = now_ms - this._display_last_ms;
+
+      const should_update = this.is_performing && this._any_score_time_overlay_visible();
+      if (should_update && elapsed_ms >= 100) { // ~10 Hz
+        this._display_last_ms = now_ms;
+        try { await this.update_display(); } catch (e) { }
+      }
+      this._display_raf_id = requestAnimationFrame(tick);
+    };
+    this._display_raf_id = requestAnimationFrame(tick);
+  }
+
+  _stop_display_loop() {
+    if (!this._display_raf_id) return;
+    try { cancelAnimationFrame(this._display_raf_id); } catch (e) { }
+    this._display_raf_id = 0;
+  }
+
   /**
      * Called by Csound during performance, and prints the message to the 
      * scrolling text area of a <csound5-log> element overlay. This function may 
@@ -287,46 +883,171 @@ class Cloud5Piece extends HTMLElement {
      * @param {string} message 
      */
   csound_message_callback = async (message) => {
-    if (message && this.log_overlay) {
-      this.log_overlay.log(message);
+    // Keep this callback extremely cheap. Csound can emit messages at a high
+    // rate during performance; doing awaits/DOM writes per message can starve
+    // the main thread and trigger GPU device/context loss.
+    if (!message) {
+      return;
     }
-    let level_left = -100;
-    let level_right = -100;
-    if (globalThis.csound) {
-      let score_time = await csound.getScoreTime();
-      level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
-      level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
-      let delta = score_time;
-      // calculate (and subtract) whole days
-      let days = Math.floor(delta / 86400);
-      delta -= days * 86400;
-      // calculate (and subtract) whole hours
-      let hours = Math.floor(delta / 3600) % 24;
-      delta -= hours * 3600;
-      // calculate (and subtract) whole minutes
-      let minutes = Math.floor(delta / 60) % 60;
-      delta -= minutes * 60;
-      // what's left is seconds
-      let seconds = delta % 60;  // in theory the modulus is not required
-      if (level_left > 0) {
-        $("#vu_meter_left").css("color", "red");
-      } else if (level_left > -12) {
-        $("#vu_meter_left").css("color", "orange")
-      } else {
-        $("#vu_meter_left").css("color", "lightgreen");
+    if (!this.csound_message_queue) {
+      this.csound_message_queue = [];
+    }
+    if (this.csound_message_queue.length >= (this.csound_message_queue_limit || 2000)) {
+      // Drop oldest to cap memory and prevent feedback loops.
+      this.csound_message_queue.shift();
+    }
+    this.csound_message_queue.push(message);
+  };
+
+  /**
+   * Drain queued Csound messages and update metering/time at a bounded rate.
+   * Call this from update_display (RAF) rather than doing expensive work from
+   * the realtime Csound message callback.
+   *
+   * @param {number} now_ms performance.now()
+   */
+process_csnd_messages_and_meters = async (now_ms) => {
+    // 1) Flush queued messages at a controlled cadence (default: 2 Hz).
+    // This keeps the log responsive without forcing an Ace reflow per message.
+    this.maybe_flush_log_queue(now_ms);
+
+    // 2) Meter/time polling must not block RAF. If it is time, kick off an
+    // async poll but never await it here.
+    this.maybe_start_meter_poll(now_ms);
+  };
+
+maybe_flush_log_queue = (now_ms) => {
+    const q = this.csound_message_queue || [];
+    if (!q.length || !this.log_overlay) {
+      return;
+    }
+    const interval = this.log_flush_interval_ms || 500;
+    const last = this._last_log_flush_ms || 0;
+    if ((now_ms - last) < interval) {
+      return;
+    }
+    this._last_log_flush_ms = now_ms;
+    const max_messages = this.log_flush_max_messages || 400;
+    const max_chars = this.log_flush_max_chars || 12000;
+    let chunk = "";
+    for (let i = 0; i < max_messages && q.length > 0; i++) {
+      const msg = q.shift();
+      if (!msg) {
+        continue;
       }
-      if (level_right > 0) {
-        $("#vu_meter_right").css("color", "red");
-      } else if (level_right > -12) {
-        $("#vu_meter_right").css("color", "orange")
-      } else {
-        $("#vu_meter_right").css("color", "lightgreen");
+      const line = msg.endsWith("\n") ? msg : (msg + "\n");
+      if ((chunk.length + line.length) > max_chars) {
+        // If we have at least one line, flush now; otherwise take the line anyway.
+        if (chunk.length > 0) {
+          break;
+        }
       }
-      $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
-      $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_right));
-      $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
-    };
+      chunk += line;
+      if (chunk.length >= max_chars) {
+        break;
+      }
+    }
+    if (chunk) {
+      try {
+        this.log_overlay.log(chunk);
+      } catch (e) {
+      }
+    }
+  };
+
+maybe_start_meter_poll = (now_ms) => {
+  if (!globalThis.csound) {
+    return;
   }
+  const interval = this.meter_update_interval_ms || 50;
+  const last = this._last_meter_update_ms || 0;
+  if ((now_ms - last) < interval) {
+    return;
+  }
+
+  // Watchdog: if a prior poll wedged, allow recovery.
+  if (this._meter_poll_in_flight) {
+    const started = this._last_meter_poll_start_ms || 0;
+    if ((now_ms - started) > 2000) {
+      console.warn("meter poll watchdog: releasing wedged poll");
+      this._meter_poll_in_flight = false;
+    } else {
+      return;
+    }
+  }
+
+  this._last_meter_update_ms = now_ms;
+  this._meter_poll_in_flight = true;
+  this._last_meter_poll_start_ms = now_ms;
+
+  // Token prevents late completions from writing stale UI.
+  const token = (this._meter_poll_token = (this._meter_poll_token || 0) + 1);
+
+  // Fire-and-forget; completion updates UI.
+  this.poll_meters_and_update_ui(token).finally(() => {
+    // Only clear if this is still the most recent poll.
+    if (this._meter_poll_token === token) {
+      this._meter_poll_in_flight = false;
+    }
+  });
+};
+
+poll_meters_and_update_ui = async (token) => {
+  let level_left = -100;
+  let level_right = -100;
+
+  const score_time = await csound.getScoreTime();
+  this.latest_score_time = score_time;
+
+  level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
+  level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
+
+  let delta = score_time;
+
+  // calculate (and subtract) whole days
+  let days = Math.floor(delta / 86400);
+  delta -= days * 86400;
+  // calculate (and subtract) whole hours
+  let hours = Math.floor(delta / 3600) % 24;
+  delta -= hours * 3600;
+  // calculate (and subtract) whole minutes
+  let minutes = Math.floor(delta / 60) % 60;
+  delta -= minutes * 60;
+  // what's left is seconds
+  let seconds = delta % 60;
+
+
+  // If a newer poll has started, ignore these results.
+  if ((this._meter_poll_token || 0) !== token) {
+    return;
+  }
+
+  if (level_left > 0) {
+    $("#vu_meter_left").css("color", "red");
+  } else if (level_left > -12) {
+    $("#vu_meter_left").css("color", "orange");
+  } else {
+    $("#vu_meter_left").css("color", "lightgreen");
+  }
+  if (level_right > 0) {
+    $("#vu_meter_right").css("color", "red");
+  } else if (level_right > -12) {
+    $("#vu_meter_right").css("color", "orange");
+  } else {
+    $("#vu_meter_right").css("color", "lightgreen");
+  }
+
+  $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
+  $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_left));
+  $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
+
+  try {
+    this?.piano_roll_overlay?.update_score_time?.(score_time);
+  } catch (e) {
+  }
+};
+
+
   /**
    * A convenience function for printing the message in the 
    * scrolling <csound5-log> element overlay.
@@ -354,57 +1075,92 @@ class Cloud5Piece extends HTMLElement {
     "genre": null,
   };
   connectedCallback() {
-    const filename = document.location.pathname.split("/").pop()
+    const filename = document.location.pathname.split("/").pop();
+
     this.innerHTML = `
     <div class="w3-bar cloud5-menu" id="main_menu">
-    <ul class="menu" id="main_menu_list">
-        <li id="menu_item_play" title="Play piece on audio output" class="w3-btn w3-hover-text-light-green">
-            Play</li>
-        <li id="menu_item_render" title="Render piece to soundfile while playing on audio output" class="w3-btn w3-hover-text-light-green">Render
-        </li>
-        <li id="menu_item_stop" title="Stop performance" class="w3-btn w3-hover-text-light-green">Stop</li>
-        <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
-        <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green" style="display:none;">Strudel</li>
-        <li id="menu_item_piano_roll" title="Show/hide piano roll score" class="w3-btn w3-hover-text-light-green" style="display:none;">Score
-        </li>
-        <li id="menu_item_log" title="Show/hide message log" class="w3-btn w3-hover-text-light-green">Log
-        </li>
-        <li id="menu_item_about" title="Show/hide information about this piece"
+      <ul class="menu" id="main_menu_list">
+        <li id="menu_item_play"
+            title="Play piece on audio output"
+            class="w3-btn w3-hover-text-light-green">Play</li>
+
+        <li id="menu_item_render"
+            title="Render piece to soundfile then play on audio output"
+            class="w3-btn w3-hover-text-light-green">Render</li>
+
+        <li id="menu_item_stop"
+            title="Stop performance"
+            class="w3-btn w3-hover-text-light-green">Stop</li>
+
+        <li id="menu_item_fullscreen"
+            class="w3-btn w3-hover-text-light-green">Fullscreen</li>
+
+        <!-- Built-in overlay items (if their overlays exist) will reuse these.
+             Generic overlays will get new <li> items injected before About. -->
+        <li id="menu_item_strudel"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Strudel</li>
+
+        <li id="menu_item_piano_roll"
+            title="Show/hide piano roll score"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Score</li>
+
+        <li id="menu_item_log"
+            title="Show/hide message log"
+            class="w3-btn w3-hover-text-light-green">Log</li>
+
+        <li id="menu_item_about"
+            title="Show/hide information about this piece"
             class="w3-btn w3-hover-text-light-green">About ${filename}</li>
-        <li id="mini_console" class="w3-btn w3-text-green w3-hover-text-light-green"></li>
-        <li id="vu_meter_left" class="w3-btn w3-hover-text-light-green"></li>
-        <li id="vu_meter_right" class="w3-btn w3-hover-text-light-green"></li>
+
+        <li id="mini_console"
+            class="w3-btn w3-text-green w3-hover-text-light-green"></li>
+
+        <li id="vu_meter_left"
+            class="w3-btn w3-hover-text-light-green"></li>
+
+        <li id="vu_meter_right"
+            class="w3-btn w3-hover-text-light-green"></li>
+
         <li id="menu_item_dat_gui"
             title="Show/hide performance controls; 'Save' copies all control parameters to system clipboard"
             class="w3-btn w3-left-align w3-hover-text-light-green w3-right"></li>
       </ul>
     </div>`;
-    this.vu_meter_left = document.querySelector("#vu_meter_left");
-    this.vu_meter_right = document.querySelector("#vu_meter_right");
-    this.mini_console = document.querySelector("#mini_console");
-    let menu_item_play = document.querySelector('#menu_item_play');
-    menu_item_play.onclick = ((event) => {
+
+    // Cache status elements
+    this.vu_meter_left = this.querySelector("#vu_meter_left");
+    this.vu_meter_right = this.querySelector("#vu_meter_right");
+    this.mini_console = this.querySelector("#mini_console");
+
+    // Transport buttons
+    const menu_item_play = this.querySelector('#menu_item_play');
+    menu_item_play.onclick = (event) => {
       console.info("menu_item_play click...");
       this.cancel_scheduled_stop();
-      ///this.show(this.piano_roll_overlay)
-      this.show(this.shader_overlay);
-      // this.hide(this.strudel_overlay);
-      // this.hide(this.shader_overlay);
+      // Show shader background if available
+      if (this.shader_overlay) {
+        this.show(this.shader_overlay);
+      }
+      // Hide overlays that should not be visible while playing
+      this.hide(this.piano_roll_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
+      this.hide(this.strudel_overlay);
+      // Start performance
       (() => this.render(1))();
-    });
-    let menu_item_render = document.querySelector('#menu_item_render');
-    menu_item_render.onclick = ((event) => {
+    };
+
+    const menu_item_render = this.querySelector('#menu_item_render');
+    menu_item_render.onclick = (event) => {
       console.info("menu_item_render click...");
       this.cancel_scheduled_stop();
       this.show(this.piano_roll_overlay);
       this.hide(this.strudel_overlay);
-      // this.hide(this.shader_overlay);
       this.hide(this.log_overlay);
       this.hide(this.about_overlay);
-      // There must be a default duration and fadeout, if not specified in the 
-      // control parameters, for rendering to a soundfile to work.
+
       let duration;
       let fadeout;
       const safe_tail = 4;
@@ -421,166 +1177,280 @@ class Cloud5Piece extends HTMLElement {
         this.fadeout = fadeout;
       }
       this.total_duration = this.duration + this.fadeout + this.safe_tail;
-      this?.csound_message_callback(`Duration: ${this.duration} fadeout: ${this.fadeout}\n`);
-      this?.csound_message_callback(`Rendering will be stopped ${this.total_duration} seconds after starting...\n`);
+      this?.csound_message_callback(
+        `Duration: ${this.duration} fadeout: ${this.fadeout}\n`
+      );
+      this?.csound_message_callback(
+        `Rendering will be stopped ${this.total_duration} seconds after starting...\n`
+      );
       (() => this.render(4))();
-    });
-    let menu_item_stop = document.querySelector('#menu_item_stop');
-    menu_item_stop.onclick = ((event) => {
+    };
+
+    const menu_item_stop = this.querySelector('#menu_item_stop');
+    menu_item_stop.onclick = (event) => {
       console.info("menu_item_stop click...");
       this.csound?.setControlChannel("gk_cloud5_performance_mode", 0);
       this.stop();
       if (this.is_rendering) {
-        let soundfile_url = url_for_soundfile(this.csound);
+        const soundfile_url = url_for_soundfile(this.csound);
         this.is_rendering = false;
         this.cancel_scheduled_stop();
+        // Optionally, do something with soundfile_url.
       }
-    });
-    let menu_item_fullscreen = document.querySelector('#menu_item_fullscreen');
-    menu_item_fullscreen.onclick = (async (event) => {
+    };
+
+    const menu_item_fullscreen = this.querySelector('#menu_item_fullscreen');
+    menu_item_fullscreen.onclick = async (event) => {
       console.info("menu_item_fullscreen click...");
       try {
         if (this.#shader_overlay?.canvas?.requestFullscreen) {
           let new_window = null;
           // Make the shader canvas fullscreen in the primary window.
           await this.#shader_overlay.canvas.requestFullscreen();
-          // Try to make the HTML controls, if available, fullscreen 
-          // in the secondary window.
-          const secondary_screen = (await getScreenDetails()).screens.find(
-            (screen) => screen.isExtended,
-          );
-          if (secondary_screen && this?.html_controls_url_addon) {
-            let permissions_granted = false;
-            const { state } = await navigator.permissions.query({ name: 'window-management' });
-            if (state === 'granted') {
-              permissions_granted = true;
-            }
-          }
-          const url = window.location.origin + this?.html_controls_url_addon;
-          const window_features = `top=${secondary_screen.availTop}, left=${secondary_screen.availLeft}, width=${secondary_screen.availWidth}, height=${secondary_screen.availHeight}`;
-          let opened_window = window.open(url, 'HTMLControls', window_features);
-          if (!opened_window || opened_window.closed || typeof opened_window.closed == 'undefined') {
-            alert("Your browser is blocking popups. Please allow popups and redirects in the browser settings for this Web site.")
-            return;
-          } else {
-            this.html_controls_window = opened_window;
-          }
-          globalThis.windows_to_close.push(this.html_controls_window);
-          if (this.html_controls_window) {
-            // These will pile up and that would be a problem... if users 
-            // repeatedly toggled fullscreen.
-            window.addEventListener("fullscreenchange", (event) => {
-              if (document.fullscreenElement) {
-              } else {
-                this.html_controls_window.close();
-                (value) => {
-                  globalThis.windows_to_close = globalThis.windows_to_close.filter(function (ele) {
-                    return ele != value;
-                  });
-                }
-              }
-            });
-          }
         }
-      } catch (ex) {
-        alert(ex.message + "\nIn the browser's 'Site permissions' for this Web site, set 'Pop-ups and redirects' to 'Allow' and 'Window management' to 'Allow'.");
-      };
-    });
-    let menu_item_strudel = document.querySelector('#menu_item_strudel');
-    menu_item_strudel.onclick = ((event) => {
-      console.info("menu_item_strudel click...");
-      //this.hide(this.piano_roll_overlay)
-      this.toggle(this.strudel_overlay);
-      // this.hide(this.shader_overlay);
-      // this.hide(this.log_overlay);
-      this.hide(this.about_overlay);
-    });
-    const menu_item_piano_roll = document.querySelector('#menu_item_piano_roll');
-    menu_item_piano_roll.addEventListener('click', () => {
-      const el = this.piano_roll_overlay;          // <cloud5-piano-roll> host
-      const willShow = getComputedStyle(el).display === 'none';
-      if (willShow) {
-        this.show(this?.piano_roll_overlay);
-        this.hide(this?.shader_overlay);
+      } catch (e) {
+        console.warn("Fullscreen failed:", e);
+      }
+    };
+
+    // After base menu is in place, interrogate the DOM and wire overlays,
+    // but do it *after* the whole document has been parsed so that
+    // overlays declared later (like <mandelbrot-julia>) exist.
+    const wireOverlays = () => this.init_overlays_from_dom();
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', wireOverlays, { once: true });
+    } else {
+      wireOverlays();
+      // Lightweight UI update loop; does work only while performing and when needed.
+      this._start_display_loop();
+    }
+    // queueMicrotask(() => {
+    //   cloud5_load_state_if_present(this);
+    // });
+
+  }
+
+  /**
+ * Scans the DOM for overlays belonging to this piece and ensures each has
+ * a menu item that toggles its visibility. Built-in overlays reuse existing
+ * menu items; generic overlays get new <li> entries inserted before About.
+ */
+
+  _get_all_overlays() {
+    const s = new Set(this._registered_overlays || []);
+    if (this.piano_roll_overlay) s.add(this.piano_roll_overlay);
+    if (this.log_overlay) s.add(this.log_overlay);
+    if (this.about_overlay) s.add(this.about_overlay);
+    if (this.strudel_overlay) s.add(this.strudel_overlay);
+    return [...s];
+  }
+
+  /**
+   * Scans the DOM for overlays belonging to this piece and ensures each has
+   * a menu item that toggles its visibility. Built-in overlays reuse existing
+   * menu items; generic overlays get new <li> entries inserted before About.
+   */
+  init_overlays_from_dom() {
+    const menu_list = document.querySelector('#main_menu_list');
+    if (!menu_list) {
+      console.warn("Cloud5Piece.init_overlays_from_dom: no #main_menu_list found.");
+      return;
+    }
+
+    const menu_item_about = document.querySelector('#menu_item_about');
+    const mini_console = document.querySelector('#mini_console');
+
+    const overlays = [];
+
+    // --- Built-in overlays --------------------------------------------------
+    const piano_roll = document.querySelector('cloud5-piano-roll');
+    if (piano_roll) {
+      this.piano_roll_overlay = piano_roll;     // setter already sets cloud5_piece
+      overlays.push({
+        element: piano_roll,
+        existingMenuId: 'menu_item_piano_roll',
+        label: 'Score',
+        stayVisible: this._read_stay_visible_flag(piano_roll)
+      });
+    }
+
+    const log = document.querySelector('cloud5-log');
+    if (log) {
+      this.log_overlay = log;                   // setter already sets cloud5_piece
+      overlays.push({
+        element: log,
+        existingMenuId: 'menu_item_log',
+        label: 'Log',
+        stayVisible: this._read_stay_visible_flag(log)
+      });
+    }
+
+    const about = document.querySelector('cloud5-about');
+    if (about) {
+      this.about_overlay = about;
+      const filename = document.location.pathname.split("/").pop();
+      overlays.push({
+        element: about,
+        existingMenuId: 'menu_item_about',
+        label: about.getAttribute('data-cloud5-label') || `About ${filename}`,
+        stayVisible: this._read_stay_visible_flag(about)
+      });
+    }
+
+    const strudel = document.querySelector('cloud5-strudel');
+    if (strudel) {
+      this.strudel_overlay = strudel;           // setter already sets cloud5_piece
+      overlays.push({
+        element: strudel,
+        existingMenuId: 'menu_item_strudel',
+        label: 'Strudel',
+        stayVisible: this._read_stay_visible_flag(strudel)
+      });
+    }
+
+    // --- Generic overlays ---------------------------------------------------
+    const generic_candidates = Array.from(
+      document.querySelectorAll('[data-cloud5-overlay], .cloud5-overlay')
+    );
+
+    const built_in_set = new Set(
+      [piano_roll, log, about, strudel].filter(Boolean)
+    );
+
+    generic_candidates
+      .filter(el => !built_in_set.has(el))
+      .forEach(el => {
+        const label =
+          el.getAttribute('data-cloud5-label') ||
+          el.getAttribute('data-overlay-label') ||
+          el.getAttribute('title') ||
+          el.id ||
+          el.tagName.toLowerCase();
+
+        const isDefault =
+          el.hasAttribute('data-cloud5-default-visible') ||
+          el.hasAttribute('data-cloud5-default-overlay');
+
+        overlays.push({
+          element: el,
+          existingMenuId: null,
+          label,
+          isDefault
+        });
+      });
+
+    // --- Create / wire menu items ------------------------------------------
+    const registered = [];
+
+    overlays.forEach(cfg => {
+      const overlay = cfg.element;
+      if (!overlay) return;
+
+      // Back-reference for ALL overlays (built-in + generic).
+      overlay.cloud5_piece = this;
+
+      // Remember whether this overlay wants to stay visible when others toggle.
+      overlay._cloud5_stay_visible = !!cfg.stayVisible;
+
+      // Start hidden by default; menu click will toggle.
+      this.hide(overlay);
+
+      let li = null;
+      if (cfg.existingMenuId) {
+        li = document.querySelector(`#${cfg.existingMenuId}`);
+      }
+
+      if (!li) {
+        li = document.createElement('li');
+        li.className = 'w3-btn w3-hover-text-light-green';
+        li.textContent = cfg.label;
+
+        // Insert new button before About (if present), otherwise before mini_console,
+        // otherwise appended at end.
+        if (menu_item_about && menu_item_about.parentNode === menu_list) {
+          menu_list.insertBefore(li, menu_item_about);
+        } else if (mini_console && mini_console.parentNode === menu_list) {
+          menu_list.insertBefore(li, mini_console);
+        } else {
+          menu_list.appendChild(li);
+        }
       } else {
-        this.hide(this?.piano_roll_overlay);
-        this.show(this?.shader_overlay);
-      }
-      this.hide(this.about_overlay);                // About can stay hidden
-      // If you don’t have automatic mutual exclusion, also hide Strudel:
-      // this.hide(this.strudel_overlay);
-      if (willShow) {
-        // Wait one frame so layout knows the element is visible,
-        // then let the element size its canvas & redraw.
-        requestAnimationFrame(() => el.on_shown?.());
-      }
-    });
-    let menu_item_log = document.querySelector('#menu_item_log');
-    menu_item_log.onclick = ((event) => {
-      const menu_bottom = document.getElementById('main_menu').getBoundingClientRect().bottom;
-      this.log_overlay.style.position = 'fixed';
-      this.log_overlay.style.top = `${menu_bottom}px`;
-      console.info("menu_item_log click...");
-      //this.show(this.piano_roll_overlay)
-      //this.hide(this.strudel_overlay);
-      //this.hide(this.shader_overlay);
-      this.toggle(this.log_overlay);
-      this.hide(this.about_overlay);
-    });
-    let menu_item_about = document.querySelector('#menu_item_about');
-    menu_item_about.onclick = ((event) => {
-      console.info("menu_item_about click...");
-      this.hide(this.piano_roll_overlay)
-      this.hide(this.strudel_overlay);
-      ///this.hide(this.shader_overlay);
-      this.hide(this.log_overlay);
-      this.toggle(this.about_overlay);
-      this.strudel_component?.focus(true);
-    });
-    // Ensure that the dat.gui controls are children of the _Controls_ button.
-    this.create_dat_gui_menu();
-    document.onkeydown = ((e) => {
-      const t = e.target;
-      if (
-        t?.isContentEditable ||
-        ['INPUT', 'TEXTAREA', 'SELECT'].includes(t?.tagName) ||
-        t?.closest?.('.dg') // inside dat.gui
-      ) {
-        return; // let the field handle the keystroke
-      }
-      let e_char = String.fromCharCode(e.keyCode || e.charCode);
-      if (e.ctrlKey === true) {
-        if (e_char === 'H') {
-          let console = document.getElementById("console");
-          if (console.style.display === "none") {
-            console.style.display = "block";
-          } else {
-            console.style.display = "none";
-          }
-          this.gui.closed = true;
-          gui.closed = false;
-        } else if (e_char === 'G') {
-          this.score_generator_function_addon();
-        } else if (e_char === 'P') {
-          this.play();
-        } else if (e_char === 'S') {
-          this.stop();
-        } else if (e_char === 'C') {
-          this?.piano_roll_overlay.recenter();
+        // Reuse existing button but ensure it has a sensible label.
+        if (!li.textContent.trim()) {
+          li.textContent = cfg.label;
         }
       }
+
+      li.style.display = 'inline';
+      li.dataset.cloud5Overlay = 'true';
+
+      li.addEventListener('click', () => {
+        this._toggleOverlayExclusive(overlay);
+      });
+
+      registered.push(overlay);
     });
-    this.show(this);
-    window.addEventListener('load', function (event) {
-      let save_button = this.gui.domElement.querySelector('span.button.save');
-      save_button.onclick = function (event) {
-        this.copy_parameters()
-      }.bind(this);
-    }.bind(this));
-    window.addEventListener("unload", function (event) {
-      nw_window?.close();
+
+    this._registered_overlays = registered;
+    // Now that overlay references exist, restore state once.
+    cloud5_load_state_if_present(this);
+
+    // Show whichever overlay is marked as default, if any.
+    const defaultCfg = overlays.find(o => o.isDefault && o.element);
+    if (defaultCfg) {
+      this.show(defaultCfg.element);
+    }
+  }
+
+  /**
+   * Reads the "stay visible" flag from overlay attributes.
+   * Recognized:
+   *   data-cloud5-stay-visible="true" | "1"
+   *   data-overlay-stay-visible="true" | "1"
+   *   visibility="keep"
+   */
+  _read_stay_visible_flag(el) {
+    if (!el || !el.getAttribute) return false;
+    const raw =
+      el.getAttribute('data-cloud5-stay-visible') ??
+      el.getAttribute('data-overlay-stay-visible') ??
+      el.getAttribute('visibility');
+
+    if (!raw) return false;
+    const v = String(raw).toLowerCase().trim();
+    return (v === 'true' || v === '1' || v === 'keep');
+  }
+
+
+  /**
+   * Toggles one overlay and hides all others that we know about.
+   * Overlays marked with _cloud5_stay_visible (via attributes) are not hidden.
+   * Does NOT touch the shader overlay (which can remain as background).
+   */
+  _toggleOverlayExclusive(target) {
+    if (!target) return;
+
+    const all = new Set(this._registered_overlays || []);
+    if (this.piano_roll_overlay) all.add(this.piano_roll_overlay);
+    if (this.log_overlay) all.add(this.log_overlay);
+    if (this.about_overlay) all.add(this.about_overlay);
+    if (this.strudel_overlay) all.add(this.strudel_overlay);
+
+    all.forEach(overlay => {
+      if (!overlay) return;
+
+      const stayVisible = !!overlay._cloud5_stay_visible;
+
+      if (overlay === target) {
+        // Always toggle the requested overlay.
+        this.toggle(overlay);
+      } else if (!stayVisible) {
+        // Only hide overlays that are not marked as "stay visible".
+        this.hide(overlay);
+      }
+      // If stayVisible === true and overlay !== target, we leave it as-is.
     });
-    this._update_timer = setInterval(() => this.update_display(), 250);
   }
 
   /**
@@ -667,7 +1537,22 @@ class Cloud5Piece extends HTMLElement {
       this.is_rendering = true;
     }
     if (non_csound(this.csound)) return;
-    this?.log_overlay?.clear?.();
+    // Stop any current performance first.
+    await this.stop();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_stop();
+    }
+    this._reset_score_time_followers();
+    // Clear performance-related state from all components.
+    await this?.log_overlay?.clear?.();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_clear();
+    }
+
+    // Reset score-following UI for a fresh performance.
+    this.is_performing = false;
+    this._display_last_ms = 0;
+    this._reset_score_time_followers();
     for (const key in this.metadata) {
       const value = this.metadata[key];
       if (value !== null) {
@@ -680,12 +1565,23 @@ class Cloud5Piece extends HTMLElement {
     }
     let csd = this.csound_code_addon.slice();
     if (this.score_generator_function_addon) {
-      let score = await this.score_generator_function_addon();
-      if (score) {
-        let csound_score = await score.getCsoundScore(12., false);
-        csound_score = csound_score.concat("\n</CsScore>");
-        csd = this.csound_code_addon.replace("</CsScore>", csound_score);
+      this.score = await this.score_generator_function_addon();
+    } else {
+      this.score = new globalThis.csound_ac.Score();
+    }
+    if (this.score) {
+      // Generate score from all components.
+      for (const overlay of this._get_all_overlays()) {
+        await overlay?.on_generate(this.score);
       }
+      if (this.piano_roll_overlay && this.piano_roll_overlay.silencio_score) {
+        this?.piano_roll_overlay?.draw_csoundac_score(this.score);
+        this?.piano_roll_overlay?.on_shown?.()
+        this?.piano_roll_overlay?.show_score_time();
+      }
+      let csound_score = await this.score.getCsoundScore(12., false);
+      csound_score = csound_score.concat("\n</CsScore>");
+      csd = this.csound_code_addon.replace("</CsScore>", csound_score);
     }
     const output_soundfile_name = document.title + ".wav";
     const orc_globals = `
@@ -712,7 +1608,13 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     } catch (e) {
       alert(e);
     }
+    await cloud5_save_state_if_needed(this);
     await this.csound.start();
+
+    this.is_performing = true;
+    this._start_display_loop();
+    this._start_ui_timer();
+    try { await this.update_display(); } catch (e) { }
     if (gk_cloud5_performance_mode == 4) {
       this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
       this.schedule_stop_after(this.total_duration);
@@ -730,8 +1632,12 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     // values defined in the control parameters addon.
     csd = this.update_parameters_in_csd(csd, this.control_parameters_addon);
     write_file(csd_filename_parameters, csd);
+    // Start performance in all components.
     if (!(this?.csound.getNode)) {
       this.csound.perform();
+      for (const overlay of this._get_all_overlays()) {
+        overlay?.on_play();
+      }
     }
     if (typeof strudel_view !== 'undefined') {
       if (strudel_view !== null) {
@@ -742,7 +1648,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
         strudel_view?.startPlaying();
       }
     }
-    this?.piano_roll_overlay?.show_score_time();
     this?.csound_message_callback("Csound is playing...\n");
   }
   /**
@@ -750,12 +1655,21 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
    */
   stop = async function () {
     this.csound_message_callback("cloud-5 is stopping...\n");
+    this.is_performing = false;
+    // Stop performance in all components.
     await this.csound.stop();
     await this.csound.cleanup();
     this.csound.reset();
     this.strudel_overlay?.stop();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_stop();
+    }
+    await cloud5_save_state_if_needed(this);
+    this._stop_display_loop();
+    this._stop_ui_timer();
     this.csound_message_callback("cloud-5 has stopped.\n");
   };
+
   /**
    * Helper function to show custom element overlays. Resizes overlay 
    * if required to fit layout.
@@ -763,43 +1677,86 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
    * @param {Object} overlay 
    */
   show(overlay) {
-    if (overlay) {
-      overlay.style.display = 'block';
-      // Back out the menu bar height from overlay height for the log 
-      // console, the score, and the about page.
-      if (['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName)) {
-        const menu_bar = document.getElementById('main_menu_list');
-        const menu_bar_bottom = menu_bar.getBoundingClientRect().bottom;
-        overlay.style.top = `${menu_bar_bottom}px`;
-        // Back out the menu bar height from the overlay height.
-        overlay.style.height = `calc(100% - ${menu_bar_bottom}px)`;
-        console.log(`overlay style: ${overlay.style}`);
+    if (!overlay) return;
+
+    // Force visibility even if a stylesheet uses display:none !important.
+    overlay.style.setProperty('display', 'block', 'important');
+
+    const is_built_in_overlay =
+      ['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName);
+
+    const is_generic_overlay =
+      overlay.classList && overlay.classList.contains('cloud5-overlay');
+
+    if (is_built_in_overlay || is_generic_overlay) {
+      // Use the menu bar (or its list) to determine bottom edge.
+      let menu_bar = document.getElementById('main_menu');
+      if (!menu_bar) {
+        menu_bar = document.getElementById('main_menu_list');
+      }
+
+      let menu_bar_bottom = 0;
+      if (menu_bar) {
+        const rect = menu_bar.getBoundingClientRect();
+        menu_bar_bottom = rect.bottom;
+      }
+
+      // Pin the overlay to fill the viewport below the menu.
+      overlay.style.position = 'fixed';
+      overlay.style.left = '0';
+      overlay.style.right = '0';
+      overlay.style.top = `${menu_bar_bottom}px`;
+      overlay.style.height = `calc(100% - ${menu_bar_bottom}px)`;
+      overlay.style.width = '100vw';
+
+      // Ensure generic overlays sit above the shader but below the menu.
+      if (is_generic_overlay) {
+        // Only override if author CSS hasn't already set an explicit z-index.
+        if (!overlay.style.zIndex) {
+          overlay.style.zIndex = '1300'; // between log/score/strudel and menu
+        }
       }
     }
+
+    // If the overlay has its own hook, let it know it's now visible.
+    if (typeof overlay.on_shown === 'function') {
+      overlay.on_shown();
+    }
   }
+
   /**
    * Helper function to hide custom element overlays.
    * 
    * @param {Object} overlay 
    */
   hide(overlay) {
-    if (overlay) {
-      overlay.style.display = 'none';
+    if (!overlay) return;
+    // Force hidden even in the presence of CSS !important.
+    overlay.style.setProperty('display', 'none', 'important');
+    // Give overlays a chance to stop expensive work (e.g. GPU render loops)
+    // while they are not visible.
+    if (typeof overlay.on_hidden === 'function') {
+      try { overlay.on_hidden(); } catch (e) { }
     }
   }
+
   /**
    * Helper function to show the overlay if it is 
-   * hidden, or to hide the overlay if it is visible
+   * hidden, or to hide the overlay if it is visible.
    * 
    * @param {Object} overlay 
    */
   toggle(overlay) {
-    if (overlay) {
-      if (overlay.checkVisibility() == true) {
-        this.hide(overlay);
-      } else {
-        this.show(overlay);
-      }
+    if (!overlay) return;
+
+    const visible = overlay.checkVisibility
+      ? overlay.checkVisibility()
+      : getComputedStyle(overlay).display !== 'none';
+
+    if (visible) {
+      this.hide(overlay);
+    } else {
+      this.show(overlay);
     }
   }
 
@@ -823,20 +1780,54 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
   }
 
   create_dat_gui_menu(parameters) {
-    let dat_gui_parameters = { autoPlace: false, closeOnTop: true, closed: true, width: 400, useLocalStorage: false };
+    // Preserve a single, stable parameters object instance for dat.gui bindings.
+    if (!this.parameters) {
+      this.parameters = this.get_default_preset();
+    }
+
+    // Merge incoming (e.g., JSON-deserialized) parameters into the existing instance.
     if (parameters) {
-      dat_gui_parameters = Object.assign(this.get_default_preset(), dat_gui_parameters);
+      apply_params_into_existing(this.parameters, parameters, {
+        allow_new_keys: false,
+        ignore_null: true
+      });
     }
-    this.gui = new dat.GUI(dat_gui_parameters);
-    let dat_gui = document.getElementById('menu_item_dat_gui');
-    // The following assumes that there is only ever one child node of the 
-    // menu item.
-    if (dat_gui.children.length == 0) {
-      dat_gui.appendChild(this.gui.domElement);
-    } else {
-      // Replaces the existing dat.gui root node with the new one.
-      dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+
+    // Create dat.gui once; do not recreate/replace DOM on subsequent updates.
+    if (!this.gui) {
+      let dat_gui_parameters = {
+        autoPlace: false,
+        closeOnTop: true,
+        closed: true,
+        width: 400,
+        useLocalStorage: false
+      };
+
+      // Preserve your original behavior of incorporating defaults when parameters exist.
+      // If you intended something else, remove/adjust this.
+      if (parameters) {
+        dat_gui_parameters = Object.assign(this.get_default_preset(), dat_gui_parameters);
+      }
+
+      this.gui = new dat.GUI(dat_gui_parameters);
+
+      const dat_gui = document.getElementById('menu_item_dat_gui');
+      if (dat_gui.children.length === 0) {
+        dat_gui.appendChild(this.gui.domElement);
+      } else if (dat_gui.children.item(0) !== this.gui.domElement) {
+        // Only replace if something else is currently mounted there.
+        dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+      }
+
+      // IMPORTANT: create controllers/folders ONCE here (or in a called helper),
+      // and bind them to this.parameters (and its nested objects), e.g.:
+      // this.gui.add(this.parameters, 'foo', 0, 1);
+      // const f = this.gui.addFolder('bar');
+      // f.add(this.parameters.bar, 'baz', 0, 10);
     }
+
+    // Refresh controller displays to reflect merged values.
+    update_gui_displays(this.gui);
   }
 
   get_default_preset() {
@@ -963,6 +1954,32 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     control_parameters_addon['name'] = onclick;
     gui_folder.add(this.control_parameters_addon, name)
   }
+  _start_ui_timer() {
+    if (this._ui_timer_id) {
+      return;
+    }
+    const tick = () => {
+      // Drain log queue + meter polling at a modest cadence without tying it to RAF
+      // or overlay visibility.
+      try {
+        this.process_csnd_messages_and_meters(performance.now());
+      } catch (e) {
+      }
+    };
+    this._ui_timer_id = setInterval(tick, this.ui_timer_interval_ms || 250);
+  }
+
+  _stop_ui_timer() {
+    if (!this._ui_timer_id) {
+      return;
+    }
+    try {
+      clearInterval(this._ui_timer_id);
+    } catch (e) {
+    }
+    this._ui_timer_id = 0;
+  }
+
 }
 customElements.define("cloud5-piece", Cloud5Piece);
 
@@ -972,20 +1989,14 @@ customElements.define("cloud5-piece", Cloud5Piece);
  * the performance in the score. The user may use the trackball 
  * to zoom in or out of the score, to drag it, or to spin it around.
  */
-/**
- * Displays a CsoundAC Score as a 3-dimensional piano roll. During 
- * performance, a moving red ball indicates the current position of 
- * the performance in the score. The user may use the trackball 
- * to zoom in or out of the score, to drag it, or to spin it around.
- */
-class Cloud5PianoRoll extends HTMLElement {
+class Cloud5PianoRoll extends Cloud5Element {
   constructor() {
     super();
-    this.cloud5_piece = null;
     this.silencio_score = new Silencio.Score();
     this.csoundac_score = null;
     this.canvas = null;
   }
+
   _onWindowResize = () => {
     const visible = this.checkVisibility
       ? this.checkVisibility()
@@ -993,7 +2004,9 @@ class Cloud5PianoRoll extends HTMLElement {
     if (!visible) return;
     requestAnimationFrame(() => this.on_shown());
   };
+
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `
      <canvas id="display" class="cloud5-score-canvas">
     `;
@@ -1001,7 +2014,7 @@ class Cloud5PianoRoll extends HTMLElement {
     window.addEventListener('resize', this._onWindowResize, { passive: true });
     window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
     if (this.csoundac_score !== null) {
-      this.draw(this.csoundac_score);
+      this.draw_csoundac_score(this.csoundac_score);
     }
     let menu_button = document.getElementById("menu_item_piano_roll");
     menu_button.style.display = 'inline';
@@ -1009,6 +2022,10 @@ class Cloud5PianoRoll extends HTMLElement {
   disconnectedCallback() {
     window.removeEventListener('resize', this._onWindowResize);
     window.visualViewport?.removeEventListener('resize', this._onWindowResize);
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
   }
   /**
    * Called by the browser to update the display of the Score. It is 
@@ -1046,17 +2063,41 @@ class Cloud5PianoRoll extends HTMLElement {
     this.silencio_score = score;
     this.silencio_score.draw3D(this.canvas);
   }
+
+  update_score_time(score_time) {
+    if (!this.silencio_score) return;
+    this.silencio_score.progress3D(score_time);
+  }
+
   /**
    * Called by a timer during performance to update the play 
    * position in the piano roll display.
    */
+
+  _raf_guard = false;
+
   show_score_time = async () => {
-    if (non_csound(this?.cloud5_piece?.csound)) {
-      return;
-    }
-    let score_time = await this?.cloud5_piece?.csound?.GetScoreTime();
-    this?.silencio_score.progress3D(score_time);
-  }
+    // Skip if piano-roll not visible
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) return;
+
+    // Need a piece & Silencio score
+    const piece = this.cloud5_piece;
+    if (!piece || typeof piece.latest_score_time !== 'number') return;
+    if (!this.silencio_score) return;
+
+    // Throttle to one progress3D per animation frame
+    if (this._raf_guard) return;
+    this._raf_guard = true;
+    const t = piece.latest_score_time;
+    requestAnimationFrame(() => {
+      this._raf_guard = false;
+      this.silencio_score.progress3D(t);
+    });
+  };
+
   /**
    * Stops the timer that is updating the play position of the score.
    */
@@ -1088,11 +2129,13 @@ customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
  * Contains an instance of the Strudel REPL that can use Csound as an output,
  * and that starts and stops along wth Csound.
  */
-class Cloud5Strudel extends HTMLElement {
+class Cloud5Strudel extends Cloud5Element {
   constructor() {
     super();
   }
+
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `
     <strudel-repl-component id="strudel_view" class='cloud5-strudel-repl'>
         <!--
@@ -1107,8 +2150,7 @@ class Cloud5Strudel extends HTMLElement {
 
     let menu_button = document.getElementById("menu_item_strudel");
     menu_button.style.display = 'inline';
-  }
-  /**
+  }  /**
    * Starts the Strudel performance loop (the Cyclist).
    */
   start() {
@@ -1161,8 +2203,7 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
  * This class is specifically designed to simplify the use of shaders 
  * developed in or adapted from the ShaderToy Web site. Other types of shader 
  * also can be used.
- */
-class Cloud5ShaderToy extends HTMLElement {
+ */class Cloud5ShaderToy extends Cloud5Element {
   gl = null;
   shader_program = null;
   analyser = null;
@@ -1191,15 +2232,54 @@ class Cloud5ShaderToy extends HTMLElement {
   constructor() {
     super();
   }
+
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `
      <canvas id="display" class="cloud5-shader-canvas">
     `;
     this.canvas = this.querySelector('#display');
+
+    // Attach WebGL context-loss handlers to this canvas (Cloud5ShaderToy does not
+    // use obtainWebGL2, so we must handle this here).
+    if (!this._context_listeners_installed) {
+      this._context_listeners_installed = true;
+      this.canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        this._context_lost = true;
+
+        const msg = 'WebGL context lost (Cloud5ShaderToy)';
+        console.error(msg);
+        try {
+          this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+        } catch { }
+
+        if (this._raf) {
+          cancelAnimationFrame(this._raf);
+          this._raf = 0;
+        }
+      }, false);
+      this.canvas.addEventListener('webglcontextrestored', () => {
+        const msg = 'WebGL context restored (Cloud5ShaderToy)';
+        console.log(msg);
+        try {
+          this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+        } catch { }
+
+        this._context_lost = false;
+        this._rebuild_after_context_restore();
+      }, false);
+    }
     window.addEventListener('resize', this._onWindowResize, { passive: true });
     window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
   }
+
+  // ...rest of Cloud5ShaderToy unchanged...
   disconnectedCallback() {
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
     window.removeEventListener('resize', this._onWindowResize);
     window.visualViewport?.removeEventListener('resize', this._onWindowResize);
   }
@@ -1450,9 +2530,11 @@ class Cloud5ShaderToy extends HTMLElement {
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this?.write_audio_texture(this.analyser, this.channel0_texture_unit, this.channel0_texture, this.channel0_sampler);
-    window.onresize = ((event) => this.resize(event));
+    // Do not overwrite the page's global resize handler.
     this.resize();
-    requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+    if (!this._raf) {
+      this._raf = requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+    }
   }
 
   set_attributes() {
@@ -1486,6 +2568,20 @@ class Cloud5ShaderToy extends HTMLElement {
    * @param {number} milliseconds The time since the start of the loop.
    */
   async render_frame(milliseconds) {
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) {
+      if (this._raf) {
+        cancelAnimationFrame(this._raf);
+        this._raf = 0;
+      }
+      return;
+    }
+    if (this._context_lost || !this.gl) {
+      this._raf = 0;
+      return;
+    }
     // Here we create an AnalyserNode as soon as Csound is available.
     if (this.analyser) {
     } else {
@@ -1524,7 +2620,7 @@ class Cloud5ShaderToy extends HTMLElement {
       this.post_draw_frame_function_addon();
     }
     this.rendering_frame++;
-    requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+    this._raf = requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
   }
 
   on_shown() {
@@ -1579,6 +2675,13 @@ class Cloud5ShaderToy extends HTMLElement {
       this._raf = requestAnimationFrame(ms => this.render_frame(ms));
     }
   }
+  on_hidden() {
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
+  }
+
   _raf = 0;
   _onWindowResize = () => {
     const visible = this.checkVisibility
@@ -1587,23 +2690,38 @@ class Cloud5ShaderToy extends HTMLElement {
     if (!visible) return;
     requestAnimationFrame(() => this.on_shown?.());
   };
+
+  _raf = 0;
+  _context_lost = false;
+  _context_listeners_installed = false;
+
+  _rebuild_after_context_restore() {
+    // GL resources are invalidated on context restore; rebuild program/buffers.
+    try {
+      this.prepare_canvas?.();
+      this.compile_shader?.();
+      this.get_uniforms?.();
+      this.set_attributes?.();
+      this.on_shown?.();
+    } catch (e) {
+      console.warn('Cloud5ShaderToy: rebuild after context restore failed:', e);
+    }
+  }
+
+
 }
 customElements.define("cloud5-shadertoy", Cloud5ShaderToy);
 
 /**
- * Displays a scrolling list of runtime messages from Csound and/or other 
- * sources.
- */
-/**
  * Displays a scrolling list of runtime messages from Csound and/or other sources.
  */
-class Cloud5Log extends HTMLElement {
+class Cloud5Log extends Cloud5Element {
   constructor() {
     super();
-    this.cloud5_piece = null;
   }
 
   connectedCallback() {
+    super.connectedCallback?.();
     this.innerHTML = `<div id="console_view" class="cloud5-log-editor no-scroll"></div>`;
     this.console_editor = ace.edit("console_view");
     this.console_editor.setShowPrintMargin(false);
@@ -1611,24 +2729,31 @@ class Cloud5Log extends HTMLElement {
     this.console_editor.renderer.setOption("showGutter", true);
   }
 
+  // ...rest of Cloud5Log unchanged...
   _pin_to_bottom() {
     if (!this.console_editor) {
       return;
     }
     const editor = this.console_editor;
     const session = editor.getSession();
-    const renderer = editor.renderer;
-    // If the editor is hidden (display:none), scroller height can be 0.
-    const scroller = renderer.scroller;
-    const scrollerHeight =
-      (renderer.$size && renderer.$size.scrollerHeight) ||
-      (scroller && scroller.clientHeight) ||
-      0;
-    if (scrollerHeight <= 0) return;
-    const lineHeight = renderer.lineHeight || 16;
-    const totalRows = session.getLength();
-    const maxY = Math.max(0, totalRows * lineHeight - scrollerHeight);
-    renderer.scrollToY(maxY);
+    // When the log overlay has been display:none, Ace often needs a resize
+    // before its scroller metrics are valid.
+    try { editor.resize(true); } catch (e) { }
+    const lastRow = Math.max(0, session.getLength() - 1);
+    // Ace's own helper is more reliable than manual Y math when soft-wrap is enabled.
+    try {
+      editor.scrollToLine(lastRow, true, true, function () { });
+    } catch (e) {
+      // Fallback: best-effort renderer scroll.
+      const renderer = editor.renderer;
+      const scroller = renderer && renderer.scroller;
+      const scrollerHeight = (renderer && renderer.$size && renderer.$size.scrollerHeight) || (scroller && scroller.clientHeight) || 0;
+      if (scrollerHeight > 0) {
+        const lineHeight = (renderer && renderer.lineHeight) || 16;
+        const maxY = Math.max(0, lastRow * lineHeight - scrollerHeight);
+        try { renderer.scrollToY(maxY); } catch (e2) { }
+      }
+    }
   }
 
   /**
@@ -1651,6 +2776,8 @@ class Cloud5Log extends HTMLElement {
     const lastCol = (session.getLine(lastRow) || "").length;
     session.insert({ row: lastRow, column: lastCol }, message);
     this._pin_to_bottom();
+    // Some browsers/Ace builds only settle scroll metrics after paint.
+    requestAnimationFrame(() => this._pin_to_bottom());
   }
 }
 customElements.define("cloud5-log", Cloud5Log);
@@ -1659,7 +2786,7 @@ customElements.define("cloud5-log", Cloud5Log);
 /**
  * May contain license, authorship, credits, and program notes as inner HTML.
  */
-class Cloud5About extends HTMLElement {
+class Cloud5About extends Cloud5Element {
   constructor() {
     super();
   }
@@ -1879,13 +3006,21 @@ var rgb_to_hsv = function (rgb) {
 }
 
 async function read_pixels_async(gl, x, y, w, h, format, type, sample) {
-  const buffer = gl.createBuffer();
+  // Reuse a single PBO per context rather than creating/deleting one per call.
+  // Frequent buffer churn + sync readback is a common trigger for WebGL context loss.
+  if (!gl.__cloud5_read_pbo) {
+    gl.__cloud5_read_pbo = gl.createBuffer();
+    gl.__cloud5_read_pbo_size = 0;
+  }
+  const buffer = gl.__cloud5_read_pbo;
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
-  gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.STREAM_READ);
+  if ((gl.__cloud5_read_pbo_size | 0) < sample.byteLength) {
+    gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.DYNAMIC_READ);
+    gl.__cloud5_read_pbo_size = sample.byteLength;
+  }
   gl.readPixels(x, y, w, h, format, type, 0);
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
   await get_buffer_sub_data_async(gl, gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
-  gl.deleteBuffer(buffer);
 }
 
 /**
@@ -2048,7 +3183,11 @@ function get_filename(pathOrUrl) {
 
 // --- Monkey-patch CsoundAC.Score with Web MIDI playback (mirrors MandelbrotJulia.playMIDIFromScore) ---
 (function attachScoreMIDIPatch(root = (typeof window !== "undefined" ? window : globalThis)) {
-  const C = root.CsoundAC;
+  if (globalThis.cloud5_score_midi_patch_installed) {
+    return;
+  }
+  globalThis.cloud5_score_midi_patch_installed = true;
+  const C = globalThis?.CsoundAC;
   if (!C || !C.Score) {
     console.warn('CsoundAC.Score not found; MIDI patch skipped.');
     return;
@@ -2064,6 +3203,7 @@ function get_filename(pathOrUrl) {
     timers: new Set(),
     startMS: 0,
     totalBeats: 0,
+    bpm: 120,
   };
 
   function clearTimers() {
@@ -2122,7 +3262,7 @@ function get_filename(pathOrUrl) {
    * Choose an output by (partial, case-insensitive) name; falls back to first match.
    * Returns the chosen MIDIOutput or null.
    */
-  Score.select_midi_output_by_name = async function(namePart) {
+  Score.select_midi_output_by_name = async function (namePart) {
     await getMIDIAccess();
     const outs = __midi.access?.outputs;
     if (!outs?.size) return null;
@@ -2137,12 +3277,12 @@ function get_filename(pathOrUrl) {
   };
 
   /** Get the current MIDI output (or null). */
-  Score.get_current_midi_output = function() {
+  Score.get_current_midi_output = function () {
     return currentMIDIOutput();
   };
 
   /** Global stop: cancels timers and sends panic. */
-  Score.stop_play_midi = function() {
+  Score.stop_play_midi = function () {
     __midi.playing = false;
     __midi.totalBeats = 0;
     clearTimers();
@@ -2150,7 +3290,7 @@ function get_filename(pathOrUrl) {
   };
 
   /** Global panic only (does not clear timers). */
-  Score.panic_midi = function() {
+  Score.panic_midi = function () {
     panicAllNotes();
   };
 
@@ -2164,7 +3304,7 @@ function get_filename(pathOrUrl) {
    * @param {number} [opts.bpm=120]            Beats per minute if times are in beats.
    * @param {boolean} [opts.time_is_beats=true]If false, interpret time/duration as seconds.
    */
-  Score.prototype.play_midi = async function(opts = {}) {
+  Score.prototype.play_midi = async function (opts = {}) {
     const { bpm = 120, time_is_beats = true } = opts;
 
     await getMIDIAccess();
@@ -2187,13 +3327,14 @@ function get_filename(pathOrUrl) {
     for (let i = 0; i < n; ++i) {
       const ev = this.get(i);
       const ch = (ev.getChannel ? ev.getChannel() : ev.getInstrument?.()) | 0;
-      const t  = toBeat(ev.getTime ? ev.getTime() : 0);
-      const d  = toBeat(ev.getDuration ? ev.getDuration() : 0.25);
-      const key= (ev.getKey ? ev.getKey() : 60) | 0;
-      const vel= (ev.getVelocity ? ev.getVelocity() : 100) | 0;
-      notes.push([ (ch|0)&0x0F, t, d, (key|0)&0x7F, Math.max(1, Math.min(127, vel|0)) ]);
+      const t = toBeat(ev.getTime ? ev.getTime() : 0);
+      const d = toBeat(ev.getDuration ? ev.getDuration() : 0.25);
+      const key = (ev.getKey ? ev.getKey() : 60) | 0;
+      const vel = (ev.getVelocity ? ev.getVelocity() : 100) | 0;
+      notes.push([(ch | 0) & 0x0F, t, d, (key | 0) & 0x7F, Math.max(1, Math.min(127, vel | 0))]);
     }
 
+    __midi.bpm = bpm;
     __midi.playing = true;
     clearTimers();
     __midi.startMS = performance.now();
@@ -2201,13 +3342,13 @@ function get_filename(pathOrUrl) {
     const t0 = __midi.startMS;
 
     for (const [ch, tBeats, dBeats, key, vel] of notes) {
-      const on  = 0x90 | ch;
+      const on = 0x90 | ch;
       const off = 0x80 | ch;
-      const whenOn  = t0 + msFromBeats(tBeats, bpm);
+      const whenOn = t0 + msFromBeats(tBeats, bpm);
       const whenOff = t0 + msFromBeats(tBeats + dBeats, bpm);
 
       __midi.timers.add(setTimeout(() => {
-        if (__midi.playing) out.send([on,  key, vel]);
+        if (__midi.playing) out.send([on, key, vel]);
       }, Math.max(0, whenOn - performance.now())));
 
       __midi.timers.add(setTimeout(() => {
@@ -2217,11 +3358,11 @@ function get_filename(pathOrUrl) {
 
     // Auto-stop slightly after last note
     __midi.timers.add(setTimeout(() => Score.stop_play_midi(),
-                                 Math.ceil(msFromBeats(__midi.totalBeats, bpm) + 50)));
+      Math.ceil(msFromBeats(__midi.totalBeats, bpm) + 50)));
   };
 
   // Optional: convenience alias (static) to play any score
-  Score.play_midi = async function(score, opts) {
+  Score.play_midi = async function (score, opts) {
     if (!score || typeof score.play_midi !== 'function') {
       throw new Error('Score.play_midi(score, opts): invalid score object');
     }
@@ -2230,4 +3371,117 @@ function get_filename(pathOrUrl) {
 
   console.info('CsoundAC.Score MIDI monkey-patch installed.');
 })();
+
+function is_plain_object(value) {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)
+  );
+}
+
+function deep_merge_into(target, patch, options = {}) {
+  const {
+    ignore_null = true,          // if true: JSON null does not overwrite
+    overwrite_arrays = true,     // if true: arrays are replaced, not merged
+    allow_new_keys = true        // if false: only update keys that already exist on target
+  } = options;
+
+  if (patch === null) {
+    return target;
+  }
+
+  for (const key of Object.keys(patch)) {
+    if (!allow_new_keys && !(key in target)) {
+      continue;
+    }
+
+    const incoming = patch[key];
+    if (incoming === null && ignore_null) {
+      continue;
+    }
+
+    const current = target[key];
+
+    if (Array.isArray(incoming)) {
+      if (overwrite_arrays || !Array.isArray(current)) {
+        target[key] = incoming.slice();
+      } else {
+        // simple “append” semantics; replace with your desired array policy
+        target[key] = current.concat(incoming);
+      }
+      continue;
+    }
+
+    // Deep-merge plain objects into existing plain objects
+    if (is_plain_object(incoming) && is_plain_object(current)) {
+      deep_merge_into(current, incoming, options);
+      continue;
+    }
+
+    // If the target property is a class instance and incoming is a plain object,
+    // merge fields into that instance (preserves prototype/methods).
+    if (is_plain_object(incoming) && current && typeof current === 'object' && !is_plain_object(current)) {
+      deep_merge_into(current, incoming, options);
+      continue;
+    }
+
+    // Primitive, function, Date (as string), or replacement object
+    target[key] = incoming;
+  }
+
+  return target;
+}
+
+function merge_json_into_instance(instance, json_string, options) {
+  const patch = JSON.parse(json_string);
+  return deep_merge_into(instance, patch, options);
+}
+
+function is_object(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function apply_params_into_existing(existing, incoming, options = {}) {
+  const { allow_new_keys = false, ignore_null = true } = options;
+
+  if (!is_object(incoming)) {
+    return existing;
+  }
+
+  for (const key of Object.keys(incoming)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    if (!allow_new_keys && !(key in existing)) {
+      continue;
+    }
+
+    const v = incoming[key];
+    if (v === null && ignore_null) {
+      continue;
+    }
+
+    if (is_object(v) && is_object(existing[key])) {
+      apply_params_into_existing(existing[key], v, options);
+    } else {
+      existing[key] = v;
+    }
+  }
+
+  return existing;
+}
+
+function update_gui_displays(gui) {
+  if (gui.__controllers) {
+    for (const c of gui.__controllers) {
+      c.updateDisplay();
+    }
+  }
+  if (gui.__folders) {
+    for (const name of Object.keys(gui.__folders)) {
+      update_gui_displays(gui.__folders[name]);
+    }
+  }
+}
 
