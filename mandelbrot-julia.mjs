@@ -1801,7 +1801,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     return s;
   }
 
-  _currentStatex() {
+  _currentState() {
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
