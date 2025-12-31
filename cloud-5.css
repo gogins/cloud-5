@@ -116,25 +116,6 @@ cloud5-menu {
   z-index: 8000;
 }
 
-cloud5-strudel {
-  z-index: 1400;
-}
-
-cloud5-piano-roll {
-  z-index: 1200;
-}
-
-cloud5-log {
-  z-index: 1100;
-}
-
-cloud5-about {
-  z-index: 1000;
-}
-
-cloud5-shadertoy {
-  z-index: 100;
-}
 
 cloud5-piece {
   position: fixed;
@@ -158,6 +139,7 @@ cloud5-piece {
 
 cloud5-strudel {
   isolation: isolate;
+  z-index: 1400;
   padding: 80px;
   font-size: 11px;
   color: rgb(255, 255, 200, 67%);
@@ -167,11 +149,13 @@ cloud5-strudel {
 }
 
 cloud5-piano-roll {
+  z-index: 1200;
   background: black;
   overflow-wrap: break-word;
 }
 
 cloud5-log {
+  z-index: 1100;
   padding: 20px;
   padding-left: 60px;
   overflow: auto;
@@ -182,6 +166,7 @@ cloud5-log {
 }
 
 cloud5-about {
+  z-index: 10000;
   isolation: isolate;
   padding: 4em;
   font-size: 11px;
@@ -191,6 +176,7 @@ cloud5-about {
 }
 
 cloud5-shadertoy {
+  z-index: 100;
   font-size: 11px;
   background: transparent;
   color: rgb(255, 255, 200, 67%);

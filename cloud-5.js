@@ -1179,7 +1179,6 @@ poll_meters_and_update_ui = async (token) => {
 
       let duration;
       let fadeout;
-      const safe_tail = 4;
       if (this.#control_parameters_addon) {
         duration = this.#control_parameters_addon.gi_cloud5_duration;
         if (this.#control_parameters_addon.gi_cloud5_fadeout) {
