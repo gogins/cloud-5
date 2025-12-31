@@ -169,7 +169,7 @@ pre {
       </select>
     </label>
     <button id="btnScore">Play MIDI</button>
-    <button id="btnStop"">Stop MIDI</button>
+    <button id="btnStop">Stop MIDI</button>
     <span>
       Click Mandelbrot = set Julia point • Option-Click = zoom in • Shift+Option-Click = zoom out • Drag on Julia = ROI
     </span>
@@ -1234,8 +1234,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const btnStop = this.shadowRoot.getElementById('btnStop');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
-    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn].forEach(e => e.addEventListener('input', this.sync_from_controls));
-    this.sync_from_controls();
+    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn]
+      .forEach(el => el.addEventListener('input', () => this.sync_from_controls()));
+   this.sync_from_controls();
 
     btnStop.addEventListener('click', () => this.stopPlayback());
 
