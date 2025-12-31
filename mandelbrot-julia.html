@@ -1815,14 +1815,37 @@
                     Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
             <p>This is an online piece of electroacoustic music, rendered in your Web
-                browser using high-resolution audio. The piece demonstrates "parametric composition,"
-                the art of composition by interactively exploring the parametric map of a complex
-                dynamical system. In this case, the dynamical system is the iteration of complex quadratic
+                browser using high-resolution audio. 
+                
+            <p>This piece demonstrates "parametric composition,"
+                the art of composing by interactively exploring the parametric map of some mathematical system. 
+                In this case, the system is the iteration of complex quadratic
                 polynomials, which generates the famous Mandelbrot and Julia sets. Each point in the
-                Mandelbrot set corresponds to a different Julia set. Selecting a point of the
+                Mandelbrot set defines a different Julia set. Selecting a point of the
                 Mandelbrot set (on the left) generates the correspondng Julia set (on the right). The
-                user may then click and drag the mouse to select a ration of the Julia set, and
-                that will be translated into music in real time.
+                user may zoom into (Option-Click) and out of (Shift-Option-Click) the Mandelbrot set, 
+                select a point of the Mandelbrot set (Click) from 
+                which to generate the corresponding Julia aset, and use the mouse (Click-Drag) to select a 
+                portion of the Julia set, which can then be translated into music in real time. The 
+                performance can be rendering using an embedded Csound 
+                orch (Play / Stop), or via a MIDI loopback interface (Play MIDI / Stop MIDI) to an external MIDI synthesizer.
+
+            <p>Parameters of the selected portion of the Julia set are mapped to musical notes
+                using a simple algorithm: the angle of each point from the center of the selected region
+                determines the pitch class (C, C#, D, etc.), while the distance from the center determines
+                the octave. The brightness of each point determines the velocity (loudness) of each note.
+                Points that do not escape within a certain number of iterations are not played. The
+                result is a cloud of notes that reflects the structure of the selected portion of the
+                Julia set.
+                
+            <p>Additional parameters controlling score generaton are:
+                <ul>
+                    <li><i>Iterations</i>: the number of iterations used to determine whether a point escapes.
+                    <li><i>Scale</i>: the musical scale used to quantize the generated notes.
+                    <li><i>Density</i>: the density of notes generated from the selected portion of the Julia set.
+                    <li><i>Tempo</i>: the tempo at which notes are played.
+                </ul>
+            </p>
 
             <p>The notes are played by a Csound orchestra that is embedded in this Web page using my <a
                     href="https://github.com/gogins/csound-wasm">WebAssembly build of Csound</a>. This in turn includes
@@ -1834,10 +1857,8 @@
                 are applied to the generated notes.
 
             <p>The viewer may exercise a certain amount of control over the Csound orchestra by opening the
-                <i>Controls</i>.
-                Changing
-                the hue will change the arrangement of instruments. The tempo of both note generation and the visuals
-                may be controlled.
+                <i>Controls</i>. This allows the user to adjust loudness, reverberation, and other parameters of 
+                the Csound instruments.
 
             <p>When the user clicks on the <i>Record</i> button, the "fout" opcode is used to record the live audio
                 to memory in the browser. When the user clicks on <i>Pause</i>, the recorded

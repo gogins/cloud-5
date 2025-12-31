@@ -150,9 +150,10 @@ function cloud5_state_filename_for_piece() {
 }
 
 function cloud5_is_local_context() {
-  const protocol = window.location.protocol;
-  const host = window.location.hostname;
+  const protocol = window.location?.protocol || '';
+  const host = window.location?.hostname || '';
 
+  // Classic browser-local signals.
   if (protocol === 'file:') {
     return true;
   }
@@ -161,11 +162,26 @@ function cloud5_is_local_context() {
     return true;
   }
 
-  // NW.js but loading remote content → not local
-  if (typeof process !== 'undefined' && process.versions?.nw) {
-    return false;
+  // NW.js: if we're running as an NW.js app (has a manifest/package.json),
+  // treat this as local context.
+  //
+  // In NW.js, the renderer may be http(s): (embedded server, custom routing, etc.)
+  // so window.location is not a reliable locality indicator.
+  try {
+    if (typeof process !== 'undefined' && process.versions && process.versions.nw) {
+      if (typeof nw !== 'undefined' && nw.App && nw.App.manifest) {
+        // nw.App.manifest is the parsed package.json when running as an app.
+        return true;
+      }
+      // If NW.js is present but manifest is not accessible for some reason,
+      // it's still overwhelmingly likely you're in the app context.
+      return true;
+    }
+  } catch (e) {
+    // If anything about NW.js probing fails, fall through to non-local.
   }
 
+  // Not file:, not loopback, not NW.js app context.
   return false;
 }
 
