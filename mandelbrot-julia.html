@@ -1802,10 +1802,10 @@
     <cloud5-piano-roll id="piano_roll" class="cloud5-overlay" data-cloud5-label="Piano Roll">
     </cloud5-piano-roll>
     <cloud5-log></cloud5-log>
-    <cloud5-about>
+    <cloud5-about style="font-size:1em;">
         <div>
-            <h1 style="font-size: 15px;">mandelbrot-julia</h1>
-            <h2 style="font-size: 13px">Michael Gogins<br>
+            <h1>mandelbrot-julia</h1>
+            <h2>Michael Gogins<br>
                 November 2025</h2>
 
             <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img
@@ -1831,22 +1831,106 @@
                 orch (<b>Play</b> / <b>Stop</b>), or via a MIDI loopback interface 
                 (<b>Play MIDI</b> / <b>Stop MIDI</b>) to an external MIDI synthesizer.
 
-            <p>Parameters of the selected portion of the Julia set are mapped to musical notes
-                using a simple algorithm: the angle of each point from the center of the selected region
-                determines the pitch class (C, C#, D, etc.), while the distance from the center determines
-                the octave. The brightness of each point determines the velocity (loudness) of each note.
-                Points that do not escape within a certain number of iterations are not played. The
-                result is a cloud of notes that reflects the structure of the selected portion of the
-                Julia set.
-                
+            <p>The selected region of the Julia set is mapped to musical notes as follows: 
+                the y coordinate of each point in the region is mapped to pitch, and the x coordinate 
+                is mapped to time. The escape time of the point is mapped to velocity (loudness). Points 
+                that do not escape, or whose escape intensity falls below a threshold, are not rendered as 
+                notes. The accumulated angular rotation of the iterate during escape is quantized and 
+                mapped to instrument. Once a note is started at a given pitch, it continues to play until 
+                the note at the next time step either does not play or the instrument changes, in which 
+                case a new note begins.
+
+            <p>Before playback, tonality is applied by computing a velocity-weighted average pitch per 
+                time step and using it to define a tonal center. Notes are then quantized to a scale 
+                centered on that tonal reference, producing a pitch-class center, a registral center, 
+                and an implied harmonic gravity. Near beat boundaries, implicitly defined by tempo, the 
+                tonal quantizer prefers chord-related scale degrees, and other tones are biased toward 
+                tonic- or dominant-related pitches. Voice leading is applied by favoring small intervals 
+                of motion within each instrument.
+
+            <p>Finally, notes are thinned according to the density parameter and the maximum allowed 
+                number of simultaneous notes per time step, favoring higher-velocity notes.<p>
+
             <p>Additional parameters controlling score generaton are:
-                <ul>
-                    <li><i>Iterations</i>: the number of iterations used to determine whether a point escapes.
-                    <li><i>Scale</i>: the musical scale used to quantize the generated notes.
-                    <li><i>Density</i>: the density of notes generated from the selected portion of the Julia set.
-                    <li><i>Tempo</i>: the tempo at which notes are played.
-                </ul>
-            </p>
+ 
+<dl>
+
+  <dt>Exponent</dt>
+  <dd>
+    Sets the exponent used in the fractal iteration formula. Changing this alters
+    the symmetry and overall structure of the Mandelbrot and Julia sets.
+  </dd>
+
+  <dt>Mandelbrot iterations</dt>
+  <dd>
+    Sets the maximum number of iterations used when rendering the Mandelbrot set,
+    which determines how precisely escape behavior is calculated.
+  </dd>
+
+  <dt>Julia iterations</dt>
+  <dd>
+    Sets the maximum number of iterations used when rendering the Julia set,
+    affecting both visual detail and musical activity.
+  </dd>
+
+  <dt>Time bins</dt>
+  <dd>
+    Controls how many vertical slices the selected Julia region is divided into.
+    This determines the temporal resolution of the generated music.
+  </dd>
+
+  <dt>Pitch bins</dt>
+  <dd>
+    Controls how many pitch levels are sampled vertically from the Julia region,
+    determining the pitch range and density.
+  </dd>
+
+  <dt>Base instrument</dt>
+  <dd>
+    Sets the starting instrument number used when generating Csound events,
+    allowing the Julia voices to map into a chosen instrument range.
+  </dd>
+
+  <dt>Instrument bins</dt>
+  <dd>
+    Sets how many distinct instrument or voice classes are derived from rotational
+    behavior in the Julia set.
+  </dd>
+
+  <dt>Tempo (BPM)</dt>
+  <dd>
+    Sets the playback tempo in beats per minute, determining how quickly the Julia
+    set is scanned from left to right.
+  </dd>
+
+  <dt>Density</dt>
+  <dd>
+    Controls how many notes are allowed to sound at each time slice, from very sparse
+    to very dense textures.
+  </dd>
+
+  <dt>Maximum voices</dt>
+  <dd>
+    Sets the maximum number of simultaneous notes permitted in any single time slice.
+  </dd>
+
+  <dt>MIDI output</dt>
+  <dd>
+    Selects the MIDI output device used for MIDI playback, if available.
+  </dd>
+
+  <dt>Play MIDI</dt>
+  <dd>
+    Generates a musical score from the selected Julia region and plays it using MIDI.
+  </dd>
+
+  <dt>Stop MIDI</dt>
+  <dd>
+    Stops MIDI playback and sends an “all notes off” message to prevent stuck notes.
+  </dd>
+
+</dl>
+
 
             <p>The notes are played by a Csound orchestra that is embedded in this Web page using my <a
                     href="https://github.com/gogins/csound-wasm">WebAssembly build of Csound</a>. This in turn includes
