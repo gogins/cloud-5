@@ -5,11 +5,6 @@ class MandelbrotJulia extends Cloud5Element {
 
     this._rendering_active = false;
     this._raf_id = 0;
-
-
-    // If an initial render is attempted while the element is hidden/collapsed,
-    // schedule a redraw for when it becomes visible (prevents \"black until resize\").
-    this._visible_poll_id = 0;
     this._render_loop = () => this.render();
 
     this._gpu_dirty = true;
@@ -245,7 +240,6 @@ pre {
       this._updateSelectionOverlay();
       // Playhead overlay is driven by the playhead ticker; no need to force it here.
       this._request_gpu_redraw('init');
-      this._schedule_redraw_when_visible();
 
     });
   }
@@ -318,14 +312,12 @@ pre {
 
   on_shown() {
     // Overlay became visible again.
-    // When shown after display:none, layout is not guaranteed to be settled in the same tick,
-    // and rendering may have been stopped in on_hidden().
-    this._rendering_active = true;
-    this._start_gpu_keepalive();
-
+    // Defer sizing/redraw to the next frame so layout has committed after display:block.
     requestAnimationFrame(() => {
+      this._rendering_active = true;
       this.resize();
       this._updateSelectionOverlay();
+      this._start_gpu_keepalive();
       this._request_gpu_redraw('shown');
     });
   }
@@ -581,25 +573,6 @@ pre {
 
     return true;
   }
-
-  _schedule_redraw_when_visible() {
-    if (this._visible_poll_id) return;
-    const poll = () => {
-      this._visible_poll_id = 0;
-      if (!this._rendering_active) return;
-
-      // Wait until the element is laid out and visible before issuing GPU work.
-      if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
-        this._visible_poll_id = requestAnimationFrame(poll);
-        return;
-      }
-
-      this.resize();
-      this._request_gpu_redraw('became_visible');
-    };
-    this._visible_poll_id = requestAnimationFrame(poll);
-  }
-
 
   // ---------- MIDI (IAC) ----------
   async initMIDI() {
@@ -981,8 +954,12 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   writeDrawUniforms({ mode, canvas, center, scale, maxIter, cParam, targetBuffer }) {
     const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
-    const w = Math.floor(canvas.clientWidth * dpr);
-    const h = Math.floor(canvas.clientHeight * dpr);
+    const w = (canvas.width && canvas.width > 0)
+      ? canvas.width
+      : Math.max(1, Math.floor(canvas.clientWidth * dpr));
+    const h = (canvas.height && canvas.height > 0)
+      ? canvas.height
+      : Math.max(1, Math.floor(canvas.clientHeight * dpr));
     const aspect = w / Math.max(1, h);
 
     const cx = this._split_f64_to_f32_pair(center.cx);
@@ -1039,7 +1016,11 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   resize() {
     const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     for (const c of [this.canvasM, this.canvasJ]) {
-      const w = Math.floor(c.clientWidth * dpr), h = Math.floor(c.clientHeight * dpr);
+      const rect = c.getBoundingClientRect();
+      const css_w = rect.width || c.clientWidth || 0;
+      const css_h = rect.height || c.clientHeight || 0;
+      const w = Math.max(1, Math.floor(css_w * dpr));
+      const h = Math.max(1, Math.floor(css_h * dpr));
       if (w && h && (c.width !== w || c.height !== h)) { c.width = w; c.height = h; }
     }
   }
@@ -1053,8 +1034,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
       // Do not submit GPU work while hidden/collapsed.
-      // However, the very first draw can happen while hidden; ensure we redraw once visible.
-      this._schedule_redraw_when_visible();
+      // Important: if we bail out here, do not let the redraw-rate limiter
+      // suppress the *next* redraw request after layout/visibility changes.
+      this._gpu_redraw_last_ms = 0;
+      this._gpu_redraw_last_reason = '';
       return;
     }
     if (!this._gpu_dirty) {
@@ -1361,7 +1344,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
     [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn]
       .forEach(el => el.addEventListener('input', () => this.sync_from_controls()));
-    this.sync_from_controls();
+   this.sync_from_controls();
 
     btnStop.addEventListener('click', () => this.stopPlayback());
 
@@ -1396,7 +1379,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       try {
         // Persist viewM (and c) to the local *.state.json used by Cloud5.
         cloud5_save_state_if_needed(this.cloud5_piece);
-        this._request_gpu_redraw('restore');
+      this._request_gpu_redraw('restore');
       } catch (err) {
         console.warn('Failed to persist Mandelbrot view state:', err);
       }
