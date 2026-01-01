@@ -5,6 +5,11 @@ class MandelbrotJulia extends Cloud5Element {
 
     this._rendering_active = false;
     this._raf_id = 0;
+
+
+    // If an initial render is attempted while the element is hidden/collapsed,
+    // schedule a redraw for when it becomes visible (prevents \"black until resize\").
+    this._visible_poll_id = 0;
     this._render_loop = () => this.render();
 
     this._gpu_dirty = true;
@@ -240,6 +245,7 @@ pre {
       this._updateSelectionOverlay();
       // Playhead overlay is driven by the playhead ticker; no need to force it here.
       this._request_gpu_redraw('init');
+      this._schedule_redraw_when_visible();
 
     });
   }
@@ -312,9 +318,16 @@ pre {
 
   on_shown() {
     // Overlay became visible again.
-    this.resize();
-    this._updateSelectionOverlay();
+    // When shown after display:none, layout is not guaranteed to be settled in the same tick,
+    // and rendering may have been stopped in on_hidden().
+    this._rendering_active = true;
     this._start_gpu_keepalive();
+
+    requestAnimationFrame(() => {
+      this.resize();
+      this._updateSelectionOverlay();
+      this._request_gpu_redraw('shown');
+    });
   }
 
   on_hidden() {
@@ -568,6 +581,25 @@ pre {
 
     return true;
   }
+
+  _schedule_redraw_when_visible() {
+    if (this._visible_poll_id) return;
+    const poll = () => {
+      this._visible_poll_id = 0;
+      if (!this._rendering_active) return;
+
+      // Wait until the element is laid out and visible before issuing GPU work.
+      if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
+        this._visible_poll_id = requestAnimationFrame(poll);
+        return;
+      }
+
+      this.resize();
+      this._request_gpu_redraw('became_visible');
+    };
+    this._visible_poll_id = requestAnimationFrame(poll);
+  }
+
 
   // ---------- MIDI (IAC) ----------
   async initMIDI() {
@@ -1021,7 +1053,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
       // Do not submit GPU work while hidden/collapsed.
-      // Rendering is event-driven; a resize or state change will request a redraw.
+      // However, the very first draw can happen while hidden; ensure we redraw once visible.
+      this._schedule_redraw_when_visible();
       return;
     }
     if (!this._gpu_dirty) {
@@ -1328,7 +1361,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
     [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn]
       .forEach(el => el.addEventListener('input', () => this.sync_from_controls()));
-   this.sync_from_controls();
+    this.sync_from_controls();
 
     btnStop.addEventListener('click', () => this.stopPlayback());
 
@@ -1363,7 +1396,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       try {
         // Persist viewM (and c) to the local *.state.json used by Cloud5.
         cloud5_save_state_if_needed(this.cloud5_piece);
-      this._request_gpu_redraw('restore');
+        this._request_gpu_redraw('restore');
       } catch (err) {
         console.warn('Failed to persist Mandelbrot view state:', err);
       }
