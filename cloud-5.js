@@ -393,15 +393,16 @@ async function cloud5_save_state_if_needed(piece) {
   const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
   const json_text = JSON.stringify(state_obj, null, 2);
 
-  // Try filesystem first
-  if (typeof fs !== 'undefined' && fs?.writeFileSync) {
+  // Try filesystem first (NW.js only)
+  const fs = cloud5_get_fs();
+  if (fs) {
     try {
       const tmp = filename + '.tmp';
       fs.writeFileSync(tmp, json_text, 'utf8');
       fs.renameSync(tmp, filename);
       return;
     } catch (e) {
-      console.warn('fs write failed, falling back to clipboard:', e);
+      // Do not throw; fall back to clipboard + download.
     }
   }
 
@@ -421,8 +422,9 @@ async function cloud5_load_state_if_present(piece) {
   const base = document.title || 'piece';
   const filename = `${base}.state.json`;
 
-  // 1) Try filesystem (NW.js / node context)
-  if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
+  // 1) Try filesystem (NW.js only)
+  const fs = cloud5_get_fs();
+  if (fs) {
     try {
       if (!fs.existsSync(filename)) {
         return;
@@ -433,7 +435,7 @@ async function cloud5_load_state_if_present(piece) {
       cloud5_notify_state_restored(piece, obj);
       return;
     } catch (e) {
-      console.warn('Failed to load state via fs; falling back to fetch:', e);
+      // Do not throw; fall back to fetch.
     }
   }
 
@@ -2808,12 +2810,43 @@ class Cloud5About extends Cloud5Element {
 }
 customElements.define("cloud5-about", Cloud5About);
 
-// A sad workaround....
-try {
-  var fs = require("fs");
-  var __dirname = fs.realpathSync.native(".");
-} catch (e) {
-  console.warn(e);
+// Environment-safe access to Node/NW.js filesystem.
+//
+// In some browser runtimes (or bundlers), a global `require` may exist but not be Node's
+// CommonJS loader ("fake require"). Calling it can throw or return unexpected values.
+// To avoid exceptions and incorrect environment inference, we only attempt to acquire
+// `fs` when we have strong evidence of an NW.js runtime.
+function cloud5_get_fs() {
+  try {
+    const is_nwjs =
+      (typeof process !== 'undefined') &&
+      !!(process.versions && process.versions.nw);
+
+    if (!is_nwjs) {
+      return null;
+    }
+
+    const req = globalThis.require;
+    if (typeof req !== 'function') {
+      return null;
+    }
+
+    const maybe_fs = req('fs');
+    if (!maybe_fs) {
+      return null;
+    }
+
+    // Validate expected APIs we use.
+    if (typeof maybe_fs.readFileSync !== 'function') return null;
+    if (typeof maybe_fs.writeFileSync !== 'function') return null;
+    if (typeof maybe_fs.existsSync !== 'function') return null;
+    if (typeof maybe_fs.renameSync !== 'function') return null;
+
+    return maybe_fs;
+  } catch (e) {
+    // Swallow all errors: persistence will fall back to fetch/download paths.
+    return null;
+  }
 }
 
 /**
@@ -2926,21 +2959,27 @@ function arrange(score, new_order_) {
  * @param {string} data 
  */
 function write_file(filepath, data) {
-  try {
-    // Sync, so a bad .csd file doesn't blow up Csound 
-    // before the .csd file is written so it can be tested!
-    fs.writeFileSync(filepath, data, function (err) {
-      console.warn(err);
-    });
-  } catch (err) {
+  // In browsers, we cannot write arbitrary files; fall back to clipboard.
+  // In NW.js, write to the local filesystem if available.
+  const fs = cloud5_get_fs();
+  if (fs) {
     try {
-      navigator.clipboard.writeText(data);
-      console.info("Copied generated csd to system clipboard.\n")
-    } catch (err1) {
-      console.warn(err1);
+      // Sync, so a bad .csd file doesn't blow up Csound before the file is written.
+      fs.writeFileSync(filepath, data, 'utf8');
+      return;
+    } catch (e) {
+      // Fall through to clipboard.
     }
   }
+
+  try {
+    navigator.clipboard.writeText(data);
+    console.info('Copied generated csd to system clipboard.\n');
+  } catch (e) {
+    // Nothing else to do in a restricted browser context.
+  }
 }
+
 
 /**
  * Called by the browser to resize arrays that are used to sample the WebGL
