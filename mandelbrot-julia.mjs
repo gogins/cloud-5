@@ -7,6 +7,17 @@ class MandelbrotJulia extends Cloud5Element {
     this._raf_id = 0;
     this._render_loop = () => this.render();
 
+    this._gpu_dirty = true;
+    this._last_playhead_update_ms = 0;
+
+    // --- GPU redraw diagnostics ---
+    this._gpu_redraw_seq = 0;
+    this._gpu_redraw_counts = { init: 0, resize: 0, save: 0, restore: 0, other: 0 };
+    this._gpu_redraw_last_reason = '';
+    this._gpu_redraw_last_ms = 0;
+    this._gpu_redraw_min_interval_ms = 250; // guard against accidental rapid redraw storms
+    this._gpu_diag_enabled = true;
+
 
     this._render_interval_ms = 100; // match Cloud5Piece display loop (~10 Hz)
     this._last_render_ms = 0;
@@ -222,7 +233,8 @@ pre {
     this._resizeObserver = new ResizeObserver(() => {
       this.resize();
       this._updateSelectionOverlay();
-      this._updatePlayheadOverlay();
+      // Playhead overlay is driven by the playhead ticker; no need to force it here.
+      this._request_gpu_redraw('init');
 
     });
   }
@@ -262,6 +274,7 @@ pre {
       // If you rely on resize() elsewhere, it is safe to call here too.
       this.resize?.();
       this._updateSelectionOverlay();
+      this._request_gpu_redraw('resize');
     });
   }
 
@@ -277,7 +290,8 @@ pre {
     this.initPipelines();
     this.initInteractions();
     this.resize();
-    this._start_rendering();
+    this._updateSelectionOverlay();
+    this._request_gpu_redraw('init');
 
     // Initialize Web MIDI and prefer IAC
     this.initMIDI();
@@ -289,9 +303,9 @@ pre {
   }
 
   on_shown() {
-    // The overlay became visible; resume GPU work.
+    // Overlay became visible. Do not automatically re-render fractals; redraw is gated.
     this.resize();
-    this._start_rendering();
+    this._updateSelectionOverlay();
   }
 
   on_hidden() {
@@ -407,7 +421,11 @@ pre {
       return;
     }
 
-    try { this._updatePlayheadOverlay(); } catch (e) { }
+    const now_ms = performance.now();
+    if (!this._last_playhead_update_ms || (now_ms - this._last_playhead_update_ms) >= 33) {
+      this._last_playhead_update_ms = now_ms;
+      try { this._updatePlayheadOverlay(); } catch (e) { }
+    }
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
   }
 
@@ -433,14 +451,48 @@ pre {
       }
     }, 250);
   }
+  _request_gpu_redraw(reason = 'other') {
+    const now_ms = performance.now();
 
+    // Count reason
+    if (this._gpu_redraw_counts && Object.prototype.hasOwnProperty.call(this._gpu_redraw_counts, reason)) {
+      this._gpu_redraw_counts[reason] += 1;
+    } else if (this._gpu_redraw_counts) {
+      this._gpu_redraw_counts.other += 1;
+    }
 
-  _start_rendering() {
-    if (this._rendering_active && this._raf_id) return;
-    this._rendering_active = true;
+    // Guard against accidental rapid redraw storms (e.g., ResizeObserver loops)
+    if (this._gpu_redraw_last_ms && (now_ms - this._gpu_redraw_last_ms) < this._gpu_redraw_min_interval_ms) {
+      if (this._gpu_diag_enabled) {
+        console.warn(`[MJ] GPU redraw suppressed (too soon): reason=${reason} dt_ms=${(now_ms - this._gpu_redraw_last_ms).toFixed(1)}`);
+      }
+      return;
+    }
+
+    this._gpu_redraw_last_ms = now_ms;
+    this._gpu_redraw_last_reason = reason;
+
+    this._gpu_dirty = true;
+    if (!this._rendering_active) {
+      // Allow a one-shot draw even if we are not in the continuous render mode.
+      this._rendering_active = true;
+    }
     if (!this._raf_id) {
       this._raf_id = requestAnimationFrame(this._render_loop);
     }
+
+    if (this._gpu_diag_enabled) {
+      const seq = (this._gpu_redraw_seq = (this._gpu_redraw_seq | 0) + 1);
+      const counts = this._gpu_redraw_counts || {};
+      console.log(`[MJ] GPU redraw requested #${seq}: reason=${reason} counts=${JSON.stringify(counts)}`);
+    }
+  }
+
+
+
+  _start_rendering() {
+    // Historical name; now schedules a single GPU redraw.
+    this._request_gpu_redraw('other');
   }
 
   _stop_rendering() {
@@ -541,9 +593,10 @@ pre {
     this.device = await this.adapter.requestDevice();
     this.device.lost.then((info) => {
       const msg = `WebGPU device lost: ${info?.message || info?.reason || 'unknown reason'}`;
-      console.error(msg);
+      const diag = this._gpu_diag_enabled ? ` last_redraw_reason=${this._gpu_redraw_last_reason} counts=${JSON.stringify(this._gpu_redraw_counts || {})}` : '';
+      console.error(msg + diag);
       try {
-        this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+        this.cloud5_piece?.csound_message_callback?.(msg + diag + '\n');
       } catch { }
     });
     const format = navigator.gpu.getPreferredCanvasFormat();
@@ -919,27 +972,26 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   render() {
+    // One-shot GPU redraw. This intentionally does not reschedule itself.
+    this._raf_id = 0;
+
     if (!this._rendering_active) {
-      this._raf_id = 0;
       return;
     }
-    // If we are not in the DOM yet, or the overlay is hidden/collapsed,
-    // skip all GPU work and just check again on the next frame.
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
-      // Do not keep submitting frames while hidden; this can trigger GPU/device loss
-      // on some platforms when canvases are detached or display:none.
-      this._raf_id = 0;
-      this._schedule_visibility_poll();
+      // Do not submit GPU work while hidden/collapsed.
+      // Rendering is event-driven; a resize or state change will request a redraw.
       return;
     }
-
-
-    const now_ms = performance.now();
-    if (this._last_render_ms && (now_ms - this._last_render_ms) < this._render_interval_ms) {
-      this._raf_id = requestAnimationFrame(this._render_loop);
+    if (!this._gpu_dirty) {
       return;
     }
-    this._last_render_ms = now_ms;
+    this._gpu_dirty = false;
+
+    if (this._gpu_diag_enabled) {
+      console.log(`[MJ] GPU redraw executing: reason=${this._gpu_redraw_last_reason}`);
+    }
+
 
     const enc = this.device.createCommandEncoder();
 
@@ -977,13 +1029,12 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     passJ.draw(3, 1, 0, 0);
     passJ.end();
 
-    this.device.queue.submit([enc.finish()]);
-
-    // Keep overlays aligned every frame
-    this._updateSelectionOverlay();
-    this._updatePlayheadOverlay();
-
-    this._raf_id = requestAnimationFrame(this._render_loop);
+    try {
+      this.device.queue.submit([enc.finish()]);
+    } catch (e) {
+      console.error(`[MJ] queue.submit failed: last_redraw_reason=${this._gpu_redraw_last_reason}`, e);
+      try { this.cloud5_piece?.csound_message_callback?.(`queue.submit failed: ${e?.message || e}\n`); } catch { }
+    }
   }
 
   // ---- Overlay helpers ----
@@ -1271,6 +1322,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       try {
         // Persist viewM (and c) to the local *.state.json used by Cloud5.
         cloud5_save_state_if_needed(this.cloud5_piece);
+      this._request_gpu_redraw('restore');
       } catch (err) {
         console.warn('Failed to persist Mandelbrot view state:', err);
       }
