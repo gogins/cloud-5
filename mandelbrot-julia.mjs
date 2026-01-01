@@ -17,6 +17,11 @@ class MandelbrotJulia extends Cloud5Element {
     this._gpu_redraw_last_ms = 0;
     this._gpu_redraw_min_interval_ms = 250; // guard against accidental rapid redraw storms
     this._gpu_diag_enabled = true;
+    // --- WebGPU keepalive (prevents some browsers/drivers from dropping idle devices) ---
+    this._gpu_keepalive_interval_ms = 5000;
+    this._gpu_keepalive_id = 0;
+    this._gpu_keepalive_seq = 0;
+
 
 
     this._render_interval_ms = 100; // match Cloud5Piece display loop (~10 Hz)
@@ -293,24 +298,29 @@ pre {
     this._updateSelectionOverlay();
     this._request_gpu_redraw('init');
 
+    this._start_gpu_keepalive();
+
     // Initialize Web MIDI and prefer IAC
     this.initMIDI();
   }
 
   disconnectedCallback() {
     this._stop_rendering();
+    this._stop_gpu_keepalive();
     this._resizeObserver.disconnect();
   }
 
   on_shown() {
-    // Overlay became visible. Do not automatically re-render fractals; redraw is gated.
+    // Overlay became visible again.
     this.resize();
     this._updateSelectionOverlay();
+    this._start_gpu_keepalive();
   }
 
   on_hidden() {
-    // The overlay is invisible; stop the render loop to prevent GPU load.
+    // Overlay is invisible; stop submitting work.
     this._stop_rendering();
+    this._stop_gpu_keepalive();
   }
 
   on_score_time(a_sec, b_sec) {
@@ -506,6 +516,37 @@ pre {
       this._visibility_poll_id = 0;
     }
   }
+
+  _start_gpu_keepalive() {
+    if (this._gpu_keepalive_id) {
+      return;
+    }
+    this._gpu_keepalive_id = window.setInterval(() => {
+      if (!this.device || !this._isActuallyVisible()) {
+        return;
+      }
+      try {
+        // An empty command buffer is enough to keep the device "active" on some stacks.
+        const enc = this.device.createCommandEncoder();
+        this.device.queue.submit([enc.finish()]);
+        this._gpu_keepalive_seq = (this._gpu_keepalive_seq | 0) + 1;
+        if (this._gpu_diag_enabled && (this._gpu_keepalive_seq % 12) === 0) {
+          // Log roughly once per minute at 5s interval.
+          console.log(`[MJ] GPU keepalive ok: seq=${this._gpu_keepalive_seq}`);
+        }
+      } catch (e) {
+        console.warn('[MJ] GPU keepalive submit failed', e);
+      }
+    }, this._gpu_keepalive_interval_ms);
+  }
+
+  _stop_gpu_keepalive() {
+    if (this._gpu_keepalive_id) {
+      window.clearInterval(this._gpu_keepalive_id);
+      this._gpu_keepalive_id = 0;
+    }
+  }
+
 
   _isActuallyVisible() {
     // Not in the document?
