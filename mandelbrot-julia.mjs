@@ -21,6 +21,11 @@ class MandelbrotJulia extends Cloud5Element {
     this._gpu_keepalive_interval_ms = 5000;
     this._gpu_keepalive_id = 0;
     this._gpu_keepalive_seq = 0;
+    this._gpu_keepalive_tex = null;
+    this._gpu_keepalive_view = null;
+    this._gpu_recover_retry_id = 0;
+    this._gpu_recover_retry_ms = 250;
+    this._gpu_recovering = false;
 
 
 
@@ -312,14 +317,9 @@ pre {
 
   on_shown() {
     // Overlay became visible again.
-    // Defer sizing/redraw to the next frame so layout has committed after display:block.
-    requestAnimationFrame(() => {
-      this._rendering_active = true;
-      this.resize();
-      this._updateSelectionOverlay();
-      this._start_gpu_keepalive();
-      this._request_gpu_redraw('shown');
-    });
+    this.resize();
+    this._updateSelectionOverlay();
+    this._start_gpu_keepalive();
   }
 
   on_hidden() {
@@ -522,17 +522,28 @@ pre {
     }
   }
 
+
   _start_gpu_keepalive() {
     if (this._gpu_keepalive_id) {
       return;
     }
     this._gpu_keepalive_id = window.setInterval(() => {
-      if (!this.device || !this._isActuallyVisible()) {
+      if (!this.device || !this._isActuallyVisible() || !this._gpu_keepalive_view) {
         return;
       }
       try {
-        // An empty command buffer is enough to keep the device "active" on some stacks.
+        // Keep the WebGPU device active without touching the onscreen swapchain.
+        // Touching swapchain textures with loadOp:'load' can yield undefined contents
+        // on some stacks and may black out the canvases.
         const enc = this.device.createCommandEncoder();
+        const pass = enc.beginRenderPass({
+          colorAttachments: [{
+            view: this._gpu_keepalive_view,
+            loadOp: 'load',
+            storeOp: 'store'
+          }]
+        });
+        pass.end();
         this.device.queue.submit([enc.finish()]);
         this._gpu_keepalive_seq = (this._gpu_keepalive_seq | 0) + 1;
         if (this._gpu_diag_enabled && (this._gpu_keepalive_seq % 12) === 0) {
@@ -541,6 +552,7 @@ pre {
         }
       } catch (e) {
         console.warn('[MJ] GPU keepalive submit failed', e);
+        try { this._recover_gpu_device(e); } catch { }
       }
     }, this._gpu_keepalive_interval_ms);
   }
@@ -549,6 +561,41 @@ pre {
     if (this._gpu_keepalive_id) {
       window.clearInterval(this._gpu_keepalive_id);
       this._gpu_keepalive_id = 0;
+    }
+    if (this._gpu_recover_retry_id) {
+      window.clearTimeout(this._gpu_recover_retry_id);
+      this._gpu_recover_retry_id = 0;
+    }
+  }
+
+  async _recover_gpu_device(err_or_info) {
+    if (this._gpu_recovering) {
+      return;
+    }
+    this._gpu_recovering = true;
+    try {
+      this._stop_rendering();
+      this._stop_gpu_keepalive();
+
+      // Drop references so subsequent code cannot accidentally use a lost device.
+      this.device = null;
+      this.adapter = null;
+
+      this._gpu_keepalive_tex = null;
+      this._gpu_keepalive_view = null;
+
+      // Reinitialize GPU resources and pipelines (interactions/state remain intact).
+      await this.initGPU();
+      this.initPipelines();
+      this.resize();
+      this._updateSelectionOverlay();
+      this._request_gpu_redraw('restore');
+      this._gpu_recover_retry_ms = 250;
+    } catch (e) {
+      console.error('[MJ] WebGPU recovery failed', e);
+      try { this.cloud5_piece?.csound_message_callback?.(`WebGPU recovery failed: ${e?.message || e}\n`); } catch { }
+    } finally {
+      this._gpu_recovering = false;
     }
   }
 
@@ -636,6 +683,9 @@ pre {
 
   async initGPU() {
     this.adapter = await navigator.gpu.requestAdapter();
+    if (!this.adapter) {
+      throw new Error('WebGPU adapter unavailable');
+    }
     this.device = await this.adapter.requestDevice();
     this.device.lost.then((info) => {
       const msg = `WebGPU device lost: ${info?.message || info?.reason || 'unknown reason'}`;
@@ -644,6 +694,7 @@ pre {
       try {
         this.cloud5_piece?.csound_message_callback?.(msg + diag + '\n');
       } catch { }
+      try { this._recover_gpu_device(info); } catch { }
     });
     const format = navigator.gpu.getPreferredCanvasFormat();
     this.ctxM = this.canvasM.getContext('webgpu');
@@ -651,6 +702,21 @@ pre {
     this.ctxM.configure({ device: this.device, format, alphaMode: 'premultiplied' });
     this.ctxJ.configure({ device: this.device, format, alphaMode: 'premultiplied' });
     this.format = format;
+
+    // Offscreen target for keepalive submissions (avoids touching onscreen swapchains).
+    try {
+      this._gpu_keepalive_tex = this.device.createTexture({
+        size: [1, 1, 1],
+        format: this.format,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT
+      });
+      this._gpu_keepalive_view = this._gpu_keepalive_tex.createView();
+    } catch (e) {
+      // If this fails, keepalive will be disabled; rendering can still work.
+      this._gpu_keepalive_tex = null;
+      this._gpu_keepalive_view = null;
+      console.warn('[MJ] keepalive offscreen texture creation failed', e);
+    }
 
     // Two separate uniform buffers (one per pass)
     this.uniformSize = 256;
@@ -954,12 +1020,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   writeDrawUniforms({ mode, canvas, center, scale, maxIter, cParam, targetBuffer }) {
     const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
-    const w = (canvas.width && canvas.width > 0)
-      ? canvas.width
-      : Math.max(1, Math.floor(canvas.clientWidth * dpr));
-    const h = (canvas.height && canvas.height > 0)
-      ? canvas.height
-      : Math.max(1, Math.floor(canvas.clientHeight * dpr));
+    const w = Math.floor(canvas.clientWidth * dpr);
+    const h = Math.floor(canvas.clientHeight * dpr);
     const aspect = w / Math.max(1, h);
 
     const cx = this._split_f64_to_f32_pair(center.cx);
@@ -1016,11 +1078,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   resize() {
     const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     for (const c of [this.canvasM, this.canvasJ]) {
-      const rect = c.getBoundingClientRect();
-      const css_w = rect.width || c.clientWidth || 0;
-      const css_h = rect.height || c.clientHeight || 0;
-      const w = Math.max(1, Math.floor(css_w * dpr));
-      const h = Math.max(1, Math.floor(css_h * dpr));
+      const w = Math.floor(c.clientWidth * dpr), h = Math.floor(c.clientHeight * dpr);
       if (w && h && (c.width !== w || c.height !== h)) { c.width = w; c.height = h; }
     }
   }
@@ -1034,10 +1092,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
       // Do not submit GPU work while hidden/collapsed.
-      // Important: if we bail out here, do not let the redraw-rate limiter
-      // suppress the *next* redraw request after layout/visibility changes.
-      this._gpu_redraw_last_ms = 0;
-      this._gpu_redraw_last_reason = '';
+      // Rendering is event-driven; a resize or state change will request a redraw.
       return;
     }
     if (!this._gpu_dirty) {
