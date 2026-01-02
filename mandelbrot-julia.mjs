@@ -240,14 +240,26 @@ pre {
     this._midi = null;
     this._midiOutId = localStorage.getItem('mj.midiOutId') || '';
 
+        this._last_resize_w = 0;
+    this._last_resize_h = 0;
     this._resizeObserver = new ResizeObserver(() => {
+      const r = this.getBoundingClientRect();
+      const w = Math.round(r.width);
+      const h = Math.round(r.height);
+      if (w <= 0 || h <= 0) {
+        return;
+      }
+      if (w === this._last_resize_w && h === this._last_resize_h) {
+        return;
+      }
+      this._last_resize_w = w;
+      this._last_resize_h = h;
+
       this.resize();
       this._updateSelectionOverlay();
       // Playhead overlay is driven by the playhead ticker; no need to force it here.
-      this._request_gpu_redraw('init');
-
-    });
-  }
+      this._request_gpu_redraw('resize');
+    });}
 
   _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
   _secondsForBeats(beats) { return beats * 60 / Math.max(20, this.bpm | 0); }
@@ -303,8 +315,6 @@ pre {
     this._updateSelectionOverlay();
     this._request_gpu_redraw('init');
 
-    this._start_gpu_keepalive();
-
     // Initialize Web MIDI and prefer IAC
     this.initMIDI();
   }
@@ -319,7 +329,6 @@ pre {
     // Overlay became visible again.
     this.resize();
     this._updateSelectionOverlay();
-    this._start_gpu_keepalive();
   }
 
   on_hidden() {
