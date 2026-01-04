@@ -378,6 +378,212 @@ async function cloud5_clipboard_and_download(json_text, filename) {
   }, 0);
 }
 
+
+function cloud5_timestamp_string() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    d.getFullYear() +
+    pad(d.getMonth() + 1) +
+    pad(d.getDate()) +
+    "-" +
+    pad(d.getHours()) +
+    pad(d.getMinutes()) +
+    pad(d.getSeconds())
+  );
+}
+
+function cloud5_strip_extension(filename) {
+  return filename.replace(/\.[^/.]+$/, "");
+}
+
+function cloud5_ensure_html_extension(filename) {
+  if (!filename) {
+    return filename;
+  }
+  if (/\.html?$/i.test(filename)) {
+    return filename;
+  }
+  return filename + ".html";
+}
+
+async function cloud5_get_current_html_text() {
+  // Prefer fetch when available (localhost/http/https).
+  try {
+    const response = await fetch(location.href, { cache: "no-store" });
+    if (response && response.ok) {
+      return await response.text();
+    }
+  } catch (e) {
+    // Fall through.
+  }
+
+  // NW.js / file: fallback: try filesystem.
+  try {
+    if (typeof fs !== "undefined" && fs?.readFileSync) {
+      const pathname = decodeURIComponent(window.location.pathname || "");
+      if (pathname) {
+        return fs.readFileSync(pathname, "utf8");
+      }
+    }
+  } catch (e) {
+    // Fall through.
+  }
+
+  // Last resort: DOM serialization (may omit doctype).
+  try {
+    return document.documentElement?.outerHTML || "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function cloud5_ensure_piece_parameters_serialized(piece) {
+  if (!piece) {
+    return;
+  }
+  if (!piece.parameters) {
+    return;
+  }
+
+  const want = "parameters";
+  const current = Array.isArray(piece.fields_to_serialize) ? piece.fields_to_serialize.slice() : [];
+  if (!current.includes(want)) {
+    current.push(want);
+    piece.fields_to_serialize = current;
+  }
+
+  // If the Snapshot menu item exists, keep its visibility in sync.
+  try {
+    const li = piece.querySelector?.("#menu_item_snapshot");
+    if (li) {
+      li.style.display = (current.length > 0) ? "inline" : "none";
+    }
+  } catch (e) {
+  }
+}
+
+async function cloud5_select_snapshot_target(default_html_filename) {
+  const suggested = cloud5_ensure_html_extension(default_html_filename);
+
+  // NW.js directory picker.
+  try {
+    if (typeof process !== "undefined" && process.versions && process.versions.nw) {
+      const dir_path = await new Promise((resolve) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.setAttribute("nwdirectory", "nwdirectory");
+        input.style.display = "none";
+        input.onchange = () => resolve(input.value || null);
+        document.body.appendChild(input);
+        input.click();
+        document.body.removeChild(input);
+      });
+      if (!dir_path) {
+        return null;
+      }
+      let name = prompt("Snapshot HTML filename:", suggested);
+      if (!name) {
+        name = suggested;
+      }
+      name = cloud5_ensure_html_extension(name.trim());
+      return { mode: "nwjs", dir_path, html_name: name };
+    }
+  } catch (e) {
+    // Fall through to browser picker.
+  }
+
+  // Browser directory picker (File System Access API).
+  if (window.showDirectoryPicker) {
+    let dir_handle;
+    try {
+      dir_handle = await window.showDirectoryPicker();
+    } catch (e) {
+      return null;
+    }
+
+    let name = prompt("Snapshot HTML filename:", suggested);
+    if (!name) {
+      name = suggested;
+    }
+    name = cloud5_ensure_html_extension(name.trim());
+    return { mode: "browser", dir_handle, html_name: name };
+  }
+
+  alert("Snapshot requires the File System Access API (directory picker) or NW.js.");
+  return null;
+}
+
+async function cloud5_write_text_atomic_nwjs(full_path, text) {
+  if (typeof fs === "undefined" || !fs?.writeFileSync) {
+    throw new Error("fs is not available.");
+  }
+  const tmp = full_path + ".tmp";
+  fs.writeFileSync(tmp, text, "utf8");
+  fs.renameSync(tmp, full_path);
+}
+
+async function cloud5_snapshot_to_new_version(piece) {
+  if (!piece) {
+    return;
+  }
+
+  // Ensure dat.gui-backed parameters are included once available.
+  cloud5_ensure_piece_parameters_serialized(piece);
+
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || "piece";
+  const default_html_name = `${base}.${cloud5_timestamp_string()}.html`;
+  const target = await cloud5_select_snapshot_target(default_html_name);
+  if (!target) {
+    return;
+  }
+
+  const html_text = await cloud5_get_current_html_text();
+
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const json_text = JSON.stringify(state_obj, null, 2);
+
+  const html_base = cloud5_strip_extension(target.html_name);
+  const state_name = `${html_base}.state.json`;
+
+  if (target.mode === "nwjs") {
+    let path_mod = null;
+    try {
+      if (typeof require !== "undefined") {
+        path_mod = require("path");
+      }
+    } catch (e) {
+    }
+    const join = (a, b) => (path_mod && path_mod.join) ? path_mod.join(a, b) : (a.replace(/[\\/]+$/, "") + "/" + b);
+
+    const html_path = join(target.dir_path, target.html_name);
+    const state_path = join(target.dir_path, state_name);
+
+    await cloud5_write_text_atomic_nwjs(html_path, html_text);
+    await cloud5_write_text_atomic_nwjs(state_path, json_text);
+    return;
+  }
+
+  if (target.mode === "browser") {
+    const dir = target.dir_handle;
+
+    const html_handle = await dir.getFileHandle(target.html_name, { create: true });
+    const state_handle = await dir.getFileHandle(state_name, { create: true });
+
+    const html_w = await html_handle.createWritable();
+    await html_w.write(html_text);
+    await html_w.close();
+
+    const json_w = await state_handle.createWritable();
+    await json_w.write(json_text);
+    await json_w.close();
+  }
+}
+
 async function cloud5_save_state_if_needed(piece) {
   if (!cloud5_is_local_context()) {
     return;
@@ -454,112 +660,6 @@ async function cloud5_load_state_if_present(piece) {
     // 3) Nothing
     console.warn('Failed to load state via fetch; no persisted state loaded:', e);
   }
-}
-
-function cloud5_timestamp_string() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return (
-    d.getFullYear() +
-    pad(d.getMonth() + 1) +
-    pad(d.getDate()) +
-    '-' +
-    pad(d.getHours()) +
-    pad(d.getMinutes()) +
-    pad(d.getSeconds())
-  );
-}
-
-function cloud5_strip_extension(filename) {
-  return filename.replace(/\.[^/.]+$/, '');
-}
-
-async function cloud5_snapshot_version(piece) {
-  if (!piece || !piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
-    return;
-  }
-
-  const base = document.title || 'piece';
-  const suggested = `${base}.${cloud5_timestamp_string()}.html`;
-
-  let html_path = null;
-
-  // --- NW.js path ---
-  if (typeof process !== 'undefined' && process.versions && process.versions.nw) {
-    html_path = await new Promise((resolve) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.setAttribute('nwsaveas', suggested);
-      input.accept = '.html';
-      input.style.display = 'none';
-      input.onchange = () => resolve(input.value || null);
-      document.body.appendChild(input);
-      input.click();
-      document.body.removeChild(input);
-    });
-  }
-  // --- Browser path ---
-  else if (window.showSaveFilePicker) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: suggested,
-        types: [{
-          description: 'HTML file',
-          accept: { 'text/html': ['.html'] }
-        }]
-      });
-      html_path = handle;
-    } catch {
-      return;
-    }
-  } else {
-    alert('Snapshot not supported in this browser.');
-    return;
-  }
-
-  if (!html_path) {
-    return;
-  }
-
-  let html_filename;
-  let write_html;
-  let write_json;
-
-  // --- NW.js filesystem ---
-  if (typeof html_path === 'string') {
-    html_filename = html_path;
-    const state_base = cloud5_strip_extension(html_filename);
-    const state_filename = `${state_base}.state.json`;
-
-    const html_text = await fetch(location.href).then(r => r.text());
-    const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
-    const json_text = JSON.stringify(state_obj, null, 2);
-
-    fs.writeFileSync(html_filename, html_text, 'utf8');
-    fs.writeFileSync(state_filename, json_text, 'utf8');
-    return;
-  }
-
-  // --- Browser File System Access API ---
-  html_filename = html_path.name;
-  const state_base = cloud5_strip_extension(html_filename);
-
-  const html_handle = html_path;
-  const state_handle = await html_handle.getParent().then(dir =>
-    dir.getFileHandle(`${state_base}.state.json`, { create: true })
-  );
-
-  const html_text = await fetch(location.href).then(r => r.text());
-  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
-  const json_text = JSON.stringify(state_obj, null, 2);
-
-  const html_stream = await html_handle.createWritable();
-  await html_stream.write(html_text);
-  await html_stream.close();
-
-  const json_stream = await state_handle.createWritable();
-  await json_stream.write(json_text);
-  await json_stream.close();
 }
 
 /**
@@ -1232,14 +1332,14 @@ class Cloud5Piece extends Cloud5Element {
             title="Show/hide message log"
             class="w3-btn w3-hover-text-light-green">Log</li>
 
+        <li id="menu_item_snapshot"
+            title="Create a new version snapshot (HTML + state) in a chosen directory"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Snapshot...</li>
+
         <li id="menu_item_about"
             title="Show/hide information about this piece"
             class="w3-btn w3-hover-text-light-green">About ${filename}</li>
-
-        <li id="menu_item_snapshot"
-            title="Save a version snapshot with new filenames"
-            class="w3-btn w3-hover-text-light-green"
-            style="display:none;">Snapshot...</li>
 
         <li id="mini_console"
             class="w3-btn w3-text-green w3-hover-text-light-green"></li>
@@ -1339,14 +1439,19 @@ class Cloud5Piece extends Cloud5Element {
       }
     };
 
-    const menu_item_snapshot = this.querySelector('#menu_item_snapshot');
-    if (this.fields_to_serialize && this.fields_to_serialize.length > 0) {
-      menu_item_snapshot.style.display = 'inline';
-      menu_item_snapshot.onclick = async () => {
-        await cloud5_snapshot_version(this);
+
+    // Snapshot... (version export)
+    const menu_item_snapshot = this.querySelector("#menu_item_snapshot");
+    if (menu_item_snapshot) {
+      // Visibility depends on whether any state is serializable.
+      const ok = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
+      menu_item_snapshot.style.display = ok ? "inline" : "none";
+      menu_item_snapshot.onclick = async (event) => {
+        await cloud5_snapshot_to_new_version(this);
+        // Re-evaluate visibility (fields may have been populated later).
+        const ok2 = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
+        menu_item_snapshot.style.display = ok2 ? "inline" : "none";
       };
-    } else {
-      menu_item_snapshot.style.display = 'none';
     }
 
     // After base menu is in place, interrogate the DOM and wire overlays,
@@ -1962,8 +2067,12 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
       // f.add(this.parameters.bar, 'baz', 0, 10);
     }
 
+    // Ensure dat.gui-backed parameters participate in state persistence.
+    cloud5_ensure_piece_parameters_serialized(this);
+
     // Refresh controller displays to reflect merged values.
     update_gui_displays(this.gui);
+    this._cloud5_ensure_parameters_serialized();
   }
 
   get_default_preset() {
@@ -2114,6 +2223,20 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     } catch (e) {
     }
     this._ui_timer_id = 0;
+  }
+  _cloud5_ensure_parameters_serialized() {
+    if (!this.parameters) {
+      return;
+    }
+
+    const current =
+      Array.isArray(this.fields_to_serialize)
+        ? this.fields_to_serialize.slice()
+        : [];
+
+    if (!current.includes('parameters')) {
+      this.fields_to_serialize = current.concat(['parameters']);
+    }
   }
 
 }
