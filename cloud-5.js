@@ -456,6 +456,112 @@ async function cloud5_load_state_if_present(piece) {
   }
 }
 
+function cloud5_timestamp_string() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return (
+    d.getFullYear() +
+    pad(d.getMonth() + 1) +
+    pad(d.getDate()) +
+    '-' +
+    pad(d.getHours()) +
+    pad(d.getMinutes()) +
+    pad(d.getSeconds())
+  );
+}
+
+function cloud5_strip_extension(filename) {
+  return filename.replace(/\.[^/.]+$/, '');
+}
+
+async function cloud5_snapshot_version(piece) {
+  if (!piece || !piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const suggested = `${base}.${cloud5_timestamp_string()}.html`;
+
+  let html_path = null;
+
+  // --- NW.js path ---
+  if (typeof process !== 'undefined' && process.versions && process.versions.nw) {
+    html_path = await new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.setAttribute('nwsaveas', suggested);
+      input.accept = '.html';
+      input.style.display = 'none';
+      input.onchange = () => resolve(input.value || null);
+      document.body.appendChild(input);
+      input.click();
+      document.body.removeChild(input);
+    });
+  }
+  // --- Browser path ---
+  else if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: suggested,
+        types: [{
+          description: 'HTML file',
+          accept: { 'text/html': ['.html'] }
+        }]
+      });
+      html_path = handle;
+    } catch {
+      return;
+    }
+  } else {
+    alert('Snapshot not supported in this browser.');
+    return;
+  }
+
+  if (!html_path) {
+    return;
+  }
+
+  let html_filename;
+  let write_html;
+  let write_json;
+
+  // --- NW.js filesystem ---
+  if (typeof html_path === 'string') {
+    html_filename = html_path;
+    const state_base = cloud5_strip_extension(html_filename);
+    const state_filename = `${state_base}.state.json`;
+
+    const html_text = await fetch(location.href).then(r => r.text());
+    const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+    const json_text = JSON.stringify(state_obj, null, 2);
+
+    fs.writeFileSync(html_filename, html_text, 'utf8');
+    fs.writeFileSync(state_filename, json_text, 'utf8');
+    return;
+  }
+
+  // --- Browser File System Access API ---
+  html_filename = html_path.name;
+  const state_base = cloud5_strip_extension(html_filename);
+
+  const html_handle = html_path;
+  const state_handle = await html_handle.getParent().then(dir =>
+    dir.getFileHandle(`${state_base}.state.json`, { create: true })
+  );
+
+  const html_text = await fetch(location.href).then(r => r.text());
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const json_text = JSON.stringify(state_obj, null, 2);
+
+  const html_stream = await html_handle.createWritable();
+  await html_stream.write(html_text);
+  await html_stream.close();
+
+  const json_stream = await state_handle.createWritable();
+  await json_stream.write(json_text);
+  await json_stream.close();
+}
+
 /**
  * Base class for Cloud5 overlay-like elements.
  * Currently lightweight, but centralizes a few common conventions:
@@ -819,7 +925,7 @@ class Cloud5Piece extends Cloud5Element {
     }
   };
 
-   _is_overlay_visible(overlay) {
+  _is_overlay_visible(overlay) {
     if (!overlay) return false;
 
     // Treat checkVisibility() as advisory: only short-circuit on true.
@@ -922,7 +1028,7 @@ class Cloud5Piece extends Cloud5Element {
    *
    * @param {number} now_ms performance.now()
    */
-process_csnd_messages_and_meters = async (now_ms) => {
+  process_csnd_messages_and_meters = async (now_ms) => {
     // 1) Flush queued messages at a controlled cadence (default: 2 Hz).
     // This keeps the log responsive without forcing an Ace reflow per message.
     this.maybe_flush_log_queue(now_ms);
@@ -932,7 +1038,7 @@ process_csnd_messages_and_meters = async (now_ms) => {
     this.maybe_start_meter_poll(now_ms);
   };
 
-maybe_flush_log_queue = (now_ms) => {
+  maybe_flush_log_queue = (now_ms) => {
     const q = this.csound_message_queue || [];
     if (!q.length || !this.log_overlay) {
       return;
@@ -971,97 +1077,97 @@ maybe_flush_log_queue = (now_ms) => {
     }
   };
 
-maybe_start_meter_poll = (now_ms) => {
-  if (!globalThis.csound) {
-    return;
-  }
-  const interval = this.meter_update_interval_ms || 50;
-  const last = this._last_meter_update_ms || 0;
-  if ((now_ms - last) < interval) {
-    return;
-  }
-
-  // Watchdog: if a prior poll wedged, allow recovery.
-  if (this._meter_poll_in_flight) {
-    const started = this._last_meter_poll_start_ms || 0;
-    if ((now_ms - started) > 2000) {
-      console.warn("meter poll watchdog: releasing wedged poll");
-      this._meter_poll_in_flight = false;
-    } else {
+  maybe_start_meter_poll = (now_ms) => {
+    if (!globalThis.csound) {
       return;
     }
-  }
-
-  this._last_meter_update_ms = now_ms;
-  this._meter_poll_in_flight = true;
-  this._last_meter_poll_start_ms = now_ms;
-
-  // Token prevents late completions from writing stale UI.
-  const token = (this._meter_poll_token = (this._meter_poll_token || 0) + 1);
-
-  // Fire-and-forget; completion updates UI.
-  this.poll_meters_and_update_ui(token).finally(() => {
-    // Only clear if this is still the most recent poll.
-    if (this._meter_poll_token === token) {
-      this._meter_poll_in_flight = false;
+    const interval = this.meter_update_interval_ms || 50;
+    const last = this._last_meter_update_ms || 0;
+    if ((now_ms - last) < interval) {
+      return;
     }
-  });
-};
 
-poll_meters_and_update_ui = async (token) => {
-  let level_left = -100;
-  let level_right = -100;
+    // Watchdog: if a prior poll wedged, allow recovery.
+    if (this._meter_poll_in_flight) {
+      const started = this._last_meter_poll_start_ms || 0;
+      if ((now_ms - started) > 2000) {
+        console.warn("meter poll watchdog: releasing wedged poll");
+        this._meter_poll_in_flight = false;
+      } else {
+        return;
+      }
+    }
 
-  const score_time = await csound.getScoreTime();
-  this.latest_score_time = score_time;
+    this._last_meter_update_ms = now_ms;
+    this._meter_poll_in_flight = true;
+    this._last_meter_poll_start_ms = now_ms;
 
-  level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
-  level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
+    // Token prevents late completions from writing stale UI.
+    const token = (this._meter_poll_token = (this._meter_poll_token || 0) + 1);
 
-  let delta = score_time;
+    // Fire-and-forget; completion updates UI.
+    this.poll_meters_and_update_ui(token).finally(() => {
+      // Only clear if this is still the most recent poll.
+      if (this._meter_poll_token === token) {
+        this._meter_poll_in_flight = false;
+      }
+    });
+  };
 
-  // calculate (and subtract) whole days
-  let days = Math.floor(delta / 86400);
-  delta -= days * 86400;
-  // calculate (and subtract) whole hours
-  let hours = Math.floor(delta / 3600) % 24;
-  delta -= hours * 3600;
-  // calculate (and subtract) whole minutes
-  let minutes = Math.floor(delta / 60) % 60;
-  delta -= minutes * 60;
-  // what's left is seconds
-  let seconds = delta % 60;
+  poll_meters_and_update_ui = async (token) => {
+    let level_left = -100;
+    let level_right = -100;
+
+    const score_time = await csound.getScoreTime();
+    this.latest_score_time = score_time;
+
+    level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
+    level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
+
+    let delta = score_time;
+
+    // calculate (and subtract) whole days
+    let days = Math.floor(delta / 86400);
+    delta -= days * 86400;
+    // calculate (and subtract) whole hours
+    let hours = Math.floor(delta / 3600) % 24;
+    delta -= hours * 3600;
+    // calculate (and subtract) whole minutes
+    let minutes = Math.floor(delta / 60) % 60;
+    delta -= minutes * 60;
+    // what's left is seconds
+    let seconds = delta % 60;
 
 
-  // If a newer poll has started, ignore these results.
-  if ((this._meter_poll_token || 0) !== token) {
-    return;
-  }
+    // If a newer poll has started, ignore these results.
+    if ((this._meter_poll_token || 0) !== token) {
+      return;
+    }
 
-  if (level_left > 0) {
-    $("#vu_meter_left").css("color", "red");
-  } else if (level_left > -12) {
-    $("#vu_meter_left").css("color", "orange");
-  } else {
-    $("#vu_meter_left").css("color", "lightgreen");
-  }
-  if (level_right > 0) {
-    $("#vu_meter_right").css("color", "red");
-  } else if (level_right > -12) {
-    $("#vu_meter_right").css("color", "orange");
-  } else {
-    $("#vu_meter_right").css("color", "lightgreen");
-  }
+    if (level_left > 0) {
+      $("#vu_meter_left").css("color", "red");
+    } else if (level_left > -12) {
+      $("#vu_meter_left").css("color", "orange");
+    } else {
+      $("#vu_meter_left").css("color", "lightgreen");
+    }
+    if (level_right > 0) {
+      $("#vu_meter_right").css("color", "red");
+    } else if (level_right > -12) {
+      $("#vu_meter_right").css("color", "orange");
+    } else {
+      $("#vu_meter_right").css("color", "lightgreen");
+    }
 
-  $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
-  $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_left));
-  $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
+    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
+    $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_left));
+    $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
 
-  try {
-    this?.piano_roll_overlay?.update_score_time?.(score_time);
-  } catch (e) {
-  }
-};
+    try {
+      this?.piano_roll_overlay?.update_score_time?.(score_time);
+    } catch (e) {
+    }
+  };
 
 
   /**
@@ -1129,6 +1235,11 @@ poll_meters_and_update_ui = async (token) => {
         <li id="menu_item_about"
             title="Show/hide information about this piece"
             class="w3-btn w3-hover-text-light-green">About ${filename}</li>
+
+        <li id="menu_item_snapshot"
+            title="Save a version snapshot with new filenames"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Snapshot...</li>
 
         <li id="mini_console"
             class="w3-btn w3-text-green w3-hover-text-light-green"></li>
@@ -1227,6 +1338,16 @@ poll_meters_and_update_ui = async (token) => {
         console.warn("Fullscreen failed:", e);
       }
     };
+
+    const menu_item_snapshot = this.querySelector('#menu_item_snapshot');
+    if (this.fields_to_serialize && this.fields_to_serialize.length > 0) {
+      menu_item_snapshot.style.display = 'inline';
+      menu_item_snapshot.onclick = async () => {
+        await cloud5_snapshot_version(this);
+      };
+    } else {
+      menu_item_snapshot.style.display = 'none';
+    }
 
     // After base menu is in place, interrogate the DOM and wire overlays,
     // but do it *after* the whole document has been parsed so that
