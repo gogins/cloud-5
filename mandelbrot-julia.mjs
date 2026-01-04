@@ -240,7 +240,7 @@ pre {
     this._midi = null;
     this._midiOutId = localStorage.getItem('mj.midiOutId') || '';
 
-        this._last_resize_w = 0;
+    this._last_resize_w = 0;
     this._last_resize_h = 0;
     this._resizeObserver = new ResizeObserver(() => {
       const r = this.getBoundingClientRect();
@@ -259,7 +259,8 @@ pre {
       this._updateSelectionOverlay();
       // Playhead overlay is driven by the playhead ticker; no need to force it here.
       this._request_gpu_redraw('resize');
-    });}
+    });
+  }
 
   _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
   _secondsForBeats(beats) { return beats * 60 / Math.max(20, this.bpm | 0); }
@@ -1099,11 +1100,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (!this._rendering_active) {
       return;
     }
+    
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
       // Do not submit GPU work while hidden/collapsed.
-      // Rendering is event-driven; a resize or state change will request a redraw.
+      // If we were asked to draw while layout is not ready, retry once it becomes visible.
+      this._schedule_visibility_poll();
       return;
     }
+
     if (!this._gpu_dirty) {
       return;
     }
@@ -1408,7 +1412,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
     [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn]
       .forEach(el => el.addEventListener('input', () => this.sync_from_controls()));
-   this.sync_from_controls();
+    this.sync_from_controls();
 
     btnStop.addEventListener('click', () => this.stopPlayback());
 
@@ -1443,7 +1447,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       try {
         // Persist viewM (and c) to the local *.state.json used by Cloud5.
         cloud5_save_state_if_needed(this.cloud5_piece);
-      this._request_gpu_redraw('restore');
+        this._request_gpu_redraw('restore');
       } catch (err) {
         console.warn('Failed to persist Mandelbrot view state:', err);
       }
