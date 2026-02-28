@@ -1782,8 +1782,26 @@ _tie_adjacent_notes(score)
     return out;
   }
 
-  async makeScore() {
-    const N = this.nTime, M = this.nPitch, K = this.nInst;
+async makeScore()
+{
+  const piano_lo = 21;   // A0
+  const piano_hi = 108;  // C8
+  const middle_c = 60;
+
+  const N = this.nTime | 0;
+
+  // "Range" control: number of pitch bins (clamped to grand piano size)
+  const M = Math.max(1, Math.min((this.nPitch | 0), (piano_hi - piano_lo + 1)));
+
+  const K = this.nInst | 0;
+
+  // Center the pitch window around middle C, expanding roughly equally both directions.
+  // For even M this is off by 0.5 semitone, which is unavoidable with integer MIDI notes.
+  let pmin = middle_c - Math.floor((M - 1) / 2);
+
+  // Clamp the window to [A0..C8] while preserving its size.
+  if (pmin < piano_lo) pmin = piano_lo;
+  if (pmin + (M - 1) > piano_hi) pmin = piano_hi - (M - 1);
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
@@ -1813,7 +1831,6 @@ _tie_adjacent_notes(score)
     readBuf.unmap();
 
     const dtBeats = this._stepBeats(); // 1/8 beat per time bin
-    const pmin = 36;
     const active = Array.from({ length: N }, _ => new Uint8Array(M));
     const vel = Array.from({ length: N }, _ => new Uint8Array(M));
     const inst = Array.from({ length: N }, _ => new Uint8Array(M));
