@@ -1682,15 +1682,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     return pcs;
   }
 
-  _tie_adjacent_notes(score)
+_tie_adjacent_notes(score)
 {
   if (!Array.isArray(score) || score.length < 2) return score;
 
   // Ensure deterministic processing order.
   score.sort((a, b) =>
-    (a[1] - b[1]) ||          // time
-    ((a[0] | 0) - (b[0] | 0)) ||  // channel
-    ((a[3] | 0) - (b[3] | 0))     // key
+    (a[1] - b[1]) ||              // time
+    ((a[0] | 0) - (b[0] | 0)) ||   // channel
+    ((a[3] | 0) - (b[3] | 0))      // key
   );
 
   const eps = 1e-9; // beats tolerance for float math
@@ -1716,11 +1716,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       const prev_d = +prev[2];
       const prev_end = prev_t + prev_d;
 
-      // Tie if exactly contiguous: prev_end == t (within tolerance)
-      if (Math.abs(prev_end - t) <= eps)
+      // Tie/merge if overlapping OR exactly contiguous:
+      //   t <= prev_end  (within eps)
+      if (t <= prev_end + eps)
       {
-        // Extend duration, keep channel/key/time, combine velocity conservatively.
-        prev[2] = prev_d + d;
+        const this_end = t + d;
+        const new_end = Math.max(prev_end, this_end);
+        prev[2] = new_end - prev_t;
+
+        // Velocity merge policy: keep the max so the merged note isn't quieter.
         prev[4] = Math.max(prev[4] | 0, vel);
         continue;
       }
@@ -1734,7 +1738,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   return out;
 }
-
   // Nudges each note to a scale/chord pitch with light voice-leading cost
   _tonalizeScore(score, plan, binsPerBar) {
     if (!score.length) return score;
