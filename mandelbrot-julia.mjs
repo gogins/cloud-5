@@ -1682,6 +1682,59 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     return pcs;
   }
 
+  _tie_adjacent_notes(score)
+{
+  if (!Array.isArray(score) || score.length < 2) return score;
+
+  // Ensure deterministic processing order.
+  score.sort((a, b) =>
+    (a[1] - b[1]) ||          // time
+    ((a[0] | 0) - (b[0] | 0)) ||  // channel
+    ((a[3] | 0) - (b[3] | 0))     // key
+  );
+
+  const eps = 1e-9; // beats tolerance for float math
+  const out = [];
+  // Map "ch:key" -> index in out of the last note we can potentially extend.
+  const last_index_by_ck = new Map();
+
+  for (const ev of score)
+  {
+    const ch = (ev[0] | 0) & 0x0f;
+    const t = +ev[1];
+    const d = +ev[2];
+    const key = ev[3] | 0;
+    const vel = ev[4] | 0;
+
+    const ck = `${ch}:${key}`;
+    const last_idx = last_index_by_ck.get(ck);
+
+    if (last_idx !== undefined)
+    {
+      const prev = out[last_idx];
+      const prev_t = +prev[1];
+      const prev_d = +prev[2];
+      const prev_end = prev_t + prev_d;
+
+      // Tie if exactly contiguous: prev_end == t (within tolerance)
+      if (Math.abs(prev_end - t) <= eps)
+      {
+        // Extend duration, keep channel/key/time, combine velocity conservatively.
+        prev[2] = prev_d + d;
+        prev[4] = Math.max(prev[4] | 0, vel);
+        continue;
+      }
+    }
+
+    // Otherwise, start a new note.
+    const new_ev = [ch, t, d, key, vel];
+    out.push(new_ev);
+    last_index_by_ck.set(ck, out.length - 1);
+  }
+
+  return out;
+}
+
   // Nudges each note to a scale/chord pitch with light voice-leading cost
   _tonalizeScore(score, plan, binsPerBar) {
     if (!score.length) return score;
@@ -1848,19 +1901,23 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         }
       }
     }
+    const tied = this._tie_adjacent_notes(tonal);
+    this._lastScore = tied;
 
-    this._lastScore = tonal;
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    this._exportMIDI(tied, ts);
+    this._lastScore = tied;
 
-    // Export / play from 'tonal' instead of 'thinned'
+    // Export / play from 'tied' instead of 'tonal'
     try {
       const effectiveROI = roi;
       const state = this._collectState(effectiveROI);
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      this._exportMIDI(tonal, ts);
+      this._exportMIDI(tied, ts);
       this._exportStateJSON(state, ts);
     } catch (e) { console.warn('Export failed:', e); }
 
-    return tonal;
+    return tied;
   }
 
   _thinScore(score) {
