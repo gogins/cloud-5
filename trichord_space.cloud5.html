@@ -133,7 +133,7 @@
             <td>
                 <div id="console-layout" class="w3-panel trichord-box">
                     <textarea id="console"
-                        style="height:25vh;width:50vw;background-color:transparent;color:#A9F5A9;font-family:Courier,sans-serif;font-size:9pt;display:block;overflow-y:scroll;">
+                        style="height:25vh;width:50vw;background-color:transparent;color:#A9F5A9;font-family:Courier,sans-serif;font-size:6pt;display:block;overflow-y:scroll;">
 </textarea>
                 </div>
             </td>
@@ -297,6 +297,57 @@ i "exitnow" [60 * 60 + 10 ] .1
             csound_message_callback('Could not access your MIDI devices.');
         }
 
+function monospace_alert(message)
+{
+    const dialog = document.createElement("dialog");
+
+    dialog.style.padding = "0";
+    dialog.style.border = "none";
+    dialog.style.background = "transparent";
+
+    dialog.innerHTML = `
+        <form method="dialog" style="margin:0">
+            <pre style="
+                font-family: monospace;
+                font-size: 8px;
+                width: 600px;
+                height: 300px;
+                margin: 0;
+                padding: 8px;
+                box-sizing: border-box;
+                background-color: #2b2b2b;
+                color: #00ff00;
+                overflow: auto;
+                white-space: pre;
+            ">${escape_html(message)}</pre>
+            <div style="
+                background:#2b2b2b;
+                padding:8px;
+                text-align:right;
+            ">
+                <button autofocus>OK</button>
+            </div>
+        </form>
+    `;
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    dialog.addEventListener("close", function ()
+    {
+        dialog.remove();
+    });
+}
+
+function escape_html(text)
+{
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+
         var draw_fundamental_domain = function (value) {
             if (value === "OP") {
                 chord_space = new ChordSpace("RP", 12.);
@@ -409,6 +460,7 @@ i "exitnow" [60 * 60 + 10 ] .1
             v1: function () { chord_space_view.controller.v1(this.semitone) },
             v2: function () { chord_space_view.controller.v2(this.semitone) },
             v3: function () { chord_space_view.controller.v3(this.semitone) },
+            information: function () { chord_space_view.controller.information() },
             semitone: 1.,
         };
 
@@ -436,6 +488,7 @@ i "exitnow" [60 * 60 + 10 ] .1
                 gui.add(gui_parameters, 'v1').name('Move voice 1 [1]');
                 gui.add(gui_parameters, 'v2').name('Move voice 2 [2]');
                 gui.add(gui_parameters, 'v3').name('Move voice 3 [3]');
+                gui.add(gui_parameters, 'information').name('Chord information');
                 document.addEventListener("keydown", function (e) {
                     const e_char = String.fromCharCode(e.keyCode || e.charCode);
                     if (e.shiftKey === true) {
@@ -478,6 +531,8 @@ i "exitnow" [60 * 60 + 10 ] .1
                         gui_parameters.nrn();
                     } else if (e_char === 'X') {
                         gui_parameters.nrh();
+                    } else if (e.key === '?') {
+                        gui_parameters.information();
                     }
                 });
             } catch (e) {
@@ -574,7 +629,7 @@ i "exitnow" [60 * 60 + 10 ] .1
                 if (chord == null) {
                     return;
                 }
-                let chord_id = chord.toString();
+                let chord_id = chord.name();
                 let ball_id = this.balls_for_chords.get(chord_id);
                 if (ball_id == null) {
                     return;
@@ -613,14 +668,20 @@ i "exitnow" [60 * 60 + 10 ] .1
                 if (chord == null) {
                     return;
                 }
-                csound_message_callback(sprintf("invert: chord:      %s\n", chord.toString()));
-                let sectors = chord.opt_domain_sectors();
-                let sector = sectors.get(0);
-                csound_message_callback(sprintf("invert: sector:     %d\n", sector));
-                let reflection = chord.reflect(sector).ceiling(1.).eOP();
+                csound_message_callback(sprintf("invert: chord:      %s\n", chord.name()));
+                let s = 0;
+                for ( ; s < chord.voices(); ++s) {
+                    if (chord.is_in_rpt_sector(s, 12.) == true) {
+                        break;
+                    }
+                }
+                csound_message_callback(sprintf("invert: sector:     %d\n", s));
+                let reflection = chord.reflect(s);
+                reflection.clamp(12.0);
                 csound_message_callback(sprintf("invert: reflection: %s\n", reflection.toString()));
                 this.select_chord(reflection);
-            } nrr() {
+            } 
+            nrr() {
                 let chord = this.current_chord();
                 if (chord == null) {
                     return;
@@ -706,7 +767,7 @@ i "exitnow" [60 * 60 + 10 ] .1
                     return;
                 }
                 let text = chord.information();
-                alert(text);
+                monospace_alert(text);
             }
             select_chord(chord) {
                 let ball = this.ball_for_chord(chord);
@@ -819,7 +880,7 @@ i "exitnow" [60 * 60 + 10 ] .1
             }
             on_picked_chord(new_chord) {
                 this.render();
-                csound_message_callback("Picked chord:\n" + new_chord.information() + "\n");
+                csound_message_callback("Picked chord:\n" + new_chord.toString() + "\n");
                 this.prior_chord = this.current_chord;
                 this.current_chord = new_chord;
                 this.play_chord();
@@ -926,9 +987,9 @@ i "exitnow" [60 * 60 + 10 ] .1
                 ball.position.y = chord.getPitch(1);
                 ball.position.z = chord.getPitch(2);
                 this.scene.add(ball);
-                this.controller.balls_for_chords.set(chord.toString(), ball.id);
+                this.controller.balls_for_chords.set(chord.name(), ball.id);
                 this.controller.chords_for_balls.set(ball.id, chord);
-                ///csound_message_callback("plotChord3D: normal_form: " + chord.normal_form().toString() + " chord: " + chord.toString() + "\n");
+                ///csound_message_callback("plotChord3D: normal_form: " + chord.normal_form().toString() + " chord: " + chord.name() + "\n");
             }
             lookAtFullScene3D() {
                 let bounding_box = new THREE.Box3().setFromObject(this.scene);

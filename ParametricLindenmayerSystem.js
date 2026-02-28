@@ -408,7 +408,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
             /**
              * Add the parameters P, I, T, and V to the current turtle state.
              */
-            this.add_command('PitvMove(P, I, T, V', function (lsystem, turtle, P, I, T, V) {
+            this.add_command('PitvMove(P, I, T, V)', function (lsystem, turtle, P, I, T, V) {
                 let pitv = lsystem.chord_space_group.fromChord(turtle.chord);
                 pitv.P += P;
                 pitv.I += I;

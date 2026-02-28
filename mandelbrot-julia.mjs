@@ -1100,7 +1100,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (!this._rendering_active) {
       return;
     }
-    
+
     if (!this.device || !this.ctxM || !this.ctxJ || !this._isActuallyVisible()) {
       // Do not submit GPU work while hidden/collapsed.
       // If we were asked to draw while layout is not ready, retry once it becomes visible.
@@ -1819,6 +1819,36 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // Tonalize (quantize to slice key/scale, add cadences, light voice-leading)
     const tonal = this._tonalizeScore(thinned, plan, binsPerBar);
 
+    // --- Rescale velocities to [80, 100] ---
+    if (tonal.length) {
+      let vmin = Infinity;
+      let vmax = -Infinity;
+
+      for (const ev of tonal) {
+        const v = ev[4] | 0;
+        if (v < vmin) vmin = v;
+        if (v > vmax) vmax = v;
+      }
+
+      const outMin = 80;
+      const outMax = 100;
+
+      if (vmax > vmin) {
+        const scale = (outMax - outMin) / (vmax - vmin);
+        for (const ev of tonal) {
+          const v = ev[4] | 0;
+          const vScaled = Math.round(outMin + (v - vmin) * scale);
+          ev[4] = Math.max(outMin, Math.min(outMax, vScaled));
+        }
+      } else {
+        // All velocities identical → map to midpoint
+        const mid = Math.round((outMin + outMax) * 0.5);
+        for (const ev of tonal) {
+          ev[4] = mid;
+        }
+      }
+    }
+
     this._lastScore = tonal;
 
     // Export / play from 'tonal' instead of 'thinned'
@@ -1906,12 +1936,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (out) {
       const t0 = this._playStartMS;
       for (const [ch, tBeats, dBeats, key, vel] of score) {
+        // Lessen dynamic range for MIDI velocity mapping; adjust as needed.
+        let vel_ = 78. + (18. * vel) / 127.;
         const c = (ch | 0) & 0x0f;
         const on = 0x90 | c;
         const off = 0x80 | c;
         const whenOn = t0 + step(tBeats);
         const whenOff = t0 + step(tBeats + dBeats);
-
+        ///this.cloud5_piece?.log(`MIDI note on: ch=${c} key=${key} vel=${vel} at ${whenOn.toFixed(1)} ms`);
         this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel | 0))]); }, Math.max(0, whenOn - performance.now())));
         this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
       }
