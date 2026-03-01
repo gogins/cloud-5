@@ -175,8 +175,8 @@ pre {
     <label>Instruments:
       <input id="binsK" data-cloud5-bind="nInst" type="number" value="4">
     </label>
-    <label>BPM:
-      <input id="bpm" data-cloud5-bind="bpm" type="number" value="120" min="20" max="300" step="1" style="width:4.5rem">
+    <label>Seconds:
+      <input id="seconds" data-cloud5-bind="seconds" type="number" value="60" min="1" max="3600" step="1" style="width:5.0rem">
     </label>
     <label>Density:
       <input id="density" data-cloud5-bind="density" type="number" min=".001" max="1" value="0.01" step="0.001"/>
@@ -220,7 +220,8 @@ pre {
     this.maxIterJ = 1000;
     this.exponent = 2.0;
 
-    this.bpm = 120;
+    this.seconds = 60;
+    this.bpm = 120; // derived from seconds + timesteps
     this.density = 0.02;     // 0..1
     this.maxVoicesPerSlice = 999; // top-K per time slice by velocity
 
@@ -262,9 +263,36 @@ pre {
     });
   }
 
+
   _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
-  _secondsForBeats(beats) { return beats * 60 / Math.max(20, this.bpm | 0); }
-  _beatsForMillis(ms) { return (ms / 1000) * (Math.max(20, this.bpm | 0) / 60); }
+
+  _update_bpm_from_seconds()
+  {
+    // Derive BPM so that (nTime * stepBeats) beats last exactly `seconds`.
+    // This keeps the time grid semantics (beats) unchanged; only the tempo changes.
+    const n_time = Math.max(1, this.nTime | 0);
+    const step_beats = this._stepBeats();
+    const total_beats = n_time * step_beats;
+
+    const seconds = Math.max(0.001, +this.seconds || 60);
+    const bpm = (60.0 * total_beats) / seconds;
+
+    // Keep a sensible tempo range (matching the old BPM control limits).
+    this.bpm = Math.max(20, Math.min(300, bpm));
+  }
+
+  _secondsForBeats(beats)
+  {
+    this._update_bpm_from_seconds();
+    return beats * 60 / Math.max(20, this.bpm);
+  }
+
+  _beatsForMillis(ms)
+  {
+    this._update_bpm_from_seconds();
+    return (ms / 1000) * (Math.max(20, this.bpm) / 60);
+  }
+
   _clearTimers() { for (const id of this._timers) clearTimeout(id); this._timers.length = 0; }
 
   _panicMIDI() {
@@ -288,6 +316,16 @@ pre {
 
   on_state_restored(restored_state) {
     super.on_state_restored(restored_state);
+
+    // Backward compatibility: older saved state used bpm instead of seconds.
+    // If seconds is missing but bpm exists, infer seconds so duration stays consistent.
+    if (restored_state && (restored_state.seconds == null) && (restored_state.bpm != null)) {
+      const n_time = Math.max(1, this.nTime | 0);
+      const total_beats = n_time * this._stepBeats();
+      const bpm = Math.max(20, Math.min(300, +restored_state.bpm || 120));
+      this.seconds = Math.max(1, Math.round((total_beats * 60.0) / bpm));
+    }
+    this._update_bpm_from_seconds();
 
     // Your existing behavior (you already have something like this)
     this.sync_to_controls();
@@ -1356,7 +1394,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
     const kIn = this.shadowRoot.getElementById('binsK');
-    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const secIn = this.shadowRoot.getElementById('seconds');
     const denIn = this.shadowRoot.getElementById('density');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
@@ -1369,7 +1407,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this.base_instrument = parseInt(base_instrument.value);
     this.nInst = parseInt(kIn.value);
 
-    this.bpm = Math.max(20, Math.min(300, parseInt(bpmIn.value) || 120));
+    this.seconds = Math.max(1, Math.min(3600, parseFloat(secIn.value) || 60));
+    this._update_bpm_from_seconds();
     this.density = parseFloat(denIn.value);
     this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
   };
@@ -1381,7 +1420,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
     const kIn = this.shadowRoot.getElementById('binsK');
-    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const secIn = this.shadowRoot.getElementById('seconds');
     const denIn = this.shadowRoot.getElementById('density');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
@@ -1392,7 +1431,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     MIn.value = `${this.nPitch ?? 60}`;
     base_instrument.value = `${this.base_instrument ?? 1}`;
     kIn.value = `${this.nInst ?? 4}`;
-    bpmIn.value = `${this.bpm ?? 120}`;
+    secIn.value = `${this.seconds ?? 60}`;
+    this._update_bpm_from_seconds();
     denIn.value = `${this.density ?? 0.01}`;
     maxVIn.value = `${this.maxVoicesPerSlice ?? 999}`;
   };
@@ -1405,12 +1445,12 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const MIn = this.shadowRoot.getElementById('binsM');
     const kIn = this.shadowRoot.getElementById('binsK');
     const btnS = this.shadowRoot.getElementById('btnScore');
-    const bpmIn = this.shadowRoot.getElementById('bpm');
+    const secIn = this.shadowRoot.getElementById('seconds');
     const denIn = this.shadowRoot.getElementById('density');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const btnStop = this.shadowRoot.getElementById('btnStop');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
-    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, bpmIn, denIn, maxVIn]
+    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, secIn, denIn, maxVIn]
       .forEach(el => el.addEventListener('input', () => this.sync_from_controls()));
     this.sync_from_controls();
 
@@ -1682,62 +1722,58 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     return pcs;
   }
 
-_tie_adjacent_notes(score)
-{
-  if (!Array.isArray(score) || score.length < 2) return score;
 
-  // Ensure deterministic processing order.
-  score.sort((a, b) =>
-    (a[1] - b[1]) ||              // time
-    ((a[0] | 0) - (b[0] | 0)) ||   // channel
-    ((a[3] | 0) - (b[3] | 0))      // key
-  );
+  _tie_adjacent_notes(score) {
+    if (!Array.isArray(score) || score.length < 2) return score;
 
-  const eps = 1e-9; // beats tolerance for float math
-  const out = [];
-  // Map "ch:key" -> index in out of the last note we can potentially extend.
-  const last_index_by_ck = new Map();
+    // Ensure deterministic processing order (time, channel, key).
+    score.sort((a, b) =>
+      (a[1] - b[1]) ||
+      ((a[0] | 0) - (b[0] | 0)) ||
+      ((a[3] | 0) - (b[3] | 0))
+    );
 
-  for (const ev of score)
-  {
-    const ch = (ev[0] | 0) & 0x0f;
-    const t = +ev[1];
-    const d = +ev[2];
-    const key = ev[3] | 0;
-    const vel = ev[4] | 0;
+    const eps = 1e-9; // beats tolerance for float math
+    const out = [];
+    // Map "ch:key" -> index in out of the last note we can potentially extend.
+    const last_index_by_ck = new Map();
 
-    const ck = `${ch}:${key}`;
-    const last_idx = last_index_by_ck.get(ck);
+    for (const ev of score) {
+      const ch = (ev[0] | 0) & 0x0f;
+      const t = +ev[1];
+      const d = +ev[2];
+      const key = ev[3] | 0;
+      const vel = ev[4] | 0;
 
-    if (last_idx !== undefined)
-    {
-      const prev = out[last_idx];
-      const prev_t = +prev[1];
-      const prev_d = +prev[2];
-      const prev_end = prev_t + prev_d;
+      const ck = `${ch}:${key}`;
+      const last_idx = last_index_by_ck.get(ck);
 
-      // Tie/merge if overlapping OR exactly contiguous:
-      //   t <= prev_end  (within eps)
-      if (t <= prev_end + eps)
-      {
-        const this_end = t + d;
-        const new_end = Math.max(prev_end, this_end);
-        prev[2] = new_end - prev_t;
+      if (last_idx !== undefined) {
+        const prev = out[last_idx];
+        const prev_t = +prev[1];
+        const prev_d = +prev[2];
+        const prev_end = prev_t + prev_d;
 
-        // Velocity merge policy: keep the max so the merged note isn't quieter.
-        prev[4] = Math.max(prev[4] | 0, vel);
-        continue;
+        // Tie/merge if overlapping OR exactly contiguous.
+        if (t <= prev_end + eps) {
+          const this_end = t + d;
+          const new_end = Math.max(prev_end, this_end);
+          prev[2] = new_end - prev_t;
+
+          // Velocity merge policy: keep the max so the merged note isn't quieter.
+          prev[4] = Math.max(prev[4] | 0, vel);
+          continue;
+        }
       }
+
+      const new_ev = [ch, t, d, key, vel];
+      out.push(new_ev);
+      last_index_by_ck.set(ck, out.length - 1);
     }
 
-    // Otherwise, start a new note.
-    const new_ev = [ch, t, d, key, vel];
-    out.push(new_ev);
-    last_index_by_ck.set(ck, out.length - 1);
+    return out;
   }
 
-  return out;
-}
   // Nudges each note to a scale/chord pitch with light voice-leading cost
   _tonalizeScore(score, plan, binsPerBar) {
     if (!score.length) return score;
@@ -1782,26 +1818,8 @@ _tie_adjacent_notes(score)
     return out;
   }
 
-async makeScore()
-{
-  const piano_lo = 21;   // A0
-  const piano_hi = 108;  // C8
-  const middle_c = 60;
-
-  const N = this.nTime | 0;
-
-  // "Range" control: number of pitch bins (clamped to grand piano size)
-  const M = Math.max(1, Math.min((this.nPitch | 0), (piano_hi - piano_lo + 1)));
-
-  const K = this.nInst | 0;
-
-  // Center the pitch window around middle C, expanding roughly equally both directions.
-  // For even M this is off by 0.5 semitone, which is unavoidable with integer MIDI notes.
-  let pmin = middle_c - Math.floor((M - 1) / 2);
-
-  // Clamp the window to [A0..C8] while preserving its size.
-  if (pmin < piano_lo) pmin = piano_lo;
-  if (pmin + (M - 1) > piano_hi) pmin = piano_hi - (M - 1);
+  async makeScore() {
+    const N = this.nTime, M = this.nPitch, K = this.nInst;
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
@@ -1831,6 +1849,7 @@ async makeScore()
     readBuf.unmap();
 
     const dtBeats = this._stepBeats(); // 1/8 beat per time bin
+    const pmin = 36;
     const active = Array.from({ length: N }, _ => new Uint8Array(M));
     const vel = Array.from({ length: N }, _ => new Uint8Array(M));
     const inst = Array.from({ length: N }, _ => new Uint8Array(M));
@@ -1892,40 +1911,8 @@ async makeScore()
     // Tonalize (quantize to slice key/scale, add cadences, light voice-leading)
     const tonal = this._tonalizeScore(thinned, plan, binsPerBar);
 
-    // --- Rescale velocities to [80, 100] ---
-    if (tonal.length) {
-      let vmin = Infinity;
-      let vmax = -Infinity;
-
-      for (const ev of tonal) {
-        const v = ev[4] | 0;
-        if (v < vmin) vmin = v;
-        if (v > vmax) vmax = v;
-      }
-
-      const outMin = 80;
-      const outMax = 100;
-
-      if (vmax > vmin) {
-        const scale = (outMax - outMin) / (vmax - vmin);
-        for (const ev of tonal) {
-          const v = ev[4] | 0;
-          const vScaled = Math.round(outMin + (v - vmin) * scale);
-          ev[4] = Math.max(outMin, Math.min(outMax, vScaled));
-        }
-      } else {
-        // All velocities identical → map to midpoint
-        const mid = Math.round((outMin + outMax) * 0.5);
-        for (const ev of tonal) {
-          ev[4] = mid;
-        }
-      }
-    }
     const tied = this._tie_adjacent_notes(tonal);
-    this._lastScore = tied;
 
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    this._exportMIDI(tied, ts);
     this._lastScore = tied;
 
     // Export / play from 'tied' instead of 'tonal'
@@ -2104,6 +2091,7 @@ async makeScore()
       nTime: this.nTime,
       nPitch: this.nPitch,
       nInst: this.nInst,
+      seconds: this.seconds,
       bpm: this.bpm,
       density: this.density,
       maxVoicesPerSlice: this.maxVoicesPerSlice,
@@ -2133,7 +2121,8 @@ async makeScore()
   _exportMIDI(score, baseName) {
     if (!score || !score.length) return;
     const PPQ = 480;
-    const tempoMicro = Math.round(60000000 / Math.max(20, this.bpm | 0));
+    this._update_bpm_from_seconds();
+    const tempoMicro = Math.round(60000000 / Math.max(20, this.bpm));
 
     const events = [];
     for (const [ch, tBeats, dBeats, key, vel] of score) {
