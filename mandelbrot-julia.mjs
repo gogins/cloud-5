@@ -1486,7 +1486,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
       try {
         // Persist viewM (and c) to the local *.state.json used by Cloud5.
-        cloud5_save_state_if_needed(this.cloud5_piece);
+        // Automatic state saves are disabled; use the Snapshot... button to capture state.
         this._request_gpu_redraw('restore');
       } catch (err) {
         console.warn('Failed to persist Mandelbrot view state:', err);
@@ -1978,7 +1978,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 
   async playMIDIFromScore() {
-    await cloud5_save_state_if_needed(this.cloud5_piece);
+    // Automatic state saves are disabled; use the Snapshot... button to capture state.
 
     const score = await this.makeScore();
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }

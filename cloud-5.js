@@ -463,56 +463,176 @@ function cloud5_ensure_piece_parameters_serialized(piece) {
   }
 }
 
-async function cloud5_select_snapshot_target(default_html_filename) {
-  const suggested = cloud5_ensure_html_extension(default_html_filename);
 
-  // NW.js directory picker.
+async function cloud5_select_snapshot_target_nwjs(dir_path, html_name) {
+  // Verify we can write to dir_path.
+  if (typeof fs === "undefined" || !fs?.accessSync) {
+    return null;
+  }
   try {
-    if (typeof process !== "undefined" && process.versions && process.versions.nw) {
-      const dir_path = await new Promise((resolve) => {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.setAttribute("nwdirectory", "nwdirectory");
-        input.style.display = "none";
-        input.onchange = () => resolve(input.value || null);
-        document.body.appendChild(input);
-        input.click();
-        document.body.removeChild(input);
-      });
-      if (!dir_path) {
-        return null;
-      }
-      let name = prompt("Snapshot HTML filename:", suggested);
-      if (!name) {
-        name = suggested;
-      }
-      name = cloud5_ensure_html_extension(name.trim());
-      return { mode: "nwjs", dir_path, html_name: name };
+    fs.accessSync(dir_path, fs.constants.W_OK);
+    return { mode: "nwjs", dir_path, html_name };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function cloud5_pick_directory_nwjs() {
+  // Directory picker for NW.js renderers.
+  // Uses the <input nwdirectory> feature.
+  try {
+    if (typeof process === "undefined" || !process.versions || !process.versions.nw) {
+      return null;
     }
   } catch (e) {
-    // Fall through to browser picker.
+    return null;
   }
 
-  // Browser directory picker (File System Access API).
-  if (window.showDirectoryPicker) {
-    let dir_handle;
+  return await new Promise((resolve) => {
     try {
-      dir_handle = await window.showDirectoryPicker();
+      const input = document.createElement("input");
+      input.type = "file";
+      input.setAttribute("nwdirectory", "nwdirectory");
+      input.setAttribute("nwworkingdir", "nwworkingdir");
+      input.style.position = "fixed";
+      input.style.left = "-10000px";
+      input.style.top = "-10000px";
+      document.body.appendChild(input);
+
+      input.addEventListener("change", () => {
+        const files = input.files;
+        let dir_path = null;
+        if (files && files.length > 0) {
+          // In NW.js, File objects include a .path property.
+          dir_path = files[0].path || null;
+        }
+        input.remove();
+        resolve(dir_path);
+      }, { once: true });
+
+      // If user cancels, 'change' may not fire reliably; add a focus-based fallback.
+      const on_focus = () => {
+        window.removeEventListener("focus", on_focus);
+        setTimeout(() => {
+          if (document.body.contains(input)) {
+            input.remove();
+            resolve(null);
+          }
+        }, 250);
+      };
+      window.addEventListener("focus", on_focus, { once: true });
+
+      input.click();
     } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+// IndexedDB storage for a persisted directory handle (browser File System Access API).
+const CLOUD5_IDB_DB_NAME = "cloud5";
+const CLOUD5_IDB_STORE = "kv";
+const CLOUD5_IDB_KEY_SNAPSHOT_DIR = "snapshot_dir_handle";
+
+function cloud5_idb_open() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(CLOUD5_IDB_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(CLOUD5_IDB_STORE)) {
+        db.createObjectStore(CLOUD5_IDB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cloud5_idb_get(key) {
+  const db = await cloud5_idb_open();
+  return await new Promise((resolve, reject) => {
+    const tx = db.transaction(CLOUD5_IDB_STORE, "readonly");
+    const store = tx.objectStore(CLOUD5_IDB_STORE);
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cloud5_idb_set(key, value) {
+  const db = await cloud5_idb_open();
+  return await new Promise((resolve, reject) => {
+    const tx = db.transaction(CLOUD5_IDB_STORE, "readwrite");
+    const store = tx.objectStore(CLOUD5_IDB_STORE);
+    const req = store.put(value, key);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cloud5_try_get_snapshot_dir_handle() {
+  if (!window.showDirectoryPicker) {
+    return null;
+  }
+
+  try {
+    const remembered = await cloud5_idb_get(CLOUD5_IDB_KEY_SNAPSHOT_DIR);
+    if (!remembered) {
       return null;
     }
 
-    let name = prompt("Snapshot HTML filename:", suggested);
-    if (!name) {
-      name = suggested;
+    // Ensure we still have permission.
+    let perm = "granted";
+    if (remembered.queryPermission) {
+      perm = await remembered.queryPermission({ mode: "readwrite" });
+      if (perm !== "granted" && remembered.requestPermission) {
+        perm = await remembered.requestPermission({ mode: "readwrite" });
+      }
     }
-    name = cloud5_ensure_html_extension(name.trim());
-    return { mode: "browser", dir_handle, html_name: name };
+
+    return (perm === "granted") ? remembered : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function cloud5_forget_snapshot_dir_handle() {
+  try {
+    await cloud5_idb_set(CLOUD5_IDB_KEY_SNAPSHOT_DIR, null);
+  } catch (e) {
+  }
+}
+
+async function cloud5_get_or_pick_snapshot_dir_handle(force_pick = false) {
+  if (!window.showDirectoryPicker) {
+    return null;
   }
 
-  alert("Snapshot requires the File System Access API (directory picker) or NW.js.");
-  return null;
+  // 1) Try a previously remembered directory handle unless forcing a new pick.
+  if (!force_pick) {
+    const remembered = await cloud5_try_get_snapshot_dir_handle();
+    if (remembered) {
+      return remembered;
+    }
+  }
+
+  // 2) Ask user.
+  let dir_handle = null;
+  try {
+    dir_handle = await window.showDirectoryPicker();
+  } catch (e) {
+    return null;
+  }
+
+  // Persist for next time.
+  try {
+    await cloud5_idb_set(CLOUD5_IDB_KEY_SNAPSHOT_DIR, dir_handle);
+  } catch (e) {
+    // Ignore persistence errors (e.g., private mode).
+  }
+  return dir_handle;
 }
+
 
 async function cloud5_write_text_atomic_nwjs(full_path, text) {
   if (typeof fs === "undefined" || !fs?.writeFileSync) {
@@ -523,96 +643,313 @@ async function cloud5_write_text_atomic_nwjs(full_path, text) {
   fs.renameSync(tmp, full_path);
 }
 
-async function cloud5_snapshot_to_new_version(piece) {
-  if (!piece) {
-    return;
+function cloud5_sanitize_title_for_filename(title) {
+  const raw = String(title || "").trim();
+  if (!raw) {
+    return "piece";
   }
+  // Keep it readable but safe on Windows/macOS/Linux.
+  // - collapse whitespace
+  // - replace disallowed characters
+  // - trim dots/spaces (Windows)
+  let safe = raw.replace(/\s+/g, " ");
+  safe = safe.replace(/[\/\\:*?"<>|]/g, "_");
+  safe = safe.replace(/[\u0000-\u001f]/g, "_");
+  safe = safe.replace(/\s+/g, "_");
+  safe = safe.replace(/[. ]+$/g, "");
+  safe = safe.replace(/^[. ]+/g, "");
+  if (!safe) {
+    safe = "piece";
+  }
+  return safe;
+}
 
-  // Ensure dat.gui-backed parameters are included once available.
+function cloud5_snapshot_filenames_from_title(title, timestamp) {
+  const safe_title = cloud5_sanitize_title_for_filename(title);
+  const ts = timestamp || cloud5_timestamp_string();
+  return {
+    safe_title,
+    timestamp: ts,
+    html_name: `${safe_title}.${ts}.html`,
+    state_name: `${safe_title}.state.${ts}.json`,
+  };
+}
+
+async function cloud5_snapshot_to_new_version(piece, options = {})
+{
+  if (!piece) return;
+
+  const force_pick = !!options.force_pick;
+
   cloud5_ensure_piece_parameters_serialized(piece);
 
   if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    alert("Nothing is configured to be saved yet (fields_to_serialize is empty).");
     return;
   }
 
-  const base = document.title || "piece";
-  const default_html_name = `${base}.${cloud5_timestamp_string()}.html`;
-  const target = await cloud5_select_snapshot_target(default_html_name);
-  if (!target) {
-    return;
+  const default_title = (document.title || "piece").replace(/\.\d{8}-\d{6}$/, "");
+  const title = options.title_override || prompt("Snapshot title:", default_title);
+  if (!title) return;
+
+  const names = cloud5_snapshot_filenames_from_title(title, cloud5_timestamp_string());
+
+  // ------------------------------------------------------------
+  // IMPORTANT: choose destination BEFORE async work that can
+  // consume transient user activation (fetch, awaits, etc.)
+  // ------------------------------------------------------------
+
+  // ---- A) NW.js ----
+  if (typeof process !== "undefined" && process?.versions?.nw) {
+    // Load fs lazily here for reliability.
+    let fs_local = null;
+    let path_mod = null;
+    try { fs_local = require("fs"); } catch (e) { }
+    try { path_mod = require("path"); } catch (e) { }
+    if (fs_local && path_mod) {
+      let dir_path = (typeof __dirname !== "undefined") ? __dirname : fs_local.realpathSync.native(".");
+
+      let need_pick = force_pick;
+      if (!need_pick) {
+        const ok_default = confirm(`Save snapshot to the default folder?\n\n${dir_path}\n\nOK = Save here\nCancel = Choose another folder`);
+        if (!ok_default) need_pick = true;
+      }
+      if (need_pick) {
+        const picked = await cloud5_pick_directory_nwjs();
+        if (!picked) return;
+        dir_path = picked;
+      }
+
+      // Now do the async work and write.
+      const html_text = await cloud5_get_current_html_text();
+      const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+      const json_text = JSON.stringify(state_obj, null, 2);
+
+      const html_path = path_mod.join(dir_path, names.html_name);
+      const state_path = path_mod.join(dir_path, names.state_name);
+
+      await cloud5_write_text_atomic_nwjs(html_path, html_text);
+      await cloud5_write_text_atomic_nwjs(state_path, json_text);
+      return;
+    }
   }
 
+  // ---- B) Browser (File System Access API) ----
+  let dir = null;
+
+  async function confirm_or_repick(candidate, prompt_prefix)
+  {
+    const name = candidate?.name || "(selected folder)";
+    const ok = confirm(`${prompt_prefix}\n\n${name}\n\nOK = Save here\nCancel = Choose another folder`);
+    if (ok) return candidate;
+    return await cloud5_get_or_pick_snapshot_dir_handle(true);
+  }
+
+  if (window.showDirectoryPicker) {
+    const remembered = (!force_pick) ? await cloud5_try_get_snapshot_dir_handle() : null;
+
+    if (force_pick) {
+      dir = await cloud5_get_or_pick_snapshot_dir_handle(true);      // PICK NOW (still in gesture)
+      if (!dir) return;
+    } else if (remembered) {
+      dir = await confirm_or_repick(remembered, "Save snapshot to the last chosen folder?");
+      if (!dir) return;
+    } else {
+      // First time: pick NOW (still in gesture), then confirm/re-pick if desired.
+      const picked = await cloud5_get_or_pick_snapshot_dir_handle(true);
+      if (!picked) return;
+      dir = await confirm_or_repick(picked, "Save snapshot to this folder?");
+      if (!dir) return;
+    }
+
+    // Now do async work AFTER directory is locked in.
+    const html_text = await cloud5_get_current_html_text();
+    const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+    const json_text = JSON.stringify(state_obj, null, 2);
+
+    try {
+      const html_handle = await dir.getFileHandle(names.html_name, { create: true });
+      const state_handle = await dir.getFileHandle(names.state_name, { create: true });
+
+      const html_w = await html_handle.createWritable();
+      await html_w.write(html_text);
+      await html_w.close();
+
+      const json_w = await state_handle.createWritable();
+      await json_w.write(json_text);
+      await json_w.close();
+      return;
+    } catch (e) {
+      await cloud5_forget_snapshot_dir_handle();
+      console.warn("Snapshot write failed; falling back to download:", e);
+    }
+  }
+
+  // ---- C) Fallback: download both files ----
   const html_text = await cloud5_get_current_html_text();
-
   const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
   const json_text = JSON.stringify(state_obj, null, 2);
-
-  const html_base = cloud5_strip_extension(target.html_name);
-  const state_name = `${html_base}.state.json`;
-
-  if (target.mode === "nwjs") {
-    let path_mod = null;
-    try {
-      if (typeof require !== "undefined") {
-        path_mod = require("path");
-      }
-    } catch (e) {
-    }
-    const join = (a, b) => (path_mod && path_mod.join) ? path_mod.join(a, b) : (a.replace(/[\\/]+$/, "") + "/" + b);
-
-    const html_path = join(target.dir_path, target.html_name);
-    const state_path = join(target.dir_path, state_name);
-
-    await cloud5_write_text_atomic_nwjs(html_path, html_text);
-    await cloud5_write_text_atomic_nwjs(state_path, json_text);
-    return;
-  }
-
-  if (target.mode === "browser") {
-    const dir = target.dir_handle;
-
-    const html_handle = await dir.getFileHandle(target.html_name, { create: true });
-    const state_handle = await dir.getFileHandle(state_name, { create: true });
-
-    const html_w = await html_handle.createWritable();
-    await html_w.write(html_text);
-    await html_w.close();
-
-    const json_w = await state_handle.createWritable();
-    await json_w.write(json_text);
-    await json_w.close();
-  }
+  await cloud5_clipboard_and_download(html_text, names.html_name);
+  await cloud5_clipboard_and_download(json_text, names.state_name);
 }
 
 async function cloud5_save_state_if_needed(piece) {
-  if (!cloud5_is_local_context()) {
-    return;
-  }
+  // Automatic state saves are intentionally disabled.
+  // Keeping this function as a no-op makes it safe if older overlays still call it.
+  return;
+}
 
-  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
-    return;
-  }
+function cloud5_get_snapshot_dialog()
+{
+  let dlg = document.getElementById("cloud5_snapshot_dialog");
+  if (dlg) return dlg;
 
-  const base = document.title || 'piece';
-  const filename = `${base}.state.json`;
+  dlg = document.createElement("dialog");
+  dlg.id = "cloud5_snapshot_dialog";
+  dlg.style.padding = "1em";
+  dlg.style.maxWidth = "520px";
 
-  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
-  const json_text = JSON.stringify(state_obj, null, 2);
+  dlg.innerHTML = `
+    <form method="dialog" style="display:flex;flex-direction:column;gap:0.75em;">
+      <div style="font-weight:600;">Snapshot</div>
 
-  // Try filesystem first
-  if (typeof fs !== 'undefined' && fs?.writeFileSync) {
-    try {
-      const tmp = filename + '.tmp';
-      fs.writeFileSync(tmp, json_text, 'utf8');
-      fs.renameSync(tmp, filename);
-      return;
-    } catch (e) {
-      console.warn('fs write failed, falling back to clipboard:', e);
+      <label style="display:flex;flex-direction:column;gap:0.25em;">
+        <span>Title</span>
+        <input id="cloud5_snapshot_title" type="text" autocomplete="off" style="width:100%;" />
+      </label>
+
+      <div style="display:flex;flex-direction:column;gap:0.25em;">
+        <span>Folder</span>
+        <div style="display:flex;gap:0.5em;align-items:center;">
+          <code id="cloud5_snapshot_folder" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></code>
+          <button id="cloud5_snapshot_choose_folder" type="button">Choose…</button>
+        </div>
+        <div style="font-size:0.9em;opacity:0.8;">
+          Saved as <code>&lt;title&gt;.&lt;timestamp&gt;.html</code> and <code>&lt;title&gt;.state.&lt;timestamp&gt;.json</code>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.5em;justify-content:flex-end;margin-top:0.5em;">
+        <button id="cloud5_snapshot_cancel" value="cancel">Cancel</button>
+        <button id="cloud5_snapshot_save" value="save">Save</button>
+      </div>
+    </form>
+  `;
+
+  document.body.appendChild(dlg);
+  return dlg;
+}
+
+async function cloud5_run_snapshot_dialog(default_title)
+{
+  const dlg = cloud5_get_snapshot_dialog();
+  const title_el = dlg.querySelector("#cloud5_snapshot_title");
+  const folder_el = dlg.querySelector("#cloud5_snapshot_folder");
+  const choose_btn = dlg.querySelector("#cloud5_snapshot_choose_folder");
+
+  const is_nwjs = !!(globalThis.process?.versions?.nw);
+
+  // Current selection state (returned to caller)
+  let selected = {
+    mode: "download",     // "browser_dir" | "nwjs_dir" | "download"
+    dir_handle: null,     // browser
+    dir_path: null        // nwjs
+  };
+
+  // Establish default folder:
+  // - NW.js: __dirname
+  // - Browser: remembered handle (if any), else show "(choose…)".
+  if (is_nwjs) {
+    selected.mode = "nwjs_dir";
+    selected.dir_path = (typeof __dirname !== "undefined") ? __dirname : ".";
+    folder_el.textContent = selected.dir_path;
+  } else {
+    const remembered = await cloud5_try_get_snapshot_dir_handle();
+    if (remembered) {
+      selected.mode = "browser_dir";
+      selected.dir_handle = remembered;
+      folder_el.textContent = remembered.name || "(selected folder)";
+    } else {
+      selected.mode = "download";
+      folder_el.textContent = "(not set — will download)";
     }
   }
 
-  // Fallback: clipboard + download
-  await cloud5_clipboard_and_download(json_text, filename);
+  // Wire "Choose…" (this is the key: user clicks -> picker allowed)
+  choose_btn.onclick = async () => {
+    try {
+      if (is_nwjs) {
+        const picked = await cloud5_pick_directory_nwjs();
+        if (picked) {
+          selected.mode = "nwjs_dir";
+          selected.dir_path = picked;
+          folder_el.textContent = picked;
+        }
+        return;
+      }
+
+      if (window.showDirectoryPicker) {
+        const h = await window.showDirectoryPicker();
+        if (h) {
+          await cloud5_idb_set(CLOUD5_IDB_KEY_SNAPSHOT_DIR, h);
+          selected.mode = "browser_dir";
+          selected.dir_handle = h;
+          folder_el.textContent = h.name || "(selected folder)";
+        }
+      } else {
+        alert("This browser does not support choosing a folder. Snapshot will be downloaded instead.");
+      }
+    } catch (e) {
+      console.warn("Choose folder failed:", e);
+    }
+  };
+
+  title_el.value = default_title || "";
+  title_el.focus();
+  title_el.select();
+
+  // Show modal and wait for Save/Cancel
+  const result = await new Promise((resolve) => {
+    const on_close = () => {
+      dlg.removeEventListener("close", on_close);
+      resolve(dlg.returnValue || "cancel");
+    };
+    dlg.addEventListener("close", on_close);
+    dlg.showModal();
+  });
+
+  if (result !== "save") {
+    return null;
+  }
+
+  const title = (title_el.value || "").trim();
+  if (!title) {
+    alert("Title is required.");
+    return null;
+  }
+
+  return { title, target: selected };
+}
+
+function cloud5_get_snapshot_state_filename_from_location() {
+  // Supports snapshot pattern:
+  //   <title>.<timestamp>.html
+  // paired with:
+  //   <title>.state.<timestamp>.json
+  try {
+    const url = new URL(window.location.href);
+    const leaf = url.pathname.split("/").pop() || "";
+    const m = leaf.match(/^(.*)\.(\d{8}-\d{6})\.html$/);
+    if (m) {
+      const title = m[1];
+      const ts = m[2];
+      return `${title}.state.${ts}.json`;
+    }
+  } catch (e) {
+  }
+  // Default legacy pattern:
+  const base = document.title || "piece";
+  return `${base}.state.json`;
 }
 
 async function cloud5_load_state_if_present(piece) {
@@ -624,44 +961,38 @@ async function cloud5_load_state_if_present(piece) {
     return;
   }
 
-  const base = document.title || 'piece';
-  const filename = `${base}.state.json`;
+  const filename = cloud5_get_snapshot_state_filename_from_location();
 
-  // 1) Try filesystem (NW.js / node context)
-  if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
+  // 1) Try filesystem (NW.js / node context) relative to CWD/app dir.
+  if (typeof fs !== "undefined" && fs?.readFileSync && fs?.existsSync) {
     try {
       if (!fs.existsSync(filename)) {
         return;
       }
-      const text = fs.readFileSync(filename, 'utf8');
+      const text = fs.readFileSync(filename, "utf8");
       const obj = JSON.parse(text);
       cloud5_restore_fields(piece, obj);
       cloud5_notify_state_restored(piece, obj);
       return;
     } catch (e) {
-      console.warn('Failed to load state via fs; falling back to fetch:', e);
+      console.warn("Failed to load state via fs; falling back to fetch:", e);
     }
   }
 
-  // 2) Try fetch (localhost served file)
+  // 2) Try fetching from same directory as the HTML (works for local static sites and web servers).
   try {
-    const url = `${filename}?t=${Date.now()}`;
-    console.log('Loading state from:', new URL(filename, location.href).href);
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) {
+    const resp = await fetch(filename, { cache: "no-store" });
+    if (!resp.ok) {
       return;
     }
-    const text = await response.text();
+    const text = await resp.text();
     const obj = JSON.parse(text);
     cloud5_restore_fields(piece, obj);
     cloud5_notify_state_restored(piece, obj);
-    return;
   } catch (e) {
-    // 3) Nothing
-    console.warn('Failed to load state via fetch; no persisted state loaded:', e);
+    // Not fatal; absence of state is normal.
   }
 }
-
 /**
  * Base class for Cloud5 overlay-like elements.
  * Currently lightweight, but centralizes a few common conventions:
@@ -1447,7 +1778,8 @@ class Cloud5Piece extends Cloud5Element {
       const ok = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
       menu_item_snapshot.style.display = ok ? "inline" : "none";
       menu_item_snapshot.onclick = async (event) => {
-        await cloud5_snapshot_to_new_version(this);
+        const force_pick = !!event?.shiftKey;
+        await cloud5_snapshot_to_new_version(this, { force_pick });
         // Re-evaluate visibility (fields may have been populated later).
         const ok2 = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
         menu_item_snapshot.style.display = ok2 ? "inline" : "none";
@@ -1849,7 +2181,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     } catch (e) {
       alert(e);
     }
-    await cloud5_save_state_if_needed(this);
     await this.csound.start();
 
     this.is_performing = true;
@@ -1905,7 +2236,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     for (const overlay of this._get_all_overlays()) {
       overlay?.on_stop();
     }
-    await cloud5_save_state_if_needed(this);
     this._stop_display_loop();
     this._stop_ui_timer();
     this.csound_message_callback("cloud-5 has stopped.\n");
