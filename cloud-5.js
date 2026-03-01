@@ -679,54 +679,43 @@ async function cloud5_snapshot_to_new_version(piece, options = {})
 {
   if (!piece) return;
 
-  const force_pick = !!options.force_pick;
-
   cloud5_ensure_piece_parameters_serialized(piece);
 
-  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0)
+  {
     alert("Nothing is configured to be saved yet (fields_to_serialize is empty).");
     return;
   }
 
   const default_title = (document.title || "piece").replace(/\.\d{8}-\d{6}$/, "");
-  const title = options.title_override || prompt("Snapshot title:", default_title);
-  if (!title) return;
+  const dlg_result = await cloud5_run_snapshot_dialog(default_title);
+  if (!dlg_result) return;
+
+  const title = dlg_result.title;
+  const target = dlg_result.target;
 
   const names = cloud5_snapshot_filenames_from_title(title, cloud5_timestamp_string());
 
-  // ------------------------------------------------------------
-  // IMPORTANT: choose destination BEFORE async work that can
-  // consume transient user activation (fetch, awaits, etc.)
-  // ------------------------------------------------------------
+  const html_text = await cloud5_get_current_html_text();
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const json_text = JSON.stringify(state_obj, null, 2);
 
-  // ---- A) NW.js ----
-  if (typeof process !== "undefined" && process?.versions?.nw) {
-    // Load fs lazily here for reliability.
+  // ---- A) NW.js folder write ----
+  if (target.mode === "nwjs_dir" && target.dir_path)
+  {
     let fs_local = null;
     let path_mod = null;
     try { fs_local = require("fs"); } catch (e) { }
     try { path_mod = require("path"); } catch (e) { }
-    if (fs_local && path_mod) {
-      let dir_path = (typeof __dirname !== "undefined") ? __dirname : fs_local.realpathSync.native(".");
 
-      let need_pick = force_pick;
-      if (!need_pick) {
-        const ok_default = confirm(`Save snapshot to the default folder?\n\n${dir_path}\n\nOK = Save here\nCancel = Choose another folder`);
-        if (!ok_default) need_pick = true;
-      }
-      if (need_pick) {
-        const picked = await cloud5_pick_directory_nwjs();
-        if (!picked) return;
-        dir_path = picked;
-      }
-
-      // Now do the async work and write.
-      const html_text = await cloud5_get_current_html_text();
-      const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
-      const json_text = JSON.stringify(state_obj, null, 2);
-
-      const html_path = path_mod.join(dir_path, names.html_name);
-      const state_path = path_mod.join(dir_path, names.state_name);
+    if (!fs_local || !path_mod)
+    {
+      alert("NW.js fs/path not available; snapshot will be downloaded instead.");
+    }
+    else
+    {
+      const html_path = path_mod.join(target.dir_path, names.html_name);
+      const state_path = path_mod.join(target.dir_path, names.state_name);
 
       await cloud5_write_text_atomic_nwjs(html_path, html_text);
       await cloud5_write_text_atomic_nwjs(state_path, json_text);
@@ -734,63 +723,28 @@ async function cloud5_snapshot_to_new_version(piece, options = {})
     }
   }
 
-  // ---- B) Browser (File System Access API) ----
-  let dir = null;
-
-  async function confirm_or_repick(candidate, prompt_prefix)
+  // ---- B) Browser folder write (File System Access API) ----
+  if (target.mode === "browser_dir" && target.dir_handle)
   {
-    const name = candidate?.name || "(selected folder)";
-    const ok = confirm(`${prompt_prefix}\n\n${name}\n\nOK = Save here\nCancel = Choose another folder`);
-    if (ok) return candidate;
-    return await cloud5_get_or_pick_snapshot_dir_handle(true);
-  }
+    const dir = target.dir_handle;
 
-  if (window.showDirectoryPicker) {
-    const remembered = (!force_pick) ? await cloud5_try_get_snapshot_dir_handle() : null;
+    const html_handle = await dir.getFileHandle(names.html_name, { create: true });
+    const state_handle = await dir.getFileHandle(names.state_name, { create: true });
 
-    if (force_pick) {
-      dir = await cloud5_get_or_pick_snapshot_dir_handle(true);      // PICK NOW (still in gesture)
-      if (!dir) return;
-    } else if (remembered) {
-      dir = await confirm_or_repick(remembered, "Save snapshot to the last chosen folder?");
-      if (!dir) return;
-    } else {
-      // First time: pick NOW (still in gesture), then confirm/re-pick if desired.
-      const picked = await cloud5_get_or_pick_snapshot_dir_handle(true);
-      if (!picked) return;
-      dir = await confirm_or_repick(picked, "Save snapshot to this folder?");
-      if (!dir) return;
-    }
+    const html_w = await html_handle.createWritable();
+    await html_w.write(html_text);
+    await html_w.close();
 
-    // Now do async work AFTER directory is locked in.
-    const html_text = await cloud5_get_current_html_text();
-    const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
-    const json_text = JSON.stringify(state_obj, null, 2);
+    const json_w = await state_handle.createWritable();
+    await json_w.write(json_text);
+    await json_w.close();
 
-    try {
-      const html_handle = await dir.getFileHandle(names.html_name, { create: true });
-      const state_handle = await dir.getFileHandle(names.state_name, { create: true });
-
-      const html_w = await html_handle.createWritable();
-      await html_w.write(html_text);
-      await html_w.close();
-
-      const json_w = await state_handle.createWritable();
-      await json_w.write(json_text);
-      await json_w.close();
-      return;
-    } catch (e) {
-      await cloud5_forget_snapshot_dir_handle();
-      console.warn("Snapshot write failed; falling back to download:", e);
-    }
+    return;
   }
 
   // ---- C) Fallback: download both files ----
-  const html_text = await cloud5_get_current_html_text();
-  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
-  const json_text = JSON.stringify(state_obj, null, 2);
-  await cloud5_clipboard_and_download(html_text, names.html_name);
-  await cloud5_clipboard_and_download(json_text, names.state_name);
+  cloud5_download_text_as_file(names.html_name, html_text, "text/html");
+  cloud5_download_text_as_file(names.state_name, json_text, "application/json");
 }
 
 async function cloud5_save_state_if_needed(piece) {
@@ -806,6 +760,9 @@ function cloud5_get_snapshot_dialog()
 
   dlg = document.createElement("dialog");
   dlg.id = "cloud5_snapshot_dialog";
+  dlg.style.background = "gray";
+  dlg.style.border = "1px solid #ccc";
+  dlg.style.borderRadius = "8px"; 
   dlg.style.padding = "1em";
   dlg.style.maxWidth = "520px";
 
