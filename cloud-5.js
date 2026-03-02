@@ -671,7 +671,7 @@ function cloud5_snapshot_filenames_from_title(title, timestamp) {
     safe_title,
     timestamp: ts,
     html_name: `${safe_title}.${ts}.html`,
-    state_name: `${safe_title}.state.${ts}.json`,
+    state_name: `${safe_title}.${ts}.state.json`,
   };
 }
 
@@ -782,7 +782,7 @@ function cloud5_get_snapshot_dialog()
           <button id="cloud5_snapshot_choose_folder" type="button">Choose…</button>
         </div>
         <div style="font-size:0.9em;opacity:0.8;">
-          Saved as <code>&lt;title&gt;.&lt;timestamp&gt;.html</code> and <code>&lt;title&gt;.state.&lt;timestamp&gt;.json</code>
+          Saved as <code>&lt;title&gt;.&lt;timestamp&gt;.html</code> and <code>&lt;title&gt;.&lt;timestamp&gt;.state.json</code>
         </div>
       </div>
 
@@ -892,7 +892,7 @@ function cloud5_get_snapshot_state_filename_from_location() {
   // Supports snapshot pattern:
   //   <title>.<timestamp>.html
   // paired with:
-  //   <title>.state.<timestamp>.json
+  //   <title>.<timestamp>.state.json
   try {
     const url = new URL(window.location.href);
     const leaf = url.pathname.split("/").pop() || "";
@@ -900,7 +900,7 @@ function cloud5_get_snapshot_state_filename_from_location() {
     if (m) {
       const title = m[1];
       const ts = m[2];
-      return `${title}.state.${ts}.json`;
+      return `${title}.${ts}.state.json`;
     }
   } catch (e) {
   }
