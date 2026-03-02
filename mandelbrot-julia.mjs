@@ -490,6 +490,22 @@ pre {
       try { this._updatePlayheadOverlay(); } catch (e) { }
     }
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
+
+    // TODO: Update mini_console with score time.
+        let delta = ext_time;
+    // calculate (and subtract) whole days
+    let days = Math.floor(delta / 86400);
+    delta -= days * 86400;
+    // calculate (and subtract) whole hours
+    let hours = Math.floor(delta / 3600) % 24;
+    delta -= hours * 3600;
+    // calculate (and subtract) whole minutes
+    let minutes = Math.floor(delta / 60) % 60;
+    delta -= minutes * 60;
+    // what's left is seconds
+    let seconds = delta % 60;
+    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
+
   }
 
   _start_playhead_ticker() {
@@ -1219,12 +1235,13 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   _updateSelectionOverlay() {
-    if (!this.roiJ) { this.sel.style.display = 'none'; return; }
+    if (!this.roiJ) { this.sel.style.setProperty('display', 'none', 'important'); return; }
     const { minx, maxx, miny, maxy } = this.roiJ;
     const a = this._complexToCanvasCss(minx, maxy); // top-left
     const b = this._complexToCanvasCss(maxx, miny); // bottom-right
     const L = Math.min(a.x, b.x), T = Math.min(a.y, b.y);
     const W = Math.abs(b.x - a.x), H = Math.abs(b.y - a.y);
+    this.sel.style.setProperty('display', 'block', 'important');
     Object.assign(this.sel.style, {
       display: 'block',
       left: `${L}px`,
@@ -1486,7 +1503,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
       try {
         // Persist viewM (and c) to the local *.state.json used by Cloud5.
-        // Automatic state saves are disabled; use the Snapshot... button to capture state.
+        cloud5_save_state_if_needed(this.cloud5_piece);
         this._request_gpu_redraw('restore');
       } catch (err) {
         console.warn('Failed to persist Mandelbrot view state:', err);
@@ -1573,8 +1590,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
       if ((key === 'r') && (e.altKey || e.metaKey)) {
         e.preventDefault(); e.stopPropagation();
-        this.roiJ = null;
-        this.sel.style.display = 'none';
+        // Keep the last selection visible; do not clear roiJ here.
+        this.sel.style.setProperty('display', 'none', 'important');
       }
 
       if ((key === 'm') && (e.altKey && e.ctrlKey)) {
@@ -1978,7 +1995,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 
   async playMIDIFromScore() {
-    // Automatic state saves are disabled; use the Snapshot... button to capture state.
+    await cloud5_save_state_if_needed(this.cloud5_piece);
 
     const score = await this.makeScore();
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }

@@ -393,6 +393,46 @@ function cloud5_timestamp_string() {
   );
 }
 
+function cloud5_strip_trailing_timestamp(title) {
+  // Remove a trailing ".YYYYMMDD-HHMMSS" suffix if present.
+  const s = String(title || "").trim();
+  return s.replace(/\.(\d{8}-\d{6})$/, "");
+}
+
+function cloud5_sanitize_for_filename(s)
+{
+  return String(s || "snapshot")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9_.-]/g, "_")
+    .replace(/-+/g, "-");
+}
+
+function cloud5_snapshot_filenames_from_title(title)
+{
+  const ts = cloud5_timestamp_string();
+  const base = cloud5_sanitize_for_filename(cloud5_strip_trailing_timestamp(title || "snapshot"));
+  return {
+    html_name: `${base}.${ts}.html`,
+    state_name: `${base}.${ts}.state.json`,
+  };
+}
+
+
+function cloud5_format_elapsed_time(seconds_total) {
+  const s = Math.max(0, Number(seconds_total) || 0);
+  let delta = s;
+  const days = Math.floor(delta / 86400);
+  delta -= days * 86400;
+  const hours = Math.floor(delta / 3600) % 24;
+  delta -= hours * 3600;
+  const minutes = Math.floor(delta / 60) % 60;
+  delta -= minutes * 60;
+  const seconds = delta % 60;
+  return sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds);
+}
+
+
 function cloud5_strip_extension(filename) {
   return filename.replace(/\.[^/.]+$/, "");
 }
@@ -464,175 +504,210 @@ function cloud5_ensure_piece_parameters_serialized(piece) {
 }
 
 
-async function cloud5_select_snapshot_target_nwjs(dir_path, html_name) {
-  // Verify we can write to dir_path.
-  if (typeof fs === "undefined" || !fs?.accessSync) {
-    return null;
-  }
-  try {
-    fs.accessSync(dir_path, fs.constants.W_OK);
-    return { mode: "nwjs", dir_path, html_name };
-  } catch (e) {
-    return null;
-  }
-}
+const CLOUD5_LAST_SNAPSHOT_TITLE_KEY = "cloud5.last_snapshot_title";
+const CLOUD5_SNAPSHOT_DIR_HANDLE_KEY = "cloud5.snapshot_dir_handle";
 
-async function cloud5_pick_directory_nwjs() {
-  // Directory picker for NW.js renderers.
-  // Uses the <input nwdirectory> feature.
-  try {
-    if (typeof process === "undefined" || !process.versions || !process.versions.nw) {
-      return null;
-    }
-  } catch (e) {
-    return null;
-  }
-
-  return await new Promise((resolve) => {
-    try {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.setAttribute("nwdirectory", "nwdirectory");
-      input.setAttribute("nwworkingdir", "nwworkingdir");
-      input.style.position = "fixed";
-      input.style.left = "-10000px";
-      input.style.top = "-10000px";
-      document.body.appendChild(input);
-
-      input.addEventListener("change", () => {
-        const files = input.files;
-        let dir_path = null;
-        if (files && files.length > 0) {
-          // In NW.js, File objects include a .path property.
-          dir_path = files[0].path || null;
-        }
-        input.remove();
-        resolve(dir_path);
-      }, { once: true });
-
-      // If user cancels, 'change' may not fire reliably; add a focus-based fallback.
-      const on_focus = () => {
-        window.removeEventListener("focus", on_focus);
-        setTimeout(() => {
-          if (document.body.contains(input)) {
-            input.remove();
-            resolve(null);
-          }
-        }, 250);
-      };
-      window.addEventListener("focus", on_focus, { once: true });
-
-      input.click();
-    } catch (e) {
-      resolve(null);
-    }
-  });
-}
-
-// IndexedDB storage for a persisted directory handle (browser File System Access API).
-const CLOUD5_IDB_DB_NAME = "cloud5";
-const CLOUD5_IDB_STORE = "kv";
-const CLOUD5_IDB_KEY_SNAPSHOT_DIR = "snapshot_dir_handle";
-
-function cloud5_idb_open() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(CLOUD5_IDB_DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(CLOUD5_IDB_STORE)) {
-        db.createObjectStore(CLOUD5_IDB_STORE);
+// Minimal IndexedDB KV store for persisting a FileSystemDirectoryHandle.
+function cloud5_idb_open()
+{
+  return new Promise((resolve, reject) =>
+  {
+    const request = indexedDB.open("cloud5_kv", 1);
+    request.onupgradeneeded = () =>
+    {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("kv"))
+      {
+        db.createObjectStore("kv");
       }
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 }
 
-async function cloud5_idb_get(key) {
+async function cloud5_idb_get(key)
+{
   const db = await cloud5_idb_open();
-  return await new Promise((resolve, reject) => {
-    const tx = db.transaction(CLOUD5_IDB_STORE, "readonly");
-    const store = tx.objectStore(CLOUD5_IDB_STORE);
+  return new Promise((resolve, reject) =>
+  {
+    const tx = db.transaction("kv", "readonly");
+    const store = tx.objectStore("kv");
     const req = store.get(key);
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function cloud5_idb_set(key, value) {
+async function cloud5_idb_put(key, value)
+{
   const db = await cloud5_idb_open();
-  return await new Promise((resolve, reject) => {
-    const tx = db.transaction(CLOUD5_IDB_STORE, "readwrite");
-    const store = tx.objectStore(CLOUD5_IDB_STORE);
+  return new Promise((resolve, reject) =>
+  {
+    const tx = db.transaction("kv", "readwrite");
+    const store = tx.objectStore("kv");
     const req = store.put(value, key);
     req.onsuccess = () => resolve(true);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function cloud5_try_get_snapshot_dir_handle() {
-  if (!window.showDirectoryPicker) {
-    return null;
-  }
+async function cloud5_idb_delete(key)
+{
+  const db = await cloud5_idb_open();
+  return new Promise((resolve, reject) =>
+  {
+    const tx = db.transaction("kv", "readwrite");
+    const store = tx.objectStore("kv");
+    const req = store.delete(key);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
 
-  try {
-    const remembered = await cloud5_idb_get(CLOUD5_IDB_KEY_SNAPSHOT_DIR);
-    if (!remembered) {
+async function cloud5_try_get_snapshot_dir_handle()
+{
+  try
+  {
+    const handle = await cloud5_idb_get(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY);
+    if (!handle)
+    {
       return null;
     }
-
-    // Ensure we still have permission.
-    let perm = "granted";
-    if (remembered.queryPermission) {
-      perm = await remembered.queryPermission({ mode: "readwrite" });
-      if (perm !== "granted" && remembered.requestPermission) {
-        perm = await remembered.requestPermission({ mode: "readwrite" });
+    if (typeof handle.requestPermission === "function")
+    {
+      const perm = await handle.requestPermission({ mode: "readwrite" });
+      if (perm !== "granted")
+      {
+        return null;
       }
     }
-
-    return (perm === "granted") ? remembered : null;
-  } catch (e) {
+    return handle;
+  }
+  catch (e)
+  {
+    console.warn(e);
     return null;
   }
 }
 
-async function cloud5_forget_snapshot_dir_handle() {
-  try {
-    await cloud5_idb_set(CLOUD5_IDB_KEY_SNAPSHOT_DIR, null);
-  } catch (e) {
+async function cloud5_get_or_pick_snapshot_dir_handle()
+{
+  let handle = await cloud5_try_get_snapshot_dir_handle();
+  if (handle)
+  {
+    return handle;
   }
+  if (!window.showDirectoryPicker)
+  {
+    throw new Error("File System Access API (showDirectoryPicker) is not available in this browser.");
+  }
+  handle = await window.showDirectoryPicker({ mode: "readwrite" });
+  await cloud5_idb_put(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY, handle);
+  return handle;
 }
 
-async function cloud5_get_or_pick_snapshot_dir_handle(force_pick = false) {
-  if (!window.showDirectoryPicker) {
-    return null;
+async function cloud5_forget_snapshot_dir_handle()
+{
+  await cloud5_idb_delete(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY);
+}
+
+async function cloud5_run_snapshot_dialog(suggested_title)
+{
+  const last_saved_title = localStorage.getItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY) || "";
+  const initial_title = cloud5_strip_trailing_timestamp(suggested_title || last_saved_title || "snapshot");
+
+  let dialog = document.getElementById("cloud5_snapshot_dialog");
+  if (!dialog)
+  {
+    dialog = document.createElement("dialog");
+    dialog.id = "cloud5_snapshot_dialog";
+    dialog.innerHTML = `
+      <form method="dialog" style="min-width: 520px;">
+        <h3 style="margin: 0 0 10px 0;">Snapshot</h3>
+
+        <div style="margin-bottom: 10px;">
+          <label style="display:block; font-weight: 600; margin-bottom: 4px;">Title</label>
+          <input id="cloud5_snapshot_title" type="text" style="width: 100%;" />
+        </div>
+
+        <div style="margin-bottom: 10px;">
+          <label style="display:block; font-weight: 600; margin-bottom: 4px;">Directory</label>
+          <div style="display:flex; gap: 8px; align-items:center;">
+            <button id="cloud5_snapshot_choose_dir" type="button">Choose…</button>
+            <div id="cloud5_snapshot_dir_label" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+            <button id="cloud5_snapshot_forget_dir" type="button" title="Forget remembered directory">Forget</button>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content: flex-end; gap: 10px;">
+          <button value="cancel">Cancel</button>
+          <button id="cloud5_snapshot_ok" value="ok">OK</button>
+        </div>
+      </form>
+    `;
+    document.body.appendChild(dialog);
   }
 
-  // 1) Try a previously remembered directory handle unless forcing a new pick.
-  if (!force_pick) {
-    const remembered = await cloud5_try_get_snapshot_dir_handle();
-    if (remembered) {
-      return remembered;
+  const title_input = dialog.querySelector("#cloud5_snapshot_title");
+  const dir_label = dialog.querySelector("#cloud5_snapshot_dir_label");
+  const choose_dir_btn = dialog.querySelector("#cloud5_snapshot_choose_dir");
+  const forget_dir_btn = dialog.querySelector("#cloud5_snapshot_forget_dir");
+
+  title_input.value = last_saved_title ? last_saved_title : initial_title;
+
+  let dir_handle = await cloud5_try_get_snapshot_dir_handle();
+  dir_label.textContent = dir_handle ? dir_handle.name : "(none selected)";
+
+  choose_dir_btn.onclick = async () =>
+  {
+    try
+    {
+      dir_handle = await cloud5_get_or_pick_snapshot_dir_handle();
+      dir_label.textContent = dir_handle ? dir_handle.name : "(none selected)";
     }
-  }
+    catch (e)
+    {
+      console.warn(e);
+      dir_label.textContent = "(directory selection failed)";
+    }
+  };
 
-  // 2) Ask user.
-  let dir_handle = null;
-  try {
-    dir_handle = await window.showDirectoryPicker();
-  } catch (e) {
+  forget_dir_btn.onclick = async () =>
+  {
+    await cloud5_forget_snapshot_dir_handle();
+    dir_handle = null;
+    dir_label.textContent = "(none selected)";
+  };
+
+  const result = await new Promise((resolve) =>
+  {
+    dialog.addEventListener("close", () => resolve(dialog.returnValue), { once: true });
+    dialog.showModal();
+  });
+
+  if (result !== "ok")
+  {
     return null;
   }
 
-  // Persist for next time.
-  try {
-    await cloud5_idb_set(CLOUD5_IDB_KEY_SNAPSHOT_DIR, dir_handle);
-  } catch (e) {
-    // Ignore persistence errors (e.g., private mode).
+  const title = cloud5_strip_trailing_timestamp(title_input.value.trim() || "snapshot");
+  if (!dir_handle)
+  {
+    // If the user didn't choose a directory in the dialog, try to reuse or prompt now.
+    dir_handle = await cloud5_get_or_pick_snapshot_dir_handle();
   }
-  return dir_handle;
+
+  return { title, dir_handle };
 }
 
+
+async function cloud5_select_snapshot_target(suggested_title)
+{
+  // One-step modal dialog for title + directory.
+  // Returns an object: { title, dir_handle } or null if canceled.
+  return await cloud5_run_snapshot_dialog(suggested_title);
+}
 
 async function cloud5_write_text_atomic_nwjs(full_path, text) {
   if (typeof fs === "undefined" || !fs?.writeFileSync) {
@@ -643,151 +718,42 @@ async function cloud5_write_text_atomic_nwjs(full_path, text) {
   fs.renameSync(tmp, full_path);
 }
 
-function cloud5_sanitize_title_for_filename(title) {
-  const raw = String(title || "").trim();
-  if (!raw) {
-    return "piece";
-  }
-  // Keep it readable but safe on Windows/macOS/Linux.
-  // - collapse whitespace
-  // - replace disallowed characters
-  // - trim dots/spaces (Windows)
-  let safe = raw.replace(/\s+/g, " ");
-  safe = safe.replace(/[\/\\:*?"<>|]/g, "_");
-  safe = safe.replace(/[\u0000-\u001f]/g, "_");
-  safe = safe.replace(/\s+/g, "_");
-  safe = safe.replace(/[. ]+$/g, "");
-  safe = safe.replace(/^[. ]+/g, "");
-  if (!safe) {
-    safe = "piece";
-  }
-  return safe;
-}
 
-function cloud5_snapshot_filenames_from_title(title, timestamp) {
-  const safe_title = cloud5_sanitize_title_for_filename(title);
-  const ts = timestamp || cloud5_timestamp_string();
-  return {
-    safe_title,
-    timestamp: ts,
-    html_name: `${safe_title}.${ts}.html`,
-    state_name: `${safe_title}.${ts}.state.json`,
-  };
-}
 
-async function cloud5_snapshot_to_new_version(piece, options = {})
-{
-  if (!piece) return;
-
-  cloud5_ensure_piece_parameters_serialized(piece);
-
-  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0)
-  {
-    alert("Nothing is configured to be saved yet (fields_to_serialize is empty).");
-    return;
-  }
-
-  const default_title = (document.title || "piece").replace(/\.\d{8}-\d{6}$/, "");
-  const dlg_result = await cloud5_run_snapshot_dialog(default_title);
-  if (!dlg_result) return;
-
-  const title = dlg_result.title;
-  const target = dlg_result.target;
-
-  const names = cloud5_snapshot_filenames_from_title(title, cloud5_timestamp_string());
-
-  const html_text = await cloud5_get_current_html_text();
-  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
-  const json_text = JSON.stringify(state_obj, null, 2);
-
-  // ---- A) NW.js folder write ----
-  if (target.mode === "nwjs_dir" && target.dir_path)
-  {
-    let fs_local = null;
-    let path_mod = null;
-    try { fs_local = require("fs"); } catch (e) { }
-    try { path_mod = require("path"); } catch (e) { }
-
-    if (!fs_local || !path_mod)
-    {
-      alert("NW.js fs/path not available; snapshot will be downloaded instead.");
-    }
-    else
-    {
-      const html_path = path_mod.join(target.dir_path, names.html_name);
-      const state_path = path_mod.join(target.dir_path, names.state_name);
-
-      await cloud5_write_text_atomic_nwjs(html_path, html_text);
-      await cloud5_write_text_atomic_nwjs(state_path, json_text);
-      return;
-    }
-  }
-
-  // ---- B) Browser folder write (File System Access API) ----
-  if (target.mode === "browser_dir" && target.dir_handle)
-  {
-    const dir = target.dir_handle;
-
-    const html_handle = await dir.getFileHandle(names.html_name, { create: true });
-    const state_handle = await dir.getFileHandle(names.state_name, { create: true });
-
-    const html_w = await html_handle.createWritable();
-    await html_w.write(html_text);
-    await html_w.close();
-
-    const json_w = await state_handle.createWritable();
-    await json_w.write(json_text);
-    await json_w.close();
-
-    return;
-  }
-
-  // ---- C) Fallback: download both files ----
-  cloud5_download_text_as_file(names.html_name, html_text, "text/html");
-  cloud5_download_text_as_file(names.state_name, json_text, "application/json");
-}
-
-async function cloud5_save_state_if_needed(piece) {
-  // Automatic state saves are intentionally disabled.
-  // Keeping this function as a no-op makes it safe if older overlays still call it.
-  return;
-}
-
-function cloud5_get_snapshot_dialog()
-{
+function cloud5_get_snapshot_dialog() {
   let dlg = document.getElementById("cloud5_snapshot_dialog");
-  if (dlg) return dlg;
+  if (dlg) {
+    return dlg;
+  }
 
   dlg = document.createElement("dialog");
   dlg.id = "cloud5_snapshot_dialog";
-  dlg.style.background = "gray";
-  dlg.style.border = "1px solid #ccc";
-  dlg.style.borderRadius = "8px"; 
-  dlg.style.padding = "1em";
-  dlg.style.maxWidth = "520px";
+  dlg.style.maxWidth = "720px";
+  dlg.style.width = "92vw";
 
   dlg.innerHTML = `
-    <form method="dialog" style="display:flex;flex-direction:column;gap:0.75em;">
-      <div style="font-weight:600;">Snapshot</div>
+    <form method="dialog" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="font-weight:600;">Create snapshot</div>
 
-      <label style="display:flex;flex-direction:column;gap:0.25em;">
-        <span>Title</span>
-        <input id="cloud5_snapshot_title" type="text" autocomplete="off" style="width:100%;" />
+      <label style="display:flex;flex-direction:column;gap:6px;">
+        <div>Title</div>
+        <input id="cloud5_snapshot_title" type="text" style="width:100%;padding:6px;" />
+        <div style="font-size:0.9em;opacity:0.8;">
+          Files will be saved as: &lt;title&gt;.&lt;timestamp&gt;.html and &lt;title&gt;.state.&lt;timestamp&gt;.json
+        </div>
       </label>
 
-      <div style="display:flex;flex-direction:column;gap:0.25em;">
-        <span>Folder</span>
-        <div style="display:flex;gap:0.5em;align-items:center;">
-          <code id="cloud5_snapshot_folder" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></code>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div>Folder</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div id="cloud5_snapshot_folder_label" style="flex:1;min-width:240px;opacity:0.9;"></div>
           <button id="cloud5_snapshot_choose_folder" type="button">Choose…</button>
-        </div>
-        <div style="font-size:0.9em;opacity:0.8;">
-          Saved as <code>&lt;title&gt;.&lt;timestamp&gt;.html</code> and <code>&lt;title&gt;.&lt;timestamp&gt;.state.json</code>
+          <button id="cloud5_snapshot_clear_folder" type="button" title="Forget remembered folder">Forget</button>
         </div>
       </div>
 
-      <div style="display:flex;gap:0.5em;justify-content:flex-end;margin-top:0.5em;">
-        <button id="cloud5_snapshot_cancel" value="cancel">Cancel</button>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+        <button value="cancel">Cancel</button>
         <button id="cloud5_snapshot_save" value="save">Save</button>
       </div>
     </form>
@@ -797,116 +763,195 @@ function cloud5_get_snapshot_dialog()
   return dlg;
 }
 
-async function cloud5_run_snapshot_dialog(default_title)
-{
+async function cloud5_run_snapshot_dialogx(default_title) {
   const dlg = cloud5_get_snapshot_dialog();
-  const title_el = dlg.querySelector("#cloud5_snapshot_title");
-  const folder_el = dlg.querySelector("#cloud5_snapshot_folder");
+
+  const title_input = dlg.querySelector("#cloud5_snapshot_title");
+  const folder_label = dlg.querySelector("#cloud5_snapshot_folder_label");
   const choose_btn = dlg.querySelector("#cloud5_snapshot_choose_folder");
+  const forget_btn = dlg.querySelector("#cloud5_snapshot_clear_folder");
 
-  const is_nwjs = !!(globalThis.process?.versions?.nw);
+  // Determine initial title: last saved title (preferred), else default.
+  const last_title = cloud5_get_last_snapshot_title();
+  const base_default = cloud5_strip_trailing_timestamp(default_title || "");
+  const initial_title = cloud5_strip_trailing_timestamp(last_title || base_default || "piece");
+  title_input.value = initial_title;
 
-  // Current selection state (returned to caller)
-  let selected = {
-    mode: "download",     // "browser_dir" | "nwjs_dir" | "download"
-    dir_handle: null,     // browser
-    dir_path: null        // nwjs
-  };
+  // Target selection model.
+  let target = { mode: "download" };
 
-  // Establish default folder:
-  // - NW.js: __dirname
-  // - Browser: remembered handle (if any), else show "(choose…)".
-  if (is_nwjs) {
-    selected.mode = "nwjs_dir";
-    selected.dir_path = (typeof __dirname !== "undefined") ? __dirname : ".";
-    folder_el.textContent = selected.dir_path;
-  } else {
-    const remembered = await cloud5_try_get_snapshot_dir_handle();
-    if (remembered) {
-      selected.mode = "browser_dir";
-      selected.dir_handle = remembered;
-      folder_el.textContent = remembered.name || "(selected folder)";
+  const is_nwjs = (() => {
+    try {
+      return (typeof process !== "undefined" && process.versions && process.versions.nw);
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  // Browser directory handle (File System Access API)
+  let dir_handle = null;
+  // NW.js directory path
+  let dir_path = null;
+
+  async function update_folder_label() {
+    if (is_nwjs) {
+      folder_label.textContent = dir_path ? dir_path : "(will download files)";
+    } else if (dir_handle) {
+      folder_label.textContent = dir_handle.name || "(selected folder)";
     } else {
-      selected.mode = "download";
-      folder_el.textContent = "(not set — will download)";
+      folder_label.textContent = "(will download files)";
     }
   }
 
-  // Wire "Choose…" (this is the key: user clicks -> picker allowed)
-  choose_btn.onclick = async () => {
-    try {
-      if (is_nwjs) {
-        const picked = await cloud5_pick_directory_nwjs();
-        if (picked) {
-          selected.mode = "nwjs_dir";
-          selected.dir_path = picked;
-          folder_el.textContent = picked;
+  async function select_default_folder_if_available() {
+    if (is_nwjs) {
+      // Prefer __dirname if writable; otherwise none.
+      try {
+        if (typeof __dirname !== "undefined" && typeof fs !== "undefined" && fs?.accessSync) {
+          try {
+            fs.accessSync(__dirname, fs.constants.W_OK);
+            dir_path = __dirname;
+            target = { mode: "nwjs_dir", dir_path };
+          } catch (e) {
+            dir_path = null;
+          }
         }
+      } catch (e) {
+        dir_path = null;
+      }
+    } else {
+      dir_handle = await cloud5_try_get_snapshot_dir_handle();
+      if (dir_handle) {
+        target = { mode: "browser_dir", dir_handle };
+      }
+    }
+    await update_folder_label();
+  }
+
+  await select_default_folder_if_available();
+
+  choose_btn.onclick = async () => {
+    if (is_nwjs) {
+      const picked = await cloud5_pick_directory_nwjs();
+      if (picked) {
+        dir_path = picked;
+        target = { mode: "nwjs_dir", dir_path };
+      }
+    } else {
+      const picked = await cloud5_get_or_pick_snapshot_dir_handle(true);
+      if (picked) {
+        dir_handle = picked;
+        target = { mode: "browser_dir", dir_handle };
+      }
+    }
+    await update_folder_label();
+  };
+
+  forget_btn.onclick = async () => {
+    if (is_nwjs) {
+      dir_path = null;
+      target = { mode: "download" };
+    } else {
+      await cloud5_forget_snapshot_dir_handle();
+      dir_handle = null;
+      target = { mode: "download" };
+    }
+    await update_folder_label();
+  };
+
+  return await new Promise((resolve) => {
+    const on_close = () => {
+      dlg.removeEventListener("close", on_close);
+      const action = dlg.returnValue;
+      if (action !== "save") {
+        resolve(null);
         return;
       }
 
-      if (window.showDirectoryPicker) {
-        const h = await window.showDirectoryPicker();
-        if (h) {
-          await cloud5_idb_set(CLOUD5_IDB_KEY_SNAPSHOT_DIR, h);
-          selected.mode = "browser_dir";
-          selected.dir_handle = h;
-          folder_el.textContent = h.name || "(selected folder)";
-        }
-      } else {
-        alert("This browser does not support choosing a folder. Snapshot will be downloaded instead.");
+      const title = cloud5_strip_trailing_timestamp(String(title_input.value || "").trim());
+      if (!title) {
+        resolve(null);
+        return;
       }
-    } catch (e) {
-      console.warn("Choose folder failed:", e);
-    }
-  };
-
-  title_el.value = default_title || "";
-  title_el.focus();
-  title_el.select();
-
-  // Show modal and wait for Save/Cancel
-  const result = await new Promise((resolve) => {
-    const on_close = () => {
-      dlg.removeEventListener("close", on_close);
-      resolve(dlg.returnValue || "cancel");
+      resolve({ title, target });
     };
     dlg.addEventListener("close", on_close);
     dlg.showModal();
   });
-
-  if (result !== "save") {
-    return null;
-  }
-
-  const title = (title_el.value || "").trim();
-  if (!title) {
-    alert("Title is required.");
-    return null;
-  }
-
-  return { title, target: selected };
 }
 
-function cloud5_get_snapshot_state_filename_from_location() {
-  // Supports snapshot pattern:
-  //   <title>.<timestamp>.html
-  // paired with:
-  //   <title>.<timestamp>.state.json
-  try {
-    const url = new URL(window.location.href);
-    const leaf = url.pathname.split("/").pop() || "";
-    const m = leaf.match(/^(.*)\.(\d{8}-\d{6})\.html$/);
-    if (m) {
-      const title = m[1];
-      const ts = m[2];
-      return `${title}.${ts}.state.json`;
-    }
-  } catch (e) {
+async function cloud5_snapshot_to_new_version()
+{
+  // Snapshot the current page HTML and Cloud5 state into the chosen directory.
+  const suggested_title = document.title || "snapshot";
+  const dlg = await cloud5_select_snapshot_target(suggested_title);
+  if (!dlg)
+  {
+    return;
   }
-  // Default legacy pattern:
-  const base = document.title || "piece";
-  return `${base}.state.json`;
+
+  const title = cloud5_strip_trailing_timestamp(dlg.title || suggested_title || "snapshot");
+  const dir_handle = dlg.dir_handle;
+
+  const { html_name, state_name } = cloud5_snapshot_filenames_from_title(title);
+
+  // Capture current HTML.
+  const html_text = "<!DOCTYPE html>" + document.documentElement.outerHTML;
+
+  // Capture state.
+  const state_obj = globalThis.cloud5_piece ? globalThis.cloud5_piece.save_state?.() : null;
+  const state_text = JSON.stringify(state_obj || {}, null, 2);
+
+  // Write files.
+  const html_handle = await dir_handle.getFileHandle(html_name, { create: true });
+  const state_handle = await dir_handle.getFileHandle(state_name, { create: true });
+
+  {
+    const writable = await html_handle.createWritable();
+    await writable.write(new Blob([html_text], { type: "text/html" }));
+    await writable.close();
+  }
+  {
+    const writable = await state_handle.createWritable();
+    await writable.write(new Blob([state_text], { type: "application/json" }));
+    await writable.close();
+  }
+
+  localStorage.setItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY, title);
+
+  console.log(`Snapshot saved: ${dir_handle.name}/${html_name} and ${dir_handle.name}/${state_name}`);
+}
+
+
+async function cloud5_save_state_if_needed(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const json_text = JSON.stringify(state_obj, null, 2);
+
+  // Try filesystem first
+  if (typeof fs !== 'undefined' && fs?.writeFileSync) {
+    try {
+      const tmp = filename + '.tmp';
+      fs.writeFileSync(tmp, json_text, 'utf8');
+      fs.renameSync(tmp, filename);
+      return;
+    } catch (e) {
+      console.warn('fs write failed, falling back to clipboard:', e);
+    }
+  }
+
+  // Fallback: clipboard + download
+  await cloud5_clipboard_and_download(json_text, filename);
 }
 
 async function cloud5_load_state_if_present(piece) {
@@ -918,38 +963,44 @@ async function cloud5_load_state_if_present(piece) {
     return;
   }
 
-  const filename = cloud5_get_snapshot_state_filename_from_location();
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
 
-  // 1) Try filesystem (NW.js / node context) relative to CWD/app dir.
-  if (typeof fs !== "undefined" && fs?.readFileSync && fs?.existsSync) {
+  // 1) Try filesystem (NW.js / node context)
+  if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
     try {
       if (!fs.existsSync(filename)) {
         return;
       }
-      const text = fs.readFileSync(filename, "utf8");
+      const text = fs.readFileSync(filename, 'utf8');
       const obj = JSON.parse(text);
       cloud5_restore_fields(piece, obj);
       cloud5_notify_state_restored(piece, obj);
       return;
     } catch (e) {
-      console.warn("Failed to load state via fs; falling back to fetch:", e);
+      console.warn('Failed to load state via fs; falling back to fetch:', e);
     }
   }
 
-  // 2) Try fetching from same directory as the HTML (works for local static sites and web servers).
+  // 2) Try fetch (localhost served file)
   try {
-    const resp = await fetch(filename, { cache: "no-store" });
-    if (!resp.ok) {
+    const url = `${filename}?t=${Date.now()}`;
+    console.log('Loading state from:', new URL(filename, location.href).href);
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
       return;
     }
-    const text = await resp.text();
+    const text = await response.text();
     const obj = JSON.parse(text);
     cloud5_restore_fields(piece, obj);
     cloud5_notify_state_restored(piece, obj);
+    return;
   } catch (e) {
-    // Not fatal; absence of state is normal.
+    // 3) Nothing
+    console.warn('Failed to load state via fetch; no persisted state loaded:', e);
   }
 }
+
 /**
  * Base class for Cloud5 overlay-like elements.
  * Currently lightweight, but centralizes a few common conventions:
@@ -989,7 +1040,9 @@ class Cloud5Element extends HTMLElement {
   }
 
   connectedCallback() {
-    const attr = this.getAttribute('data-cloud5-stay-visible');
+    
+    try { globalThis.cloud5_piece = this; } catch (e) { }
+const attr = this.getAttribute('data-cloud5-stay-visible');
     if (attr !== null) {
       const v = String(attr).toLowerCase();
       this.cloud5_stay_visible =
@@ -1082,6 +1135,8 @@ class Cloud5Piece extends Cloud5Element {
     // Performance/UI state.
     this.is_performing = false;
     this.latest_score_time = 0;
+    this._midi_perf_start_ms = null;
+    this._midi_perf_running = false;
     this._display_raf_id = 0;
     this._display_last_ms = 0;
     this._ui_timer_id = 0;
@@ -1102,6 +1157,18 @@ class Cloud5Piece extends Cloud5Element {
     this._last_meter_poll_start_ms = 0;
     this._meter_poll_token = 0;
   }
+
+on_midi_start()
+{
+  this._midi_perf_start_ms = performance.now();
+  this._midi_perf_running = true;
+}
+
+on_midi_stop()
+{
+  this._midi_perf_running = false;
+}
+
   #csound_code_addon = null;
   /**
     * May be assigned the text of a Csound .csd patch. If so, the Csound 
@@ -1506,8 +1573,16 @@ class Cloud5Piece extends Cloud5Element {
     let level_left = -100;
     let level_right = -100;
 
-    const score_time = await csound.getScoreTime();
-    this.latest_score_time = score_time;
+let score_time = 0;
+if (this._midi_perf_running && typeof this._midi_perf_start_ms === "number")
+{
+  score_time = (performance.now() - this._midi_perf_start_ms) / 1000.0;
+}
+else
+{
+  score_time = await csound.getScoreTime();
+}
+this.latest_score_time = score_time;
 
     level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
     level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
@@ -1735,8 +1810,7 @@ class Cloud5Piece extends Cloud5Element {
       const ok = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
       menu_item_snapshot.style.display = ok ? "inline" : "none";
       menu_item_snapshot.onclick = async (event) => {
-        const force_pick = !!event?.shiftKey;
-        await cloud5_snapshot_to_new_version(this, { force_pick });
+        await cloud5_snapshot_to_new_version(this);
         // Re-evaluate visibility (fields may have been populated later).
         const ok2 = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
         menu_item_snapshot.style.display = ok2 ? "inline" : "none";
@@ -2138,6 +2212,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     } catch (e) {
       alert(e);
     }
+    await cloud5_save_state_if_needed(this);
     await this.csound.start();
 
     this.is_performing = true;
@@ -2193,6 +2268,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     for (const overlay of this._get_all_overlays()) {
       overlay?.on_stop();
     }
+    await cloud5_save_state_if_needed(this);
     this._stop_display_loop();
     this._stop_ui_timer();
     this.csound_message_callback("cloud-5 has stopped.\n");
@@ -2525,6 +2601,61 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
       this.fields_to_serialize = current.concat(['parameters']);
     }
   }
+
+
+
+on_midi_start(start_ms) {
+  // Start an independent mini_console clock during MIDI playback.
+  try {
+    this._midi_start_ms = (typeof start_ms === "number" && isFinite(start_ms)) ? start_ms : performance.now();
+    this._start_midi_clock();
+  } catch (e) {
+  }
+}
+
+on_midi_stop() {
+  try {
+    this._stop_midi_clock();
+    // Leave the last time displayed.
+  } catch (e) {
+  }
+}
+
+_start_midi_clock() {
+  if (this._midi_timer_id) {
+    return;
+  }
+  const tick = () => {
+    try {
+      if (!globalThis.__midi?.playing) {
+        this._stop_midi_clock();
+        return;
+      }
+      const start = this._midi_start_ms || globalThis.__midi.startMS || performance.now();
+      const elapsed_sec = (performance.now() - start) / 1000.0;
+      // Drive mini_console in the same format as Csound rendering time.
+      const txt = cloud5_format_elapsed_time(elapsed_sec);
+      const el = this.mini_console || document.getElementById("mini_console");
+      if (el) {
+        el.innerHTML = txt;
+      }
+      // Also expose elapsed as latest_score_time so score-following overlays can move.
+      this.latest_score_time = elapsed_sec;
+    } catch (e) {
+    }
+  };
+  // 20 Hz update is smooth enough for playheads.
+  this._midi_timer_id = setInterval(tick, 50);
+  tick();
+}
+
+_stop_midi_clock() {
+  if (!this._midi_timer_id) {
+    return;
+  }
+  try { clearInterval(this._midi_timer_id); } catch (e) { }
+  this._midi_timer_id = 0;
+}
 
 }
 customElements.define("cloud5-piece", Cloud5Piece);
@@ -3340,11 +3471,23 @@ class Cloud5About extends Cloud5Element {
 customElements.define("cloud5-about", Cloud5About);
 
 // A sad workaround....
-try {
-  var fs = require("fs");
-  var __dirname = fs.realpathSync.native(".");
-} catch (e) {
-  console.warn(e);
+// In some environments a stub `require` exists but Node's 'fs' module is unavailable.
+// Guard carefully to avoid crashing in browsers.
+var __dirname = ".";
+try
+{
+  if (typeof require === "function")
+  {
+    const fs = require("fs");
+    if (fs && typeof fs.realpathSync === "function")
+    {
+      __dirname = fs.realpathSync(".");
+    }
+  }
+}
+catch (e)
+{
+  // Ignore.
 }
 
 /**
@@ -3752,6 +3895,10 @@ function get_filename(pathOrUrl) {
     bpm: 120,
   };
 
+  // Expose MIDI scheduler state for the rest of cloud-5.
+  globalThis.__midi = __midi;
+
+
   function clearTimers() {
     for (const id of __midi.timers) clearTimeout(id);
     __midi.timers.clear();
@@ -3830,6 +3977,8 @@ function get_filename(pathOrUrl) {
   /** Global stop: cancels timers and sends panic. */
   Score.stop_play_midi = function () {
     __midi.playing = false;
+    try { globalThis.cloud5_piece?.on_midi_stop?.(); } catch (e) { }
+
     __midi.totalBeats = 0;
     clearTimers();
     panicAllNotes();
@@ -3884,7 +4033,9 @@ function get_filename(pathOrUrl) {
     __midi.playing = true;
     clearTimers();
     __midi.startMS = performance.now();
-    __midi.totalBeats = Math.max(0, ...notes.map(n => n[1] + n[2]));
+    
+    try { globalThis.cloud5_piece?.on_midi_start?.(__midi.startMS); } catch (e) { }
+__midi.totalBeats = Math.max(0, ...notes.map(n => n[1] + n[2]));
     const t0 = __midi.startMS;
 
     for (const [ch, tBeats, dBeats, key, vel] of notes) {
@@ -4030,3 +4181,21 @@ function update_gui_displays(gui) {
     }
   }
 }
+
+function cloud5_get_last_snapshot_title() {
+  try {
+    const v = localStorage.getItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY);
+    return v ? String(v) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function cloud5_set_last_snapshot_title(title) {
+  try {
+    localStorage.setItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY, String(title || ""));
+  } catch (e) {
+  }
+}
+
+
