@@ -263,7 +263,7 @@ pre {
     });
   }
 
-
+// FIXME: timesteps 
   _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
 
   _update_bpm_from_seconds()
@@ -491,7 +491,6 @@ pre {
     }
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
 
-    // TODO: Update mini_console with score time.
         let delta = ext_time;
     // calculate (and subtract) whole days
     let days = Math.floor(delta / 86400);
@@ -1866,7 +1865,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     readBuf.unmap();
 
     const dtBeats = this._stepBeats(); // 1/8 beat per time bin
-    const pmin = 36;
+    const pmin = Math.floor(60 - M / 2.);
     const active = Array.from({ length: N }, _ => new Uint8Array(M));
     const vel = Array.from({ length: N }, _ => new Uint8Array(M));
     const inst = Array.from({ length: N }, _ => new Uint8Array(M));
