@@ -414,7 +414,7 @@ function cloud5_snapshot_filenames_from_title(title)
   const base = cloud5_sanitize_for_filename(cloud5_strip_trailing_timestamp(title || "snapshot"));
   return {
     html_name: `${base}.${ts}.html`,
-    state_name: `${base}.${ts}.state.json`,
+    state_name: `${base}.state.${ts}.json`,
   };
 }
 
@@ -880,7 +880,7 @@ async function cloud5_run_snapshot_dialogx(default_title) {
   });
 }
 
-async function cloud5_snapshot_to_new_version()
+async function cloud5_snapshot_to_new_version(piece)
 {
   // Snapshot the current page HTML and Cloud5 state into the chosen directory.
   const suggested_title = document.title || "snapshot";
@@ -899,8 +899,8 @@ async function cloud5_snapshot_to_new_version()
   const html_text = "<!DOCTYPE html>" + document.documentElement.outerHTML;
 
   // Capture state.
-  const state_obj = globalThis.cloud5_piece ? globalThis.cloud5_piece.save_state?.() : null;
-  const state_text = JSON.stringify(state_obj || {}, null, 2);
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const state_text = JSON.stringify(state_obj, null, 2);
 
   // Write files.
   const html_handle = await dir_handle.getFileHandle(html_name, { create: true });
@@ -954,6 +954,21 @@ async function cloud5_save_state_if_needed(piece) {
   await cloud5_clipboard_and_download(json_text, filename);
 }
 
+function state_filename(composition_filename)
+{
+    const last_slash = composition_filename.lastIndexOf('/');
+    const path = composition_filename.substring(0, last_slash + 1);
+    const basename = composition_filename.substring(last_slash + 1);
+
+    const stem = basename.replace(/\.html$/, "");
+    const parts = stem.split(".");
+
+    const timestamp = parts.pop();
+    const title = parts.join(".");
+
+    return path + title + ".state." + timestamp + ".json";
+}
+
 async function cloud5_load_state_if_present(piece) {
   if (!cloud5_is_local_context()) {
     return;
@@ -963,8 +978,7 @@ async function cloud5_load_state_if_present(piece) {
     return;
   }
 
-  const base = document.title || 'piece';
-  const filename = `${base}.state.json`;
+  const filename = state_filename(document.title || 'piece');
 
   // 1) Try filesystem (NW.js / node context)
   if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
@@ -984,9 +998,9 @@ async function cloud5_load_state_if_present(piece) {
 
   // 2) Try fetch (localhost served file)
   try {
-    const url = `${filename}?t=${Date.now()}`;
-    console.log('Loading state from:', new URL(filename, location.href).href);
-    const response = await fetch(url, { cache: 'no-store' });
+    const url = filename;
+    const url_ = new URL(url, location.href).href; // resolve relative to current page
+    const response = await fetch(url_, { cache: 'no-store' });
     if (!response.ok) {
       return;
     }
@@ -1801,7 +1815,6 @@ this.latest_score_time = score_time;
         console.warn("Fullscreen failed:", e);
       }
     };
-
 
     // Snapshot... (version export)
     const menu_item_snapshot = this.querySelector("#menu_item_snapshot");

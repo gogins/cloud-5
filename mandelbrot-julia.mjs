@@ -2122,7 +2122,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     };
   }
 
-  _exportStateJSONX(state, baseName) {
+  _exportStateJSON(state, baseName) {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
