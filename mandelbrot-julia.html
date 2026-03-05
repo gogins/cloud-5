@@ -1,14 +1,824 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html><head><style id="error_marker.css">
+    .error_widget_wrapper {
+        background: inherit;
+        color: inherit;
+        border:none
+    }
+    .error_widget {
+        border-top: solid 2px;
+        border-bottom: solid 2px;
+        margin: 5px 0;
+        padding: 10px 40px;
+        white-space: pre-wrap;
+    }
+    .error_widget.ace_error, .error_widget_arrow.ace_error{
+        border-color: #ff5a5a
+    }
+    .error_widget.ace_warning, .error_widget_arrow.ace_warning{
+        border-color: #F1D817
+    }
+    .error_widget.ace_info, .error_widget_arrow.ace_info{
+        border-color: #5a5a5a
+    }
+    .error_widget.ace_ok, .error_widget_arrow.ace_ok{
+        border-color: #5aaa5a
+    }
+    .error_widget_arrow {
+        position: absolute;
+        border: solid 5px;
+        border-top-color: transparent!important;
+        border-right-color: transparent!important;
+        border-left-color: transparent!important;
+        top: -5px;
+    }
 
-<head>
+/*# sourceURL=ace/css/error_marker.css */</style><style id="ace-tm">.ace-tm .ace_gutter {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.ace-tm .ace_print-margin {
+  width: 1px;
+  background: #e8e8e8;
+}
+
+.ace-tm .ace_fold {
+    background-color: #6B72E6;
+}
+
+.ace-tm {
+  background-color: #FFFFFF;
+  color: black;
+}
+
+.ace-tm .ace_cursor {
+  color: black;
+}
+        
+.ace-tm .ace_invisible {
+  color: rgb(191, 191, 191);
+}
+
+.ace-tm .ace_storage,
+.ace-tm .ace_keyword {
+  color: blue;
+}
+
+.ace-tm .ace_constant {
+  color: rgb(197, 6, 11);
+}
+
+.ace-tm .ace_constant.ace_buildin {
+  color: rgb(88, 72, 246);
+}
+
+.ace-tm .ace_constant.ace_language {
+  color: rgb(88, 92, 246);
+}
+
+.ace-tm .ace_constant.ace_library {
+  color: rgb(6, 150, 14);
+}
+
+.ace-tm .ace_invalid {
+  background-color: rgba(255, 0, 0, 0.1);
+  color: red;
+}
+
+.ace-tm .ace_support.ace_function {
+  color: rgb(60, 76, 114);
+}
+
+.ace-tm .ace_support.ace_constant {
+  color: rgb(6, 150, 14);
+}
+
+.ace-tm .ace_support.ace_type,
+.ace-tm .ace_support.ace_class {
+  color: rgb(109, 121, 222);
+}
+
+.ace-tm .ace_keyword.ace_operator {
+  color: rgb(104, 118, 135);
+}
+
+.ace-tm .ace_string {
+  color: rgb(3, 106, 7);
+}
+
+.ace-tm .ace_comment {
+  color: rgb(76, 136, 107);
+}
+
+.ace-tm .ace_comment.ace_doc {
+  color: rgb(0, 102, 255);
+}
+
+.ace-tm .ace_comment.ace_doc.ace_tag {
+  color: rgb(128, 159, 191);
+}
+
+.ace-tm .ace_constant.ace_numeric {
+  color: rgb(0, 0, 205);
+}
+
+.ace-tm .ace_variable {
+  color: rgb(49, 132, 149);
+}
+
+.ace-tm .ace_xml-pe {
+  color: rgb(104, 104, 91);
+}
+
+.ace-tm .ace_entity.ace_name.ace_function {
+  color: #0000A2;
+}
+
+
+.ace-tm .ace_heading {
+  color: rgb(12, 7, 255);
+}
+
+.ace-tm .ace_list {
+  color:rgb(185, 6, 144);
+}
+
+.ace-tm .ace_meta.ace_tag {
+  color:rgb(0, 22, 142);
+}
+
+.ace-tm .ace_string.ace_regex {
+  color: rgb(255, 0, 0)
+}
+
+.ace-tm .ace_marker-layer .ace_selection {
+  background: rgb(181, 213, 255);
+}
+.ace-tm.ace_multiselect .ace_selection.ace_start {
+  box-shadow: 0 0 3px 0px white;
+}
+.ace-tm .ace_marker-layer .ace_step {
+  background: rgb(252, 255, 0);
+}
+
+.ace-tm .ace_marker-layer .ace_stack {
+  background: rgb(164, 229, 101);
+}
+
+.ace-tm .ace_marker-layer .ace_bracket {
+  margin: -1px 0 0 -1px;
+  border: 1px solid rgb(192, 192, 192);
+}
+
+.ace-tm .ace_marker-layer .ace_active-line {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.ace-tm .ace_gutter-active-line {
+    background-color : #dcdcdc;
+}
+
+.ace-tm .ace_marker-layer .ace_selected-word {
+  background: rgb(250, 250, 255);
+  border: 1px solid rgb(200, 200, 250);
+}
+
+.ace-tm .ace_indent-guide {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==") right repeat-y;
+}
+
+.ace-tm .ace_indent-guide-active {
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAAZSURBVHjaYvj///9/hivKyv8BAAAA//8DACLqBhbvk+/eAAAAAElFTkSuQmCC") right repeat-y;
+}
+
+/*# sourceURL=ace/css/ace-tm */</style><style id="ace_editor.css">/*
+styles = []
+for (var i = 1; i < 16; i++) {
+    styles.push(".ace_br" + i + "{" + (
+        ["top-left", "top-right", "bottom-right", "bottom-left"]
+    ).map(function(x, j) {
+        return i & (1<<j) ? "border-" + x + "-radius: 3px;" : "" 
+    }).filter(Boolean).join(" ") + "}")
+}
+styles.join("\n")
+*/
+.ace_br1 {border-top-left-radius    : 3px;}
+.ace_br2 {border-top-right-radius   : 3px;}
+.ace_br3 {border-top-left-radius    : 3px; border-top-right-radius:    3px;}
+.ace_br4 {border-bottom-right-radius: 3px;}
+.ace_br5 {border-top-left-radius    : 3px; border-bottom-right-radius: 3px;}
+.ace_br6 {border-top-right-radius   : 3px; border-bottom-right-radius: 3px;}
+.ace_br7 {border-top-left-radius    : 3px; border-top-right-radius:    3px; border-bottom-right-radius: 3px;}
+.ace_br8 {border-bottom-left-radius : 3px;}
+.ace_br9 {border-top-left-radius    : 3px; border-bottom-left-radius:  3px;}
+.ace_br10{border-top-right-radius   : 3px; border-bottom-left-radius:  3px;}
+.ace_br11{border-top-left-radius    : 3px; border-top-right-radius:    3px; border-bottom-left-radius:  3px;}
+.ace_br12{border-bottom-right-radius: 3px; border-bottom-left-radius:  3px;}
+.ace_br13{border-top-left-radius    : 3px; border-bottom-right-radius: 3px; border-bottom-left-radius:  3px;}
+.ace_br14{border-top-right-radius   : 3px; border-bottom-right-radius: 3px; border-bottom-left-radius:  3px;}
+.ace_br15{border-top-left-radius    : 3px; border-top-right-radius:    3px; border-bottom-right-radius: 3px; border-bottom-left-radius: 3px;}
+
+
+.ace_editor {
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    direction: ltr;
+    text-align: left;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.ace_scroller {
+    position: absolute;
+    overflow: hidden;
+    top: 0;
+    bottom: 0;
+    background-color: inherit;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: text;
+}
+
+.ace_content {
+    position: absolute;
+    box-sizing: border-box;
+    min-width: 100%;
+    contain: style size layout;
+    font-variant-ligatures: no-common-ligatures;
+}
+
+.ace_dragging .ace_scroller:before{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    content: '';
+    background: rgba(250, 250, 250, 0.01);
+    z-index: 1000;
+}
+.ace_dragging.ace_dark .ace_scroller:before{
+    background: rgba(0, 0, 0, 0.01);
+}
+
+.ace_gutter {
+    position: absolute;
+    overflow : hidden;
+    width: auto;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    cursor: default;
+    z-index: 4;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    contain: style size layout;
+}
+
+.ace_gutter-active-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+.ace_scroller.ace_scroll-left {
+    box-shadow: 17px 0 16px -16px rgba(0, 0, 0, 0.4) inset;
+}
+
+.ace_gutter-cell {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding-left: 19px;
+    padding-right: 6px;
+    background-repeat: no-repeat;
+}
+
+.ace_gutter-cell.ace_error {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAABOFBMVEX/////////QRswFAb/Ui4wFAYwFAYwFAaWGAfDRymzOSH/PxswFAb/SiUwFAYwFAbUPRvjQiDllog5HhHdRybsTi3/Tyv9Tir+Syj/UC3////XurebMBIwFAb/RSHbPx/gUzfdwL3kzMivKBAwFAbbvbnhPx66NhowFAYwFAaZJg8wFAaxKBDZurf/RB6mMxb/SCMwFAYwFAbxQB3+RB4wFAb/Qhy4Oh+4QifbNRcwFAYwFAYwFAb/QRzdNhgwFAYwFAbav7v/Uy7oaE68MBK5LxLewr/r2NXewLswFAaxJw4wFAbkPRy2PyYwFAaxKhLm1tMwFAazPiQwFAaUGAb/QBrfOx3bvrv/VC/maE4wFAbRPBq6MRO8Qynew8Dp2tjfwb0wFAbx6eju5+by6uns4uH9/f36+vr/GkHjAAAAYnRSTlMAGt+64rnWu/bo8eAA4InH3+DwoN7j4eLi4xP99Nfg4+b+/u9B/eDs1MD1mO7+4PHg2MXa347g7vDizMLN4eG+Pv7i5evs/v79yu7S3/DV7/498Yv24eH+4ufQ3Ozu/v7+y13sRqwAAADLSURBVHjaZc/XDsFgGIBhtDrshlitmk2IrbHFqL2pvXf/+78DPokj7+Fz9qpU/9UXJIlhmPaTaQ6QPaz0mm+5gwkgovcV6GZzd5JtCQwgsxoHOvJO15kleRLAnMgHFIESUEPmawB9ngmelTtipwwfASilxOLyiV5UVUyVAfbG0cCPHig+GBkzAENHS0AstVF6bacZIOzgLmxsHbt2OecNgJC83JERmePUYq8ARGkJx6XtFsdddBQgZE2nPR6CICZhawjA4Fb/chv+399kfR+MMMDGOQAAAABJRU5ErkJggg==");
+    background-repeat: no-repeat;
+    background-position: 2px center;
+}
+
+.ace_gutter-cell.ace_warning {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAmVBMVEX///8AAAD///8AAAAAAABPSzb/5sAAAAB/blH/73z/ulkAAAAAAAD85pkAAAAAAAACAgP/vGz/rkDerGbGrV7/pkQICAf////e0IsAAAD/oED/qTvhrnUAAAD/yHD/njcAAADuv2r/nz//oTj/p064oGf/zHAAAAA9Nir/tFIAAAD/tlTiuWf/tkIAAACynXEAAAAAAAAtIRW7zBpBAAAAM3RSTlMAABR1m7RXO8Ln31Z36zT+neXe5OzooRDfn+TZ4p3h2hTf4t3k3ucyrN1K5+Xaks52Sfs9CXgrAAAAjklEQVR42o3PbQ+CIBQFYEwboPhSYgoYunIqqLn6/z8uYdH8Vmdnu9vz4WwXgN/xTPRD2+sgOcZjsge/whXZgUaYYvT8QnuJaUrjrHUQreGczuEafQCO/SJTufTbroWsPgsllVhq3wJEk2jUSzX3CUEDJC84707djRc5MTAQxoLgupWRwW6UB5fS++NV8AbOZgnsC7BpEAAAAABJRU5ErkJggg==");
+    background-position: 2px center;
+}
+
+.ace_gutter-cell.ace_info {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAAAAAA6mKC9AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAJ0Uk5TAAB2k804AAAAPklEQVQY02NgIB68QuO3tiLznjAwpKTgNyDbMegwisCHZUETUZV0ZqOquBpXj2rtnpSJT1AEnnRmL2OgGgAAIKkRQap2htgAAAAASUVORK5CYII=");
+    background-position: 2px center;
+}
+.ace_dark .ace_gutter-cell.ace_info {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAJFBMVEUAAAChoaGAgIAqKiq+vr6tra1ZWVmUlJSbm5s8PDxubm56enrdgzg3AAAAAXRSTlMAQObYZgAAAClJREFUeNpjYMAPdsMYHegyJZFQBlsUlMFVCWUYKkAZMxZAGdxlDMQBAG+TBP4B6RyJAAAAAElFTkSuQmCC");
+}
+
+.ace_scrollbar {
+    contain: strict;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 6;
+}
+
+.ace_scrollbar-inner {
+    position: absolute;
+    cursor: text;
+    left: 0;
+    top: 0;
+}
+
+.ace_scrollbar-v{
+    overflow-x: hidden;
+    overflow-y: scroll;
+    top: 0;
+}
+
+.ace_scrollbar-h {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    left: 0;
+}
+
+.ace_print-margin {
+    position: absolute;
+    height: 100%;
+}
+
+.ace_text-input {
+    position: absolute;
+    z-index: 0;
+    width: 0.5em;
+    height: 1em;
+    opacity: 0;
+    background: transparent;
+    -moz-appearance: none;
+    appearance: none;
+    border: none;
+    resize: none;
+    outline: none;
+    overflow: hidden;
+    font: inherit;
+    padding: 0 1px;
+    margin: 0 -1px;
+    contain: strict;
+    -ms-user-select: text;
+    -moz-user-select: text;
+    -webkit-user-select: text;
+    user-select: text;
+    /*with `pre-line` chrome inserts &nbsp; instead of space*/
+    white-space: pre!important;
+}
+.ace_text-input.ace_composition {
+    background: transparent;
+    color: inherit;
+    z-index: 1000;
+    opacity: 1;
+}
+.ace_composition_placeholder { color: transparent }
+.ace_composition_marker { 
+    border-bottom: 1px solid;
+    position: absolute;
+    border-radius: 0;
+    margin-top: 1px;
+}
+
+[ace_nocontext=true] {
+    transform: none!important;
+    filter: none!important;
+    clip-path: none!important;
+    mask : none!important;
+    contain: none!important;
+    perspective: none!important;
+    mix-blend-mode: initial!important;
+    z-index: auto;
+}
+
+.ace_layer {
+    z-index: 1;
+    position: absolute;
+    overflow: hidden;
+    /* workaround for chrome bug https://github.com/ajaxorg/ace/issues/2312*/
+    word-wrap: normal;
+    white-space: pre;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    /* setting pointer-events: auto; on node under the mouse, which changes
+        during scroll, will break mouse wheel scrolling in Safari */
+    pointer-events: none;
+}
+
+.ace_gutter-layer {
+    position: relative;
+    width: auto;
+    text-align: right;
+    pointer-events: auto;
+    height: 1000000px;
+    contain: style size layout;
+}
+
+.ace_text-layer {
+    font: inherit !important;
+    position: absolute;
+    height: 1000000px;
+    width: 1000000px;
+    contain: style size layout;
+}
+
+.ace_text-layer > .ace_line, .ace_text-layer > .ace_line_group {
+    contain: style size layout;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+.ace_hidpi .ace_text-layer,
+.ace_hidpi .ace_gutter-layer,
+.ace_hidpi .ace_content,
+.ace_hidpi .ace_gutter {
+    contain: strict;
+    will-change: transform;
+}
+.ace_hidpi .ace_text-layer > .ace_line, 
+.ace_hidpi .ace_text-layer > .ace_line_group {
+    contain: strict;
+}
+
+.ace_cjk {
+    display: inline-block;
+    text-align: center;
+}
+
+.ace_cursor-layer {
+    z-index: 4;
+}
+
+.ace_cursor {
+    z-index: 4;
+    position: absolute;
+    box-sizing: border-box;
+    border-left: 2px solid;
+    /* workaround for smooth cursor repaintng whole screen in chrome */
+    transform: translatez(0);
+}
+
+.ace_multiselect .ace_cursor {
+    border-left-width: 1px;
+}
+
+.ace_slim-cursors .ace_cursor {
+    border-left-width: 1px;
+}
+
+.ace_overwrite-cursors .ace_cursor {
+    border-left-width: 0;
+    border-bottom: 1px solid;
+}
+
+.ace_hidden-cursors .ace_cursor {
+    opacity: 0.2;
+}
+
+.ace_hasPlaceholder .ace_hidden-cursors .ace_cursor {
+    opacity: 0;
+}
+
+.ace_smooth-blinking .ace_cursor {
+    transition: opacity 0.18s;
+}
+
+.ace_animate-blinking .ace_cursor {
+    animation-duration: 1000ms;
+    animation-timing-function: step-end;
+    animation-name: blink-ace-animate;
+    animation-iteration-count: infinite;
+}
+
+.ace_animate-blinking.ace_smooth-blinking .ace_cursor {
+    animation-duration: 1000ms;
+    animation-timing-function: ease-in-out;
+    animation-name: blink-ace-animate-smooth;
+}
+    
+@keyframes blink-ace-animate {
+    from, to { opacity: 1; }
+    60% { opacity: 0; }
+}
+
+@keyframes blink-ace-animate-smooth {
+    from, to { opacity: 1; }
+    45% { opacity: 1; }
+    60% { opacity: 0; }
+    85% { opacity: 0; }
+}
+
+.ace_marker-layer .ace_step, .ace_marker-layer .ace_stack {
+    position: absolute;
+    z-index: 3;
+}
+
+.ace_marker-layer .ace_selection {
+    position: absolute;
+    z-index: 5;
+}
+
+.ace_marker-layer .ace_bracket {
+    position: absolute;
+    z-index: 6;
+}
+
+.ace_marker-layer .ace_error_bracket {
+    position: absolute;
+    border-bottom: 1px solid #DE5555;
+    border-radius: 0;
+}
+
+.ace_marker-layer .ace_active-line {
+    position: absolute;
+    z-index: 2;
+}
+
+.ace_marker-layer .ace_selected-word {
+    position: absolute;
+    z-index: 4;
+    box-sizing: border-box;
+}
+
+.ace_line .ace_fold {
+    box-sizing: border-box;
+
+    display: inline-block;
+    height: 11px;
+    margin-top: -2px;
+    vertical-align: middle;
+
+    background-image:
+        url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAAJCAYAAADU6McMAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAJpJREFUeNpi/P//PwOlgAXGYGRklAVSokD8GmjwY1wasKljQpYACtpCFeADcHVQfQyMQAwzwAZI3wJKvCLkfKBaMSClBlR7BOQikCFGQEErIH0VqkabiGCAqwUadAzZJRxQr/0gwiXIal8zQQPnNVTgJ1TdawL0T5gBIP1MUJNhBv2HKoQHHjqNrA4WO4zY0glyNKLT2KIfIMAAQsdgGiXvgnYAAAAASUVORK5CYII="),
+        url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA3CAYAAADNNiA5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAACJJREFUeNpi+P//fxgTAwPDBxDxD078RSX+YeEyDFMCIMAAI3INmXiwf2YAAAAASUVORK5CYII=");
+    background-repeat: no-repeat, repeat-x;
+    background-position: center center, top left;
+    color: transparent;
+
+    border: 1px solid black;
+    border-radius: 2px;
+
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.ace_dark .ace_fold {
+}
+
+.ace_fold:hover{
+    background-image:
+        url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAAJCAYAAADU6McMAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAJpJREFUeNpi/P//PwOlgAXGYGRklAVSokD8GmjwY1wasKljQpYACtpCFeADcHVQfQyMQAwzwAZI3wJKvCLkfKBaMSClBlR7BOQikCFGQEErIH0VqkabiGCAqwUadAzZJRxQr/0gwiXIal8zQQPnNVTgJ1TdawL0T5gBIP1MUJNhBv2HKoQHHjqNrA4WO4zY0glyNKLT2KIfIMAAQsdgGiXvgnYAAAAASUVORK5CYII="),
+        url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA3CAYAAADNNiA5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAACBJREFUeNpi+P//fz4TAwPDZxDxD5X4i5fLMEwJgAADAEPVDbjNw87ZAAAAAElFTkSuQmCC");
+}
+
+.ace_tooltip {
+    background-color: #FFF;
+    background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
+    border: 1px solid gray;
+    border-radius: 1px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: black;
+    max-width: 100%;
+    padding: 3px 4px;
+    position: fixed;
+    z-index: 999999;
+    box-sizing: border-box;
+    cursor: default;
+    white-space: pre;
+    word-wrap: break-word;
+    line-height: normal;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
+    pointer-events: none;
+}
+
+.ace_folding-enabled > .ace_gutter-cell {
+    padding-right: 13px;
+}
+
+.ace_fold-widget {
+    box-sizing: border-box;
+
+    margin: 0 -12px 0 1px;
+    display: none;
+    width: 11px;
+    vertical-align: top;
+
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAANElEQVR42mWKsQ0AMAzC8ixLlrzQjzmBiEjp0A6WwBCSPgKAXoLkqSot7nN3yMwR7pZ32NzpKkVoDBUxKAAAAABJRU5ErkJggg==");
+    background-repeat: no-repeat;
+    background-position: center;
+
+    border-radius: 3px;
+    
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.ace_folding-enabled .ace_fold-widget {
+    display: inline-block;   
+}
+
+.ace_fold-widget.ace_end {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAANElEQVR42m3HwQkAMAhD0YzsRchFKI7sAikeWkrxwScEB0nh5e7KTPWimZki4tYfVbX+MNl4pyZXejUO1QAAAABJRU5ErkJggg==");
+}
+
+.ace_fold-widget.ace_closed {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAGCAYAAAAG5SQMAAAAOUlEQVR42jXKwQkAMAgDwKwqKD4EwQ26sSOkVWjgIIHAzPiCgaqiqnJHZnKICBERHN194O5b9vbLuAVRL+l0YWnZAAAAAElFTkSuQmCCXA==");
+}
+
+.ace_fold-widget:hover {
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+.ace_fold-widget:active {
+    border: 1px solid rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+/**
+ * Dark version for fold widgets
+ */
+.ace_dark .ace_fold-widget {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHklEQVQIW2P4//8/AzoGEQ7oGCaLLAhWiSwB146BAQCSTPYocqT0AAAAAElFTkSuQmCC");
+}
+.ace_dark .ace_fold-widget.ace_end {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAH0lEQVQIW2P4//8/AxQ7wNjIAjDMgC4AxjCVKBirIAAF0kz2rlhxpAAAAABJRU5ErkJggg==");
+}
+.ace_dark .ace_fold-widget.ace_closed {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAFCAYAAACAcVaiAAAAHElEQVQIW2P4//+/AxAzgDADlOOAznHAKgPWAwARji8UIDTfQQAAAABJRU5ErkJggg==");
+}
+.ace_dark .ace_fold-widget:hover {
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+.ace_dark .ace_fold-widget:active {
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.ace_inline_button {
+    border: 1px solid lightgray;
+    display: inline-block;
+    margin: -1px 8px;
+    padding: 0 5px;
+    pointer-events: auto;
+    cursor: pointer;
+}
+.ace_inline_button:hover {
+    border-color: gray;
+    background: rgba(200,200,200,0.2);
+    display: inline-block;
+    pointer-events: auto;
+}
+
+.ace_fold-widget.ace_invalid {
+    background-color: #FFB4B4;
+    border-color: #DE5555;
+}
+
+.ace_fade-fold-widgets .ace_fold-widget {
+    transition: opacity 0.4s ease 0.05s;
+    opacity: 0;
+}
+
+.ace_fade-fold-widgets:hover .ace_fold-widget {
+    transition: opacity 0.05s ease 0.05s;
+    opacity:1;
+}
+
+.ace_underline {
+    text-decoration: underline;
+}
+
+.ace_bold {
+    font-weight: bold;
+}
+
+.ace_nobold .ace_bold {
+    font-weight: normal;
+}
+
+.ace_italic {
+    font-style: italic;
+}
+
+
+.ace_error-marker {
+    background-color: rgba(255, 0, 0,0.2);
+    position: absolute;
+    z-index: 9;
+}
+
+.ace_highlight-marker {
+    background-color: rgba(255, 255, 0,0.2);
+    position: absolute;
+    z-index: 8;
+}
+
+.ace_mobile-menu {
+    position: absolute;
+    line-height: 1.5;
+    border-radius: 4px;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    background: white;
+    box-shadow: 1px 3px 2px grey;
+    border: 1px solid #dcdcdc;
+    color: black;
+}
+.ace_dark > .ace_mobile-menu {
+    background: #333;
+    color: #ccc;
+    box-shadow: 1px 3px 2px grey;
+    border: 1px solid #444;
+
+}
+.ace_mobile-button {
+    padding: 2px;
+    cursor: pointer;
+    overflow: hidden;
+}
+.ace_mobile-button:hover {
+    background-color: #eee;
+    opacity:1;
+}
+.ace_mobile-button:active {
+    background-color: #ddd;
+}
+
+.ace_placeholder {
+    font-family: arial;
+    transform: scale(0.9);
+    transform-origin: left;
+    white-space: pre;
+    opacity: 0.7;
+    margin: 0 10px;
+}
+/*# sourceURL=ace/css/ace_editor.css */</style><style id="ace_scrollbar.css">.ace_editor>.ace_sb-v div, .ace_editor>.ace_sb-h div{
+  position: absolute;
+  background: rgba(128, 128, 128, 0.6);
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  border: 1px solid #bbb;
+  border-radius: 2px;
+  z-index: 8;
+}
+.ace_editor>.ace_sb-v, .ace_editor>.ace_sb-h {
+  position: absolute;
+  z-index: 6;
+  background: none;
+  overflow: hidden!important;
+}
+.ace_editor>.ace_sb-v {
+  z-index: 6;
+  right: 0;
+  top: 0;
+  width: 12px;
+}
+.ace_editor>.ace_sb-v div {
+  z-index: 8;
+  right: 0;
+  width: 100%;
+}
+.ace_editor>.ace_sb-h {
+  bottom: 0;
+  left: 0;
+  height: 12px;
+}
+.ace_editor>.ace_sb-h div {
+  bottom: 0;
+  height: 100%;
+}
+.ace_editor>.ace_sb_grabbed {
+  z-index: 8;
+  background: #000;
+}
+/*# sourceURL=ace/css/ace_scrollbar.css */</style>
     <title>mandelbrot-julia</title>
-    <meta http-equiv='cache-control' content='no-cache'>
-    <meta http-equiv='expires' content='0'>
-    <meta http-equiv='pragma' content='no-cache'>
-    <meta charset="UTF-8" />
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <meta http-equiv="pragma" content="no-cache">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="dat.gui.js"></script>
+    <script src="dat.gui.js"></script><style type="text/css">.dg ul{list-style:none;margin:0;padding:0;width:100%;clear:both}.dg.ac{position:fixed;top:0;left:0;right:0;height:0;z-index:0}.dg:not(.ac) .main{overflow:hidden}.dg.main{-webkit-transition:opacity .1s linear;-o-transition:opacity .1s linear;-moz-transition:opacity .1s linear;transition:opacity .1s linear}.dg.main.taller-than-window{overflow-y:auto}.dg.main.taller-than-window .close-button{opacity:1;margin-top:-1px;border-top:1px solid #2c2c2c}.dg.main ul.closed .close-button{opacity:1 !important}.dg.main:hover .close-button,.dg.main .close-button.drag{opacity:1}.dg.main .close-button{-webkit-transition:opacity .1s linear;-o-transition:opacity .1s linear;-moz-transition:opacity .1s linear;transition:opacity .1s linear;border:0;line-height:19px;height:20px;cursor:pointer;text-align:center;background-color:#000}.dg.main .close-button.close-top{position:relative}.dg.main .close-button.close-bottom{position:absolute}.dg.main .close-button:hover{background-color:#111}.dg.a{float:right;margin-right:15px;overflow-y:visible}.dg.a.has-save>ul.close-top{margin-top:0}.dg.a.has-save>ul.close-bottom{margin-top:27px}.dg.a.has-save>ul.closed{margin-top:0}.dg.a .save-row{top:0;z-index:1002}.dg.a .save-row.close-top{position:relative}.dg.a .save-row.close-bottom{position:fixed}.dg li{-webkit-transition:height .1s ease-out;-o-transition:height .1s ease-out;-moz-transition:height .1s ease-out;transition:height .1s ease-out;-webkit-transition:overflow .1s linear;-o-transition:overflow .1s linear;-moz-transition:overflow .1s linear;transition:overflow .1s linear}.dg li:not(.folder){cursor:auto;height:27px;line-height:27px;padding:0 4px 0 5px}.dg li.folder{padding:0;border-left:4px solid rgba(0,0,0,0)}.dg li.title{cursor:pointer;margin-left:-4px}.dg .closed li:not(.title),.dg .closed ul li,.dg .closed ul li>*{height:0;overflow:hidden;border:0}.dg .cr{clear:both;padding-left:3px;height:27px;overflow:hidden}.dg .property-name{cursor:default;float:left;clear:left;width:40%;overflow:hidden;text-overflow:ellipsis}.dg .c{float:left;width:60%;position:relative}.dg .c input[type=text]{border:0;margin-top:4px;padding:3px;width:100%;float:right}.dg .has-slider input[type=text]{width:30%;margin-left:0}.dg .slider{float:left;width:66%;margin-left:-5px;margin-right:0;height:19px;margin-top:4px}.dg .slider-fg{height:100%}.dg .c input[type=checkbox]{margin-top:7px}.dg .c select{margin-top:5px}.dg .cr.function,.dg .cr.function .property-name,.dg .cr.function *,.dg .cr.boolean,.dg .cr.boolean *{cursor:pointer}.dg .cr.color{overflow:visible}.dg .selector{display:none;position:absolute;margin-left:-9px;margin-top:23px;z-index:10}.dg .c:hover .selector,.dg .selector.drag{display:block}.dg li.save-row{padding:0}.dg li.save-row .button{display:inline-block;padding:0px 6px}.dg.dialogue{background-color:#222;width:460px;padding:15px;font-size:13px;line-height:15px}#dg-new-constructor{padding:10px;color:#222;font-family:Monaco, monospace;font-size:10px;border:0;resize:none;box-shadow:inset 1px 1px 1px #888;word-wrap:break-word;margin:12px 0;display:block;width:440px;overflow-y:scroll;height:100px;position:relative}#dg-local-explain{display:none;font-size:11px;line-height:17px;border-radius:3px;background-color:#333;padding:8px;margin-top:10px}#dg-local-explain code{font-size:10px}#dat-gui-save-locally{display:none}.dg{color:#eee;font:11px 'Lucida Grande', sans-serif;text-shadow:0 -1px 0 #111}.dg.main::-webkit-scrollbar{width:5px;background:#1a1a1a}.dg.main::-webkit-scrollbar-corner{height:0;display:none}.dg.main::-webkit-scrollbar-thumb{border-radius:5px;background:#676767}.dg li:not(.folder){background:#1a1a1a;border-bottom:1px solid #2c2c2c}.dg li.save-row{line-height:25px;background:#dad5cb;border:0}.dg li.save-row select{margin-left:5px;width:108px}.dg li.save-row .button{margin-left:5px;margin-top:1px;border-radius:2px;font-size:9px;line-height:7px;padding:4px 4px 5px 4px;background:#c5bdad;color:#fff;text-shadow:0 1px 0 #b0a58f;box-shadow:0 -1px 0 #b0a58f;cursor:pointer}.dg li.save-row .button.gears{background:#c5bdad url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAANCAYAAAB/9ZQ7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQJJREFUeNpiYKAU/P//PwGIC/ApCABiBSAW+I8AClAcgKxQ4T9hoMAEUrxx2QSGN6+egDX+/vWT4e7N82AMYoPAx/evwWoYoSYbACX2s7KxCxzcsezDh3evFoDEBYTEEqycggWAzA9AuUSQQgeYPa9fPv6/YWm/Acx5IPb7ty/fw+QZblw67vDs8R0YHyQhgObx+yAJkBqmG5dPPDh1aPOGR/eugW0G4vlIoTIfyFcA+QekhhHJhPdQxbiAIguMBTQZrPD7108M6roWYDFQiIAAv6Aow/1bFwXgis+f2LUAynwoIaNcz8XNx3Dl7MEJUDGQpx9gtQ8YCueB+D26OECAAQDadt7e46D42QAAAABJRU5ErkJggg==) 2px 1px no-repeat;height:7px;width:8px}.dg li.save-row .button:hover{background-color:#bab19e;box-shadow:0 -1px 0 #b0a58f}.dg li.folder{border-bottom:0}.dg li.title{padding-left:16px;background:#000 url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.2)}.dg .closed li.title{background-image:url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlGIWqMCbWAEAOw==)}.dg .cr.boolean{border-left:3px solid #806787}.dg .cr.color{border-left:3px solid}.dg .cr.function{border-left:3px solid #e61d5f}.dg .cr.number{border-left:3px solid #2FA1D6}.dg .cr.number input[type=text]{color:#2FA1D6}.dg .cr.string{border-left:3px solid #1ed36f}.dg .cr.string input[type=text]{color:#1ed36f}.dg .cr.function:hover,.dg .cr.boolean:hover{background:#111}.dg .c input[type=text]{background:#303030;outline:none}.dg .c input[type=text]:hover{background:#3c3c3c}.dg .c input[type=text]:focus{background:#494949;color:#fff}.dg .c .slider{background:#303030;cursor:ew-resize}.dg .c .slider-fg{background:#2FA1D6;max-width:100%}.dg .c .slider:hover{background:#3c3c3c}.dg .c .slider:hover .slider-fg{background:#44abda}
+</style><style type="text/css">.dg ul{list-style:none;margin:0;padding:0;width:100%;clear:both}.dg.ac{position:fixed;top:0;left:0;right:0;height:0;z-index:0}.dg:not(.ac) .main{overflow:hidden}.dg.main{-webkit-transition:opacity .1s linear;-o-transition:opacity .1s linear;-moz-transition:opacity .1s linear;transition:opacity .1s linear}.dg.main.taller-than-window{overflow-y:auto}.dg.main.taller-than-window .close-button{opacity:1;margin-top:-1px;border-top:1px solid #2c2c2c}.dg.main ul.closed .close-button{opacity:1 !important}.dg.main:hover .close-button,.dg.main .close-button.drag{opacity:1}.dg.main .close-button{-webkit-transition:opacity .1s linear;-o-transition:opacity .1s linear;-moz-transition:opacity .1s linear;transition:opacity .1s linear;border:0;line-height:19px;height:20px;cursor:pointer;text-align:center;background-color:#000}.dg.main .close-button.close-top{position:relative}.dg.main .close-button.close-bottom{position:absolute}.dg.main .close-button:hover{background-color:#111}.dg.a{float:right;margin-right:15px;overflow-y:visible}.dg.a.has-save>ul.close-top{margin-top:0}.dg.a.has-save>ul.close-bottom{margin-top:27px}.dg.a.has-save>ul.closed{margin-top:0}.dg.a .save-row{top:0;z-index:1002}.dg.a .save-row.close-top{position:relative}.dg.a .save-row.close-bottom{position:fixed}.dg li{-webkit-transition:height .1s ease-out;-o-transition:height .1s ease-out;-moz-transition:height .1s ease-out;transition:height .1s ease-out;-webkit-transition:overflow .1s linear;-o-transition:overflow .1s linear;-moz-transition:overflow .1s linear;transition:overflow .1s linear}.dg li:not(.folder){cursor:auto;height:27px;line-height:27px;padding:0 4px 0 5px}.dg li.folder{padding:0;border-left:4px solid rgba(0,0,0,0)}.dg li.title{cursor:pointer;margin-left:-4px}.dg .closed li:not(.title),.dg .closed ul li,.dg .closed ul li>*{height:0;overflow:hidden;border:0}.dg .cr{clear:both;padding-left:3px;height:27px;overflow:hidden}.dg .property-name{cursor:default;float:left;clear:left;width:40%;overflow:hidden;text-overflow:ellipsis}.dg .c{float:left;width:60%;position:relative}.dg .c input[type=text]{border:0;margin-top:4px;padding:3px;width:100%;float:right}.dg .has-slider input[type=text]{width:30%;margin-left:0}.dg .slider{float:left;width:66%;margin-left:-5px;margin-right:0;height:19px;margin-top:4px}.dg .slider-fg{height:100%}.dg .c input[type=checkbox]{margin-top:7px}.dg .c select{margin-top:5px}.dg .cr.function,.dg .cr.function .property-name,.dg .cr.function *,.dg .cr.boolean,.dg .cr.boolean *{cursor:pointer}.dg .cr.color{overflow:visible}.dg .selector{display:none;position:absolute;margin-left:-9px;margin-top:23px;z-index:10}.dg .c:hover .selector,.dg .selector.drag{display:block}.dg li.save-row{padding:0}.dg li.save-row .button{display:inline-block;padding:0px 6px}.dg.dialogue{background-color:#222;width:460px;padding:15px;font-size:13px;line-height:15px}#dg-new-constructor{padding:10px;color:#222;font-family:Monaco, monospace;font-size:10px;border:0;resize:none;box-shadow:inset 1px 1px 1px #888;word-wrap:break-word;margin:12px 0;display:block;width:440px;overflow-y:scroll;height:100px;position:relative}#dg-local-explain{display:none;font-size:11px;line-height:17px;border-radius:3px;background-color:#333;padding:8px;margin-top:10px}#dg-local-explain code{font-size:10px}#dat-gui-save-locally{display:none}.dg{color:#eee;font:11px 'Lucida Grande', sans-serif;text-shadow:0 -1px 0 #111}.dg.main::-webkit-scrollbar{width:5px;background:#1a1a1a}.dg.main::-webkit-scrollbar-corner{height:0;display:none}.dg.main::-webkit-scrollbar-thumb{border-radius:5px;background:#676767}.dg li:not(.folder){background:#1a1a1a;border-bottom:1px solid #2c2c2c}.dg li.save-row{line-height:25px;background:#dad5cb;border:0}.dg li.save-row select{margin-left:5px;width:108px}.dg li.save-row .button{margin-left:5px;margin-top:1px;border-radius:2px;font-size:9px;line-height:7px;padding:4px 4px 5px 4px;background:#c5bdad;color:#fff;text-shadow:0 1px 0 #b0a58f;box-shadow:0 -1px 0 #b0a58f;cursor:pointer}.dg li.save-row .button.gears{background:#c5bdad url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAANCAYAAAB/9ZQ7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQJJREFUeNpiYKAU/P//PwGIC/ApCABiBSAW+I8AClAcgKxQ4T9hoMAEUrxx2QSGN6+egDX+/vWT4e7N82AMYoPAx/evwWoYoSYbACX2s7KxCxzcsezDh3evFoDEBYTEEqycggWAzA9AuUSQQgeYPa9fPv6/YWm/Acx5IPb7ty/fw+QZblw67vDs8R0YHyQhgObx+yAJkBqmG5dPPDh1aPOGR/eugW0G4vlIoTIfyFcA+QekhhHJhPdQxbiAIguMBTQZrPD7108M6roWYDFQiIAAv6Aow/1bFwXgis+f2LUAynwoIaNcz8XNx3Dl7MEJUDGQpx9gtQ8YCueB+D26OECAAQDadt7e46D42QAAAABJRU5ErkJggg==) 2px 1px no-repeat;height:7px;width:8px}.dg li.save-row .button:hover{background-color:#bab19e;box-shadow:0 -1px 0 #b0a58f}.dg li.folder{border-bottom:0}.dg li.title{padding-left:16px;background:#000 url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.2)}.dg .closed li.title{background-image:url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlGIWqMCbWAEAOw==)}.dg .cr.boolean{border-left:3px solid #806787}.dg .cr.color{border-left:3px solid}.dg .cr.function{border-left:3px solid #e61d5f}.dg .cr.number{border-left:3px solid #2FA1D6}.dg .cr.number input[type=text]{color:#2FA1D6}.dg .cr.string{border-left:3px solid #1ed36f}.dg .cr.string input[type=text]{color:#1ed36f}.dg .cr.function:hover,.dg .cr.boolean:hover{background:#111}.dg .c input[type=text]{background:#303030;outline:none}.dg .c input[type=text]:hover{background:#3c3c3c}.dg .c input[type=text]:focus{background:#494949;color:#fff}.dg .c .slider{background:#303030;cursor:ew-resize}.dg .c .slider-fg{background:#2FA1D6;max-width:100%}.dg .c .slider:hover{background:#3c3c3c}.dg .c .slider:hover .slider-fg{background:#44abda}
+</style>
     <script src="jquery.js"></script>
     <script src="sprintf.js"></script>
     <script src="three.js"></script>
@@ -17,8 +827,8 @@
     <script src="CsoundAudioNode.js"></script>
     <script src="csound_loader.js"></script>
     <script src="CsoundAC.js"></script>
-    <script src='Silencio.js'></script>
-    <script src='ChordSpace.js'></script>
+    <script src="Silencio.js"></script>
+    <script src="ChordSpace.js"></script>
     <script src="TrackballControls.js"></script>
     <script src="strudel_embed.js"></script>
     <link rel="stylesheet" href="w3.css">
@@ -28,12 +838,11 @@
 </head>
 
 <body class="w3-medium w3-text-sand cloud5-body">
-    <textarea id="csd" style="display:none;">
-        <CsoundSynthesizer>
-          <CsOptions>
+    <textarea id="csd" style="display:none;">        &lt;CsoundSynthesizer&gt;
+          &lt;CsOptions&gt;
           -d -m162 -odac
-          </CsOptions>
-          <CsInstruments>
+          &lt;/CsOptions&gt;
+          &lt;CsInstruments&gt;
           sr = 48000
           ksmps = 128
           nchnls = 2
@@ -670,7 +1479,7 @@
           // Bug?
           aenvelope transeg 1.0, 20.0, -10.0, 0.05
           ///aenvelope transegr 1.0, 20.0, -10.0, 0.05
-          ip3 = 3;;; (p3 < 3.0 ? p3 : 3.0)
+          ip3 = 3;;; (p3 &lt; 3.0 ? p3 : 3.0)
           ; parameters
           ; p4 overall amplitude scaling factor
           ip4 init i_amplitude
@@ -678,9 +1487,9 @@
           ip5 init iHz
           ; p6 percent vibrato depth, recommended values in range [-1., +1.]
           ip6 init 0.5
-          ; 0.0 -> no vibrato
-          ; +1. -> 1% vibrato depth, where vibrato rate increases slightly
-          ; -1. -> 1% vibrato depth, where vibrato rate decreases slightly
+          ; 0.0 -&gt; no vibrato
+          ; +1. -&gt; 1% vibrato depth, where vibrato rate increases slightly
+          ; -1. -&gt; 1% vibrato depth, where vibrato rate decreases slightly
           ; p7 attack time in seconds
           ; recommended value: .12 for slurred notes, .06 for tongued notes
           ; (.03 for short notes)
@@ -689,8 +1498,8 @@
           ; recommended value: .1 (.05 for short notes)
           ip8 init .08
           ; p9 overall brightness / filter cutoff factor
-          ; 1 -> least bright / minimum filter cutoff frequency (40 Hz)
-          ; 9 -> brightest / maximum filter cutoff frequency (10,240Hz)
+          ; 1 -&gt; least bright / minimum filter cutoff frequency (40 Hz)
+          ; 9 -&gt; brightest / maximum filter cutoff frequency (10,240Hz)
           ip9 init 5
           ; initial variables
           iampscale = ip4 ; overall amplitude scaling factor
@@ -701,11 +1510,11 @@
           idecay = ip8 * (1.1 - .2*gi_ZakianFLute_seed) ; decay time with up to +-10% random deviation
           gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
           ifiltcut tablei ip9, gi_ZakianFLute_f2 ; lowpass filter cutoff frequency
-          iattack = (iattack < 6/kr ? 6/kr : iattack) ; minimal attack length
-          idecay = (idecay < 6/kr ? 6/kr : idecay) ; minimal decay length
+          iattack = (iattack &lt; 6/kr ? 6/kr : iattack) ; minimal attack length
+          idecay = (idecay &lt; 6/kr ? 6/kr : idecay) ; minimal decay length
           isustain = i_duration - iattack - idecay
-          ;;;p3 = (isustain < 5/kr ? iattack+idecay+5/kr : i_duration) ; minimal sustain length
-          isustain = (isustain < 5/kr ? 5/kr : isustain)
+          ;;;p3 = (isustain &lt; 5/kr ? iattack+idecay+5/kr : i_duration) ; minimal sustain length
+          isustain = (isustain &lt; 5/kr ? 5/kr : isustain)
           iatt = iattack/6
           isus = isustain/4
           idec = idecay/6
@@ -722,7 +1531,7 @@
           gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
           ivibr2 = gi_ZakianFLute_seed
           gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
-          if ip6 < 0 goto vibrato1
+          if ip6 &lt; 0 goto vibrato1
           kvibrate linseg 2.5+ivibr1, isustain, 4.5+ivibr2 ; if p6 positive vibrato gets faster
           goto vibrato2
           vibrato1:
@@ -744,9 +1553,9 @@
           gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
           kfreqr linseg ifdev1, iattack, ifdev2, isustain, ifdev3, idecay, ifdev4
           kfreq = kHz * (1 + kfreqr) + kvib
-          if ifreq < 427.28 goto range1 ; (cpspch(8.08) + cpspch(8.09))/2
-          if ifreq < 608.22 goto range2 ; (cpspch(9.02) + cpspch(9.03))/2
-          if ifreq < 1013.7 goto range3 ; (cpspch(9.11) + cpspch(10.00))/2
+          if ifreq &lt; 427.28 goto range1 ; (cpspch(8.08) + cpspch(8.09))/2
+          if ifreq &lt; 608.22 goto range2 ; (cpspch(9.02) + cpspch(9.03))/2
+          if ifreq &lt; 1013.7 goto range3 ; (cpspch(9.11) + cpspch(10.00))/2
           goto range4
           ; wavetable amplitude envelopes
           range1: ; for low range tones
@@ -1196,9 +2005,9 @@
         ioct = octmidinn(i_midi_key)
         kvib poscil 1/120, ipch/50, gi_Kung4_sine
         ; The instrument envelope should observe limits.
-        if (i_duration > 10) then
+        if (i_duration &gt; 10) then
         i_instrument_attack = 10 / 3
-        elseif (i_duration < 1) then
+        elseif (i_duration &lt; 1) then
         i_instrument_attack = 1 / 3
         else
         i_instrument_attack = i_duration / 3
@@ -1207,7 +2016,7 @@
         ;i_instrument_duration -= (2 * i_instrument_attack)
         aadsr linsegr 0, i_instrument_attack, 1.0, i_duration, 1.0, i_instrument_attack, 0 ;ADSR envelope
         amodi linseg 0, i_instrument_attack, 5, i_duration, 3, i_instrument_attack, 0 ;ADSR envelope for I
-        amodr linseg gi_Kung4_modulation_ratio_start, i_duration, gi_Kung4_modulation_ratio_end ;r moves from p6->p7 in p3 sec.
+        amodr linseg gi_Kung4_modulation_ratio_start, i_duration, gi_Kung4_modulation_ratio_end ;r moves from p6-&gt;p7 in p3 sec.
         a1 = amodi*(amodr-1/amodr)/2
         a1ndx = abs(a1*2/20) ;a1*2 is normalized from 0-1.
         a2 = amodi*(amodr+1/amodr)/2
@@ -1777,7 +2586,7 @@
           ; We want something that will play on my phone.
           i_amplitude_adjustment = ampdbfs(-3) / 32767
           i_filename_length strlen gS_MasterOutput_filename
-          ;if i_filename_length > 0 then
+          ;if i_filename_length &gt; 0 then
           ;prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
           ;fout gS_MasterOutput_filename, 18, a_out_left * i_amplitude_adjustment, a_out_right * i_amplitude_adjustment
           ;endif
@@ -1789,35 +2598,65 @@
           ;;; printks "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d l%9.4f r%9.4f\n", 1, nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1), gk_MasterOutput_output_level_left, gk_MasterOutput_output_level_right
           endin
           
-          </CsInstruments>
-          <CsScore>
+          &lt;/CsInstruments&gt;
+          &lt;CsScore&gt;
           f 0 [ 7 * 60 + 45]
-          </CsScore>
-        </CsoundSynthesizer>
+          &lt;/CsScore&gt;
+        &lt;/CsoundSynthesizer&gt;
     </textarea>
-    <cloud5-piece></cloud5-piece>
-    <mandelbrot-julia id="mandelbrot_julia" class="cloud5-overlay" data-cloud5-label="Mandelbrot/Julia"
-        data-cloud5-default-visible="true">
+    <cloud5-piece>
+    <div class="w3-bar cloud5-menu" id="main_menu">
+      <ul class="menu" id="main_menu_list">
+        <li id="menu_item_play" title="Play piece on audio output" class="w3-btn w3-hover-text-light-green">Play</li>
+
+        <li id="menu_item_render" title="Render piece to soundfile then play on audio output" class="w3-btn w3-hover-text-light-green">Render</li>
+
+        <li id="menu_item_stop" title="Stop performance" class="w3-btn w3-hover-text-light-green">Stop</li>
+
+        <li id="menu_item_fullscreen" class="w3-btn w3-hover-text-light-green">Fullscreen</li>
+
+        <!-- Built-in overlay items (if their overlays exist) will reuse these.
+             Generic overlays will get new <li> items injected before About. -->
+        <li id="menu_item_strudel" class="w3-btn w3-hover-text-light-green" style="display:none;">Strudel</li>
+
+        <li id="menu_item_piano_roll" title="Show/hide piano roll score" class="w3-btn w3-hover-text-light-green" style="display: inline;" data-cloud5-overlay="true">Score</li>
+
+        <li id="menu_item_log" title="Show/hide message log" class="w3-btn w3-hover-text-light-green" data-cloud5-overlay="true" style="display: inline;">Log</li>
+
+        <li id="menu_item_snapshot" title="Create a new version snapshot (HTML + state) in a chosen directory" class="w3-btn w3-hover-text-light-green" style="display: inline;">Snapshot...</li>
+
+        <li class="w3-btn w3-hover-text-light-green" data-cloud5-overlay="true" style="display: inline;">Mandelbrot/Julia</li><li id="menu_item_about" title="Show/hide information about this piece" class="w3-btn w3-hover-text-light-green" data-cloud5-overlay="true" style="display: inline;">About mandelbrot-julia.html</li>
+
+        <li id="mini_console" class="w3-btn w3-text-green w3-hover-text-light-green"></li>
+
+        <li id="vu_meter_left" class="w3-btn w3-hover-text-light-green"></li>
+
+        <li id="vu_meter_right" class="w3-btn w3-hover-text-light-green"></li>
+
+        <li id="menu_item_dat_gui" title="Show/hide performance controls; 'Save' copies all control parameters to system clipboard" class="w3-btn w3-left-align w3-hover-text-light-green w3-right"><div class="dg main has-save" style="width: 400px;"><div class="close-button close-top" style="width: 400px;">Controls</div><ul class="closed"><li class="save-row"><select><option value="Default">Default</option></select><span class="button gears">&nbsp;</span><span class="button save">Save</span><span class="button save-as">New</span><span class="button revert">Revert</span></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">Master</li><li class="cr number has-slider"><div><span class="property-name">gk_MasterOutput_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Iterations</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 28.5714%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Duration_factor</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 17.3654%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_ReverbSC_feedback</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 85%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_ReverbSC_wet</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_ReverbSC_delay_modulation</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 0.75%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_ReverbSC_frequency_cutoff</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 45%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">01 FMWaterBell</li><li class="cr number has-slider"><div><span class="property-name">gk_FMWaterBell_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gi_FMWaterBell_attack</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 2%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gi_FMWaterBell_release</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 10%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gi_FMWaterBell_exponent</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 75%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gi_FMWaterBell_sustain</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 100%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gi_FMWaterBell_sustain_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 0%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_FMWaterBell_crossfade</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_FMWaterBell_index</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 3.33333%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_FMWaterBell_vibrato_depth</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 0.5%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_FMWaterBell_vibrato_rate</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 60%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">02 Phaser</li><li class="cr number has-slider"><div><span class="property-name">gk_Phaser_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Phaser_ratio1</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 40%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Phaser_ratio2</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 60%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Phaser_index1</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 6.84411%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Phaser_index2</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 3.55565%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">03 Droner</li><li class="cr number has-slider"><div><span class="property-name">gk_Droner_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Droner_partial1</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 12.1056%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Droner_partial2</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 22.6287%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Droner_partial3</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 64.0633%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Droner_partial4</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 11.4479%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Droner_partial5</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 0%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">04 Sweeper</li><li class="cr number has-slider"><div><span class="property-name">gk_Sweeper_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Sweeper_britel</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 5.52872%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Sweeper_briteh</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 60.7748%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Sweeper_britels</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 8.81718%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Sweeper_britehs</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 18.6826%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">05 Buzzer</li><li class="cr number has-slider"><div><span class="property-name">gk_Buzzer_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Buzzer_harmonics</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 6.84411%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">06 Shiner</li><li class="cr number has-slider"><div><span class="property-name">gk_Shiner_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Shiner_attack</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 12.5%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Shiner_release</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 12.5%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">07 Blower</li><li class="cr number has-slider"><div><span class="property-name">gk_Blower_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Blower_attack</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 75%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Blower_release</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Blower_grainDensity</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 61.4325%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Blower_grainDuration</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 7.5018%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Blower_grainAmplitudeRange</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 29.8633%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Blower_grainFrequencyRange</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50.2518%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">08 Zakian Flute</li><li class="cr number has-slider"><div><span class="property-name">gk_ZakianFlute_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">09 Bower</li><li class="cr number has-slider"><div><span class="property-name">gk_Bower_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Bower_pressure</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 94.3171%;"></div></div></div></div></li><li class="cr number has-slider"><div><span class="property-name">gk_Bower_rat</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 90.371%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">10 Filtered Sines</li><li class="cr number has-slider"><div><span class="property-name">gk_FilteredSines_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">11 Guitar</li><li class="cr number has-slider"><div><span class="property-name">gk_Guitar_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">12 Kung4</li><li class="cr number has-slider"><div><span class="property-name">gk_Kung4_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">13 Plucked</li><li class="cr number has-slider"><div><span class="property-name">gk_Plucked_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">14 SeidelHarmonicOsc</li><li class="cr number has-slider"><div><span class="property-name">gk_SeidelHarmonicOsc_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">15 TubularBell</li><li class="cr number has-slider"><div><span class="property-name">gk_TubularBell_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">16 YiString</li><li class="cr number has-slider"><div><span class="property-name">gk_YiString_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li><li class="folder"><div class="dg"><ul class="closed"><li class="title">17 Xing</li><li class="cr number has-slider"><div><span class="property-name">gk_Xing_level</span><div class="c"><div><input type="text"></div><div class="slider"><div class="slider-fg" style="width: 50%;"></div></div></div></div></li></ul></div></li></ul></div></li>
+      </ul>
+    </div></cloud5-piece>
+    <mandelbrot-julia id="mandelbrot_julia" class="cloud5-overlay" data-cloud5-label="Mandelbrot/Julia" data-cloud5-default-visible="true" style="display: block !important; position: fixed; left: 0px; right: 0px; top: 89.5px; height: calc(100% - 89.5px); width: 100vw; z-index: 1300;">
     </mandelbrot-julia>
-    <cloud5-piano-roll id="piano_roll" class="cloud5-overlay" data-cloud5-label="Piano Roll">
+    <cloud5-piano-roll id="piano_roll" class="cloud5-overlay" data-cloud5-label="Piano Roll" style="display: none !important;">
+     <canvas id="display" class="cloud5-score-canvas">
+    </canvas>
     </cloud5-piano-roll>
-    <cloud5-log></cloud5-log>
-    <cloud5-about style="font-size:1em;">
+    <cloud5-log style="display: none !important;"><div id="console_view" class="cloud5-log-editor no-scroll ace_editor ace_hidpi ace-tm"><textarea class="ace_text-input" wrap="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="opacity: 0; font-size: 1px;"></textarea><div class="ace_gutter" aria-hidden="true"><div class="ace_layer ace_gutter-layer ace_folding-enabled" style="height: 1e+06px;"></div></div><div class="ace_scroller" style="line-height: 0px;"><div class="ace_content"><div class="ace_layer ace_print-margin-layer"><div class="ace_print-margin" style="left: 4px; visibility: hidden;"></div></div><div class="ace_layer ace_marker-layer"></div><div class="ace_layer ace_text-layer" style="height: 1e+06px; margin: 0px 4px;"></div><div class="ace_layer ace_marker-layer"></div><div class="ace_layer ace_cursor-layer ace_hidden-cursors"><div class="ace_cursor"></div></div></div></div><div class="ace_scrollbar ace_scrollbar-v" style="display: none; width: 20px;"><div class="ace_scrollbar-inner" style="width: 20px;">&nbsp;</div></div><div class="ace_scrollbar ace_scrollbar-h" style="display: none; height: 20px;"><div class="ace_scrollbar-inner" style="height: 20px;">&nbsp;</div></div><div style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; font: inherit; overflow: hidden;"><div style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; font: inherit; overflow: visible;"></div><div style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; font: inherit; overflow: visible;">XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div></div></div></cloud5-log>
+    <cloud5-about style="font-size: 1em; display: none !important;">
         <div>
             <h1>mandelbrot-julia</h1>
             <h2>Michael Gogins<br>
                 November 2025</h2>
 
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img
-                    alt="Creative Commons License" style="border-width:0;height:30px;width:auto;" src="cc-by-nc-sa.png" /></a>
-            <p>This work is licensed under a <a rel="license"
-                    href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;height:30px;width:auto;" src="cc-by-nc-sa.png"></a>
+            <p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons
                     Attribution-NonCommercial-ShareAlike 3.0 Unported License.</a>
 
-            <p>This is an online piece of electroacoustic music, rendered in your Web
+            </p><p>This is an online piece of electroacoustic music, rendered in your Web
                 browser using high-resolution audio. 
                 
-            <p>This piece demonstrates "parametric composition,"
+            </p><p>This piece demonstrates "parametric composition,"
                 the art of composing by interactively exploring the parametric map of some mathematical 
                 system. In this case, the system is the iteration of complex quadratic
                 polynomials, which generate the famous Mandelbrot and Julia sets. Each point in the
@@ -1831,7 +2670,7 @@
                 orch (<b>Play</b> / <b>Stop</b>), or via a MIDI loopback interface 
                 (<b>Play MIDI</b> / <b>Stop MIDI</b>) to an external MIDI synthesizer.
 
-            <p>The selected region of the Julia set is mapped to musical notes as follows: 
+            </p><p>The selected region of the Julia set is mapped to musical notes as follows: 
                 the y coordinate of each point in the region is mapped to pitch, and the x coordinate 
                 is mapped to time. The escape time of the point is mapped to velocity (loudness). Points 
                 that do not escape, or whose escape intensity falls below a threshold, are not rendered as 
@@ -1840,7 +2679,7 @@
                 the note at the next time step either does not play or the instrument changes, in which 
                 case a new note begins.
 
-            <p>Before playback, tonality is applied by computing a velocity-weighted average pitch per 
+            </p><p>Before playback, tonality is applied by computing a velocity-weighted average pitch per 
                 time step and using it to define a tonal center. Notes are then quantized to a scale 
                 centered on that tonal reference, producing a pitch-class center, a registral center, 
                 and an implied harmonic gravity. Near beat boundaries, implicitly defined by tempo, the 
@@ -1848,12 +2687,12 @@
                 tonic- or dominant-related pitches. Voice leading is applied by favoring small intervals 
                 of motion within each instrument.
 
-            <p>Finally, notes are thinned according to the density parameter and the maximum allowed 
-                number of simultaneous notes per time step, favoring higher-velocity notes.<p>
+            </p><p>Finally, notes are thinned according to the density parameter and the maximum allowed 
+                number of simultaneous notes per time step, favoring higher-velocity notes.</p><p>
 
-            <p>Additional parameters controlling score generaton are:
+            </p><p>Additional parameters controlling score generaton are:
  
-<dl>
+</p><dl>
 
   <dt>Exponent</dt>
   <dd>
@@ -1933,8 +2772,7 @@
 </dl>
 
 
-            <p>The notes are played by a Csound orchestra that is embedded in this Web page using my <a
-                    href="https://github.com/gogins/csound-wasm">WebAssembly build of Csound</a>. This in turn includes
+            <p>The notes are played by a Csound orchestra that is embedded in this Web page using my <a href="https://github.com/gogins/csound-wasm">WebAssembly build of Csound</a>. This in turn includes
                 my
                 <a href="https://github.com/gogins/csound-ac">CsoundAC</a> library for algorithmic composition, used in
                 this
@@ -1942,78 +2780,70 @@
                 that
                 are applied to the generated notes.
 
-            <p>The viewer may exercise a certain amount of control over the Csound orchestra by opening the
+            </p><p>The viewer may exercise a certain amount of control over the Csound orchestra by opening the
                 <i>Controls</i>. This allows the user to adjust loudness, reverberation, and other parameters of 
                 the Csound instruments.
 
-            <p>When the user clicks on the <i>Record</i> button, the "fout" opcode is used to record the live audio
+            </p><p>When the user clicks on the <i>Record</i> button, the "fout" opcode is used to record the live audio
                 to memory in the browser. When the user clicks on <i>Pause</i>, the recorded
                 audio will automatically be downloaded to the user's downloads directory. Such recording may be
                 restarted
                 and paused again any number of times. This can be used in place of an audio loopback interface to make
                 a soundfile from a performance.
 
-            <p>This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+            </p><p>This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
                 License
                 (https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)
 
-            <p>Feel free to use this piece as a template for creating new pieces of this type... as long as it doesn't
+            </p><p>Feel free to use this piece as a template for creating new pieces of this type... as long as it doesn't
                 sound
                 too much like this one!
 
-            <p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a
-                    href="https://github.com/gogins/cloud-music/issues">cloud-music issues</a>.
+            </p><p>Please report any problems you have playing this piece, or any ideas for enhancements, at <a href="https://github.com/gogins/cloud-music/issues">cloud-music issues</a>.
 
-            <ul>
+            </p><ul>
                 <li>To view the source code of this piece, use your browser menu to view the page source.
-                <li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer
+                </li><li>To inspect or debug the code of this piece as it runs, use your browser menu to open the developer
                     tools.
-            </ul>
+            </li></ul>
 
             <h2 style="font-size: 13px;">Credits</h2>
 
-            <p>My code in CsoundAC for working with chords, scales, and voice-leading implements basic ideas from <a
-                    href="http://dmitri.tymoczko.com/">Dmitri Tymoczko's work in music theory</a>.
+            <p>My code in CsoundAC for working with chords, scales, and voice-leading implements basic ideas from <a href="http://dmitri.tymoczko.com/">Dmitri Tymoczko's work in music theory</a>.
 
-            <p>Csound instruments are adapted from <a href="https://kunstmusik.com/">Steven Yi</a> (YiString and
+            </p><p>Csound instruments are adapted from <a href="https://kunstmusik.com/">Steven Yi</a> (YiString and
                 FMWaterBell), Joseph T. Kung (Kung4), <a href="http://www.jlpublishing.com/">Lee Zakian</a>
                 (ZakianFlute), and others.
 
-            <p>
+            </p><p>
 
                 <a href="http://michaelgogins.tumblr.com">
-                    <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-                    <svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="36" height="36"
-                        viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
+                    
+                    <svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="36" height="36" viewBox="0 0 256 256" enable-background="new 0 0 256 256" xml:space="preserve">
                         <g>
                             <g>
                                 <g>
-                                    <rect x="0.24" y="0.167" fill="#314358" width="255.52" height="256" />
+                                    <rect x="0.24" y="0.167" fill="#314358" width="255.52" height="256"></rect>
                                 </g>
                             </g>
                             <g>
-                                <path fill="#FFFFFF"
-                                    d="M168.08,170.918c-2.969,1.416-8.647,2.648-12.881,2.754c-12.783,0.342-15.264-8.979-15.367-15.736v-49.705
+                                <path fill="#FFFFFF" d="M168.08,170.918c-2.969,1.416-8.647,2.648-12.881,2.754c-12.783,0.342-15.264-8.979-15.367-15.736v-49.705
             h32.065V84.055h-31.954V43.382c0,0-23.008,0-23.383,0c-0.385,0-1.057,0.337-1.152,1.192c-1.368,12.448-7.192,34.296-31.416,43.032
-            v20.624h16.16v52.167c0,17.863,13.176,43.24,47.959,42.641c11.736-0.201,24.77-5.113,27.648-9.354L168.08,170.918" />
+            v20.624h16.16v52.167c0,17.863,13.176,43.24,47.959,42.641c11.736-0.201,24.77-5.113,27.648-9.354L168.08,170.918"></path>
                             </g>
                         </g>
                     </svg>
                 </a>
 
                 <a href="https://github.com/gogins">
-                    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                    <svg width="36" height="36" viewBox="0 0 256 250" version="1.1" xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+                    <!--?xml version="1.0" encoding="UTF-8" standalone="no"?-->
+                    <svg width="36" height="36" viewBox="0 0 256 250" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
                         <g>
-                            <path
-                                d="M128.00106,0 C57.3172926,0 0,57.3066942 0,128.00106 C0,184.555281 36.6761997,232.535542 87.534937,249.460899 C93.9320223,250.645779 96.280588,246.684165 96.280588,243.303333 C96.280588,240.251045 96.1618878,230.167899 96.106777,219.472176 C60.4967585,227.215235 52.9826207,204.369712 52.9826207,204.369712 C47.1599584,189.574598 38.770408,185.640538 38.770408,185.640538 C27.1568785,177.696113 39.6458206,177.859325 39.6458206,177.859325 C52.4993419,178.762293 59.267365,191.04987 59.267365,191.04987 C70.6837675,210.618423 89.2115753,204.961093 96.5158685,201.690482 C97.6647155,193.417512 100.981959,187.77078 104.642583,184.574357 C76.211799,181.33766 46.324819,170.362144 46.324819,121.315702 C46.324819,107.340889 51.3250588,95.9223682 59.5132437,86.9583937 C58.1842268,83.7344152 53.8029229,70.715562 60.7532354,53.0843636 C60.7532354,53.0843636 71.5019501,49.6441813 95.9626412,66.2049595 C106.172967,63.368876 117.123047,61.9465949 128.00106,61.8978432 C138.879073,61.9465949 149.837632,63.368876 160.067033,66.2049595 C184.49805,49.6441813 195.231926,53.0843636 195.231926,53.0843636 C202.199197,70.715562 197.815773,83.7344152 196.486756,86.9583937 C204.694018,95.9223682 209.660343,107.340889 209.660343,121.315702 C209.660343,170.478725 179.716133,181.303747 151.213281,184.472614 C155.80443,188.444828 159.895342,196.234518 159.895342,208.176593 C159.895342,225.303317 159.746968,239.087361 159.746968,243.303333 C159.746968,246.709601 162.05102,250.70089 168.53925,249.443941 C219.370432,232.499507 256,184.536204 256,128.00106 C256,57.3066942 198.691187,0 128.00106,0 Z M47.9405593,182.340212 C47.6586465,182.976105 46.6581745,183.166873 45.7467277,182.730227 C44.8183235,182.312656 44.2968914,181.445722 44.5978808,180.80771 C44.8734344,180.152739 45.876026,179.97045 46.8023103,180.409216 C47.7328342,180.826786 48.2627451,181.702199 47.9405593,182.340212 Z M54.2367892,187.958254 C53.6263318,188.524199 52.4329723,188.261363 51.6232682,187.366874 C50.7860088,186.474504 50.6291553,185.281144 51.2480912,184.70672 C51.8776254,184.140775 53.0349512,184.405731 53.8743302,185.298101 C54.7115892,186.201069 54.8748019,187.38595 54.2367892,187.958254 Z M58.5562413,195.146347 C57.7719732,195.691096 56.4895886,195.180261 55.6968417,194.042013 C54.9125733,192.903764 54.9125733,191.538713 55.713799,190.991845 C56.5086651,190.444977 57.7719732,190.936735 58.5753181,192.066505 C59.3574669,193.22383 59.3574669,194.58888 58.5562413,195.146347 Z M65.8613592,203.471174 C65.1597571,204.244846 63.6654083,204.03712 62.5716717,202.981538 C61.4524999,201.94927 61.1409122,200.484596 61.8446341,199.710926 C62.5547146,198.935137 64.0575422,199.15346 65.1597571,200.200564 C66.2704506,201.230712 66.6095936,202.705984 65.8613592,203.471174 Z M75.3025151,206.281542 C74.9930474,207.284134 73.553809,207.739857 72.1039724,207.313809 C70.6562556,206.875043 69.7087748,205.700761 70.0012857,204.687571 C70.302275,203.678621 71.7478721,203.20382 73.2083069,203.659543 C74.6539041,204.09619 75.6035048,205.261994 75.3025151,206.281542 Z M86.046947,207.473627 C86.0829806,208.529209 84.8535871,209.404622 83.3316829,209.4237 C81.8013,209.457614 80.563428,208.603398 80.5464708,207.564772 C80.5464708,206.498591 81.7483088,205.631657 83.2786917,205.606221 C84.8005962,205.576546 86.046947,206.424403 86.046947,207.473627 Z M96.6021471,207.069023 C96.7844366,208.099171 95.7267341,209.156872 94.215428,209.438785 C92.7295577,209.710099 91.3539086,209.074206 91.1652603,208.052538 C90.9808515,206.996955 92.0576306,205.939253 93.5413813,205.66582 C95.054807,205.402984 96.4092596,206.021919 96.6021471,207.069023 Z"
-                                fill="#161614"></path>
+                            <path d="M128.00106,0 C57.3172926,0 0,57.3066942 0,128.00106 C0,184.555281 36.6761997,232.535542 87.534937,249.460899 C93.9320223,250.645779 96.280588,246.684165 96.280588,243.303333 C96.280588,240.251045 96.1618878,230.167899 96.106777,219.472176 C60.4967585,227.215235 52.9826207,204.369712 52.9826207,204.369712 C47.1599584,189.574598 38.770408,185.640538 38.770408,185.640538 C27.1568785,177.696113 39.6458206,177.859325 39.6458206,177.859325 C52.4993419,178.762293 59.267365,191.04987 59.267365,191.04987 C70.6837675,210.618423 89.2115753,204.961093 96.5158685,201.690482 C97.6647155,193.417512 100.981959,187.77078 104.642583,184.574357 C76.211799,181.33766 46.324819,170.362144 46.324819,121.315702 C46.324819,107.340889 51.3250588,95.9223682 59.5132437,86.9583937 C58.1842268,83.7344152 53.8029229,70.715562 60.7532354,53.0843636 C60.7532354,53.0843636 71.5019501,49.6441813 95.9626412,66.2049595 C106.172967,63.368876 117.123047,61.9465949 128.00106,61.8978432 C138.879073,61.9465949 149.837632,63.368876 160.067033,66.2049595 C184.49805,49.6441813 195.231926,53.0843636 195.231926,53.0843636 C202.199197,70.715562 197.815773,83.7344152 196.486756,86.9583937 C204.694018,95.9223682 209.660343,107.340889 209.660343,121.315702 C209.660343,170.478725 179.716133,181.303747 151.213281,184.472614 C155.80443,188.444828 159.895342,196.234518 159.895342,208.176593 C159.895342,225.303317 159.746968,239.087361 159.746968,243.303333 C159.746968,246.709601 162.05102,250.70089 168.53925,249.443941 C219.370432,232.499507 256,184.536204 256,128.00106 C256,57.3066942 198.691187,0 128.00106,0 Z M47.9405593,182.340212 C47.6586465,182.976105 46.6581745,183.166873 45.7467277,182.730227 C44.8183235,182.312656 44.2968914,181.445722 44.5978808,180.80771 C44.8734344,180.152739 45.876026,179.97045 46.8023103,180.409216 C47.7328342,180.826786 48.2627451,181.702199 47.9405593,182.340212 Z M54.2367892,187.958254 C53.6263318,188.524199 52.4329723,188.261363 51.6232682,187.366874 C50.7860088,186.474504 50.6291553,185.281144 51.2480912,184.70672 C51.8776254,184.140775 53.0349512,184.405731 53.8743302,185.298101 C54.7115892,186.201069 54.8748019,187.38595 54.2367892,187.958254 Z M58.5562413,195.146347 C57.7719732,195.691096 56.4895886,195.180261 55.6968417,194.042013 C54.9125733,192.903764 54.9125733,191.538713 55.713799,190.991845 C56.5086651,190.444977 57.7719732,190.936735 58.5753181,192.066505 C59.3574669,193.22383 59.3574669,194.58888 58.5562413,195.146347 Z M65.8613592,203.471174 C65.1597571,204.244846 63.6654083,204.03712 62.5716717,202.981538 C61.4524999,201.94927 61.1409122,200.484596 61.8446341,199.710926 C62.5547146,198.935137 64.0575422,199.15346 65.1597571,200.200564 C66.2704506,201.230712 66.6095936,202.705984 65.8613592,203.471174 Z M75.3025151,206.281542 C74.9930474,207.284134 73.553809,207.739857 72.1039724,207.313809 C70.6562556,206.875043 69.7087748,205.700761 70.0012857,204.687571 C70.302275,203.678621 71.7478721,203.20382 73.2083069,203.659543 C74.6539041,204.09619 75.6035048,205.261994 75.3025151,206.281542 Z M86.046947,207.473627 C86.0829806,208.529209 84.8535871,209.404622 83.3316829,209.4237 C81.8013,209.457614 80.563428,208.603398 80.5464708,207.564772 C80.5464708,206.498591 81.7483088,205.631657 83.2786917,205.606221 C84.8005962,205.576546 86.046947,206.424403 86.046947,207.473627 Z M96.6021471,207.069023 C96.7844366,208.099171 95.7267341,209.156872 94.215428,209.438785 C92.7295577,209.710099 91.3539086,209.074206 91.1652603,208.052538 C90.9808515,206.996955 92.0576306,205.939253 93.5413813,205.66582 C95.054807,205.402984 96.4092596,206.021919 96.6021471,207.069023 Z" fill="#161614"></path>
                         </g>
                     </svg>
                 </a>
-        </div>
+        </p></div>
     </cloud5-about>
     <script>
         let cloud5_piece = document.querySelector('cloud5-piece');
@@ -2194,7 +3024,6 @@
             'mandelbrot_julia_overlay.density',
             'mandelbrot_julia_overlay.base_instrument',
             'mandelbrot_julia_overlay.maxVoicesPerSlice',
-            'mandelbrot_julia_overlay._stepBeats',
             'mandelbrot_julia_overlay.viewM',
             'mandelbrot_julia_overlay.viewJ',
             'mandelbrot_julia_overlay.c',
@@ -2202,7 +3031,50 @@
             'mandelbrot_julia_overlay._midiOutId',
         ];
         // #endregion
-    </script>
-</body>
+    </script><div style="background-color: rgba(0, 0, 0, 0.8); inset: 0px; display: none; z-index: 1000; opacity: 0; transition: opacity 0.2s linear; position: fixed;"></div><div style="position: fixed; display: none; z-index: 1001; opacity: 0; transition: transform 0.2s ease-out, opacity 0.2s linear;"><div id="dg-save" class="dg dialogue">
 
-</html>
+  Here's the new load parameter for your <code>GUI</code>'s constructor:
+
+  <textarea id="dg-new-constructor"></textarea>
+
+  <div id="dg-save-locally" style="display: block;">
+
+    <input id="dg-local-storage" type="checkbox"> Automatically save
+    values to <code>localStorage</code> on exit.
+
+    <div id="dg-local-explain" style="display: none;">The values saved to <code>localStorage</code> will
+      override those passed to <code>dat.GUI</code>'s constructor. This makes it
+      easier to work incrementally, but <code>localStorage</code> is fragile,
+      and your friends may not see the same values you do.
+
+    </div>
+
+  </div>
+
+</div></div>
+
+
+<dialog id="cloud5_snapshot_dialog">
+      <form method="dialog" style="min-width: 520px;">
+        <h3 style="margin: 0 0 10px 0;">Snapshot</h3>
+
+        <div style="margin-bottom: 10px;">
+          <label style="display:block; font-weight: 600; margin-bottom: 4px;">Title</label>
+          <input id="cloud5_snapshot_title" type="text" style="width: 100%;">
+        </div>
+
+        <div style="margin-bottom: 10px;">
+          <label style="display:block; font-weight: 600; margin-bottom: 4px;">Directory</label>
+          <div style="display:flex; gap: 8px; align-items:center;">
+            <button id="cloud5_snapshot_choose_dir" type="button">Choose…</button>
+            <div id="cloud5_snapshot_dir_label" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">cloud-5</div>
+            <button id="cloud5_snapshot_forget_dir" type="button" title="Forget remembered directory">Forget</button>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content: flex-end; gap: 10px;">
+          <button value="cancel">Cancel</button>
+          <button id="cloud5_snapshot_ok" value="ok">OK</button>
+        </div>
+      </form>
+    </dialog></body></html>

@@ -253,18 +253,60 @@ function cloud5_snapshot_fields(obj, field_names) {
   return values;
 }
 
-function cloud5_restore_fields(obj, values) {
-  if (!obj || !values || typeof values !== 'object') {
-    return;
-  }
-
-  for (const path of Object.keys(values)) {
-    try {
-      cloud5_set_by_path(obj, path, values[path]);
-    } catch {
-      console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
+function cloud5_path_exists_strict(root_obj, path)
+{
+    if (!root_obj || typeof path !== 'string' || path.length === 0)
+    {
+        return false;
     }
-  }
+
+    const parts = path.split('.');
+    let cur = root_obj;
+
+    for (let i = 0; i < parts.length; i++)
+    {
+        const key = parts[i];
+
+        if (cur === null || (typeof cur !== 'object' && typeof cur !== 'function'))
+        {
+            return false;
+        }
+
+        if (!(key in cur))
+        {
+            return false;
+        }
+
+        cur = cur[key];
+    }
+
+    return true;
+}
+
+function cloud5_restore_fields(obj, values)
+{
+    if (!obj || !values || typeof values !== 'object')
+    {
+        return;
+    }
+
+    for (const path of Object.keys(values))
+    {
+        try
+        {
+            if (!cloud5_path_exists_strict(obj, path))
+            {
+                console.log('skip', path); 
+                continue;
+            }
+
+            cloud5_set_by_path(obj, path, values[path]); // your existing setter is fine now
+        }
+        catch
+        {
+            console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
+        }
+    }
 }
 
 function cloud5_apply_state_bindings(host, options = {}) {
@@ -378,27 +420,6 @@ async function cloud5_clipboard_and_download(json_text, filename) {
   }, 0);
 }
 
-
-function cloud5_timestamp_string() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return (
-    d.getFullYear() +
-    pad(d.getMonth() + 1) +
-    pad(d.getDate()) +
-    "-" +
-    pad(d.getHours()) +
-    pad(d.getMinutes()) +
-    pad(d.getSeconds())
-  );
-}
-
-function cloud5_strip_trailing_timestamp(title) {
-  // Remove a trailing ".YYYYMMDD-HHMMSS" suffix if present.
-  const s = String(title || "").trim();
-  return s.replace(/\.(\d{8}-\d{6})$/, "");
-}
-
 function cloud5_sanitize_for_filename(s)
 {
   return String(s || "snapshot")
@@ -410,14 +431,12 @@ function cloud5_sanitize_for_filename(s)
 
 function cloud5_snapshot_filenames_from_title(title)
 {
-  const ts = cloud5_timestamp_string();
-  const base = cloud5_sanitize_for_filename(cloud5_strip_trailing_timestamp(title || "snapshot"));
+  const base = cloud5_sanitize_for_filename(title || "snapshot");
   return {
-    html_name: `${base}.${ts}.html`,
-    state_name: `${base}.state.${ts}.json`,
+    html_name: `${base}.html`,
+    state_name: `${base}.state.json`,
   };
 }
-
 
 function cloud5_format_elapsed_time(seconds_total) {
   const s = Math.max(0, Number(seconds_total) || 0);
@@ -615,7 +634,7 @@ async function cloud5_forget_snapshot_dir_handle()
 async function cloud5_run_snapshot_dialog(suggested_title)
 {
   const last_saved_title = localStorage.getItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY) || "";
-  const initial_title = cloud5_strip_trailing_timestamp(suggested_title || last_saved_title || "snapshot");
+  const initial_title = last_saved_title || "snapshot";
 
   let dialog = document.getElementById("cloud5_snapshot_dialog");
   if (!dialog)
@@ -691,7 +710,7 @@ async function cloud5_run_snapshot_dialog(suggested_title)
     return null;
   }
 
-  const title = cloud5_strip_trailing_timestamp(title_input.value.trim() || "snapshot");
+  const title = title_input.value.trim() || "snapshot";
   if (!dir_handle)
   {
     // If the user didn't choose a directory in the dialog, try to reuse or prompt now.
@@ -739,7 +758,7 @@ function cloud5_get_snapshot_dialog() {
         <div>Title</div>
         <input id="cloud5_snapshot_title" type="text" style="width:100%;padding:6px;" />
         <div style="font-size:0.9em;opacity:0.8;">
-          Files will be saved as: &lt;title&gt;.&lt;timestamp&gt;.html and &lt;title&gt;.state.&lt;timestamp&gt;.json
+          Files will be saved as: &lt;title&gt;.html and &lt;title&gt;.state.&lt;.json
         </div>
       </label>
 
@@ -763,123 +782,6 @@ function cloud5_get_snapshot_dialog() {
   return dlg;
 }
 
-async function cloud5_run_snapshot_dialogx(default_title) {
-  const dlg = cloud5_get_snapshot_dialog();
-
-  const title_input = dlg.querySelector("#cloud5_snapshot_title");
-  const folder_label = dlg.querySelector("#cloud5_snapshot_folder_label");
-  const choose_btn = dlg.querySelector("#cloud5_snapshot_choose_folder");
-  const forget_btn = dlg.querySelector("#cloud5_snapshot_clear_folder");
-
-  // Determine initial title: last saved title (preferred), else default.
-  const last_title = cloud5_get_last_snapshot_title();
-  const base_default = cloud5_strip_trailing_timestamp(default_title || "");
-  const initial_title = cloud5_strip_trailing_timestamp(last_title || base_default || "piece");
-  title_input.value = initial_title;
-
-  // Target selection model.
-  let target = { mode: "download" };
-
-  const is_nwjs = (() => {
-    try {
-      return (typeof process !== "undefined" && process.versions && process.versions.nw);
-    } catch (e) {
-      return false;
-    }
-  })();
-
-  // Browser directory handle (File System Access API)
-  let dir_handle = null;
-  // NW.js directory path
-  let dir_path = null;
-
-  async function update_folder_label() {
-    if (is_nwjs) {
-      folder_label.textContent = dir_path ? dir_path : "(will download files)";
-    } else if (dir_handle) {
-      folder_label.textContent = dir_handle.name || "(selected folder)";
-    } else {
-      folder_label.textContent = "(will download files)";
-    }
-  }
-
-  async function select_default_folder_if_available() {
-    if (is_nwjs) {
-      // Prefer __dirname if writable; otherwise none.
-      try {
-        if (typeof __dirname !== "undefined" && typeof fs !== "undefined" && fs?.accessSync) {
-          try {
-            fs.accessSync(__dirname, fs.constants.W_OK);
-            dir_path = __dirname;
-            target = { mode: "nwjs_dir", dir_path };
-          } catch (e) {
-            dir_path = null;
-          }
-        }
-      } catch (e) {
-        dir_path = null;
-      }
-    } else {
-      dir_handle = await cloud5_try_get_snapshot_dir_handle();
-      if (dir_handle) {
-        target = { mode: "browser_dir", dir_handle };
-      }
-    }
-    await update_folder_label();
-  }
-
-  await select_default_folder_if_available();
-
-  choose_btn.onclick = async () => {
-    if (is_nwjs) {
-      const picked = await cloud5_pick_directory_nwjs();
-      if (picked) {
-        dir_path = picked;
-        target = { mode: "nwjs_dir", dir_path };
-      }
-    } else {
-      const picked = await cloud5_get_or_pick_snapshot_dir_handle(true);
-      if (picked) {
-        dir_handle = picked;
-        target = { mode: "browser_dir", dir_handle };
-      }
-    }
-    await update_folder_label();
-  };
-
-  forget_btn.onclick = async () => {
-    if (is_nwjs) {
-      dir_path = null;
-      target = { mode: "download" };
-    } else {
-      await cloud5_forget_snapshot_dir_handle();
-      dir_handle = null;
-      target = { mode: "download" };
-    }
-    await update_folder_label();
-  };
-
-  return await new Promise((resolve) => {
-    const on_close = () => {
-      dlg.removeEventListener("close", on_close);
-      const action = dlg.returnValue;
-      if (action !== "save") {
-        resolve(null);
-        return;
-      }
-
-      const title = cloud5_strip_trailing_timestamp(String(title_input.value || "").trim());
-      if (!title) {
-        resolve(null);
-        return;
-      }
-      resolve({ title, target });
-    };
-    dlg.addEventListener("close", on_close);
-    dlg.showModal();
-  });
-}
-
 async function cloud5_snapshot_to_new_version(piece)
 {
   // Snapshot the current page HTML and Cloud5 state into the chosen directory.
@@ -890,7 +792,7 @@ async function cloud5_snapshot_to_new_version(piece)
     return;
   }
 
-  const title = cloud5_strip_trailing_timestamp(dlg.title || suggested_title || "snapshot");
+  const title = dlg.title || suggested_title || "snapshot";
   const dir_handle = dlg.dir_handle;
 
   const { html_name, state_name } = cloud5_snapshot_filenames_from_title(title);
@@ -954,21 +856,6 @@ async function cloud5_save_state_if_needed(piece) {
   await cloud5_clipboard_and_download(json_text, filename);
 }
 
-function state_filename(composition_filename)
-{
-    const last_slash = composition_filename.lastIndexOf('/');
-    const path = composition_filename.substring(0, last_slash + 1);
-    const basename = composition_filename.substring(last_slash + 1);
-
-    const stem = basename.replace(/\.html$/, "");
-    const parts = stem.split(".");
-
-    const timestamp = parts.pop();
-    const title = parts.join(".");
-
-    return path + title + ".state." + timestamp + ".json";
-}
-
 async function cloud5_load_state_if_present(piece) {
   if (!cloud5_is_local_context()) {
     return;
@@ -978,7 +865,7 @@ async function cloud5_load_state_if_present(piece) {
     return;
   }
 
-  const filename = state_filename(document.title || 'piece');
+  const filename = cloud5_state_filename_for_piece(document.title || 'piece');
 
   // 1) Try filesystem (NW.js / node context)
   if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
@@ -1008,11 +895,19 @@ async function cloud5_load_state_if_present(piece) {
     const obj = JSON.parse(text);
     cloud5_restore_fields(piece, obj);
     cloud5_notify_state_restored(piece, obj);
+    // FIXME: This is a hack to work around a bug where
+    // something unknown is duplicating the main menu element.
+    const menus = document.querySelectorAll('#main_menu');
+    for (let i = 1; i < menus.length; i++)
+    {
+        menus[i].remove();
+    }        
     return;
   } catch (e) {
     // 3) Nothing
     console.warn('Failed to load state via fetch; no persisted state loaded:', e);
   }
+
 }
 
 /**
@@ -1054,7 +949,7 @@ class Cloud5Element extends HTMLElement {
   }
 
   connectedCallback() {
-    
+
     try { globalThis.cloud5_piece = this; } catch (e) { }
 const attr = this.getAttribute('data-cloud5-stay-visible');
     if (attr !== null) {
@@ -1674,6 +1569,7 @@ this.latest_score_time = score_time;
     "genre": null,
   };
   connectedCallback() {
+  
     const filename = document.location.pathname.split("/").pop();
 
     this.innerHTML = `
@@ -1845,14 +1741,7 @@ this.latest_score_time = score_time;
     // queueMicrotask(() => {
     //   cloud5_load_state_if_present(this);
     // });
-
   }
-
-  /**
- * Scans the DOM for overlays belonging to this piece and ensures each has
- * a menu item that toggles its visibility. Built-in overlays reuse existing
- * menu items; generic overlays get new <li> entries inserted before About.
- */
 
   _get_all_overlays() {
     const s = new Set(this._registered_overlays || []);
