@@ -1826,25 +1826,27 @@ this.latest_score_time = score_time;
 
     generic_candidates
       .filter(el => !built_in_set.has(el))
+      // TODO: Undo this?
+      .filter(el => !el.closest('#main_menu'))   // prevents menu DOM becoming overlays
       .forEach(el => {
-        const label =
-          el.getAttribute('data-cloud5-label') ||
-          el.getAttribute('data-overlay-label') ||
-          el.getAttribute('title') ||
-          el.id ||
-          el.tagName.toLowerCase();
+      const label =
+        el.getAttribute('data-cloud5-label') ||
+        el.getAttribute('data-overlay-label') ||
+        el.getAttribute('title') ||
+        el.id ||
+        el.tagName.toLowerCase();
 
-        const isDefault =
-          el.hasAttribute('data-cloud5-default-visible') ||
-          el.hasAttribute('data-cloud5-default-overlay');
+      const isDefault =
+        el.hasAttribute('data-cloud5-default-visible') ||
+        el.hasAttribute('data-cloud5-default-overlay');
 
-        overlays.push({
-          element: el,
-          existingMenuId: null,
-          label,
-          isDefault
-        });
+      overlays.push({
+        element: el,
+        existingMenuId: null,
+        label,
+        isDefault
       });
+    });
 
     // --- Create / wire menu items ------------------------------------------
     const registered = [];
@@ -1908,7 +1910,7 @@ this.latest_score_time = score_time;
       this.show(defaultCfg.element);
     }
   }
-
+  
   /**
    * Reads the "stay visible" flag from overlay attributes.
    * Recognized:
