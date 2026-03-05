@@ -275,10 +275,11 @@ pre {
     const total_beats = n_time * step_beats;
 
     const seconds = Math.max(0.001, +this.seconds || 60);
-    const bpm = (60.0 * total_beats) / seconds;
+    ///const bpm = (60.0 * total_beats) / seconds;
+    this.bpm = (60.0 * total_beats) / seconds;
 
     // Keep a sensible tempo range (matching the old BPM control limits).
-    this.bpm = Math.max(20, Math.min(300, bpm));
+    ///this.bpm = Math.max(20, Math.min(300, bpm));
   }
 
   _secondsForBeats(beats)
@@ -1423,7 +1424,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this.base_instrument = parseInt(base_instrument.value);
     this.nInst = parseInt(kIn.value);
 
-    this.seconds = Math.max(1, Math.min(3600, parseFloat(secIn.value) || 60));
+    this.seconds = Math.max(1, parseFloat(secIn.value) || 180);
     this._update_bpm_from_seconds();
     this.density = parseFloat(denIn.value);
     this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
