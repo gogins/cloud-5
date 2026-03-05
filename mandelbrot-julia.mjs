@@ -275,11 +275,7 @@ pre {
     const total_beats = n_time * step_beats;
 
     const seconds = Math.max(0.001, +this.seconds || 60);
-    ///const bpm = (60.0 * total_beats) / seconds;
     this.bpm = (60.0 * total_beats) / seconds;
-
-    // Keep a sensible tempo range (matching the old BPM control limits).
-    ///this.bpm = Math.max(20, Math.min(300, bpm));
   }
 
   _secondsForBeats(beats)
@@ -1337,7 +1333,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       }
       // Ensure the piano-roll playhead (red ball) advances during MIDI playback.
       try { this.cloud5_piece.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
-      ///}
     } catch (e) {
     }
 
