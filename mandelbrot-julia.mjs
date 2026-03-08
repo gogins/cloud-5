@@ -1482,7 +1482,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       const zx = this.viewM.cx + ndc.x * this.viewM.scale;
       const zy = this.viewM.cy - ndc.y * this.viewM.scale / aspect;
 
-
       this.c = { x: zx, y: zy };
 
       // Zooming with Option-click should recenter the Mandelbrot view on the
@@ -1861,7 +1860,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     readBuf.unmap();
 
     const dtBeats = this._stepBeats(); // 1/8 beat per time bin
-    const pmin = Math.floor(60 - M / 2.);
+    const pmin = Math.floor(60 - (M / 2));
     const active = Array.from({ length: N }, _ => new Uint8Array(M));
     const vel = Array.from({ length: N }, _ => new Uint8Array(M));
     const inst = Array.from({ length: N }, _ => new Uint8Array(M));
