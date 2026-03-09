@@ -263,31 +263,29 @@ pre {
     });
   }
 
-// FIXME: timesteps 
-  _stepBeats() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
+  // FIXME: timesteps 
+  _beats_per_timestep() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
 
   _update_bpm_from_seconds()
   {
     // Derive BPM so that (nTime * stepBeats) beats last exactly `seconds`.
     // This keeps the time grid semantics (beats) unchanged; only the tempo changes.
-    const n_time = Math.max(1, this.nTime | 0);
-    const step_beats = this._stepBeats();
-    const total_beats = n_time * step_beats;
-
-    const seconds = Math.max(0.001, +this.seconds || 60);
-    this.bpm = (60.0 * total_beats) / seconds;
+    const timesteps = this.nTime;
+    const beats_per_timestep = this._beats_per_timestep();
+    const beats_ = timesteps * beats_per_timestep;
+    this.bpm = (60.0 * beats_) / this.seconds;
   }
 
   _secondsForBeats(beats)
   {
     this._update_bpm_from_seconds();
-    return beats * 60 / Math.max(20, this.bpm);
+    return beats * (60.0 / this.bpm);
   }
 
   _beatsForMillis(ms)
   {
     this._update_bpm_from_seconds();
-    return (ms / 1000) * (Math.max(20, this.bpm) / 60);
+    return (ms / 1000.) * (Math.max(20., this.bpm) / 60.);
   }
 
   _clearTimers() { for (const id of this._timers) clearTimeout(id); this._timers.length = 0; }
@@ -318,7 +316,7 @@ pre {
     // If seconds is missing but bpm exists, infer seconds so duration stays consistent.
     if (restored_state && (restored_state.seconds == null) && (restored_state.bpm != null)) {
       const n_time = Math.max(1, this.nTime | 0);
-      const total_beats = n_time * this._stepBeats();
+      const total_beats = n_time * this._beats_per_timestep();
       const bpm = Math.max(20, Math.min(300, +restored_state.bpm || 120));
       this.seconds = Math.max(1, Math.round((total_beats * 60.0) / bpm));
     }
@@ -1693,7 +1691,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
     // Harmonic rhythm + cadences
     const barBeats = 4;
-    const binsPerBar = Math.round(barBeats / this._stepBeats()); // e.g., 32
+    const binsPerBar = Math.round(barBeats / this._beats_per_timestep()); // e.g., 32
     for (let i = 0; i < N; i += binsPerBar) {
       const end = Math.min(N - 1, i + binsPerBar - 1);
       // pick a function around trend: favor I, IV, V; drift with tRot change
@@ -1790,7 +1788,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (!score.length) return score;
 
     // Build a slice index for each event
-    const step = this._stepBeats();
+    const step = this._beats_per_timestep();
     const out = [];
     const lastPitchByChan = new Map();
 
@@ -1859,7 +1857,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const u32grid = new Uint32Array(readBuf.getMappedRange().slice(0));
     readBuf.unmap();
 
-    const dtBeats = this._stepBeats(); // 1/8 beat per time bin
+    const dtBeats = this._beats_per_timestep(); // 1/8 beat per time bin
     const pmin = Math.floor(60 - (M / 2));
     const active = Array.from({ length: N }, _ => new Uint8Array(M));
     const vel = Array.from({ length: N }, _ => new Uint8Array(M));
@@ -1947,7 +1945,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const q = new Map(); // integer slice index -> array of notes
     for (const n of score) {
       const [ch, t, d, key, vel] = n;
-      const tKey = Math.round(t / this._stepBeats());
+      const tKey = Math.round(t / this._beats_per_timestep());
       if (!q.has(tKey)) q.set(tKey, []);
       q.get(tKey).push(n);
     }
@@ -2109,7 +2107,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       bpm: this.bpm,
       density: this.density,
       maxVoicesPerSlice: this.maxVoicesPerSlice,
-      stepBeats: this._stepBeats(),
+      stepBeats: this._beats_per_timestep(),
       viewM: { ...this.viewM },
       viewJ: { ...this.viewJ },
       c: { ...this.c },
