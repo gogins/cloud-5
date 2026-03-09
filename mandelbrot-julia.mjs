@@ -1880,7 +1880,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       for (let j = 0; j < M; j++) pairs[j] = [j, vel[i][j]];
       pairs.sort((a, b) => (b[1] | 0) - (a[1] | 0));
       const cutoff = pairs[Math.min(perSliceKeep - 1, pairs.length - 1)][1] | 0;
-      for (let j = 0; j < M; j++) active[i][j] = (vel[i][j] | 0) >= cutoff ? 1 : 0;
+      for (let j = 0; j < M; j++) {
+        const was_on = active[i][j] !== 0;
+        active[i][j] = was_on && ((vel[i][j] | 0) >= cutoff) ? 1 : 0;
+      }
     }
 
     const runOn = Array.from({ length: M }, _ => Array(K).fill(false));
