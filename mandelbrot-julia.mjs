@@ -166,6 +166,9 @@ pre {
     <label>Timesteps:
       <input id="binsN" data-cloud5-bind="nTime" type="number" value="4096"> 
     </label>
+    <label>Bass:
+      <input id="bass" data-cloud5-bind="bass" type="number" value="36" min="0" max="127" step="1">
+    </label>    
     <label>Range:
       <input id="binsM" data-cloud5-bind="nPitch" type="number" value="60">
     </label>
@@ -215,6 +218,7 @@ pre {
     // Defaults
     this.nTime = 4096;  // N time default
     this.nPitch = 60;   // M pitch default
+    this.bass = 36;    // bass MIDI note number default (C2)
     this.nInst = 4;
     this.maxIterM = 500;
     this.maxIterJ = 1000;
@@ -1403,6 +1407,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const jIn = this.shadowRoot.getElementById('iterJ');
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
+    const bassIn = this.shadowRoot.getElementById('bass');
+    
     const kIn = this.shadowRoot.getElementById('binsK');
     const secIn = this.shadowRoot.getElementById('seconds');
     const denIn = this.shadowRoot.getElementById('density');
@@ -1413,6 +1419,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this.maxIterM = parseInt(mIn.value);
     this.maxIterJ = parseInt(jIn.value);
     this.nTime = parseInt(nIn.value);
+    this.bass = parseInt(bassIn.value);
     this.nPitch = parseInt(MIn.value);
     this.base_instrument = parseInt(base_instrument.value);
     this.nInst = parseInt(kIn.value);
@@ -1429,6 +1436,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const jIn = this.shadowRoot.getElementById('iterJ');
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
+    const bassIn = this.shadowRoot.getElementById('bass');
     const kIn = this.shadowRoot.getElementById('binsK');
     const secIn = this.shadowRoot.getElementById('seconds');
     const denIn = this.shadowRoot.getElementById('density');
@@ -1438,6 +1446,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     mIn.value = `${this.maxIterM ?? 500}`;
     jIn.value = `${this.maxIterJ ?? 1000}`;
     nIn.value = `${this.nTime ?? 4096}`;
+    bassIn.value = `${this.bass ?? 36}`;
     MIn.value = `${this.nPitch ?? 60}`;
     base_instrument.value = `${this.base_instrument ?? 1}`;
     kIn.value = `${this.nInst ?? 4}`;
@@ -1453,6 +1462,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const jIn = this.shadowRoot.getElementById('iterJ');
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
+    const bassIn = this.shadowRoot.getElementById('bass');
     const kIn = this.shadowRoot.getElementById('binsK');
     const btnS = this.shadowRoot.getElementById('btnScore');
     const secIn = this.shadowRoot.getElementById('seconds');
@@ -1460,7 +1470,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const btnStop = this.shadowRoot.getElementById('btnStop');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
-    [pIn, mIn, jIn, nIn, MIn, base_instrument, kIn, secIn, denIn, maxVIn]
+    [pIn, mIn, jIn, nIn, MIn, bassIn, base_instrument, kIn, secIn, denIn, maxVIn]
       .forEach(el => el.addEventListener('input', () => this.sync_from_controls()));
     this.sync_from_controls();
 
@@ -1829,6 +1839,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   async makeScore() {
     const N = this.nTime, M = this.nPitch, K = this.nInst;
+    console.log("makeScore: timesteps:", N, " bass:", this.bass, " range:", M, " instruments:", K);
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
@@ -1858,7 +1869,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     readBuf.unmap();
 
     const dtBeats = this._beats_per_timestep(); // 1/8 beat per time bin
-    const pmin = Math.floor(60 - (M / 2));
     const active = Array.from({ length: N }, _ => new Uint8Array(M));
     const vel = Array.from({ length: N }, _ => new Uint8Array(M));
     const inst = Array.from({ length: N }, _ => new Uint8Array(M));
@@ -1898,7 +1908,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         for (let k = 0; k < K; k++) {
           if (runOn[j][k] && (i === N || k !== kk || !on)) {
             const i0 = runI0[j][k], i1 = i - 1;
-            score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, pmin + j, runVmax[j][k]]);
+            score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, this.bass + j, runVmax[j][k]]);
             runOn[j][k] = false;
           }
         }
@@ -1927,7 +1937,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
     this._lastScore = tied;
 
-    // Export / play from 'tied' instead of 'tonal'
+    // Export / play from 'tied'.
     try {
       const effectiveROI = roi;
       const state = this._collectState(effectiveROI);
@@ -2101,6 +2111,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       maxIterM: this.maxIterM,
       maxIterJ: this.maxIterJ,
       nTime: this.nTime,
+      bass: this.bass,
       nPitch: this.nPitch,
       nInst: this.nInst,
       seconds: this.seconds,
