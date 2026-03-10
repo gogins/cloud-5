@@ -1942,7 +1942,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       const effectiveROI = roi;
       const state = this._collectState(effectiveROI);
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      this._exportMIDI(tied, ts);
+      this._exportMIDI(tied, document.title.replace(/\s+/g, '_') + `_${ts}.mid`);
       this._exportStateJSON(state, ts);
     } catch (e) { console.warn('Export failed:', e); }
 
@@ -2003,6 +2003,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     await cloud5_save_state_if_needed(this.cloud5_piece);
 
     const score = await this.makeScore();
+  
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
 
     // Ensure the piano roll has geometry to draw (progress3D alone does not render notes).
@@ -2208,7 +2209,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const a = document.createElement('a');
     const ts = baseName || new Date().toISOString().replace(/[:.]/g, '-');
     a.href = url;
-    a.download = `mandelbrot-julia-${ts}.mid`;
+    a.download = baseName;
     this.shadowRoot.appendChild(a);
     a.click();
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
