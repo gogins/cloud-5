@@ -1022,7 +1022,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     th_prev = th;
   }
 
-  var tvel = 1.0;
+  /// var tvel = 1.0;
+  var tvel = 0.0;
   if (n < maxIter) {
     let r = length(z);
     tvel = clamp(
@@ -1776,7 +1777,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
           prev[2] = new_end - prev_t;
 
           // Velocity merge policy: keep the max so the merged note isn't quieter.
-          prev[4] = Math.max(prev[4] | 0, vel);
+          /// prev[4] = Math.max(prev[4] | 0, vel);
           continue;
         }
       }
@@ -1892,7 +1893,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
     const runOn = Array.from({ length: M }, _ => Array(K).fill(false));
     const runI0 = Array.from({ length: M }, _ => Array(K).fill(0));
-    const runVmax = Array.from({ length: M }, _ => Array(K).fill(0));
+    const runV0 = Array.from({ length: M }, _ => Array(K).fill(0));
     const score = [];
 
     for (let i = 0; i <= N; i++) {
@@ -1903,17 +1904,22 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
         for (let k = 0; k < K; k++) {
           if (runOn[j][k] && (i === N || k !== kk || !on)) {
-            const i0 = runI0[j][k], i1 = i - 1;
-            score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, this.bass + j, runVmax[j][k]]);
+            const i0 = runI0[j][k];
+            const i1 = i - 1;
+            score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, this.bass + j, runV0[j][k]]);
             runOn[j][k] = false;
           }
         }
+
         if (i < N && on) {
-          if (!runOn[j][kk]) { runOn[j][kk] = true; runI0[j][kk] = i; runVmax[j][kk] = vv; }
-          else { runVmax[j][kk] = Math.max(runVmax[j][kk], vv); }
+          if (!runOn[j][kk]) {
+            runOn[j][kk] = true;
+            runI0[j][kk] = i;
+            runV0[j][kk] = vv;
+          }
         }
       }
-    }
+    }   
 
     const log = this.shadowRoot.getElementById('log');
     log.textContent = `Score notes: ${score.length}\n` +
@@ -2027,10 +2033,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const off = 0x80 | c;
         const whenOn = t0 + step(tBeats);
         const whenOff = t0 + step(tBeats + dBeats);
-        const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d\n", whenOn / 1000., (whenOff - whenOn) / 1000., ch, key, vel);
+        const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d\n", whenOn / 1000., (whenOff - whenOn) / 1000., ch, key, vel_);
         this.cloud5_piece?.log(message_);
         this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
-        this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel | 0))]); }, Math.max(0, whenOn - performance.now())));
+        this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel_ | 0))]); }, Math.max(0, whenOn - performance.now())));
         this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
       }
       this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(step(this._playTotalBeats) + 50)));
@@ -2226,7 +2232,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       let instrument = note[0] + this.base_instrument;
       let pitch = note[3];
       let loudness = note[4];
-      loudness = (loudness / 5.0) + 50;
+      /// loudness = (loudness / 5.0) + 50;
       this.cloud5_piece.score.append(time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095);
       /// this.cloud5_piece.score.append(note[1], note[2], 144, 3, note[3], note[4], 0, 0, 0, 0, 4095);
     }
