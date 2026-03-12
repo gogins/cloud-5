@@ -565,8 +565,6 @@ pre {
     }
   }
 
-
-
   _start_rendering() {
     // Historical name; now schedules a single GPU redraw.
     this._request_gpu_redraw('other');
@@ -583,7 +581,6 @@ pre {
       this._visibility_poll_id = 0;
     }
   }
-
 
   _start_gpu_keepalive() {
     if (this._gpu_keepalive_id) {
@@ -660,7 +657,6 @@ pre {
       this._gpu_recovering = false;
     }
   }
-
 
   _isActuallyVisible() {
     // Not in the document?
@@ -2030,7 +2026,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const off = 0x80 | c;
         const whenOn = t0 + step(tBeats);
         const whenOff = t0 + step(tBeats + dBeats);
-        ///this.cloud5_piece?.log(`MIDI note on: ch=${c} key=${key} vel=${vel} at ${whenOn.toFixed(1)} ms`);
+        const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d\n", whenOn / 1000., (whenOff - whenOn) / 1000., ch, key, vel);
+        this.cloud5_piece?.log(message_);
+        this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
         this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel | 0))]); }, Math.max(0, whenOn - performance.now())));
         this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
       }
