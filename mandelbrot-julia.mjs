@@ -2020,7 +2020,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       const t0 = this._playStartMS;
       for (const [ch, tBeats, dBeats, key, vel] of score) {
         // Lessen dynamic range for MIDI velocity mapping; adjust as needed.
-        let vel_ = 78. + (18. * vel) / 127.;
+        /// let vel_ = 78. + (18. * vel) / 127.;
+        let vel_ = 78. + vel / 5.
         const c = (ch | 0) & 0x0f;
         const on = 0x90 | c;
         const off = 0x80 | c;
