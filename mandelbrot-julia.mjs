@@ -1781,12 +1781,35 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
           continue;
         }
       }
-
-      const new_ev = [ch, t, d, key, vel];
-      out.push(new_ev);
+      const new_note = [ch, t, d, key, vel];
+      out.push(new_note);
       last_index_by_ck.set(ck, out.length - 1);
     }
-
+    // Rescale velocities.
+    // First obtain existing scale.
+    const first_event = out.at(0);
+    let minimum_velocity = first_event[4];
+    let maximum_velocity = minimum_velocity;
+    for (const ev of out) {
+      let velocity = ev[4];
+      if (velocity < minimum_velocity) {
+        minimum_velocity = velocity;
+      }
+      if (velocity > maximum_velocity) {
+        maximum_velocity = velocity;
+      }
+    }
+    const existing_range = maximum_velocity - minimum_velocity;
+    const target_range = 20.;
+    const scale = existing_range > 0 ? target_range / existing_range : 1.0; 
+    // Then rescale to target range while preserving relative dynamics.
+    for (let ev of out) {
+      let velocity = ev[4];
+      velocity = velocity - minimum_velocity; // shift to zero-based
+      velocity = velocity * scale;
+      velocity = velocity + 80; // shift to target center (80 is a common "mezzo-forte" velocity in MIDI)
+      ev[4] = Math.round(Math.max(1, Math.min(127, velocity))); // clamp to MIDI range
+    }
     return out;
   }
 
