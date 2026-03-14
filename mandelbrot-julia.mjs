@@ -1,6 +1,8 @@
 class MandelbrotJulia extends Cloud5Element {
   constructor() {
     super();
+    this._interactions_initialized = false;
+
     this.attachShadow({ mode: 'open' });
 
     this._rendering_active = false;
@@ -463,7 +465,6 @@ pre {
 
   _tick_playheads() {
     const piece = this.cloud5_piece;
-
     const ext_time = piece?.latest_score_time;
     const ext_total = piece?.total_duration;
 
@@ -490,7 +491,7 @@ pre {
     }
     this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
 
-        let delta = ext_time;
+    let delta = ext_time;
     // calculate (and subtract) whole days
     let days = Math.floor(delta / 86400);
     delta -= days * 86400;
@@ -1454,6 +1455,11 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   };
 
   initInteractions() {
+    if (this._interactions_initialized)
+    {
+        return;
+    }
+    this._interactions_initialized = true;  
     const pIn = this.shadowRoot.getElementById('expP');
     const mIn = this.shadowRoot.getElementById('iterM');
     const jIn = this.shadowRoot.getElementById('iterJ');
@@ -1599,7 +1605,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       }
     }, { capture: true });
 
-    btnS.addEventListener('click', () => { this.generate_score(); this.playMIDIFromScore(); });
+    btnS.addEventListener('click', async () => { await this.generate_score(); this.playMIDIFromScore(); });
   }
 
   _placeSelRect(rJ, startPx, curPx) {
@@ -2014,26 +2020,19 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 
   async playMIDIFromScore() {
+    this.stopPlayback();
     await cloud5_save_state_if_needed(this.cloud5_piece);
-
-    const score = await this.generate_score();
-  
+    let score = this._lastScore;
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
-
     // Ensure the piano roll has geometry to draw (progress3D alone does not render notes).
     this._publish_midi_score_to_piano_roll(score);
-
     this._playing = true;
     this._clearTimers();
-
     const out = this._currentMIDIOutput();
     const step = (beats) => this._secondsForBeats(beats) * 1000; // ms
-
     this._playStartMS = performance.now();
-
     this._start_playhead_ticker();
     this._playTotalBeats = Math.max(0, ...score.map(n => n[1] + n[2]));
-
     if (out) {
       console.log(`Playing MIDI: total beats: ${this._playTotalBeats}, estimated duration: ${(step(this._playTotalBeats) / 1000).toFixed(2)}s`);
       const t0 = this._playStartMS;
@@ -2044,7 +2043,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const off = 0x80 | c;
         const whenOn = t0 + step(tBeats);
         const whenOff = t0 + step(tBeats + dBeats);
-        const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d", whenOn / 1000., (whenOff - whenOn) / 1000., ch, key, vel_);
+        const on_time = this._secondsForBeats(tBeats);
+        const duration = this._secondsForBeats(dBeats);
+        const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d", on_time, duration, ch, key, vel_);
         this.cloud5_piece?.log(message_ + "\n");
         console.log(message_);
         this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
