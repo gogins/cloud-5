@@ -378,6 +378,9 @@ pre {
   }
 
   on_score_time(a_sec, b_sec) {
+    if (this._playing) {
+      return;
+    }
     // Called by Cloud5Piece.update_display() during Csound performance.
 
     // Heuristic: some callers pass (total, now) instead of (now, total).
@@ -463,48 +466,98 @@ pre {
     try { this.cloud5_piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
   }
 
-  _tick_playheads() {
-    const piece = this.cloud5_piece;
-    const ext_time = piece?.latest_score_time;
-    const ext_total = piece?.total_duration;
+  _tick_playheads()
+  {
+      const piece = this.cloud5_piece;
 
-    const ext_active =
-      typeof ext_time === 'number' &&
-      isFinite(ext_time) &&
-      ext_time >= 0 &&
-      (
-        // if we know total duration, keep ticking until we reach it
-        (typeof ext_total === 'number' && isFinite(ext_total) && ext_total > 0 && ext_time <= ext_total) ||
-        // otherwise tick as long as time is moving forward
-        true
+      let display_time_sec = 0;
+      let display_total_sec = 0;
+      let ticker_active = false;
+
+      if (this._playing)
+      {
+          const now_ms = performance.now();
+          const elapsed_ms = Math.max(0, now_ms - (this._playStartMS || now_ms));
+          const elapsed_beats = this._beatsForMillis(elapsed_ms);
+
+          display_time_sec = this._secondsForBeats(elapsed_beats);
+          display_total_sec = this._secondsForBeats(Math.max(0, this._playTotalBeats || 0));
+          ticker_active = true;
+      }
+      else
+      {
+          const ext_time = piece?.latest_score_time;
+          const ext_total = piece?.total_duration;
+
+          const time_ok =
+              typeof ext_time === 'number' &&
+              isFinite(ext_time) &&
+              ext_time >= 0;
+
+          const total_ok =
+              typeof ext_total === 'number' &&
+              isFinite(ext_total) &&
+              ext_total > 0;
+
+          if (time_ok)
+          {
+              display_time_sec = ext_time;
+              display_total_sec = total_ok ? ext_total : 0;
+
+              if (total_ok)
+              {
+                  ticker_active = ext_time <= ext_total;
+              }
+              else
+              {
+                  ticker_active = true;
+              }
+          }
+      }
+
+      if (!ticker_active)
+      {
+          this._playhead_raf_id = 0;
+          return;
+      }
+
+      const now_ms = performance.now();
+      if (!this._last_playhead_update_ms || (now_ms - this._last_playhead_update_ms) >= 33)
+      {
+          this._last_playhead_update_ms = now_ms;
+          try
+          {
+              this._updatePlayheadOverlay();
+          }
+          catch (e)
+          {
+          }
+      }
+
+      this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
+
+      let delta = Math.max(0, display_time_sec);
+
+      const days = Math.floor(delta / 86400);
+      delta -= days * 86400;
+
+      const hours = Math.floor(delta / 3600);
+      delta -= hours * 3600;
+
+      const minutes = Math.floor(delta / 60);
+      delta -= minutes * 60;
+
+      const seconds = delta;
+
+      $("#mini_console").html(
+          sprintf(
+              "d:%4d h:%02d m:%02d s:%06.3f",
+              days,
+              hours,
+              minutes,
+              seconds
+          )
       );
-
-    if (!this._playing && !ext_active) {
-      this._playhead_raf_id = 0;
-      return;
-    }
-
-    const now_ms = performance.now();
-    if (!this._last_playhead_update_ms || (now_ms - this._last_playhead_update_ms) >= 33) {
-      this._last_playhead_update_ms = now_ms;
-      try { this._updatePlayheadOverlay(); } catch (e) { }
-    }
-    this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
-
-    let delta = ext_time;
-    // calculate (and subtract) whole days
-    let days = Math.floor(delta / 86400);
-    delta -= days * 86400;
-    // calculate (and subtract) whole hours
-    let hours = Math.floor(delta / 3600) % 24;
-    delta -= hours * 3600;
-    // calculate (and subtract) whole minutes
-    let minutes = Math.floor(delta / 60) % 60;
-    delta -= minutes * 60;
-    // what's left is seconds
-    let seconds = delta % 60;
-    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
-
   }
 
   _start_playhead_ticker() {
