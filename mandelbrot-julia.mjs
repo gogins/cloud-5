@@ -1583,7 +1583,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
       if ((key === 's') && (e.altKey || e.metaKey)) {
         e.preventDefault(); e.stopPropagation();
-        const score = this.makeScore(); // auto-download happens there
+        const score = this.generate_score(); // auto-download happens there
         this.playMIDIFromScore();
       }
 
@@ -1599,7 +1599,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       }
     }, { capture: true });
 
-    btnS.addEventListener('click', () => { this.makeScore(); this.playMIDIFromScore(); });
+    btnS.addEventListener('click', () => { this.generate_score(); this.playMIDIFromScore(); });
   }
 
   _placeSelRect(rJ, startPx, curPx) {
@@ -1857,9 +1857,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     return out;
   }
 
-  async makeScore() {
+  async generate_score() {
     const N = this.nTime, M = this.nPitch, K = this.nInst;
-    console.log("makeScore: timesteps:", N, " bass:", this.bass, " range:", M, " instruments:", K);
+    console.log("generate_score: timesteps:", N, " bass:", this.bass, " range:", M, " instruments:", K);
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
@@ -1933,7 +1933,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             runOn[j][k] = false;
           }
         }
-
         if (i < N && on) {
           if (!runOn[j][kk]) {
             runOn[j][kk] = true;
@@ -1948,30 +1947,20 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     log.textContent = `Score notes: ${score.length}\n` +
       score.slice(0, 32).map(n => JSON.stringify(n)).join('\n') +
       (score.length > 32 ? `\n… (${score.length - 32} more)` : '');
-    console.log('SCORE [instrument, time, duration, key, velocity]:', score);
     // Build the per-slice tonal plan from Julia-driven 'inst' and velocities
     const { plan, binsPerBar } = this._buildKeyPlanFromGrid(active, vel, inst, N, M, K);
-
-    // Your existing thinning:
-    const thinned = this._thinScore(score);
-
-    // Tonalize (quantize to slice key/scale, add cadences, light voice-leading)
-    const tonal = this._tonalizeScore(thinned, plan, binsPerBar);
-
-    const tied = this._tie_adjacent_notes(tonal);
-
-    this._lastScore = tied;
-
-    // Export / play from 'tied'.
+    const thinned_score = this._thinScore(score);
+    const tonalized_score = this._tonalizeScore(thinned_score, plan, binsPerBar);
+    const tied_score = this._tie_adjacent_notes(tonalized_score);
+    this._lastScore = tied_score;
     try {
       const effectiveROI = roi;
       const state = this._collectState(effectiveROI);
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      this._exportMIDI(tied, document.title.replace(/\s+/g, '_') + `_${ts}.mid`);
+      this._exportMIDI(tied_score, document.title.replace(/\s+/g, '_') + `_${ts}.mid`);
       this._exportStateJSON(state, ts);
     } catch (e) { console.warn('Export failed:', e); }
-
-    return tied;
+    return tied_score;
   }
 
   _thinScore(score) {
@@ -2027,7 +2016,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   async playMIDIFromScore() {
     await cloud5_save_state_if_needed(this.cloud5_piece);
 
-    const score = await this.makeScore();
+    const score = await this.generate_score();
   
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
 
@@ -2046,18 +2035,18 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this._playTotalBeats = Math.max(0, ...score.map(n => n[1] + n[2]));
 
     if (out) {
+      console.log(`Playing MIDI: total beats: ${this._playTotalBeats}, estimated duration: ${(step(this._playTotalBeats) / 1000).toFixed(2)}s`);
       const t0 = this._playStartMS;
       for (const [ch, tBeats, dBeats, key, vel] of score) {
-        // Lessen dynamic range for MIDI velocity mapping; adjust as needed.
-        /// let vel_ = 78. + (18. * vel) / 127.;
         let vel_ = 78. + vel / 5.
         const c = (ch | 0) & 0x0f;
         const on = 0x90 | c;
         const off = 0x80 | c;
         const whenOn = t0 + step(tBeats);
         const whenOff = t0 + step(tBeats + dBeats);
-        const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d\n", whenOn / 1000., (whenOff - whenOn) / 1000., ch, key, vel_);
-        this.cloud5_piece?.log(message_);
+        const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d", whenOn / 1000., (whenOff - whenOn) / 1000., ch, key, vel_);
+        this.cloud5_piece?.log(message_ + "\n");
+        console.log(message_);
         this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
         this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel_ | 0))]); }, Math.max(0, whenOn - performance.now())));
         this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
@@ -2244,7 +2233,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   async on_generate() {
-    const generated_score = await this.makeScore();
+    const generated_score = await this.generate_score();
+    this.cloud5_piece.score.clear();
     // Layout of this score's notes is: [channel, startBeat, durationBeats, midiKey, velocity]
     // Signature of append_note is:
     // virtual void append_note(double time, double duration, double status, double instrument, double key, double velocity, double phase=0, double pan=0, double depth=0, double height=0, double pitches=4095);
@@ -2255,9 +2245,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       let instrument = note[0] + this.base_instrument;
       let pitch = note[3];
       let loudness = note[4];
-      /// loudness = (loudness / 5.0) + 50;
       this.cloud5_piece.score.append(time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095);
-      /// this.cloud5_piece.score.append(note[1], note[2], 144, 3, note[3], note[4], 0, 0, 0, 0, 4095);
     }
   }
 }
