@@ -1998,9 +1998,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const on_time = this._secondsForBeats(tBeats);
         const duration = this._secondsForBeats(dBeats);
         const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d", on_time, duration, ch, key, vel_);
-        this.cloud5_piece?.log(message_ + "\n");
+        // Bypass the buffering of log messages.
+        this.cloud5_piece?.log_overlay?.log(message_ + "\n");
         console.log(message_);
-        this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
+        /// this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
         this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel_ | 0))]); }, Math.max(0, whenOn - performance.now())));
         this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
       }
