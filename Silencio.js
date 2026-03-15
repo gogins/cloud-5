@@ -986,34 +986,37 @@ if (typeof console === 'undefined') {
     /**
      * Looks at a full fixed score.
      */
-    Score.prototype.lookAtFullScore3D = function() {
-        const bounding_box = new THREE.Box3().setFromObject(this.scene);
-
-        const center = new THREE.Vector3();
-        const size = new THREE.Vector3();
-        bounding_box.getCenter(center);
-        bounding_box.getSize(size);
-
-        this.camera.lookAt(center);
-
-        // Guard against degenerate bounding boxes (e.g. flat/empty scenes).
-        const aspect = this.canvas.width / this.canvas.height;
-        const safe_y = (size.y > 0) ? size.y : 1;
-        const safe_x = (size.x > 0) ? size.x : 1;
-
-        // Fit the score into the viewport.
-        this.camera.fov = 2 * Math.atan((safe_x / aspect) / (2 * safe_y)) * (180 / Math.PI);
-
-        this.camera.position.copy(center);
-        const z_distance = 1.125 * Math.min(safe_x, safe_y);
-        this.camera.position.z = center.z + z_distance;
-
-
-        if (this.controls && this.controls.target) {
-            this.controls.target.copy(center);
-            this.controls.update();
+    Score.prototype.lookAtFullScore3D = function()
+    {
+        var bounding_box = new THREE.Box3().setFromObject(this.scene);
+        var center = bounding_box.getCenter(new THREE.Vector3());
+        var size = bounding_box.getSize(new THREE.Vector3());
+        if (size.x === 0) {
+            size.x = 1;
         }
-
+        if (size.y === 0) {
+            size.y = 1;
+        }
+        if (size.z === 0) {
+            size.z = 1;
+        }
+        var margin_factor = 1.10;
+        var half_width = (size.x * margin_factor) / 2;
+        var half_height = (size.y * margin_factor) / 2;
+        var half_depth = (size.z * margin_factor) / 2;
+        var aspect = this.canvas.width / this.canvas.height;
+        this.camera.aspect = aspect;
+        var vertical_fov_radians = this.camera.fov * Math.PI / 180;
+        var horizontal_fov_radians = 2 * Math.atan(Math.tan(vertical_fov_radians / 2) * aspect);
+        var distance_for_height = half_height / Math.tan(vertical_fov_radians / 2);
+        var distance_for_width = half_width / Math.tan(horizontal_fov_radians / 2);
+        var distance = Math.max(distance_for_height, distance_for_width);
+        this.camera.position.set(center.x, center.y, center.z + distance + half_depth);
+        this.camera.lookAt(center);
+            this.controls.target.copy(center);
+        this.camera.near = Math.max(0.1, distance / 100);
+        this.camera.far = Math.max(this.camera.near + 1, distance + half_depth * 4);
+            this.controls.update();
         this.camera.updateProjectionMatrix();
         this.renderer.render(this.scene, this.camera);
     };
