@@ -272,8 +272,7 @@ pre {
   // FIXME: timesteps 
   _beats_per_timestep() { return 1 / 8; } // each time bin = 32nd note (1/8 of a beat)
 
-  _update_bpm_from_seconds()
-  {
+  _update_bpm_from_seconds() {
     // Derive BPM so that (nTime * stepBeats) beats last exactly `seconds`.
     // This keeps the time grid semantics (beats) unchanged; only the tempo changes.
     const timesteps = this.nTime;
@@ -282,16 +281,14 @@ pre {
     this.bpm = (60.0 * beats_) / this.seconds;
   }
 
-  _secondsForBeats(beats)
-  {
+  _secondsForBeats(beats) {
     this._update_bpm_from_seconds();
     return beats * (60.0 / this.bpm);
   }
 
-  _beatsForMillis(ms)
-  {
-      this._update_bpm_from_seconds();
-      return (ms / 1000.) * (this.bpm / 60.0);
+  _beatsForMillis(ms) {
+    this._update_bpm_from_seconds();
+    return (ms / 1000.) * (this.bpm / 60.0);
   }
 
   _clearTimers() { for (const id of this._timers) clearTimeout(id); this._timers.length = 0; }
@@ -377,126 +374,110 @@ pre {
     this._stop_gpu_keepalive();
   }
 
-  on_score_time(a_sec, b_sec)
-  {
-      if (this._playing)
-      {
-          return;
-      }
+  on_score_time(a_sec, b_sec) {
+    if (this._playing) {
+      return;
+    }
 
-      if (!(typeof a_sec === 'number' && isFinite(a_sec) && a_sec >= 0))
-      {
-          this.playHead.style.display = 'none';
-          return;
-      }
+    if (!(typeof a_sec === 'number' && isFinite(a_sec) && a_sec >= 0)) {
+      this.playHead.style.display = 'none';
+      return;
+    }
 
-      try
-      {
-          if (this.cloud5_piece)
-          {
-              this.cloud5_piece.latest_score_time = a_sec;
-              this.cloud5_piece.total_duration = Math.max(1, this.seconds || 0);
-          }
+    try {
+      if (this.cloud5_piece) {
+        this.cloud5_piece.latest_score_time = a_sec;
+        this.cloud5_piece.total_duration = Math.max(1, this.seconds || 0);
       }
-      catch (e)
-      {
-      }
+    }
+    catch (e) {
+    }
 
-      this._start_playhead_ticker();
+    this._start_playhead_ticker();
   }
 
-  _tick_playheads()
-  {
-      const piece = this.cloud5_piece;
+  _tick_playheads() {
+    const piece = this.cloud5_piece;
 
-      let display_time_sec = 0;
-      let display_total_sec = 0;
-      let ticker_active = false;
+    let display_time_sec = 0;
+    let display_total_sec = 0;
+    let ticker_active = false;
 
-      if (this._playing)
-      {
-          const now_ms = performance.now();
-          const elapsed_ms = Math.max(0, now_ms - (this._playStartMS || now_ms));
-          const elapsed_beats = this._beatsForMillis(elapsed_ms);
-
-          display_time_sec = this._secondsForBeats(elapsed_beats);
-          display_total_sec = this._secondsForBeats(Math.max(0, this._playTotalBeats || 0));
-          ticker_active = true;
-      }
-      else
-      {
-          const ext_time = piece?.latest_score_time;
-          const ext_total = piece?.total_duration;
-
-          const time_ok =
-              typeof ext_time === 'number' &&
-              isFinite(ext_time) &&
-              ext_time >= 0;
-
-          const total_ok =
-              typeof ext_total === 'number' &&
-              isFinite(ext_total) &&
-              ext_total > 0;
-
-          if (time_ok)
-          {
-              display_time_sec = ext_time;
-              display_total_sec = total_ok ? ext_total : 0;
-
-              if (total_ok)
-              {
-                  ticker_active = ext_time <= ext_total;
-              }
-              else
-              {
-                  ticker_active = true;
-              }
-          }
-      }
-
-      if (!ticker_active)
-      {
-          this._playhead_raf_id = 0;
-          return;
-      }
-
+    if (this._playing) {
       const now_ms = performance.now();
-      if (!this._last_playhead_update_ms || (now_ms - this._last_playhead_update_ms) >= 33)
-      {
-          this._last_playhead_update_ms = now_ms;
-          try
-          {
-              this._updatePlayheadOverlay();
-          }
-          catch (e)
-          {
-          }
+      const elapsed_ms = Math.max(0, now_ms - (this._playStartMS || now_ms));
+      const elapsed_beats = this._beatsForMillis(elapsed_ms);
+
+      display_time_sec = this._secondsForBeats(elapsed_beats);
+      display_total_sec = this._secondsForBeats(Math.max(0, this._playTotalBeats || 0));
+      ticker_active = true;
+    }
+    else {
+      const ext_time = piece?.latest_score_time;
+      const ext_total = piece?.total_duration;
+
+      const time_ok =
+        typeof ext_time === 'number' &&
+        isFinite(ext_time) &&
+        ext_time >= 0;
+
+      const total_ok =
+        typeof ext_total === 'number' &&
+        isFinite(ext_total) &&
+        ext_total > 0;
+
+      if (time_ok) {
+        display_time_sec = ext_time;
+        display_total_sec = total_ok ? ext_total : 0;
+
+        if (total_ok) {
+          ticker_active = ext_time <= ext_total;
+        }
+        else {
+          ticker_active = true;
+        }
       }
+    }
 
-      this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
+    if (!ticker_active) {
+      this._playhead_raf_id = 0;
+      return;
+    }
 
-      let delta = Math.max(0, display_time_sec);
+    const now_ms = performance.now();
+    if (!this._last_playhead_update_ms || (now_ms - this._last_playhead_update_ms) >= 33) {
+      this._last_playhead_update_ms = now_ms;
+      try {
+        this._updatePlayheadOverlay();
+      }
+      catch (e) {
+      }
+    }
 
-      const days = Math.floor(delta / 86400);
-      delta -= days * 86400;
+    this._playhead_raf_id = requestAnimationFrame(this._playhead_loop);
 
-      const hours = Math.floor(delta / 3600);
-      delta -= hours * 3600;
+    let delta = Math.max(0, display_time_sec);
 
-      const minutes = Math.floor(delta / 60);
-      delta -= minutes * 60;
+    const days = Math.floor(delta / 86400);
+    delta -= days * 86400;
 
-      const seconds = delta;
+    const hours = Math.floor(delta / 3600);
+    delta -= hours * 3600;
 
-      $("#mini_console").html(
-          sprintf(
-              "d:%4d h:%02d m:%02d s:%06.3f",
-              days,
-              hours,
-              minutes,
-              seconds
-          )
-      );
+    const minutes = Math.floor(delta / 60);
+    delta -= minutes * 60;
+
+    const seconds = delta;
+
+    $("#mini_console").html(
+      sprintf(
+        "d:%4d h:%02d m:%02d s:%06.3f",
+        days,
+        hours,
+        minutes,
+        seconds
+      )
+    );
   }
 
   _start_playhead_ticker() {
@@ -1243,27 +1224,23 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // Two playhead drivers:
     //   1) MIDI playback in this class (this._playing === true)
     //   2) External/Csound playback via cloud5_piece.latest_score_time
-    if (!this._playing)
-    {
-        try
-        {
-            const piece = this.cloud5_piece;
-            const score_time_sec = piece?.latest_score_time;
+    if (!this._playing) {
+      try {
+        const piece = this.cloud5_piece;
+        const score_time_sec = piece?.latest_score_time;
 
-            if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0)
-            {
-                const total_duration_sec = Math.max(1, this.seconds || 0);
-                this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
-                try { piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
-                return;
-            }
+        if (typeof score_time_sec === 'number' && isFinite(score_time_sec) && score_time_sec >= 0) {
+          const total_duration_sec = Math.max(1, this.seconds || 0);
+          this._updatePlayheadFromSeconds(score_time_sec, total_duration_sec);
+          try { piece?.piano_roll_overlay?.show_score_time?.(); } catch (e) { }
+          return;
         }
-        catch (e)
-        {
-        }
+      }
+      catch (e) {
+      }
 
-        this.playHead.style.display = 'none';
-        return;
+      this.playHead.style.display = 'none';
+      return;
     }
     if (this._playTotalBeats <= 0) {
       this.playHead.style.display = 'none';
@@ -1358,7 +1335,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const nIn = this.shadowRoot.getElementById('binsN');
     const MIn = this.shadowRoot.getElementById('binsM');
     const bassIn = this.shadowRoot.getElementById('bass');
-    
+
     const kIn = this.shadowRoot.getElementById('binsK');
     const secIn = this.shadowRoot.getElementById('seconds');
     const denIn = this.shadowRoot.getElementById('density');
@@ -1407,11 +1384,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   };
 
   initInteractions() {
-    if (this._interactions_initialized)
-    {
-        return;
+    if (this._interactions_initialized) {
+      return;
     }
-    this._interactions_initialized = true;  
+    this._interactions_initialized = true;
     const pIn = this.shadowRoot.getElementById('expP');
     const mIn = this.shadowRoot.getElementById('iterM');
     const jIn = this.shadowRoot.getElementById('iterJ');
@@ -1759,7 +1735,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
     const existing_range = maximum_velocity - minimum_velocity;
     const target_range = 20.;
-    const scale = existing_range > 0 ? target_range / existing_range : 1.0; 
+    const scale = existing_range > 0 ? target_range / existing_range : 1.0;
     // Then rescale to target range while preserving relative dynamics.
     for (let ev of out) {
       let velocity = ev[4];
@@ -1899,7 +1875,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
           }
         }
       }
-    }   
+    }
 
     const log = this.shadowRoot.getElementById('log');
     log.textContent = `Score notes: ${score.length}\n` +
@@ -1998,11 +1974,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const on_time = this._secondsForBeats(tBeats);
         const duration = this._secondsForBeats(dBeats);
         const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d", on_time, duration, ch, key, vel_);
-        // Bypass the buffering of log messages.
-        this.cloud5_piece?.log_overlay?.log(message_ + "\n");
-        console.log(message_);
         /// this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
-        this._timers.push(setTimeout(() => { if (this._playing) out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel_ | 0))]); }, Math.max(0, whenOn - performance.now())));
+        this._timers.push(setTimeout(() => { 
+          if (this._playing) { 
+            out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel_ | 0))]); 
+            // Bypass the buffering of log messages.
+            this.cloud5_piece?.log_overlay?.log(message_ + "\n");
+            console.log(message_);
+          }
+        }, Math.max(0, whenOn - performance.now())));
         this._timers.push(setTimeout(() => { if (this._playing) out.send([off, key & 0x7f, 0]); }, Math.max(0, whenOff - performance.now())));
       }
       this._timers.push(setTimeout(() => this.stopPlayback(), Math.ceil(step(this._playTotalBeats) + 50)));
