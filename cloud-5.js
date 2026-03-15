@@ -253,60 +253,49 @@ function cloud5_snapshot_fields(obj, field_names) {
   return values;
 }
 
-function cloud5_path_exists_strict(root_obj, path)
-{
-    if (!root_obj || typeof path !== 'string' || path.length === 0)
-    {
-        return false;
+function cloud5_path_exists_strict(root_obj, path) {
+  if (!root_obj || typeof path !== 'string' || path.length === 0) {
+    return false;
+  }
+
+  const parts = path.split('.');
+  let cur = root_obj;
+
+  for (let i = 0; i < parts.length; i++) {
+    const key = parts[i];
+
+    if (cur === null || (typeof cur !== 'object' && typeof cur !== 'function')) {
+      return false;
     }
 
-    const parts = path.split('.');
-    let cur = root_obj;
-
-    for (let i = 0; i < parts.length; i++)
-    {
-        const key = parts[i];
-
-        if (cur === null || (typeof cur !== 'object' && typeof cur !== 'function'))
-        {
-            return false;
-        }
-
-        if (!(key in cur))
-        {
-            return false;
-        }
-
-        cur = cur[key];
+    if (!(key in cur)) {
+      return false;
     }
 
-    return true;
+    cur = cur[key];
+  }
+
+  return true;
 }
 
-function cloud5_restore_fields(obj, values)
-{
-    if (!obj || !values || typeof values !== 'object')
-    {
-        return;
-    }
+function cloud5_restore_fields(obj, values) {
+  if (!obj || !values || typeof values !== 'object') {
+    return;
+  }
 
-    for (const path of Object.keys(values))
-    {
-        try
-        {
-            if (!cloud5_path_exists_strict(obj, path))
-            {
-                console.log('skip', path); 
-                continue;
-            }
+  for (const path of Object.keys(values)) {
+    try {
+      if (!cloud5_path_exists_strict(obj, path)) {
+        console.log('skip', path);
+        continue;
+      }
 
-            cloud5_set_by_path(obj, path, values[path]); // your existing setter is fine now
-        }
-        catch
-        {
-            console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
-        }
+      cloud5_set_by_path(obj, path, values[path]); // your existing setter is fine now
     }
+    catch {
+      console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
+    }
+  }
 }
 
 function cloud5_apply_state_bindings(host, options = {}) {
@@ -420,8 +409,7 @@ async function cloud5_clipboard_and_download(json_text, filename) {
   }, 0);
 }
 
-function cloud5_sanitize_for_filename(s)
-{
+function cloud5_sanitize_for_filename(s) {
   return String(s || "snapshot")
     .trim()
     .replace(/\s+/g, "-")
@@ -429,8 +417,7 @@ function cloud5_sanitize_for_filename(s)
     .replace(/-+/g, "-");
 }
 
-function cloud5_snapshot_filenames_from_title(title)
-{
+function cloud5_snapshot_filenames_from_title(title) {
   const base = cloud5_sanitize_for_filename(title || "snapshot");
   return {
     html_name: `${base}.html`,
@@ -527,16 +514,12 @@ const CLOUD5_LAST_SNAPSHOT_TITLE_KEY = "cloud5.last_snapshot_title";
 const CLOUD5_SNAPSHOT_DIR_HANDLE_KEY = "cloud5.snapshot_dir_handle";
 
 // Minimal IndexedDB KV store for persisting a FileSystemDirectoryHandle.
-function cloud5_idb_open()
-{
-  return new Promise((resolve, reject) =>
-  {
+function cloud5_idb_open() {
+  return new Promise((resolve, reject) => {
     const request = indexedDB.open("cloud5_kv", 1);
-    request.onupgradeneeded = () =>
-    {
+    request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains("kv"))
-      {
+      if (!db.objectStoreNames.contains("kv")) {
         db.createObjectStore("kv");
       }
     };
@@ -545,11 +528,9 @@ function cloud5_idb_open()
   });
 }
 
-async function cloud5_idb_get(key)
-{
+async function cloud5_idb_get(key) {
   const db = await cloud5_idb_open();
-  return new Promise((resolve, reject) =>
-  {
+  return new Promise((resolve, reject) => {
     const tx = db.transaction("kv", "readonly");
     const store = tx.objectStore("kv");
     const req = store.get(key);
@@ -558,11 +539,9 @@ async function cloud5_idb_get(key)
   });
 }
 
-async function cloud5_idb_put(key, value)
-{
+async function cloud5_idb_put(key, value) {
   const db = await cloud5_idb_open();
-  return new Promise((resolve, reject) =>
-  {
+  return new Promise((resolve, reject) => {
     const tx = db.transaction("kv", "readwrite");
     const store = tx.objectStore("kv");
     const req = store.put(value, key);
@@ -571,11 +550,9 @@ async function cloud5_idb_put(key, value)
   });
 }
 
-async function cloud5_idb_delete(key)
-{
+async function cloud5_idb_delete(key) {
   const db = await cloud5_idb_open();
-  return new Promise((resolve, reject) =>
-  {
+  return new Promise((resolve, reject) => {
     const tx = db.transaction("kv", "readwrite");
     const store = tx.objectStore("kv");
     const req = store.delete(key);
@@ -584,41 +561,32 @@ async function cloud5_idb_delete(key)
   });
 }
 
-async function cloud5_try_get_snapshot_dir_handle()
-{
-  try
-  {
+async function cloud5_try_get_snapshot_dir_handle() {
+  try {
     const handle = await cloud5_idb_get(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY);
-    if (!handle)
-    {
+    if (!handle) {
       return null;
     }
-    if (typeof handle.requestPermission === "function")
-    {
+    if (typeof handle.requestPermission === "function") {
       const perm = await handle.requestPermission({ mode: "readwrite" });
-      if (perm !== "granted")
-      {
+      if (perm !== "granted") {
         return null;
       }
     }
     return handle;
   }
-  catch (e)
-  {
+  catch (e) {
     console.warn(e);
     return null;
   }
 }
 
-async function cloud5_get_or_pick_snapshot_dir_handle()
-{
+async function cloud5_get_or_pick_snapshot_dir_handle() {
   let handle = await cloud5_try_get_snapshot_dir_handle();
-  if (handle)
-  {
+  if (handle) {
     return handle;
   }
-  if (!window.showDirectoryPicker)
-  {
+  if (!window.showDirectoryPicker) {
     throw new Error("File System Access API (showDirectoryPicker) is not available in this browser.");
   }
   handle = await window.showDirectoryPicker({ mode: "readwrite" });
@@ -626,19 +594,16 @@ async function cloud5_get_or_pick_snapshot_dir_handle()
   return handle;
 }
 
-async function cloud5_forget_snapshot_dir_handle()
-{
+async function cloud5_forget_snapshot_dir_handle() {
   await cloud5_idb_delete(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY);
 }
 
-async function cloud5_run_snapshot_dialog(suggested_title)
-{
+async function cloud5_run_snapshot_dialog(suggested_title) {
   const last_saved_title = localStorage.getItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY) || "";
   const initial_title = last_saved_title || "snapshot";
 
   let dialog = document.getElementById("cloud5_snapshot_dialog");
-  if (!dialog)
-  {
+  if (!dialog) {
     dialog = document.createElement("dialog");
     dialog.id = "cloud5_snapshot_dialog";
     dialog.innerHTML = `
@@ -678,41 +643,34 @@ async function cloud5_run_snapshot_dialog(suggested_title)
   let dir_handle = await cloud5_try_get_snapshot_dir_handle();
   dir_label.textContent = dir_handle ? dir_handle.name : "(none selected)";
 
-  choose_dir_btn.onclick = async () =>
-  {
-    try
-    {
+  choose_dir_btn.onclick = async () => {
+    try {
       dir_handle = await cloud5_get_or_pick_snapshot_dir_handle();
       dir_label.textContent = dir_handle ? dir_handle.name : "(none selected)";
     }
-    catch (e)
-    {
+    catch (e) {
       console.warn(e);
       dir_label.textContent = "(directory selection failed)";
     }
   };
 
-  forget_dir_btn.onclick = async () =>
-  {
+  forget_dir_btn.onclick = async () => {
     await cloud5_forget_snapshot_dir_handle();
     dir_handle = null;
     dir_label.textContent = "(none selected)";
   };
 
-  const result = await new Promise((resolve) =>
-  {
+  const result = await new Promise((resolve) => {
     dialog.addEventListener("close", () => resolve(dialog.returnValue), { once: true });
     dialog.showModal();
   });
 
-  if (result !== "ok")
-  {
+  if (result !== "ok") {
     return null;
   }
 
   const title = title_input.value.trim() || "snapshot";
-  if (!dir_handle)
-  {
+  if (!dir_handle) {
     // If the user didn't choose a directory in the dialog, try to reuse or prompt now.
     dir_handle = await cloud5_get_or_pick_snapshot_dir_handle();
   }
@@ -721,8 +679,7 @@ async function cloud5_run_snapshot_dialog(suggested_title)
 }
 
 
-async function cloud5_select_snapshot_target(suggested_title)
-{
+async function cloud5_select_snapshot_target(suggested_title) {
   // One-step modal dialog for title + directory.
   // Returns an object: { title, dir_handle } or null if canceled.
   return await cloud5_run_snapshot_dialog(suggested_title);
@@ -782,13 +739,11 @@ function cloud5_get_snapshot_dialog() {
   return dlg;
 }
 
-async function cloud5_snapshot_to_new_version(piece)
-{
+async function cloud5_snapshot_to_new_version(piece) {
   // Snapshot the current page HTML and Cloud5 state into the chosen directory.
   const suggested_title = document.title || "snapshot";
   const dlg = await cloud5_select_snapshot_target(suggested_title);
-  if (!dlg)
-  {
+  if (!dlg) {
     return;
   }
 
@@ -898,10 +853,9 @@ async function cloud5_load_state_if_present(piece) {
     // FIXME: This is a hack to work around a bug where
     // something unknown is duplicating the main menu element.
     const menus = document.querySelectorAll('#main_menu');
-    for (let i = 1; i < menus.length; i++)
-    {
-        menus[i].remove();
-    }        
+    for (let i = 1; i < menus.length; i++) {
+      menus[i].remove();
+    }
     return;
   } catch (e) {
     // 3) Nothing
@@ -951,7 +905,7 @@ class Cloud5Element extends HTMLElement {
   connectedCallback() {
 
     try { globalThis.cloud5_piece = this; } catch (e) { }
-const attr = this.getAttribute('data-cloud5-stay-visible');
+    const attr = this.getAttribute('data-cloud5-stay-visible');
     if (attr !== null) {
       const v = String(attr).toLowerCase();
       this.cloud5_stay_visible =
@@ -1067,16 +1021,14 @@ class Cloud5Piece extends Cloud5Element {
     this._meter_poll_token = 0;
   }
 
-on_midi_start()
-{
-  this._midi_perf_start_ms = performance.now();
-  this._midi_perf_running = true;
-}
+  on_midi_start() {
+    this._midi_perf_start_ms = performance.now();
+    this._midi_perf_running = true;
+  }
 
-on_midi_stop()
-{
-  this._midi_perf_running = false;
-}
+  on_midi_stop() {
+    this._midi_perf_running = false;
+  }
 
   #csound_code_addon = null;
   /**
@@ -1482,16 +1434,14 @@ on_midi_stop()
     let level_left = -100;
     let level_right = -100;
 
-let score_time = 0;
-if (this._midi_perf_running && typeof this._midi_perf_start_ms === "number")
-{
-  score_time = (performance.now() - this._midi_perf_start_ms) / 1000.0;
-}
-else
-{
-  score_time = await csound.getScoreTime();
-}
-this.latest_score_time = score_time;
+    let score_time = 0;
+    if (this._midi_perf_running && typeof this._midi_perf_start_ms === "number") {
+      score_time = (performance.now() - this._midi_perf_start_ms) / 1000.0;
+    }
+    else {
+      score_time = await csound.getScoreTime();
+    }
+    this.latest_score_time = score_time;
 
     level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
     level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
@@ -1569,7 +1519,7 @@ this.latest_score_time = score_time;
     "genre": null,
   };
   connectedCallback() {
-  
+
     const filename = document.location.pathname.split("/").pop();
 
     this.innerHTML = `
@@ -1829,24 +1779,24 @@ this.latest_score_time = score_time;
       // TODO: Undo this?
       .filter(el => !el.closest('#main_menu'))   // prevents menu DOM becoming overlays
       .forEach(el => {
-      const label =
-        el.getAttribute('data-cloud5-label') ||
-        el.getAttribute('data-overlay-label') ||
-        el.getAttribute('title') ||
-        el.id ||
-        el.tagName.toLowerCase();
+        const label =
+          el.getAttribute('data-cloud5-label') ||
+          el.getAttribute('data-overlay-label') ||
+          el.getAttribute('title') ||
+          el.id ||
+          el.tagName.toLowerCase();
 
-      const isDefault =
-        el.hasAttribute('data-cloud5-default-visible') ||
-        el.hasAttribute('data-cloud5-default-overlay');
+        const isDefault =
+          el.hasAttribute('data-cloud5-default-visible') ||
+          el.hasAttribute('data-cloud5-default-overlay');
 
-      overlays.push({
-        element: el,
-        existingMenuId: null,
-        label,
-        isDefault
+        overlays.push({
+          element: el,
+          existingMenuId: null,
+          label,
+          isDefault
+        });
       });
-    });
 
     // --- Create / wire menu items ------------------------------------------
     const registered = [];
@@ -1910,7 +1860,7 @@ this.latest_score_time = score_time;
       this.show(defaultCfg.element);
     }
   }
-  
+
   /**
    * Reads the "stay visible" flag from overlay attributes.
    * Recognized:
@@ -2508,58 +2458,58 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
 
 
 
-on_midi_start(start_ms) {
-  // Start an independent mini_console clock during MIDI playback.
-  try {
-    this._midi_start_ms = (typeof start_ms === "number" && isFinite(start_ms)) ? start_ms : performance.now();
-    this._start_midi_clock();
-  } catch (e) {
-  }
-}
-
-on_midi_stop() {
-  try {
-    this._stop_midi_clock();
-    // Leave the last time displayed.
-  } catch (e) {
-  }
-}
-
-_start_midi_clock() {
-  if (this._midi_timer_id) {
-    return;
-  }
-  const tick = () => {
+  on_midi_start(start_ms) {
+    // Start an independent mini_console clock during MIDI playback.
     try {
-      if (!globalThis.__midi?.playing) {
-        this._stop_midi_clock();
-        return;
-      }
-      const start = this._midi_start_ms || globalThis.__midi.startMS || performance.now();
-      const elapsed_sec = (performance.now() - start) / 1000.0;
-      // Drive mini_console in the same format as Csound rendering time.
-      const txt = cloud5_format_elapsed_time(elapsed_sec);
-      const el = this.mini_console || document.getElementById("mini_console");
-      if (el) {
-        el.innerHTML = txt;
-      }
-      // Also expose elapsed as latest_score_time so score-following overlays can move.
-      this.latest_score_time = elapsed_sec;
+      this._midi_start_ms = (typeof start_ms === "number" && isFinite(start_ms)) ? start_ms : performance.now();
+      this._start_midi_clock();
     } catch (e) {
     }
-  };
-  // 20 Hz update is smooth enough for playheads.
-  this._midi_timer_id = setInterval(tick, 50);
-  tick();
-}
-
-_stop_midi_clock() {
-  if (!this._midi_timer_id) {
-    return;
   }
-  try { clearInterval(this._midi_timer_id); } catch (e) { }
-  this._midi_timer_id = 0;
-}
+
+  on_midi_stop() {
+    try {
+      this._stop_midi_clock();
+      // Leave the last time displayed.
+    } catch (e) {
+    }
+  }
+
+  _start_midi_clock() {
+    if (this._midi_timer_id) {
+      return;
+    }
+    const tick = () => {
+      try {
+        if (!globalThis.__midi?.playing) {
+          this._stop_midi_clock();
+          return;
+        }
+        const start = this._midi_start_ms || globalThis.__midi.startMS || performance.now();
+        const elapsed_sec = (performance.now() - start) / 1000.0;
+        // Drive mini_console in the same format as Csound rendering time.
+        const txt = cloud5_format_elapsed_time(elapsed_sec);
+        const el = this.mini_console || document.getElementById("mini_console");
+        if (el) {
+          el.innerHTML = txt;
+        }
+        // Also expose elapsed as latest_score_time so score-following overlays can move.
+        this.latest_score_time = elapsed_sec;
+      } catch (e) {
+      }
+    };
+    // 20 Hz update is smooth enough for playheads.
+    this._midi_timer_id = setInterval(tick, 50);
+    tick();
+  }
+
+  _stop_midi_clock() {
+    if (!this._midi_timer_id) {
+      return;
+    }
+    try { clearInterval(this._midi_timer_id); } catch (e) { }
+    this._midi_timer_id = 0;
+  }
 
 }
 customElements.define("cloud5-piece", Cloud5Piece);
@@ -3378,19 +3328,15 @@ customElements.define("cloud5-about", Cloud5About);
 // In some environments a stub `require` exists but Node's 'fs' module is unavailable.
 // Guard carefully to avoid crashing in browsers.
 var __dirname = ".";
-try
-{
-  if (typeof require === "function")
-  {
+try {
+  if (typeof require === "function") {
     const fs = require("fs");
-    if (fs && typeof fs.realpathSync === "function")
-    {
+    if (fs && typeof fs.realpathSync === "function") {
       __dirname = fs.realpathSync(".");
     }
   }
 }
-catch (e)
-{
+catch (e) {
   // Ignore.
 }
 
@@ -3937,9 +3883,9 @@ function get_filename(pathOrUrl) {
     __midi.playing = true;
     clearTimers();
     __midi.startMS = performance.now();
-    
+
     try { globalThis.cloud5_piece?.on_midi_start?.(__midi.startMS); } catch (e) { }
-__midi.totalBeats = Math.max(0, ...notes.map(n => n[1] + n[2]));
+    __midi.totalBeats = Math.max(0, ...notes.map(n => n[1] + n[2]));
     const t0 = __midi.startMS;
 
     for (const [ch, tBeats, dBeats, key, vel] of notes) {
