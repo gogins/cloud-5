@@ -425,6 +425,24 @@ function cloud5_snapshot_filenames_from_title(title) {
   };
 }
 
+function cloud5_generated_csd_filename_from_title(title) {
+    const base = cloud5_sanitize_for_filename(title || "snapshot");
+    return `${base}-generated-parameters.csd`;
+}
+
+async function cloud5_write_text_to_snapshot_dir_if_available(filename, text, mime_type = "text/plain") {
+    const dir_handle = await cloud5_try_get_snapshot_dir_handle();
+    if (!dir_handle) {
+        return false;
+    }
+
+    const file_handle = await dir_handle.getFileHandle(filename, { create: true });
+    const writable = await file_handle.createWritable();
+    await writable.write(new Blob([text], { type: mime_type }));
+    await writable.close();
+    return true;
+}
+
 function cloud5_format_elapsed_time(seconds_total) {
   const s = Math.max(0, Number(seconds_total) || 0);
   let delta = s;
@@ -2091,13 +2109,16 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     // Send _current_ dat.gui parameter values to Csound 
     // before actually performing.
     this.send_parameters(this.control_parameters_addon);
+
     // Also save the generated .csd file again, this time with current control 
     // parameter values.
-    const csd_filename_parameters = document.title + '-generated-parameters.csd';
+    const csd_filename_parameters = cloud5_generated_csd_filename_from_title(document.title);
     // Replace all values defined in global control channel init statements with the 
     // values defined in the control parameters addon.
     csd = this.update_parameters_in_csd(csd, this.control_parameters_addon);
     write_file(csd_filename_parameters, csd);
+    await cloud5_write_text_to_snapshot_dir_if_available(csd_filename_parameters, csd, "application/x-csound");
+
     // Start performance in all components.
     if (!(this?.csound.getNode)) {
       this.csound.perform();
