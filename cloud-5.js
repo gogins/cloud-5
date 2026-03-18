@@ -757,6 +757,10 @@ async function cloud5_snapshot_to_new_version(piece) {
 
   // Capture state.
   const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const save_object = piece?.gui?.getSaveObject();
+  if (save_object) {
+    state_obj.control_parameters_addon = save_object.remembered.Default[0];
+  }
   const state_text = JSON.stringify(state_obj, null, 2);
 
   // Write files.
@@ -791,8 +795,12 @@ async function cloud5_save_state_if_needed(piece) {
 
   const base = document.title || 'piece';
   const filename = `${base}.state.json`;
-
   const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const save_object = piece?.gui?.getSaveObject();
+  if (save_object) {
+    state_obj.control_parameters_addon = save_object.remembered.Default[0];
+  }
+
   const json_text = JSON.stringify(state_obj, null, 2);
 
   // Try filesystem first
@@ -2311,7 +2319,7 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
   send_parameters(parameters) {
     if (non_csound(this.csound) == false) {
       this.csound_message_callback("Sending initial state of control perameters to Csound...\n")
-      let snapshot = this.snapshot_dat_gui_menu();
+      let parameters_ = this.snapshot_dat_gui_menu();
       for (const [name, value] of Object.entries(parameters)) {
         this.csound_message_callback(name + ": " + value + "\n");
         this.csound?.setControlChannel(name, parseFloat(value));
