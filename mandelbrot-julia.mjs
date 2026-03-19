@@ -178,7 +178,7 @@ pre {
       <input id="base_instrument" data-cloud5-bind="base_instrument" type="number" value="1">
     </label>
     <label>Instruments:
-      <input id="binsK" data-cloud5-bind="nInst" type="number" value="4">
+      <input id="binsK" data-cloud5-bind="nInst" type="text" value="4">
     </label>
     <label>Seconds:
       <input id="seconds" data-cloud5-bind="seconds" type="number" value="60" min="1" max="3600" step="1" style="width:5.0rem">
@@ -221,7 +221,7 @@ pre {
     this.nTime = 4096;  // N time default
     this.nPitch = 60;   // M pitch default
     this.bass = 36;    // bass MIDI note number default (C2)
-    this.nInst = 4;
+    this.nInst = '4';
     this.maxIterM = 500;
     this.maxIterJ = 1000;
     this.exponent = 2.0;
@@ -1349,8 +1349,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this.bass = parseInt(bassIn.value);
     this.nPitch = parseInt(MIn.value);
     this.base_instrument = parseInt(base_instrument.value);
-    this.nInst = parseInt(kIn.value);
-
+    // Preserve exact user text for snapshots/restores.
+    this.nInst = (kIn.value || '').trim();
+    this.instruments = (kIn.value || '').trim();
+    const instrument_numbers = this.instruments
+      .split(/\s+/)
+      .map(value => parseInt(value, 10))
+      .filter(value => Number.isFinite(value));
+    this.instrument_numbers = instrument_numbers.length > 1 ? instrument_numbers : null;
     this.seconds = Math.max(1, parseFloat(secIn.value) || 180);
     this._update_bpm_from_seconds();
     this.density = parseFloat(denIn.value);
@@ -1792,8 +1798,21 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   async generate_score() {
-    const N = this.nTime, M = this.nPitch, K = this.nInst;
+    const N = this.nTime;
+    const M = this.nPitch;
+
+    const instrument_numbers = `${this.nInst ?? ''}`
+      .trim()
+      .split(/\s+/)
+      .map(value => parseInt(value, 10))
+      .filter(value => Number.isFinite(value));
+
+    const K = instrument_numbers.length > 1
+      ? instrument_numbers.length
+      : Math.max(1, parseInt(this.nInst, 10) || 1);
+
     console.log("generate_score: timesteps:", N, " bass:", this.bass, " range:", M, " instruments:", K);
+
     const roi = this.roiJ ?? {
       minx: this.viewJ.cx - this.viewJ.scale,
       maxx: this.viewJ.cx + this.viewJ.scale,
@@ -2167,22 +2186,35 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   async on_generate() {
-    const generated_score = await this.generate_score();
-    this.cloud5_piece.score.clear();
+  const generated_score = await this.generate_score();
+  this.cloud5_piece.score.clear();
 
-    for (const note of generated_score) {
-      let time = this._secondsForBeats(note[1]);
-      let duration = this._secondsForBeats(note[2]);
-      let status = 144;
-      let instrument = note[0] + this.base_instrument;
-      let pitch = note[3];
-      let loudness = note[4];
+  const instrument_numbers = `${this.nInst ?? ''}`
+    .trim()
+    .split(/\s+/)
+    .map(value => parseInt(value, 10))
+    .filter(value => Number.isFinite(value));
 
-      this.cloud5_piece.score.append(
-        time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095
-      );
-    }
+  const use_mapping = instrument_numbers.length > 1;
+  const instrument_count = use_mapping
+    ? instrument_numbers.length
+    : Math.max(1, parseInt(this.nInst, 10) || 1);
+
+  for (const note of generated_score) {
+    let time = this._secondsForBeats(note[1]);
+    let duration = this._secondsForBeats(note[2]);
+    let status = 144;
+    let instrument = use_mapping
+      ? instrument_numbers[note[0] % instrument_count]
+      : note[0] + this.base_instrument;
+    let pitch = note[3];
+    let loudness = note[4];
+
+    this.cloud5_piece.score.append(
+      time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095
+    );
   }
+}
 }
 
 customElements.define('mandelbrot-julia', MandelbrotJulia);
