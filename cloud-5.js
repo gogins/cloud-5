@@ -824,53 +824,48 @@ async function cloud5_load_state_if_present(piece) {
   if (!cloud5_is_local_context()) {
     return;
   }
-
   if (!piece?.fields_to_serialize || piece.fields_to_serialize.length === 0) {
     return;
   }
-
   const filename = cloud5_state_filename_for_piece(document.title || 'piece');
-
-  // 1) Try filesystem (NW.js / node context)
-  if (typeof fs !== 'undefined' && fs?.readFileSync && fs?.existsSync) {
+  // Try FileSystem API first (user-selected directory with persisted handle).
+  const directory_handle = await cloud5_try_get_snapshot_dir_handle();
+  if (directory_handle) {
     try {
-      if (!fs.existsSync(filename)) {
+      const file_handle = await directory_handle.getFileHandle(filename);
+      if (file_handle) {
+        const file = await file_handle.getFile();
+        const text = await file.text();
+        const obj = JSON.parse(text);
+        cloud5_restore_fields(piece, obj);
+        cloud5_notify_state_restored(piece, obj);
+      }
+    } catch (e) {
+      console.warn(`Failed to load state via FileSystem from directory "${directory_handle.name}":`, e);
+    }
+  } else {
+    // If FileSystem fails, try fetch.
+    try {
+      const url = filename;
+      const url_ = new URL(url, location.href).href; // resolve relative to current page
+      const response = await fetch(url_, { cache: 'no-store' });
+      if (!response.ok) {
         return;
       }
-      const text = fs.readFileSync(filename, 'utf8');
+      const text = await response.text();
       const obj = JSON.parse(text);
       cloud5_restore_fields(piece, obj);
       cloud5_notify_state_restored(piece, obj);
-      return;
     } catch (e) {
-      console.warn('Failed to load state via fs; falling back to fetch:', e);
+      console.warn(`Failed to load state via fetch from "${filename}": `, e);
     }
-  }
-
-  // 2) Try fetch (localhost served file)
-  try {
-    const url = filename;
-    const url_ = new URL(url, location.href).href; // resolve relative to current page
-    const response = await fetch(url_, { cache: 'no-store' });
-    if (!response.ok) {
-      return;
-    }
-    const text = await response.text();
-    const obj = JSON.parse(text);
-    cloud5_restore_fields(piece, obj);
-    cloud5_notify_state_restored(piece, obj);
     // FIXME: This is a hack to work around a bug where
     // something unknown is duplicating the main menu element.
     const menus = document.querySelectorAll('#main_menu');
     for (let i = 1; i < menus.length; i++) {
       menus[i].remove();
-    }
-    return;
-  } catch (e) {
-    // 3) Nothing
-    console.warn('Failed to load state via fetch; no persisted state loaded:', e);
+    }      
   }
-
 }
 
 /**
@@ -4068,10 +4063,7 @@ async function cloud5_save_data(data, filename, directory_handle) {
         if (directory_handle) {
             const file_handle = await directory_handle.getFileHandle(filename, { create: true });
             const writable = await file_handle.createWritable();
-            const content = (typeof data === 'string')
-                ? data
-                : JSON.stringify(data, null, 2);
-            await writable.write(content);
+            await writable.write(data);
             await writable.close();
             return;
         }
