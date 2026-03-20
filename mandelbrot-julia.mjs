@@ -996,7 +996,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     th_prev = th;
   }
 
-  /// var tvel = 1.0;
   var tvel = 0.0;
   if (n < maxIter) {
     let r = length(z);
@@ -1539,7 +1538,11 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       }
     }, { capture: true });
 
-    btnS.addEventListener('click', async () => { await this.generate_score(); this.playMIDIFromScore(); });
+    btnS.addEventListener('click', async () => { 
+      await this.generate_score(); 
+      await cloud5_save_state_if_needed(this.cloud5_piece);
+      this.playMIDIFromScore(); 
+    });
   }
 
   _placeSelRect(rJ, startPx, curPx) {
@@ -1717,7 +1720,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
           prev[2] = new_end - prev_t;
 
           // Velocity merge policy: keep the max so the merged note isn't quieter.
-          /// prev[4] = Math.max(prev[4] | 0, vel);
           continue;
         }
       }
@@ -1909,10 +1911,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     try {
       const effectiveROI = roi;
       const state = this._collectState(effectiveROI);
-      const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      this._exportMIDI(tied_score, document.title.replace(/\s+/g, '_') + `_${ts}.mid`);
-      this._exportStateJSON(state, ts);
-    } catch (e) { console.warn('Export failed:', e); }
+      this._exportMIDI(tied_score, document.title+ '.mid');
+    } catch (e) { 
+      console.warn('Export failed:', e); 
+    }
     return tied_score;
   }
 
@@ -1968,7 +1970,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   async playMIDIFromScore() {
     this.stopPlayback();
-    await cloud5_save_state_if_needed(this.cloud5_piece);
     let score = this._lastScore;
     if (!Array.isArray(score) || !score.length) { console.warn('No score to play'); return; }
     // Ensure the piano roll has geometry to draw (progress3D alone does not render notes).
@@ -1993,7 +1994,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         const on_time = this._secondsForBeats(tBeats);
         const duration = this._secondsForBeats(dBeats);
         const message_ = sprintf("Note on: t: %9.4f d: %9.4f c: %3d k: %4d v: %4d", on_time, duration, ch, key, vel_);
-        /// this.cloud5_piece?.process_csnd_messages_and_meters(performance.now());
         this._timers.push(setTimeout(() => { 
           if (this._playing) { 
             out.send([on, key & 0x7f, Math.max(1, Math.min(127, vel_ | 0))]); 
@@ -2100,17 +2100,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     };
   }
 
-  _exportStateJSON(state, baseName) {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${baseName}.json`;
-    this.shadowRoot.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
-  }
-
   // --------- MIDI file export ---------
   _exportMIDI(score, baseName) {
     if (!score || !score.length) return;
@@ -2173,48 +2162,40 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     bytes.set(header, 0);
     bytes.set(trkHeader, header.length);
     bytes.set(new Uint8Array(track), header.length + trkHeader.length);
-
-    const blob = new Blob([bytes], { type: 'audio/midi' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const ts = baseName || new Date().toISOString().replace(/[:.]/g, '-');
-    a.href = url;
-    a.download = baseName;
-    this.shadowRoot.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+    cloud5_save_data(bytes, `${baseName}`);
   }
 
   async on_generate() {
-  const generated_score = await this.generate_score();
-  this.cloud5_piece.score.clear();
+    const generated_score = await this.generate_score();
+    this.cloud5_piece.score.clear();
 
-  const instrument_numbers = `${this.nInst ?? ''}`
-    .trim()
-    .split(/\s+/)
-    .map(value => parseInt(value, 10))
-    .filter(value => Number.isFinite(value));
+    const instrument_numbers = `${this.nInst ?? ''}`
+      .trim()
+      .split(/\s+/)
+      .map(value => parseInt(value, 10))
+      .filter(value => Number.isFinite(value));
 
-  const use_mapping = instrument_numbers.length > 1;
-  const instrument_count = use_mapping
-    ? instrument_numbers.length
-    : Math.max(1, parseInt(this.nInst, 10) || 1);
+    const use_mapping = instrument_numbers.length > 1;
+    const instrument_count = use_mapping
+      ? instrument_numbers.length
+      : Math.max(1, parseInt(this.nInst, 10) || 1);
 
-  for (const note of generated_score) {
-    let time = this._secondsForBeats(note[1]);
-    let duration = this._secondsForBeats(note[2]);
-    let status = 144;
-    let instrument = use_mapping
-      ? instrument_numbers[note[0] % instrument_count]
-      : note[0] + this.base_instrument;
-    let pitch = note[3];
-    let loudness = note[4];
+    for (const note of generated_score) {
+      let time = this._secondsForBeats(note[1]);
+      let duration = this._secondsForBeats(note[2]);
+      let status = 144;
+      let instrument = use_mapping
+        ? instrument_numbers[note[0] % instrument_count]
+        : note[0] + this.base_instrument;
+      let pitch = note[3];
+      let loudness = note[4];
 
-    this.cloud5_piece.score.append(
-      time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095
-    );
+      this.cloud5_piece.score.append(
+        time, duration, status, instrument, pitch, loudness, 0, 0, 0, 0, 4095
+      );
+    }
+    await cloud5_save_state_if_needed(this.cloud5_piece);
   }
-}
 }
 
 customElements.define('mandelbrot-julia', MandelbrotJulia);

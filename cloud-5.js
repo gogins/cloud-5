@@ -712,8 +712,6 @@ async function cloud5_write_text_atomic_nwjs(full_path, text) {
   fs.renameSync(tmp, full_path);
 }
 
-
-
 function cloud5_get_snapshot_dialog() {
   let dlg = document.getElementById("cloud5_snapshot_dialog");
   if (dlg) {
@@ -818,23 +816,8 @@ async function cloud5_save_state_if_needed(piece) {
   if (save_object) {
     state_obj.control_parameters_addon = save_object.remembered.Default[0];
   }
-
   const json_text = JSON.stringify(state_obj, null, 2);
-
-  // Try filesystem first
-  if (typeof fs !== 'undefined' && fs?.writeFileSync) {
-    try {
-      const tmp = filename + '.tmp';
-      fs.writeFileSync(tmp, json_text, 'utf8');
-      fs.renameSync(tmp, filename);
-      return;
-    } catch (e) {
-      console.warn('fs write failed, falling back to clipboard:', e);
-    }
-  }
-
-  // Fallback: clipboard + download
-  await cloud5_clipboard_and_download(json_text, filename);
+  cloud5_save_data(json_text, filename);
 }
 
 async function cloud5_load_state_if_present(piece) {
@@ -3149,7 +3132,6 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
       if (csound) {
         var node;
         if (typeof csound.getNode == 'undefined') {
-          /// node = csound;
         } else {
           node = await csound.getNode()
           this.analyser = new AnalyserNode(node.context);
@@ -3650,7 +3632,8 @@ function downsample_lttb(data, buckets) {
       if (area > max_area) {
         max_area = area;
         max_area_point = data[range_offs];
-        next_a = range_offs; // Next a is this b
+        // Next a is this b
+        next_a = range_offs; 
       }
     }
     // Pick this point from the bucket; it is the point with the maximum
@@ -4075,6 +4058,36 @@ function cloud5_set_last_snapshot_title(title) {
     localStorage.setItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY, String(title || ""));
   } catch (e) {
   }
+}
+
+async function cloud5_save_data(data, filename, directory_handle) {
+    try {
+        if (!directory_handle) {
+         directory_handle = await cloud5_try_get_snapshot_dir_handle();
+        }
+        if (directory_handle) {
+            const file_handle = await directory_handle.getFileHandle(filename, { create: true });
+            const writable = await file_handle.createWritable();
+            const content = (typeof data === 'string')
+                ? data
+                : JSON.stringify(data, null, 2);
+            await writable.write(content);
+            await writable.close();
+            return;
+        }
+    } catch (e){
+        // fall through to blob download.
+    }
+    const content = (typeof data === 'string')
+        ? data
+        : JSON.stringify(data, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 
