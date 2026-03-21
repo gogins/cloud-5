@@ -426,21 +426,21 @@ function cloud5_snapshot_filenames_from_title(title) {
 }
 
 function cloud5_generated_csd_filename_from_title(title) {
-    const base = cloud5_sanitize_for_filename(title || "snapshot");
-    return `${base}-generated-parameters.csd`;
+  const base = cloud5_sanitize_for_filename(title || "snapshot");
+  return `${base}-generated-parameters.csd`;
 }
 
 async function cloud5_write_text_to_snapshot_dir_if_available(filename, text, mime_type = "text/plain") {
-    const dir_handle = await cloud5_try_get_snapshot_dir_handle();
-    if (!dir_handle) {
-        return false;
-    }
+  const dir_handle = await cloud5_try_get_snapshot_dir_handle();
+  if (!dir_handle) {
+    return false;
+  }
 
-    const file_handle = await dir_handle.getFileHandle(filename, { create: true });
-    const writable = await file_handle.createWritable();
-    await writable.write(new Blob([text], { type: mime_type }));
-    await writable.close();
-    return true;
+  const file_handle = await dir_handle.getFileHandle(filename, { create: true });
+  const writable = await file_handle.createWritable();
+  await writable.write(new Blob([text], { type: mime_type }));
+  await writable.close();
+  return true;
 }
 
 function cloud5_format_elapsed_time(seconds_total) {
@@ -501,32 +501,6 @@ async function cloud5_get_current_html_text() {
     return "";
   }
 }
-
-function cloud5_ensure_piece_parameters_serialized(piece) {
-  if (!piece) {
-    return;
-  }
-  if (!piece.parameters) {
-    return;
-  }
-
-  const want = "parameters";
-  const current = Array.isArray(piece.fields_to_serialize) ? piece.fields_to_serialize.slice() : [];
-  if (!current.includes(want)) {
-    current.push(want);
-    piece.fields_to_serialize = current;
-  }
-
-  // If the Snapshot menu item exists, keep its visibility in sync.
-  try {
-    const li = piece.querySelector?.("#menu_item_snapshot");
-    if (li) {
-      li.style.display = (current.length > 0) ? "inline" : "none";
-    }
-  } catch (e) {
-  }
-}
-
 
 const CLOUD5_LAST_SNAPSHOT_TITLE_KEY = "cloud5.last_snapshot_title";
 const CLOUD5_SNAPSHOT_DIR_HANDLE_KEY = "cloud5.snapshot_dir_handle";
@@ -799,16 +773,13 @@ async function cloud5_snapshot_to_new_version(piece) {
   console.log(`Snapshot saved: ${dir_handle.name}/${html_name} and ${dir_handle.name}/${state_name}`);
 }
 
-
 async function cloud5_save_state_if_needed(piece) {
   if (!cloud5_is_local_context()) {
     return;
   }
-
   if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
     return;
   }
-
   const base = document.title || 'piece';
   const filename = `${base}.state.json`;
   const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
@@ -865,7 +836,7 @@ async function cloud5_load_state_if_present(piece) {
   const menus = document.querySelectorAll('#main_menu');
   for (let i = 1; i < menus.length; i++) {
     menus[i].remove();
-  }      
+  }
 }
 
 /**
@@ -2244,58 +2215,54 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     return snapshot;
   }
 
-  create_dat_gui_menu(parameters) {
+create_dat_gui_menu(parameters)
+{
     // Preserve a single, stable parameters object instance for dat.gui bindings.
-    if (!this.parameters) {
-      this.parameters = this.get_default_preset();
+    if (!this.control_parameters_addon) {
+        this.control_parameters_addon = this.get_default_preset();
     }
-    // Merge incoming (e.g., JSON-deserialized) parameters into the existing instance.
+
+    // Merge incoming JSON-deserialized parameters into the existing instance.
     if (parameters) {
-      apply_params_into_existing(this.parameters, parameters, {
-        allow_new_keys: false,
-        ignore_null: true
-      });
+        deep_merge_into(this.control_parameters_addon, parameters, {
+            allow_new_keys: false,
+            ignore_null: true
+        });
     }
-    // Create dat.gui once; do not recreate/replace DOM on subsequent updates.
+
+    // Create dat.gui once; do not recreate it on subsequent updates.
     if (!this.gui) {
-      let dat_gui_parameters = {
-        autoPlace: false,
-        closeOnTop: true,
-        closed: true,
-        width: 400,
-        useLocalStorage: false
-      };
+        const dat_gui_parameters = {
+            autoPlace: false,
+            closeOnTop: true,
+            closed: true,
+            width: 400,
+            useLocalStorage: false
+        };
 
-      // Preserve your original behavior of incorporating defaults when parameters exist.
-      // If you intended something else, remove/adjust this.
-      if (parameters) {
-        dat_gui_parameters = Object.assign(this.get_default_preset(), dat_gui_parameters);
-      }
+        this.gui = new dat.GUI(dat_gui_parameters);
 
-      this.gui = new dat.GUI(dat_gui_parameters);
+        const dat_gui = document.getElementById('menu_item_dat_gui');
 
-      const dat_gui = document.getElementById('menu_item_dat_gui');
-      if (dat_gui.children.length === 0) {
-        dat_gui.appendChild(this.gui.domElement);
-      } else if (dat_gui.children.item(0) !== this.gui.domElement) {
-        // Only replace if something else is currently mounted there.
-        dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
-      }
+        if (dat_gui.children.length === 0) {
+            dat_gui.appendChild(this.gui.domElement);
+        } else if (dat_gui.children.item(0) !== this.gui.domElement) {
+            dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+        }
 
-      // IMPORTANT: create controllers/folders ONCE here (or in a called helper),
-      // and bind them to this.parameters (and its nested objects), e.g.:
-      // this.gui.add(this.parameters, 'foo', 0, 1);
-      // const f = this.gui.addFolder('bar');
-      // f.add(this.parameters.bar, 'baz', 0, 10);
+        // Build controllers here, bound ONLY to this.control_parameters_addon.
+        // Example:
+        // this.gui.add(this.control_parameters_addon, 'foo', 0, 1);
+        // const folder = this.gui.addFolder('bar');
+        // folder.add(this.control_parameters_addon.bar, 'baz', 0, 10);
     }
-
-    // Ensure dat.gui-backed parameters participate in state persistence.
-    cloud5_ensure_piece_parameters_serialized(this);
-
-    // Refresh controller displays to reflect merged values.
+    const menu_item_snapshot = this.querySelector("#menu_item_snapshot");
+    if (menu_item_snapshot) {
+      const ok = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
+      menu_item_snapshot.style.display = ok ? "inline" : "none";
+    }
     update_gui_displays(this.gui);
-    this._cloud5_ensure_parameters_serialized();
-  }
+}
 
   get_default_preset() {
     if (this.#control_parameters_addon.hasOwnProperty('preset')) {
@@ -2446,22 +2413,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     }
     this._ui_timer_id = 0;
   }
-  _cloud5_ensure_parameters_serialized() {
-    if (!this.parameters) {
-      return;
-    }
-
-    const current =
-      Array.isArray(this.fields_to_serialize)
-        ? this.fields_to_serialize.slice()
-        : [];
-
-    if (!current.includes('parameters')) {
-      this.fields_to_serialize = current.concat(['parameters']);
-    }
-  }
-
-
 
   on_midi_start(start_ms) {
     // Start an independent mini_console clock during MIDI playback.
@@ -3626,7 +3577,7 @@ function downsample_lttb(data, buckets) {
         max_area = area;
         max_area_point = data[range_offs];
         // Next a is this b
-        next_a = range_offs; 
+        next_a = range_offs;
       }
     }
     // Pick this point from the bucket; it is the point with the maximum
@@ -3925,21 +3876,24 @@ function get_filename(pathOrUrl) {
 })();
 
 function is_plain_object(value) {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)
-  );
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function deep_merge_into(target, patch, options = {}) {
   const {
-    ignore_null = true,          // if true: JSON null does not overwrite
-    overwrite_arrays = true,     // if true: arrays are replaced, not merged
-    allow_new_keys = true        // if false: only update keys that already exist on target
+    ignore_null = true,
+    allow_new_keys = true
   } = options;
 
-  if (patch === null) {
+  if (target === null || target === undefined) {
+    return target;
+  }
+
+  if (patch === null || patch === undefined) {
     return target;
   }
 
@@ -3949,40 +3903,114 @@ function deep_merge_into(target, patch, options = {}) {
     }
 
     const incoming = patch[key];
+
     if (incoming === null && ignore_null) {
       continue;
     }
 
     const current = target[key];
 
+    // Arrays: preserve array identity by mutating in place.
     if (Array.isArray(incoming)) {
-      if (overwrite_arrays || !Array.isArray(current)) {
-        target[key] = incoming.slice();
+      if (Array.isArray(current)) {
+        current.length = incoming.length;
+
+        for (let i = 0; i < incoming.length; ++i) {
+          const incoming_item = incoming[i];
+          const current_item = current[i];
+
+          if (is_plain_object(incoming_item) && is_plain_object(current_item)) {
+            deep_merge_into(current_item, incoming_item, options);
+          } else if (
+            is_plain_object(incoming_item) &&
+            current_item &&
+            typeof current_item === 'object' &&
+            !is_plain_object(current_item) &&
+            !Array.isArray(current_item)
+          ) {
+            deep_merge_into(current_item, incoming_item, options);
+          } else if (Array.isArray(incoming_item) && Array.isArray(current_item)) {
+            current[i] = current_item;
+            deep_merge_into_array(current_item, incoming_item, options);
+          } else {
+            current[i] = clone_for_merge(incoming_item);
+          }
+        }
       } else {
-        // simple “append” semantics; replace with your desired array policy
-        target[key] = current.concat(incoming);
+        target[key] = clone_for_merge(incoming);
       }
+
       continue;
     }
 
-    // Deep-merge plain objects into existing plain objects
+    // Plain object into plain object: mutate existing object in place.
     if (is_plain_object(incoming) && is_plain_object(current)) {
       deep_merge_into(current, incoming, options);
       continue;
     }
 
-    // If the target property is a class instance and incoming is a plain object,
-    // merge fields into that instance (preserves prototype/methods).
-    if (is_plain_object(incoming) && current && typeof current === 'object' && !is_plain_object(current)) {
+    // Plain object into class instance: mutate existing instance in place.
+    if (
+      is_plain_object(incoming) &&
+      current &&
+      typeof current === 'object' &&
+      !is_plain_object(current) &&
+      !Array.isArray(current)
+    ) {
       deep_merge_into(current, incoming, options);
       continue;
     }
 
-    // Primitive, function, Date (as string), or replacement object
-    target[key] = incoming;
+    // Primitive or replacement value.
+    target[key] = clone_for_merge(incoming);
   }
 
   return target;
+}
+
+function deep_merge_into_array(target_array, patch_array, options = {}) {
+  target_array.length = patch_array.length;
+
+  for (let i = 0; i < patch_array.length; ++i) {
+    const incoming_item = patch_array[i];
+    const current_item = target_array[i];
+
+    if (Array.isArray(incoming_item) && Array.isArray(current_item)) {
+      deep_merge_into_array(current_item, incoming_item, options);
+    } else if (is_plain_object(incoming_item) && is_plain_object(current_item)) {
+      deep_merge_into(current_item, incoming_item, options);
+    } else if (
+      is_plain_object(incoming_item) &&
+      current_item &&
+      typeof current_item === 'object' &&
+      !is_plain_object(current_item) &&
+      !Array.isArray(current_item)
+    ) {
+      deep_merge_into(current_item, incoming_item, options);
+    } else {
+      target_array[i] = clone_for_merge(incoming_item);
+    }
+  }
+
+  return target_array;
+}
+
+function clone_for_merge(value) {
+  if (Array.isArray(value)) {
+    return value.map(clone_for_merge);
+  }
+
+  if (is_plain_object(value)) {
+    const result = {};
+
+    for (const key of Object.keys(value)) {
+      result[key] = clone_for_merge(value[key]);
+    }
+
+    return result;
+  }
+
+  return value;
 }
 
 function merge_json_into_instance(instance, json_string, options) {
@@ -3992,36 +4020,6 @@ function merge_json_into_instance(instance, json_string, options) {
 
 function is_object(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function apply_params_into_existing(existing, incoming, options = {}) {
-  const { allow_new_keys = false, ignore_null = true } = options;
-
-  if (!is_object(incoming)) {
-    return existing;
-  }
-
-  for (const key of Object.keys(incoming)) {
-    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-      continue;
-    }
-    if (!allow_new_keys && !(key in existing)) {
-      continue;
-    }
-
-    const v = incoming[key];
-    if (v === null && ignore_null) {
-      continue;
-    }
-
-    if (is_object(v) && is_object(existing[key])) {
-      apply_params_into_existing(existing[key], v, options);
-    } else {
-      existing[key] = v;
-    }
-  }
-
-  return existing;
 }
 
 function update_gui_displays(gui) {
@@ -4054,30 +4052,30 @@ function cloud5_set_last_snapshot_title(title) {
 }
 
 async function cloud5_save_data(data, filename, directory_handle) {
-    try {
-        if (!directory_handle) {
-         directory_handle = await cloud5_try_get_snapshot_dir_handle();
-        }
-        if (directory_handle) {
-            const file_handle = await directory_handle.getFileHandle(filename, { create: true });
-            const writable = await file_handle.createWritable();
-            await writable.write(data);
-            await writable.close();
-            return;
-        }
-    } catch (e){
-        // fall through to blob download.
+  try {
+    if (!directory_handle) {
+      directory_handle = await cloud5_try_get_snapshot_dir_handle();
     }
-    const content = (typeof data === 'string')
-        ? data
-        : JSON.stringify(data, null, 2);
-    const blob = new Blob([content], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (directory_handle) {
+      const file_handle = await directory_handle.getFileHandle(filename, { create: true });
+      const writable = await file_handle.createWritable();
+      await writable.write(data);
+      await writable.close();
+      return;
+    }
+  } catch (e) {
+    // fall through to blob download.
+  }
+  const content = (typeof data === 'string')
+    ? data
+    : JSON.stringify(data, null, 2);
+  const blob = new Blob([content], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 
