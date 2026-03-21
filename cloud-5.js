@@ -859,13 +859,13 @@ async function cloud5_load_state_if_present(piece) {
     } catch (e) {
       console.warn(`Failed to load state via fetch from "${filename}": `, e);
     }
-    // FIXME: This is a hack to work around a bug where
-    // something unknown is duplicating the main menu element.
-    const menus = document.querySelectorAll('#main_menu');
-    for (let i = 1; i < menus.length; i++) {
-      menus[i].remove();
-    }      
   }
+  // FIXME: This is a hack to work around a bug where
+  // something unknown is duplicating the main menu element.
+  const menus = document.querySelectorAll('#main_menu');
+  for (let i = 1; i < menus.length; i++) {
+    menus[i].remove();
+  }      
 }
 
 /**
@@ -2249,7 +2249,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     if (!this.parameters) {
       this.parameters = this.get_default_preset();
     }
-
     // Merge incoming (e.g., JSON-deserialized) parameters into the existing instance.
     if (parameters) {
       apply_params_into_existing(this.parameters, parameters, {
@@ -2257,7 +2256,6 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
         ignore_null: true
       });
     }
-
     // Create dat.gui once; do not recreate/replace DOM on subsequent updates.
     if (!this.gui) {
       let dat_gui_parameters = {
