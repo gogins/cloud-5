@@ -1888,13 +1888,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             runOn[j][k] = false;
           }
         }
-        if (i < N && on) {
+        const minStartVelocity = 20; // threshold to start a note; tune to taste
+        if (i < N && on && vv >= minStartVelocity) {
           if (!runOn[j][kk]) {
             runOn[j][kk] = true;
             runI0[j][kk] = i;
             runV0[j][kk] = vv;
           }
-        }
+        }      
       }
     }
 
