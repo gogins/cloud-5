@@ -188,6 +188,9 @@ pre {
     </label>
     <label>Max voices/slice:
       <input id="maxVoices" data-cloud5-bind="maxVoicesPerSlice" type="number" value="4" min="1" step="1" style="width:4.5rem">
+    </label>    
+    <label>Velocity threshhold:
+      <input id="velocityThreshold" data-cloud5-bind="velocityThreshold" type="number" value="20" min="01" step="1" style="width:4.5rem">
     </label>
     <label>MIDI Out:
       <select id="midiOut">
@@ -230,6 +233,7 @@ pre {
     this.bpm = 120; // derived from seconds + timesteps
     this.density = 0.02;     // 0..1
     this.maxVoicesPerSlice = 999; // top-K per time slice by velocity
+    this.velocityThreshold = 20; // MIDI velocity threshold for triggering notes
 
     // playback bookkeeping
     this._timers = [];
@@ -1339,6 +1343,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const secIn = this.shadowRoot.getElementById('seconds');
     const denIn = this.shadowRoot.getElementById('density');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
+    const velocityThresholdIn = this.shadowRoot.getElementById('velocityThreshold');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
 
     this.exponent = Math.max(1.0001, parseFloat(pIn.value) || 2.0);
@@ -1360,6 +1365,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this._update_bpm_from_seconds();
     this.density = parseFloat(denIn.value);
     this.maxVoicesPerSlice = Math.max(1, parseInt(maxVIn.value) || 999);
+    this.velocityThreshold = parseInt(velocityThresholdIn.value);
   };
 
   sync_to_controls() {
@@ -1374,6 +1380,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const denIn = this.shadowRoot.getElementById('density');
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
+    const velocityThresholdIn = this.shadowRoot.getElementById('velocityThreshold');
     pIn.value = `${this.exponent ?? 2.0}`;
     mIn.value = `${this.maxIterM ?? 500}`;
     jIn.value = `${this.maxIterJ ?? 1000}`;
@@ -1386,6 +1393,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     this._update_bpm_from_seconds();
     denIn.value = `${this.density ?? 0.01}`;
     maxVIn.value = `${this.maxVoicesPerSlice ?? 999}`;
+    velocityThresholdIn.value = `${this.velocityThreshold ?? 20}`;
   };
 
   initInteractions() {
@@ -1406,7 +1414,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const maxVIn = this.shadowRoot.getElementById('maxVoices');
     const btnStop = this.shadowRoot.getElementById('btnStop');
     const base_instrument = this.shadowRoot.getElementById('base_instrument');
-    [pIn, mIn, jIn, nIn, MIn, bassIn, base_instrument, kIn, secIn, denIn, maxVIn]
+    const velocityThresholdIn = this.shadowRoot.getElementById('velocityThreshold');
+    [pIn, mIn, jIn, nIn, MIn, bassIn, base_instrument, kIn, secIn, denIn, maxVIn, velocityThresholdIn]
       .forEach(el => el.addEventListener('input', () => this.sync_from_controls()));
     this.sync_from_controls();
 
@@ -1888,8 +1897,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
             runOn[j][k] = false;
           }
         }
-        const minStartVelocity = 20; // threshold to start a note; tune to taste
-        if (i < N && on && vv >= minStartVelocity) {
+        if (i < N && on && vv >= this.velocityThreshold) {
           if (!runOn[j][kk]) {
             runOn[j][kk] = true;
             runI0[j][kk] = i;
@@ -2090,6 +2098,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       bpm: this.bpm,
       density: this.density,
       maxVoicesPerSlice: this.maxVoicesPerSlice,
+      velocityThreshold: this.velocityThreshold,
       stepBeats: this._beats_per_timestep(),
       viewM: { ...this.viewM },
       viewJ: { ...this.viewJ },
