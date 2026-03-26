@@ -1893,7 +1893,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
           if (runOn[j][k] && (i === N || k !== kk || !on)) {
             const i0 = runI0[j][k];
             const i1 = i - 1;
-            score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, this.bass + j, runV0[j][k]]);
+            score.push([k, i0 * dtBeats, (i1 - i0 + 1) * dtBeats, j, runV0[j][k]]);
             runOn[j][k] = false;
           }
         }
@@ -1916,6 +1916,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     const thinned_score = this._thinScore(score);
     const tonalized_score = this._tonalizeScore(thinned_score, plan, binsPerBar);
     const tied_score = this._tie_adjacent_notes(tonalized_score);
+    // Move bass as the very last step to avoid changing the key before tonalization and tying.
+    for (let ev of tied_score) {
+      let key = ev[3] | 0;
+      key = this.bass + key;
+      if ( key >= 0 && key <= 127) {
+        ev[3] = key;
+      }
+    }
     this._lastScore = tied_score;
     try {
       const effectiveROI = roi;
