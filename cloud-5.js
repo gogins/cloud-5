@@ -1081,8 +1081,15 @@ class Cloud5Piece extends Cloud5Element {
 
     */
   set control_parameters_addon(parameters) {
-    this.#control_parameters_addon = parameters;
-    this.create_dat_gui_menu(parameters);
+      if (!this.#control_parameters_addon) {
+          this.#control_parameters_addon = parameters;
+      } else if (parameters && parameters !== this.#control_parameters_addon) {
+          deep_merge_into(this.#control_parameters_addon, parameters, {
+              allow_new_keys: false,
+              ignore_null: true
+          });
+      }
+      this.create_dat_gui_menu();
   }
   get control_parameters_addon() {
     return this.#control_parameters_addon;
@@ -2215,54 +2222,40 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
     return snapshot;
   }
 
-create_dat_gui_menu(parameters)
-{
-    // Preserve a single, stable parameters object instance for dat.gui bindings.
-    if (!this.control_parameters_addon) {
-        this.control_parameters_addon = this.get_default_preset();
-    }
+  create_dat_gui_menu()
+  {
+      if (!this.control_parameters_addon) {
+          this.control_parameters_addon = this.get_default_preset();
+      }
 
-    // Merge incoming JSON-deserialized parameters into the existing instance.
-    if (parameters) {
-        deep_merge_into(this.control_parameters_addon, parameters, {
-            allow_new_keys: false,
-            ignore_null: true
-        });
-    }
+      if (!this.gui) {
+          const dat_gui_parameters = {
+              autoPlace: false,
+              closeOnTop: true,
+              closed: true,
+              width: 400,
+              useLocalStorage: false
+          };
 
-    // Create dat.gui once; do not recreate it on subsequent updates.
-    if (!this.gui) {
-        const dat_gui_parameters = {
-            autoPlace: false,
-            closeOnTop: true,
-            closed: true,
-            width: 400,
-            useLocalStorage: false
-        };
+          this.gui = new dat.GUI(dat_gui_parameters);
 
-        this.gui = new dat.GUI(dat_gui_parameters);
+          const dat_gui = document.getElementById('menu_item_dat_gui');
 
-        const dat_gui = document.getElementById('menu_item_dat_gui');
+          if (dat_gui.children.length === 0) {
+              dat_gui.appendChild(this.gui.domElement);
+          } else if (dat_gui.children.item(0) !== this.gui.domElement) {
+              dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+          }
+      }
 
-        if (dat_gui.children.length === 0) {
-            dat_gui.appendChild(this.gui.domElement);
-        } else if (dat_gui.children.item(0) !== this.gui.domElement) {
-            dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
-        }
+      const menu_item_snapshot = this.querySelector("#menu_item_snapshot");
+      if (menu_item_snapshot) {
+          const ok = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
+          menu_item_snapshot.style.display = ok ? "inline" : "none";
+      }
 
-        // Build controllers here, bound ONLY to this.control_parameters_addon.
-        // Example:
-        // this.gui.add(this.control_parameters_addon, 'foo', 0, 1);
-        // const folder = this.gui.addFolder('bar');
-        // folder.add(this.control_parameters_addon.bar, 'baz', 0, 10);
-    }
-    const menu_item_snapshot = this.querySelector("#menu_item_snapshot");
-    if (menu_item_snapshot) {
-      const ok = Array.isArray(this.fields_to_serialize) && this.fields_to_serialize.length > 0;
-      menu_item_snapshot.style.display = ok ? "inline" : "none";
-    }
-    update_gui_displays(this.gui);
-}
+      update_gui_displays(this.gui);
+  }
 
   get_default_preset() {
     if (this.#control_parameters_addon.hasOwnProperty('preset')) {
