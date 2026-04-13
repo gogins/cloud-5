@@ -221,7 +221,7 @@ pre {
     this._rootDiv = this.shadowRoot.getElementById('gridRoot');
 
     // Defaults
-    this.nTime = 4096;  // N time default
+    this.nTime = 400;  // N time default
     this.nPitch = 60;   // M pitch default
     this.bass = 36;    // bass MIDI note number default (C2)
     this.nInst = '4';

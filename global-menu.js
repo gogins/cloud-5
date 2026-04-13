@@ -22,6 +22,7 @@ function injectGlobalMenuList() {
     // Add the menu items
     globalMenuList.innerHTML = `
         <li class="w3-btn w3-pink w3-hover-text-amber" onclick="location.href='cloud-music.html'">About cloud-music</li>
+        <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='mandelbrot-julia.html'">Mandelbrot-Julia</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='cloud_music_no_1.html'">Cloud Music No. 1</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='cloud_music_no_2.html'">Cloud Music No. 2</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='cloud_music_no_9.html'">Cloud Music No. 9</li>
