@@ -8,7 +8,7 @@
     "package": "rm -f cloud-5.zip && cd strudel/website/dist && zip -r ../../../cloud-5.zip . -x '*.git*' -x'*.zip'",
     "marshal": "rsync -av --exclude='/*/' --exclude='.git*' --exclude='index.html' --exclude='node_modules' ./ strudel/website/dist/",
     "rename": "cp -f strudel/website/dist/index.html strudel/website/dist/strudel_repl.html",
-    "document": "pandoc --css readme.css -s --metadata title='cloud-music' --ascii=true CLOUD-MUSIC.md -o cloud-music.html && pnpm run jsdoc",
+    "document": "pandoc --css readme.css -s --metadata title='cloud-music' --ascii CLOUD-MUSIC.md -o cloud-music.html && pnpm run jsdoc",
     "dist:rename-strudel-index": "sh -c 'cd strudel/website/dist && [ -f index.html ] && mv -f index.html strudel_repl.html || true'",
     "dist:copy-root-files": "rsync -a ./ strudel/website/dist/ --exclude \"/index.html\" --exclude \"/*/\" --exclude \".git*\" --exclude \"node_modules\"",
     "dist:copy-root-jsdocs": "rsync -a --delete ./jsdocs/ strudel/website/dist/jsdocs/",
