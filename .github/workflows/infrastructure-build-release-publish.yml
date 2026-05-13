@@ -1,0 +1,150 @@
+# cloud-5: build Strudel site, publish a source+bundle zip to GitHub Releases, and
+# push strudel/website/dist into gogins.github.io on branch main.
+#
+# gogins.github.io
+#   - After git clone / fetch, the working tree is the live static site.
+#   - Files produced by cloud-5 (everything under strudel/website/dist) are
+#     tracked via .cloud5-dist-manifest.txt. Only those paths are removed when
+#     they disappear from a newer build (e.g. Rollup chunk renames).
+#   - Paths never listed in the manifest are never touched (pieces and deps
+#     committed only on gogins.github.io).
+#
+# Purging old blob history for churned assets (optional, offline):
+#   git filter-repo --force --path _astro/   # example; run in a fresh clone of
+#   gogins.github.io if the repo grows from retired chunk files in old commits.
+#
+# Secrets (cloud-5 repository):
+#   GOGINS_IO_DEPLOY_TOKEN — PAT with contents:write on gogins/gogins.github.io
+#
+# env:
+#   BUNDLE_RELEASE_TAG — rolling release tag for the zip (default cloud-5-bundle)
+#
+# Publish (zip, GitHub Release, push to Pages) runs only on branch main of repo
+# gogins/cloud-5 — never on forks, so no accidental pushes to other remotes.
+
+name: Build, bundle release, publish Pages
+
+# Runs on every push (any branch) so feature branches still build. Zip / Release
+# / Pages steps run only on refs/heads/main AND github.repository == gogins/cloud-5
+# (forks never publish; only this upstream repo touches gogins.github.io).
+on:
+  workflow_dispatch:
+  push:
+
+concurrency:
+  group: cloud-5-infrastructure
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  BUNDLE_RELEASE_TAG: cloud-5-bundle
+
+jobs:
+  build-release-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cloud-5 (with Strudel submodule)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Update Strudel submodule to tracked branch tip
+        run: |
+          set -euo pipefail
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          git submodule update --remote strudel
+
+      - name: Install pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pandoc
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies and build
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Create source + dist zip (exclude node_modules and .git)
+        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/cloud-5-bundle.zip"
+          rm -f "${out}"
+          (
+            cd "${GITHUB_WORKSPACE}"
+            zip -r "${out}" . \
+              -x '.git/*' \
+              -x '*node_modules/*' \
+              -x '*.zip'
+          )
+          ls -lh "${out}"
+          echo "BUNDLE_ZIP=${out}" >> "${GITHUB_ENV}"
+
+      - name: Publish or update rolling GitHub Release (zip only)
+        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "${BUNDLE_RELEASE_TAG}" --repo "${{ github.repository }}" >/dev/null 2>&1
+          then
+            gh release create "${BUNDLE_RELEASE_TAG}" \
+              --repo "${{ github.repository }}" \
+              --title "cloud-5 bundle (rolling)" \
+              --notes "Source tree (excluding node_modules and .git) plus built strudel/website/dist. Updated by GitHub Actions."
+          fi
+          gh release upload "${BUNDLE_RELEASE_TAG}" "${BUNDLE_ZIP}" \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+      - name: Clone gogins.github.io and merge dist
+        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
+        env:
+          TOKEN: ${{ secrets.GOGINS_IO_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${TOKEN}" ]]; then
+            echo "Missing secret GOGINS_IO_DEPLOY_TOKEN (needs contents:write on gogins/gogins.github.io)." >&2
+            exit 1
+          fi
+          pages_dir="${RUNNER_TEMP}/gogins.github.io"
+          rm -rf "${pages_dir}"
+          git clone "https://x-access-token:${TOKEN}@github.com/gogins/gogins.github.io.git" "${pages_dir}"
+          bash "${GITHUB_WORKSPACE}/scripts/publish-github-pages-from-dist.sh" \
+            "${GITHUB_WORKSPACE}/strudel/website/dist" \
+            "${pages_dir}"
+
+      - name: Commit and push gogins.github.io (main)
+        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
+        env:
+          TOKEN: ${{ secrets.GOGINS_IO_DEPLOY_TOKEN }}
+          CLOUD5_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          pages_dir="${RUNNER_TEMP}/gogins.github.io"
+          cd "${pages_dir}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet
+          then
+            echo "No changes on gogins/gogins.github.io."
+            exit 0
+          fi
+          git commit -m "Sync cloud-5 site from ${CLOUD5_SHA:0:12}"
+          git push "https://x-access-token:${TOKEN}@github.com/gogins/gogins.github.io.git" HEAD:main
