@@ -32,7 +32,7 @@ function injectGlobalMenuList() {
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='droner.html'">Droner</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='circler.html'">Circler</li>
         <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='scrims.html'">Scrims</li>
-        <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='trichord_space.cloud5.html'">Trichord Space</li>
+        <li class="w3-btn w3-text-orange w3-hover-text-amber" onclick="location.href='trichord_space.html'">Trichord Space</li>
     `;
 
     // Insert globalMenuList before mainMenuList

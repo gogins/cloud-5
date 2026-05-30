@@ -81,5 +81,5 @@ so on.
 <li><a href="player.html">player.html</a></li>
 <li><a href="polymetric.html">polymetric.html</a></li>
 <li><a href="scrims.html">scrims.html</a></li>
-<li><a href="trichord_space.cloud5.html">trichord_space.cloud5.html</a></li>
+<li><a href="trichord_space.html">trichord_space.html</a></li>
 </ul>
