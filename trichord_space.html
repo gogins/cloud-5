@@ -353,10 +353,16 @@ function escape_html(text)
                 chord_space = new ChordSpace("RP", 12.);
             }
             if (value === "OPT") {
-                chord_space = new ChordSpace("RPTg", 12.);
+                chord_space = new ChordSpace("RPT", 12.);
             }
             if (value === "OPTI") {
-                chord_space = new ChordSpace("RPTgI", 12.);
+                chord_space = new ChordSpace("RPTI", 12.);
+            }
+            if (value === "OPTg") {
+                chord_space = new ChordSpace("RPTg", 12.);
+            }
+            if (value === "OPTIg") {
+                chord_space = new ChordSpace("RPTIg", 12.);
             }
             chord_space_view = new ChordSpaceView(chord_space);
             chord_space_view.draw3D(document.getElementById("canvas"));
@@ -381,7 +387,8 @@ function escape_html(text)
             let CM = CsoundAC.chordForName("C+");
             CM = CM.T(-4.);
             console.log(CM.information());
-            console.log(CM.information_debug(-1));
+            // Currently would crash.
+            // console.log(CM.information_debug(-1));
             draw_fundamental_domain("OP");
         }());
 
@@ -474,7 +481,7 @@ function escape_html(text)
                 add_slider(Master, 'gi_Reverb_delay_modulation', 0, 3);
                 add_slider(Master, 'gk_Reverb_frequency_cutoff', 5000, 20000);
                 add_slider(Master, 'gk_MasterOutput_level', -80, 80);
-                gui.add(gui_parameters, 'equivalence_class', ['OP', 'OPT', 'OPTI']).name('Equivalence class').onChange(draw_fundamental_domain);
+                gui.add(gui_parameters, 'equivalence_class', ['OP', 'OPT', 'OPTI', 'OPTg', 'OPTIg']).name('Equivalence class').onChange(draw_fundamental_domain);
                 gui.add(gui_parameters, 'transpose').name('Transpose [T]');
                 gui.add(gui_parameters, 'invert').name('Invert [I]');
                 let Neo_Reimannian = gui.addFolder('Neo-Riemannian Transformations');
@@ -545,7 +552,7 @@ function escape_html(text)
                 csound_message_callback("ChordSpace constructor: " + equivalence_class_ + ", " + range_ + "\n");
                 this.equivalence_class = equivalence_class_;
                 this.range = range_;
-                this.chords = CsoundAC.allOfEquivalenceClass(3, this.equivalence_class, this.range, 1., 0, false);
+                this.chords = CsoundAC.allOfEquivalenceClass(3, this.equivalence_class, this.range, 1., 0., true);
             }
             contains(a) {
                 let n = this.chords.size();
@@ -608,6 +615,36 @@ function escape_html(text)
                  * Maps Chord ids to Three.js object ids.
                  */
                 this.balls_for_chords = new Map();
+                /**
+                 * OPT sector used for inversion.  Chords on shared sector facets
+                 * belong to several sectors; reflection must use the same flat
+                 * for both halves of an invert/invert pair.
+                 */
+                this.pickedSector = 0;
+            }
+            /**
+             * Canonical OPT sector for a chord (lowest index among ties).
+             */
+            sector_for_chord(chord) {
+                try {
+                    const sectors = chord.opt_domain_sectors();
+                    if (sectors != null) {
+                        if (typeof sectors.size === 'function' && sectors.size() > 0) {
+                            return sectors.get(0);
+                        }
+                        if (sectors.length > 0) {
+                            return sectors[0];
+                        }
+                    }
+                } catch (e) {
+                    csound_message_callback("sector_for_chord: " + e.message + "\n");
+                }
+                for (let s = 0; s < chord.voices(); ++s) {
+                    if (chord.is_in_rpt_sector_g(s, 12., 1.0) === true) {
+                        return s;
+                    }
+                }
+                return 0;
             }
             /**
              * Returns the chord associated with the object, or undefined if the chord 
@@ -629,13 +666,21 @@ function escape_html(text)
                 if (chord == null) {
                     return;
                 }
-                let chord_id = chord.name();
+                // Use toString() (pitch-based) as the key, not name(), because
+                // name() returns "" for any chord without a standard musical name,
+                // causing all unnamed chords to alias the same map entry.
+                let chord_id = chord.toString();
                 let ball_id = this.balls_for_chords.get(chord_id);
-                if (ball_id == null) {
-                    return;
+                if (ball_id != null) {
+                    return this.view.scene.getObjectById(ball_id);
                 }
-                let object_ = this.view.scene.getObjectById(ball_id);
-                return object_;
+                // Exact string keys can miss after Rg; match by pitch equality.
+                for (const [object_id, stored] of this.chords_for_balls.entries()) {
+                    if (stored.equals(chord)) {
+                        return this.view.scene.getObjectById(object_id);
+                    }
+                }
+                return;
             }
             current_chord() {
                 return this.chord_for_ball(this.pickedObject);
@@ -668,18 +713,16 @@ function escape_html(text)
                 if (chord == null) {
                     return;
                 }
-                csound_message_callback(sprintf("invert: chord:      %s\n", chord.name()));
-                let s = 0;
-                for ( ; s < chord.voices(); ++s) {
-                    if (chord.is_in_rpt_sector(s, 12.) == true) {
-                        break;
-                    }
-                }
-                csound_message_callback(sprintf("invert: sector:     %d\n", s));
-                let reflection = chord.reflect(s);
-                reflection.clamp(12.0);
+                csound_message_callback(sprintf("invert: chord:      %s\n", chord.toString()));
+                csound_message_callback(sprintf("invert: sector:     %d\n", this.pickedSector));
+                // Rg maps to a cached RPg partner on the ET lattice (same as before).
+                // Continuous R() can land off-lattice and miss every plotted ball.
+                let reflection = chord.Rg(this.pickedSector, 1.0);
+                reflection = reflection.eET(1.0);
                 csound_message_callback(sprintf("invert: reflection: %s\n", reflection.toString()));
-                this.select_chord(reflection);
+                // Keep pickedSector: facet chords may move to a different sector
+                // after reflection, but involution requires the same flat.
+                this.select_chord(reflection, false);
             } 
             nrr() {
                 let chord = this.current_chord();
@@ -769,14 +812,20 @@ function escape_html(text)
                 let text = chord.information();
                 monospace_alert(text);
             }
-            select_chord(chord) {
+            select_chord(chord, updateSector = true) {
                 let ball = this.ball_for_chord(chord);
                 // Note: "variable == null" is true if the variable is either undefined or null.
                 if (ball == null) {
+                    csound_message_callback(sprintf("select_chord: no ball for %s\n", chord.toString()));
                     return;
                 }
+                const mapped = this.chord_for_ball(ball);
+                const selected = (mapped != null) ? mapped : chord;
+                if (updateSector) {
+                    this.pickedSector = this.sector_for_chord(selected);
+                }
                 this.select_ball(ball);
-                this.view.on_picked_chord(chord);
+                this.view.on_picked_chord(selected);
             }
             select_ball(ball) {
                 // Restore the state of a previoiusly picked chord.
@@ -805,6 +854,7 @@ function escape_html(text)
                         if (chord == null) {
                             continue;
                         } else {
+                            this.pickedSector = this.sector_for_chord(chord);
                             this.select_ball(picked_);
                             break;
                         }
@@ -880,9 +930,10 @@ function escape_html(text)
             }
             on_picked_chord(new_chord) {
                 this.render();
-                csound_message_callback("Picked chord:\n" + new_chord.toString() + "\n");
                 this.prior_chord = this.current_chord;
                 this.current_chord = new_chord;
+                csound_message_callback("Prior chord:\n" + (this.prior_chord ? this.prior_chord.toString() : "None") + "\n");
+                csound_message_callback("Picked chord:\n" + (this.current_chord ? this.current_chord.toString() : "None") + "\n");
                 this.play_chord();
             }
             prepareScene3D() {
@@ -987,7 +1038,9 @@ function escape_html(text)
                 ball.position.y = chord.getPitch(1);
                 ball.position.z = chord.getPitch(2);
                 this.scene.add(ball);
-                this.controller.balls_for_chords.set(chord.name(), ball.id);
+                // Use toString() (pitch-based) as the key so that every chord
+                // gets its own unique entry regardless of whether it has a name.
+                this.controller.balls_for_chords.set(chord.toString(), ball.id);
                 this.controller.chords_for_balls.set(ball.id, chord);
                 ///csound_message_callback("plotChord3D: normal_form: " + chord.normal_form().toString() + " chord: " + chord.name() + "\n");
             }
