@@ -86,9 +86,9 @@
                     <dl>
                         <dt>Equivalence class</dt>
                         <dd>Sets the current equivalence class of the orbifold. The possibilities are OP
-                            (octave equivalence and permutational equivalence), OPT (octave equivalence,
+                            (octave equivalence and permutational equivalence), OPTg (octave equivalence,
                             permutational equivalence, and transpositional equivalence; maps to normal form),
-                            or OPTI (octave equivalence, permutational equivalence, transpositional
+                            or OPTIg (octave equivalence, permutational equivalence, transpositional
                             equivalence, and inversional equivalence; maps to prime form).
                         <dd>
                         <dt>Play</dt>
@@ -100,7 +100,7 @@
                         <dd>Transposes the selected chord up (+ key) or down (- key) by 1 semitone.</dd>
                         <dt>Invert [I]</dt>
                         <dd>Inverts the selected chord, i.e. reflects it in the inversion flat that
-                            divides each OPT domain into two OPTI domains.</dd>
+                            divides each OPTg domain into two OPTIg domains.</dd>
                         <dt>Move voice 1 [1]</dt>
                         <dd>Moves voice 1 of the selected chord up or down by 1 semitone.</dd>
                         <dt>Move voice 2 [2]</dt>
@@ -352,12 +352,6 @@ function escape_html(text)
             if (value === "OP") {
                 chord_space = new ChordSpace("RP", 12.);
             }
-            if (value === "OPT") {
-                chord_space = new ChordSpace("RPT", 12.);
-            }
-            if (value === "OPTI") {
-                chord_space = new ChordSpace("RPTI", 12.);
-            }
             if (value === "OPTg") {
                 chord_space = new ChordSpace("RPTg", 12.);
             }
@@ -481,7 +475,7 @@ function escape_html(text)
                 add_slider(Master, 'gi_Reverb_delay_modulation', 0, 3);
                 add_slider(Master, 'gk_Reverb_frequency_cutoff', 5000, 20000);
                 add_slider(Master, 'gk_MasterOutput_level', -80, 80);
-                gui.add(gui_parameters, 'equivalence_class', ['OP', 'OPT', 'OPTI', 'OPTg', 'OPTIg']).name('Equivalence class').onChange(draw_fundamental_domain);
+                gui.add(gui_parameters, 'equivalence_class', ['OP', 'OPTg', 'OPTIg']).name('Equivalence class').onChange(draw_fundamental_domain);
                 gui.add(gui_parameters, 'transpose').name('Transpose [T]');
                 gui.add(gui_parameters, 'invert').name('Invert [I]');
                 let Neo_Reimannian = gui.addFolder('Neo-Riemannian Transformations');
@@ -693,21 +687,6 @@ function escape_html(text)
                 chord = chord.T(semitone).eOP();
                 this.select_chord(chord);
             }
-            /*
-            Chord self = chord;
-            if (predicate<EQUIVALENCE_RELATION_RPTgI>(self, range, g, opt_sector) == true) {
-                return self;
-            } else {
-                auto rptt = equate<EQUIVALENCE_RELATION_RPTg>(self, range, g, opt_sector);
-                if (predicate<EQUIVALENCE_RELATION_I>(rptt, range, g, opt_sector) == true) {
-                    return rptt;
-                } else {
-                    auto rptt_i = equate<EQUIVALENCE_RELATION_I>(rptt, range, g, opt_sector);
-                    auto rptt_i_rptt = equate<EQUIVALENCE_RELATION_RPTg>(rptt_i, range, g, opt_sector);
-                    return rptt_i_rptt;
-                }
-            }
-            */
             invert() {
                 let chord = this.current_chord();
                 if (chord == null) {
