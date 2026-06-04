@@ -1,38 +1,38 @@
 # cloud-5: build Strudel site, publish a source+bundle zip to GitHub Releases, and
-# push strudel/website/dist into gogins.github.io on branch main.
+# push strudel/website/dist into gogins.github.io.
+#
+# Triggers
+#   - push (any branch): build only, except main on gogins/cloud-5 also releases + Pages
+#   - workflow_dispatch: build; optional release zip and/or gogins.github.io sync
 #
 # gogins.github.io
-#   - After git clone / fetch, the working tree is the live static site.
-#   - Files produced by cloud-5 (everything under strudel/website/dist) are
-#     tracked via .cloud5-dist-manifest.txt. Only those paths are removed when
-#     they disappear from a newer build (e.g. Rollup chunk renames).
-#   - Paths never listed in the manifest are never touched (pieces and deps
-#     committed only on gogins.github.io).
-#
-# Purging old blob history for churned assets (optional, offline):
-#   git filter-repo --force --path _astro/   # example; run in a fresh clone of
-#   gogins.github.io if the repo grows from retired chunk files in old commits.
+#   - strudel/website/dist is merged at the repo root via scripts/publish-github-pages-from-dist.sh
+#   - Paths listed in .cloud5-dist-manifest.txt are owned by cloud-5; retired Rollup chunks
+#     are removed only when they drop out of the manifest (not gogins-only files).
 #
 # Secrets (cloud-5 repository):
 #   GOGINS_IO_DEPLOY_TOKEN — PAT with contents:write on gogins/gogins.github.io
 #
 # env:
 #   BUNDLE_RELEASE_TAG — rolling release tag for the zip (default cloud-5-bundle)
-#
-# Publish (zip, GitHub Release, push to Pages) runs only on branch main of repo
-# gogins/cloud-5 — never on forks, so no accidental pushes to other remotes.
 
 name: Build, bundle release, publish Pages
 
-# Runs on every push (any branch) so feature branches still build. Zip / Release
-# / Pages steps run only on refs/heads/main AND github.repository == gogins/cloud-5
-# (forks never publish; only this upstream repo touches gogins.github.io).
 on:
   workflow_dispatch:
+    inputs:
+      publish_github_release:
+        description: Upload rolling cloud-5-bundle release (main builds only on push)
+        type: boolean
+        default: true
+      publish_gogins_github_io:
+        description: Sync strudel/website/dist to gogins.github.io (after release job succeeds)
+        type: boolean
+        default: true
   push:
 
 concurrency:
-  group: cloud-5-infrastructure
+  group: cloud-5-infrastructure-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -42,7 +42,7 @@ env:
   BUNDLE_RELEASE_TAG: cloud-5-bundle
 
 jobs:
-  build-release-publish:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout cloud-5 (with Strudel submodule)
@@ -80,10 +80,10 @@ jobs:
           pnpm run build
 
       - name: Create source + dist zip (exclude node_modules and .git)
-        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
+        if: github.repository == 'gogins/cloud-5'
         run: |
           set -euo pipefail
-          out="${RUNNER_TEMP}/cloud-5-bundle.zip"
+          out="${GITHUB_WORKSPACE}/cloud-5-bundle.zip"
           rm -f "${out}"
           (
             cd "${GITHUB_WORKSPACE}"
@@ -93,14 +93,45 @@ jobs:
               -x '*.zip'
           )
           ls -lh "${out}"
-          echo "BUNDLE_ZIP=${out}" >> "${GITHUB_ENV}"
+
+      - name: Upload build artifacts
+        if: github.repository == 'gogins/cloud-5'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-5-build
+          if-no-files-found: error
+          path: |
+            strudel/website/dist/
+            cloud-5-bundle.zip
+
+  release:
+    needs: build
+    if: >-
+      github.repository == 'gogins/cloud-5' &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' && inputs.publish_github_release)
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download bundle zip
+        uses: actions/download-artifact@v4
+        with:
+          name: cloud-5-build
+          path: artifacts
 
       - name: Publish or update rolling GitHub Release (zip only)
-        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          BUNDLE_ZIP="artifacts/cloud-5-bundle.zip"
+          if [[ ! -f "${BUNDLE_ZIP}" ]]
+          then
+            echo "cloud-5-bundle.zip not found in artifact" >&2
+            find artifacts -type f | head -50 >&2 || true
+            exit 1
+          fi
           if ! gh release view "${BUNDLE_RELEASE_TAG}" --repo "${{ github.repository }}" >/dev/null 2>&1
           then
             gh release create "${BUNDLE_RELEASE_TAG}" \
@@ -112,8 +143,41 @@ jobs:
             --repo "${{ github.repository }}" \
             --clobber
 
+  publish-gogins-github-io:
+    needs: [build, release]
+    if: >-
+      always() &&
+      needs.build.result == 'success' &&
+      github.repository == 'gogins/cloud-5' &&
+      (
+        (
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          needs.release.result == 'success'
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          inputs.publish_gogins_github_io &&
+          (
+            needs.release.result == 'success' ||
+            inputs.publish_github_release == false
+          )
+        )
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cloud-5 (publish script)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download strudel/website/dist
+        uses: actions/download-artifact@v4
+        with:
+          name: cloud-5-build
+          path: artifacts
+
       - name: Clone gogins.github.io and merge dist
-        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
         env:
           TOKEN: ${{ secrets.GOGINS_IO_DEPLOY_TOKEN }}
         run: |
@@ -122,15 +186,21 @@ jobs:
             echo "Missing secret GOGINS_IO_DEPLOY_TOKEN (needs contents:write on gogins/gogins.github.io)." >&2
             exit 1
           fi
+          DIST="artifacts/strudel/website/dist"
+          if [[ ! -d "${DIST}" ]]
+          then
+            echo "strudel/website/dist not found in artifact" >&2
+            find artifacts -type d | head -40 >&2 || true
+            exit 1
+          fi
           pages_dir="${RUNNER_TEMP}/gogins.github.io"
           rm -rf "${pages_dir}"
           git clone "https://x-access-token:${TOKEN}@github.com/gogins/gogins.github.io.git" "${pages_dir}"
           bash "${GITHUB_WORKSPACE}/scripts/publish-github-pages-from-dist.sh" \
-            "${GITHUB_WORKSPACE}/strudel/website/dist" \
+            "${DIST}" \
             "${pages_dir}"
 
       - name: Commit and push gogins.github.io (main)
-        if: github.ref == 'refs/heads/main' && github.repository == 'gogins/cloud-5'
         env:
           TOKEN: ${{ secrets.GOGINS_IO_DEPLOY_TOKEN }}
           CLOUD5_SHA: ${{ github.sha }}
