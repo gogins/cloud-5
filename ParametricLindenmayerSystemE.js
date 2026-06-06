@@ -383,14 +383,17 @@ Part of Silencio, an algorithmic music composition library for Csound.
             });
             this.add_command('T(n)', function (lsystem, turtle, n) {
                 turtle.chord = turtle.chord.T(n);
+                lsystem.score.insertChord(turtle.note.getTime(), turtle.chord);
                 return turtle;
             });
             this.add_command('I(c)', function (lsystem, turtle, c) {
                 turtle.chord = turtle.chord.I(c);
+                lsystem.score.insertChord(turtle.note.getTime(), turtle.chord);
                 return turtle;
             });
             this.add_command('K()', function (lsystem, turtle) {
                 turtle.chord = turtle.chord.K();
+                lsystem.score.insertChord(turtle.note.getTime(), turtle.chord);
                 return turtle;
             });
             this.add_command('Q(n)', function (lsystem, turtle, n) {
@@ -496,8 +499,8 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             /**
-             * Create notes in the score at the current time and duration from
-             * the current turtle state's chord.
+             * Append the turtle chord as note events in the score. Does not
+             * update the harmony timeline (use Chord() for conformToChords).
              */
             this.add_command('ChordNotesDuration(D)', function (lsystem, turtle, D) {
                 turtle.chord.setDuration(D);
@@ -505,6 +508,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 turtle.prior_chord = turtle.chord.clone();
                 return turtle;
             });
+            /** Append the turtle chord as note events (see ChordNotesDuration). */
             this.add_command('ChordNotes()', function (lsystem, turtle) {
                 CsoundAC.insert(lsystem.score, turtle.chord, turtle.note.getTime());
                 turtle.prior_chord = turtle.chord.clone();
@@ -525,11 +529,12 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             /**
-             * Conform notes in the score at the current time and duration to
-             * the current turtle state's chord.
+             * Insert the current turtle chord on the harmony timeline at the
+             * turtle time (same as T/K/I do after transforming). Use when the
+             * chord changes without those commands; see conformToChords.
              */
             this.add_command('Chord()', function (lsystem, turtle) {
-                CsoundAC.insert(lsystem.score, turtle.chord, turtle.note.getTime());
+                lsystem.score.insertChord(turtle.note.getTime(), turtle.chord);
                 turtle.prior_chord = turtle.chord.clone();
                 return turtle;
             });
