@@ -1,0 +1,4125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: cloud-5.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: cloud-5.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * This script defines custom HTML elements and supporting code for the 
+ * cloud-5 system. Once a custom element is used in the body of a Web page, 
+ * its DOM object can be obtained, and then not only DOM methods but also 
+ * custom methods can be called.
+ * 
+ * There are two methods of extending the cloud-5 system:
+ * 
+ * 1. Set addon functions, code text, and other properties of the custom 
+ *    elements. All such user-defined properties have names ending in 
+ *    `_addon`.
+ * 2. Define new custom elements that derive from the `Cloud5Element` base 
+ *    class, or from other cloud-5 custom elements. These new custom elements 
+ *    will automatically be given menu buttons and show/hide behavior by the
+ * 
+ * To simplify both usage and maintenance, internal styles are usually not 
+ * used. Default styles are defined in the csound-5.css cascading style sheet. 
+ * These styles can be overridden by the user.
+ * 
+ * Usage:
+ * 
+ * 1. Include the csound-5.js and csound-5.css scripts in the Web page.
+ * 2. Lay out and style the required custom elements as with any other HTNL 
+ *    elements. The w3.css style sheet is used internally and should also be 
+ *    included.
+ * 3. In a script element of the Web page:
+ *    a. Define addons as JavaScript variables.
+ *    b. Obtain DOM objects from custom elements.
+ *    c. Assign custom elements and addons to their respective properties.
+ */
+
+/**
+ * Holds refernces to windows that must be closed on exit.
+ */
+globalThis.windows_to_close = [];
+
+/**
+ * Close all secondary windows on exit.
+ */
+window.addEventListener("beforeunload", (event) => {
+  for (let window_to_close of globalThis.windows_to_close) {
+    try {
+      window_to_close.close()
+    } catch (ex) {
+      console.warn(ex);
+    }
+  }
+  globalThis.windows_to_close = [];
+});
+
+/**
+ * Create a full-viewport WebGL2 canvas inside `container` and return {gl, canvas}.
+ * Transparent by default so lower layers (e.g., your shader background) can show through.
+ */
+function obtainWebGL2(container, {
+  alpha = true,
+  antialias = true,
+  premultipliedAlpha = true,
+  preserveDrawingBuffer = false,
+  desynchronized = true,          // lower latency on some browsers
+  powerPreference = 'high-performance'
+} = {}) {
+  const canvas = document.createElement('canvas');
+  Object.assign(canvas.style, {
+    position: 'fixed', inset: '0', width: '100%', height: '100%', border: '0',
+    display: 'block', pointerEvents: 'none' // keep clicks for UI above
+  });
+  container.appendChild(canvas);
+
+  // Try WebGL2 first.
+  let gl = canvas.getContext('webgl2', {
+    alpha, antialias, premultipliedAlpha, preserveDrawingBuffer,
+    desynchronized, powerPreference
+  });
+
+  // Optional fallback to WebGL1 (if you want it)
+  if (!gl) {
+    gl = canvas.getContext('webgl', {
+      alpha, antialias, premultipliedAlpha, preserveDrawingBuffer,
+      desynchronized, powerPreference
+    }) || canvas.getContext('experimental-webgl');
+  }
+  if (!gl) throw new Error('Unable to obtain WebGL or WebGL2 context.');
+
+  // Transparent clear so underlying layers remain visible.
+  gl.clearColor(0, 0, 0, 0);
+
+  // Handle HiDPI and resizing
+  function resize() {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const w = Math.floor(canvas.clientWidth * dpr);
+    const h = Math.floor(canvas.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w; canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+  resize();
+  new ResizeObserver(resize).observe(canvas);
+  window.addEventListener('orientationchange', resize);
+
+  // Context loss / restore
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    const msg = 'WebGL context lost (obtainWebGL2)';
+    console.error(msg);
+    try {
+      globalThis.cloud5_piece?.csound_message_callback?.(msg + '\n');
+    } catch { }
+    // stop anim loops / releases as needed
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    const msg = 'WebGL context restored (obtainWebGL2)';
+    console.log(msg);
+    try {
+      globalThis.cloud5_piece?.csound_message_callback?.(msg + '\n');
+    } catch { }
+    // re-create programs/buffers/textures, then:
+    resize();
+  });
+
+  // Useful diagnostics
+  // console.log(gl.getParameter(gl.VERSION), gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+
+  // WebGL2-only? Check once:
+  const isWebGL2 = (typeof WebGL2RenderingContext !== 'undefined') &amp;&amp; (gl instanceof WebGL2RenderingContext);
+
+  // Enable common extensions when available (WebGL2: only EXT_color_buffer_float typically needed)
+  if (isWebGL2) {
+    gl.getExtension('EXT_color_buffer_float'); // renderable float targets
+    gl.getExtension('EXT_texture_filter_anisotropic'); // better texture filtering
+  } else {
+    gl.getExtension('OES_texture_float');
+    gl.getExtension('OES_texture_float_linear');
+    gl.getExtension('OES_element_index_uint');
+    gl.getExtension('EXT_shader_texture_lod');
+    gl.getExtension('EXT_texture_filter_anisotropic');
+  }
+
+  return { gl, canvas, isWebGL2 };
+}
+
+function cloud5_can_persist_state() {
+  return cloud5_is_local_context();
+}
+
+function cloud5_state_filename_for_piece() {
+  const base = document.title || 'piece';
+  return `${base}.state.json`;
+}
+
+function cloud5_is_local_context() {
+  const protocol = window.location?.protocol || '';
+  const host = window.location?.hostname || '';
+
+  // Classic browser-local signals.
+  if (protocol === 'file:') {
+    return true;
+  }
+
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return true;
+  }
+
+  // NW.js: if we're running as an NW.js app (has a manifest/package.json),
+  // treat this as local context.
+  //
+  // In NW.js, the renderer may be http(s): (embedded server, custom routing, etc.)
+  // so window.location is not a reliable locality indicator.
+  try {
+    if (typeof process !== 'undefined' &amp;&amp; process.versions &amp;&amp; process.versions.nw) {
+      if (typeof nw !== 'undefined' &amp;&amp; nw.App &amp;&amp; nw.App.manifest) {
+        // nw.App.manifest is the parsed package.json when running as an app.
+        return true;
+      }
+      // If NW.js is present but manifest is not accessible for some reason,
+      // it's still overwhelmingly likely you're in the app context.
+      return true;
+    }
+  } catch (e) {
+    // If anything about NW.js probing fails, fall through to non-local.
+  }
+
+  // Not file:, not loopback, not NW.js app context.
+  return false;
+}
+
+function cloud5_get_by_path(obj, path) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return undefined;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (const part of parts) {
+    if (current === null || (typeof current !== 'object' &amp;&amp; typeof current !== 'function')) {
+      return undefined;
+    }
+    if (!(part in current)) {
+      return undefined;
+    }
+    current = current[part]; // supports prototype getters
+  }
+
+  return current;
+}
+
+function cloud5_set_by_path(obj, path, value) {
+  if (!obj || typeof path !== 'string' || path.length === 0) {
+    return;
+  }
+
+  const parts = path.split('.');
+  let current = obj;
+
+  for (let i = 0; i &lt; parts.length - 1; i++) {
+    const part = parts[i];
+
+    if (current === null || (typeof current !== 'object' &amp;&amp; typeof current !== 'function')) {
+      return;
+    }
+
+    // Use existing value if it looks like an object; otherwise create.
+    if (!(part in current) || current[part] === null || typeof current[part] !== 'object') {
+      current[part] = {};
+    }
+
+    current = current[part];
+  }
+
+  // Final assignment: will invoke a setter if present.
+  current[parts[parts.length - 1]] = value;
+}
+
+function cloud5_snapshot_fields(obj, field_names) {
+  const values = {};
+
+  for (const path of field_names) {
+    try {
+      const raw_value = cloud5_get_by_path(obj, path);
+      if (raw_value === undefined) {
+        continue;
+      }
+
+      const detached = JSON.parse(JSON.stringify(raw_value));
+      values[path] = detached;
+    } catch {
+      console.warn(`cloud5_snapshot_fields: field ${path} could not be serialized; skipping.`);
+    }
+  }
+
+  return values;
+}
+
+function cloud5_path_exists_strict(root_obj, path) {
+  if (!root_obj || typeof path !== 'string' || path.length === 0) {
+    return false;
+  }
+
+  const parts = path.split('.');
+  let cur = root_obj;
+
+  for (let i = 0; i &lt; parts.length; i++) {
+    const key = parts[i];
+
+    if (cur === null || (typeof cur !== 'object' &amp;&amp; typeof cur !== 'function')) {
+      return false;
+    }
+
+    if (!(key in cur)) {
+      return false;
+    }
+
+    cur = cur[key];
+  }
+
+  return true;
+}
+
+function cloud5_restore_fields(obj, values) {
+  if (!obj || !values || typeof values !== 'object') {
+    return;
+  }
+
+  for (const path of Object.keys(values)) {
+    try {
+      if (!cloud5_path_exists_strict(obj, path)) {
+        console.log('skip', path);
+        continue;
+      }
+
+      cloud5_set_by_path(obj, path, values[path]); // your existing setter is fine now
+    }
+    catch {
+      console.warn(`cloud5_restore_fields: field ${path} could not be restored; skipping.`);
+    }
+  }
+}
+
+function cloud5_apply_state_bindings(host, options = {}) {
+  if (!host) return;
+
+  const include_shadow = options.include_shadow !== false;
+  const roots = [];
+  roots.push(host);
+  if (include_shadow &amp;&amp; host.shadowRoot) {
+    roots.push(host.shadowRoot);
+  }
+
+  const apply_to_element = (el, value) => {
+    if (!el) return;
+
+    // Optional affine transform: value' = value * scale + offset
+    let v = value;
+    const scale_attr = el.getAttribute?.('data-cloud5-bind-scale');
+    const offset_attr = el.getAttribute?.('data-cloud5-bind-offset');
+    const scale = scale_attr !== null ? parseFloat(scale_attr) : NaN;
+    const offset = offset_attr !== null ? parseFloat(offset_attr) : NaN;
+    if (typeof v === 'number') {
+      if (!Number.isNaN(scale)) v = v * scale;
+      if (!Number.isNaN(offset)) v = v + offset;
+    }
+
+    const explicit_prop = el.getAttribute?.('data-cloud5-bind-prop');
+    if (explicit_prop) {
+      try {
+        el[explicit_prop] = v;
+      } catch (e) { }
+      return;
+    }
+
+    // Default mapping.
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'input') {
+      const type = (el.getAttribute('type') || 'text').toLowerCase();
+      if (type === 'checkbox' || type === 'radio') {
+        el.checked = !!v;
+      } else {
+        el.value = (v ?? '').toString();
+      }
+      return;
+    }
+
+    if (tag === 'textarea' || tag === 'select') {
+      el.value = (v ?? '').toString();
+      return;
+    }
+
+    el.textContent = (v ?? '').toString();
+  };
+
+  for (const root of roots) {
+    const bound = root.querySelectorAll?.('[data-cloud5-bind]') || [];
+    for (const el of bound) {
+      const bind_path = el.getAttribute('data-cloud5-bind');
+      if (!bind_path) continue;
+      const value = cloud5_get_by_path(host, bind_path);
+      if (value === undefined) continue;
+      apply_to_element(el, value);
+    }
+  }
+}
+
+function cloud5_notify_state_restored(piece, restored_state) {
+  const notify_one = (obj) => {
+    if (!obj) return;
+    try {
+      obj.on_state_restored?.(restored_state);
+    } catch (e) {
+      console.warn('on_state_restored failed:', e);
+    }
+  };
+
+  notify_one(piece);
+
+  try {
+    if (typeof piece?._get_all_overlays === 'function') {
+      for (const overlay of piece._get_all_overlays()) {
+        notify_one(overlay);
+      }
+    }
+  } catch (e) { }
+}
+
+async function cloud5_clipboard_and_download(json_text, filename) {
+  // Clipboard
+  try {
+    await navigator.clipboard.writeText(json_text);
+  } catch (e) {
+    console.warn('Clipboard write failed:', e);
+  }
+
+  // Automatic download
+  const blob = new Blob([json_text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
+function cloud5_sanitize_for_filename(s) {
+  return String(s || "snapshot")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9_.-]/g, "_")
+    .replace(/-+/g, "-");
+}
+
+function cloud5_snapshot_filenames_from_title(title) {
+  const base = cloud5_sanitize_for_filename(title || "snapshot");
+  return {
+    html_name: `${base}.html`,
+    state_name: `${base}.state.json`,
+  };
+}
+
+function cloud5_generated_csd_filename_from_title(title) {
+  const base = cloud5_sanitize_for_filename(title || "snapshot");
+  return `${base}-generated-parameters.csd`;
+}
+
+async function cloud5_write_text_to_snapshot_dir_if_available(filename, text, mime_type = "text/plain") {
+  const dir_handle = await cloud5_try_get_snapshot_dir_handle();
+  if (!dir_handle) {
+    return false;
+  }
+
+  const file_handle = await dir_handle.getFileHandle(filename, { create: true });
+  const writable = await file_handle.createWritable();
+  await writable.write(new Blob([text], { type: mime_type }));
+  await writable.close();
+  return true;
+}
+
+function cloud5_format_elapsed_time(seconds_total) {
+  const s = Math.max(0, Number(seconds_total) || 0);
+  let delta = s;
+  const days = Math.floor(delta / 86400);
+  delta -= days * 86400;
+  const hours = Math.floor(delta / 3600) % 24;
+  delta -= hours * 3600;
+  const minutes = Math.floor(delta / 60) % 60;
+  delta -= minutes * 60;
+  const seconds = delta % 60;
+  return sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds);
+}
+
+
+function cloud5_strip_extension(filename) {
+  return filename.replace(/\.[^/.]+$/, "");
+}
+
+function cloud5_ensure_html_extension(filename) {
+  if (!filename) {
+    return filename;
+  }
+  if (/\.html?$/i.test(filename)) {
+    return filename;
+  }
+  return filename + ".html";
+}
+
+async function cloud5_get_current_html_text() {
+  // Prefer fetch when available (localhost/http/https).
+  try {
+    const response = await fetch(location.href, { cache: "no-store" });
+    if (response &amp;&amp; response.ok) {
+      return await response.text();
+    }
+  } catch (e) {
+    // Fall through.
+  }
+
+  // NW.js / file: fallback: try filesystem.
+  try {
+    if (typeof fs !== "undefined" &amp;&amp; fs?.readFileSync) {
+      const pathname = decodeURIComponent(window.location.pathname || "");
+      if (pathname) {
+        return fs.readFileSync(pathname, "utf8");
+      }
+    }
+  } catch (e) {
+    // Fall through.
+  }
+
+  // Last resort: DOM serialization (may omit doctype).
+  try {
+    return document.documentElement?.outerHTML || "";
+  } catch (e) {
+    return "";
+  }
+}
+
+const CLOUD5_LAST_SNAPSHOT_TITLE_KEY = "cloud5.last_snapshot_title";
+const CLOUD5_SNAPSHOT_DIR_HANDLE_KEY = "cloud5.snapshot_dir_handle";
+
+// Minimal IndexedDB KV store for persisting a FileSystemDirectoryHandle.
+function cloud5_idb_open() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("cloud5_kv", 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("kv")) {
+        db.createObjectStore("kv");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function cloud5_idb_get(key) {
+  const db = await cloud5_idb_open();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("kv", "readonly");
+    const store = tx.objectStore("kv");
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cloud5_idb_put(key, value) {
+  const db = await cloud5_idb_open();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("kv", "readwrite");
+    const store = tx.objectStore("kv");
+    const req = store.put(value, key);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cloud5_idb_delete(key) {
+  const db = await cloud5_idb_open();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("kv", "readwrite");
+    const store = tx.objectStore("kv");
+    const req = store.delete(key);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cloud5_try_get_snapshot_dir_handle() {
+  try {
+    const handle = await cloud5_idb_get(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY);
+    if (!handle) {
+      return null;
+    }
+    if (typeof handle.requestPermission === "function") {
+      const perm = await handle.requestPermission({ mode: "readwrite" });
+      if (perm !== "granted") {
+        return null;
+      }
+    }
+    return handle;
+  }
+  catch (e) {
+    console.warn(e);
+    return null;
+  }
+}
+
+async function cloud5_get_or_pick_snapshot_dir_handle() {
+  let handle = await cloud5_try_get_snapshot_dir_handle();
+  if (handle) {
+    return handle;
+  }
+  if (!window.showDirectoryPicker) {
+    throw new Error("File System Access API (showDirectoryPicker) is not available in this browser.");
+  }
+  handle = await window.showDirectoryPicker({ mode: "readwrite" });
+  await cloud5_idb_put(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY, handle);
+  return handle;
+}
+
+async function cloud5_forget_snapshot_dir_handle() {
+  await cloud5_idb_delete(CLOUD5_SNAPSHOT_DIR_HANDLE_KEY);
+}
+
+async function cloud5_run_snapshot_dialog(suggested_title) {
+  const last_saved_title = localStorage.getItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY) || "";
+  const initial_title = last_saved_title || "snapshot";
+
+  let dialog = document.getElementById("cloud5_snapshot_dialog");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "cloud5_snapshot_dialog";
+    dialog.innerHTML = `
+      &lt;form method="dialog" style="min-width: 520px;">
+        &lt;h3 style="margin: 0 0 10px 0;">Snapshot&lt;/h3>
+
+        &lt;div style="margin-bottom: 10px;">
+          &lt;label style="display:block; font-weight: 600; margin-bottom: 4px;">Title&lt;/label>
+          &lt;input id="cloud5_snapshot_title" type="text" style="width: 100%;" />
+        &lt;/div>
+
+        &lt;div style="margin-bottom: 10px;">
+          &lt;label style="display:block; font-weight: 600; margin-bottom: 4px;">Directory&lt;/label>
+          &lt;div style="display:flex; gap: 8px; align-items:center;">
+            &lt;button id="cloud5_snapshot_choose_dir" type="button">Choose…&lt;/button>
+            &lt;div id="cloud5_snapshot_dir_label" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">&lt;/div>
+            &lt;button id="cloud5_snapshot_forget_dir" type="button" title="Forget remembered directory">Forget&lt;/button>
+          &lt;/div>
+        &lt;/div>
+
+        &lt;div style="display:flex; justify-content: flex-end; gap: 10px;">
+          &lt;button value="cancel">Cancel&lt;/button>
+          &lt;button id="cloud5_snapshot_ok" value="ok">OK&lt;/button>
+        &lt;/div>
+      &lt;/form>
+    `;
+    document.body.appendChild(dialog);
+  }
+
+  const title_input = dialog.querySelector("#cloud5_snapshot_title");
+  const dir_label = dialog.querySelector("#cloud5_snapshot_dir_label");
+  const choose_dir_btn = dialog.querySelector("#cloud5_snapshot_choose_dir");
+  const forget_dir_btn = dialog.querySelector("#cloud5_snapshot_forget_dir");
+
+  title_input.value = last_saved_title ? last_saved_title : initial_title;
+
+  let dir_handle = await cloud5_try_get_snapshot_dir_handle();
+  dir_label.textContent = dir_handle ? dir_handle.name : "(none selected)";
+
+  choose_dir_btn.onclick = async () => {
+    try {
+      dir_handle = await cloud5_get_or_pick_snapshot_dir_handle();
+      dir_label.textContent = dir_handle ? dir_handle.name : "(none selected)";
+    }
+    catch (e) {
+      console.warn(e);
+      dir_label.textContent = "(directory selection failed)";
+    }
+  };
+
+  forget_dir_btn.onclick = async () => {
+    await cloud5_forget_snapshot_dir_handle();
+    dir_handle = null;
+    dir_label.textContent = "(none selected)";
+  };
+
+  const result = await new Promise((resolve) => {
+    dialog.addEventListener("close", () => resolve(dialog.returnValue), { once: true });
+    dialog.showModal();
+  });
+
+  if (result !== "ok") {
+    return null;
+  }
+
+  const title = title_input.value.trim() || "snapshot";
+  if (!dir_handle) {
+    // If the user didn't choose a directory in the dialog, try to reuse or prompt now.
+    dir_handle = await cloud5_get_or_pick_snapshot_dir_handle();
+  }
+
+  return { title, dir_handle };
+}
+
+
+async function cloud5_select_snapshot_target(suggested_title) {
+  // One-step modal dialog for title + directory.
+  // Returns an object: { title, dir_handle } or null if canceled.
+  return await cloud5_run_snapshot_dialog(suggested_title);
+}
+
+async function cloud5_write_text_atomic_nwjs(full_path, text) {
+  if (typeof fs === "undefined" || !fs?.writeFileSync) {
+    throw new Error("fs is not available.");
+  }
+  const tmp = full_path + ".tmp";
+  fs.writeFileSync(tmp, text, "utf8");
+  fs.renameSync(tmp, full_path);
+}
+
+function cloud5_get_snapshot_dialog() {
+  let dlg = document.getElementById("cloud5_snapshot_dialog");
+  if (dlg) {
+    return dlg;
+  }
+
+  dlg = document.createElement("dialog");
+  dlg.id = "cloud5_snapshot_dialog";
+  dlg.style.maxWidth = "720px";
+  dlg.style.width = "92vw";
+
+  dlg.innerHTML = `
+    &lt;form method="dialog" style="display:flex;flex-direction:column;gap:12px;">
+      &lt;div style="font-weight:600;">Create snapshot&lt;/div>
+
+      &lt;label style="display:flex;flex-direction:column;gap:6px;">
+        &lt;div>Title&lt;/div>
+        &lt;input id="cloud5_snapshot_title" type="text" style="width:100%;padding:6px;" />
+        &lt;div style="font-size:0.9em;opacity:0.8;">
+          Files will be saved as: &amp;lt;title&amp;gt;.html and &amp;lt;title&amp;gt;.state.&amp;lt;.json
+        &lt;/div>
+      &lt;/label>
+
+      &lt;div style="display:flex;flex-direction:column;gap:6px;">
+        &lt;div>Folder&lt;/div>
+        &lt;div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          &lt;div id="cloud5_snapshot_folder_label" style="flex:1;min-width:240px;opacity:0.9;">&lt;/div>
+          &lt;button id="cloud5_snapshot_choose_folder" type="button">Choose…&lt;/button>
+          &lt;button id="cloud5_snapshot_clear_folder" type="button" title="Forget remembered folder">Forget&lt;/button>
+        &lt;/div>
+      &lt;/div>
+
+      &lt;div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+        &lt;button value="cancel">Cancel&lt;/button>
+        &lt;button id="cloud5_snapshot_save" value="save">Save&lt;/button>
+      &lt;/div>
+    &lt;/form>
+  `;
+
+  document.body.appendChild(dlg);
+  return dlg;
+}
+
+async function cloud5_snapshot_to_new_version(piece) {
+  // Snapshot the current page HTML and Cloud5 state into the chosen directory.
+  const suggested_title = document.title || "snapshot";
+  const dlg = await cloud5_select_snapshot_target(suggested_title);
+  if (!dlg) {
+    return;
+  }
+
+  const title = dlg.title || suggested_title || "snapshot";
+  const dir_handle = dlg.dir_handle;
+
+  const { html_name, state_name } = cloud5_snapshot_filenames_from_title(title);
+
+  // Capture current HTML.
+  const html_text = "&lt;!DOCTYPE html>" + document.documentElement.outerHTML;
+
+  // Capture state.
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const save_object = piece?.gui?.getSaveObject();
+  if (save_object) {
+    state_obj.control_parameters_addon = save_object.remembered.Default[0];
+  }
+  const state_text = JSON.stringify(state_obj, null, 2);
+
+  // Write files.
+  const html_handle = await dir_handle.getFileHandle(html_name, { create: true });
+  const state_handle = await dir_handle.getFileHandle(state_name, { create: true });
+
+  {
+    const writable = await html_handle.createWritable();
+    await writable.write(new Blob([html_text], { type: "text/html" }));
+    await writable.close();
+  }
+  {
+    const writable = await state_handle.createWritable();
+    await writable.write(new Blob([state_text], { type: "application/json" }));
+    await writable.close();
+  }
+
+  localStorage.setItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY, title);
+
+  console.log(`Snapshot saved: ${dir_handle.name}/${html_name} and ${dir_handle.name}/${state_name}`);
+}
+
+async function cloud5_save_state_if_needed(piece) {
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+  if (!piece.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+  const base = document.title || 'piece';
+  const filename = `${base}.state.json`;
+  const state_obj = cloud5_snapshot_fields(piece, piece.fields_to_serialize);
+  const save_object = piece?.gui?.getSaveObject();
+  if (save_object) {
+    state_obj.control_parameters_addon = save_object.remembered.Default[0];
+  }
+  const json_text = JSON.stringify(state_obj, null, 2);
+  cloud5_save_data(json_text, filename);
+}
+
+async function cloud5_load_state_if_present(piece) {
+  // FIXME: This is a hack to work around a bug where
+  // something unknown is duplicating the main menu element.
+  const menus = document.querySelectorAll('#main_menu');
+  for (let i = 1; i &lt; menus.length; i++) {
+    menus[i].remove();
+  }
+  if (!cloud5_is_local_context()) {
+    return;
+  }
+  if (!piece?.fields_to_serialize || piece.fields_to_serialize.length === 0) {
+    return;
+  }
+  const filename = cloud5_state_filename_for_piece(document.title || 'piece');
+  // Try FileSystem API first (user-selected directory with persisted handle).
+  const directory_handle = await cloud5_try_get_snapshot_dir_handle();
+  if (directory_handle) {
+    try {
+      const file_handle = await directory_handle.getFileHandle(filename);
+      if (file_handle) {
+        const file = await file_handle.getFile();
+        const text = await file.text();
+        const obj = JSON.parse(text);
+        cloud5_restore_fields(piece, obj);
+        cloud5_notify_state_restored(piece, obj);
+      }
+    } catch (e) {
+      console.warn(`Failed to load state via FileSystem from directory "${directory_handle.name}":`, e);
+    }
+  } else {
+    // If FileSystem fails, try fetch.
+    try {
+      const url = filename;
+      const url_ = new URL(url, location.href).href; // resolve relative to current page
+      const response = await fetch(url_, { cache: 'no-store' });
+      if (!response.ok) {
+        return;
+      }
+      const text = await response.text();
+      const obj = JSON.parse(text);
+      cloud5_restore_fields(piece, obj);
+      cloud5_notify_state_restored(piece, obj);
+    } catch (e) {
+      console.warn(`Failed to load state via fetch from "${filename}": `, e);
+    }
+  }
+}
+
+/**
+ * Base class for Cloud5 overlay-like elements.
+ * Currently lightweight, but centralizes a few common conventions:
+ * - Optional `data-cloud5-stay-visible` attribute parsed into `cloud5_stay_visible`.
+ * - Optional `on_shown()` / `on_hidden()` lifecycle hooks.
+ *
+ * Subclasses should call `super.connectedCallback()` if they override it.
+ */
+class Cloud5Element extends HTMLElement {
+  #fields_to_serialize = [];
+  #cloud5_state_restored = false;
+
+  constructor() {
+    super();
+    this.cloud5_stay_visible = false;
+  }
+
+  set fields_to_serialize(fields) {
+    if (!Array.isArray(fields)) {
+      this.#fields_to_serialize = [];
+    } else {
+      this.#fields_to_serialize = fields.slice();
+    }
+    // Do NOT restore here — overlays may not exist yet.
+  }
+
+  get fields_to_serialize() {
+    // Lazy, one-shot restore
+    if (!this.#cloud5_state_restored) {
+      this.#cloud5_state_restored = true;
+
+      if (cloud5_can_persist_state() &amp;&amp; this.#fields_to_serialize.length > 0) {
+        cloud5_load_state_if_present(this);
+      }
+    }
+    return this.#fields_to_serialize;
+  }
+
+  connectedCallback() {
+
+    try { globalThis.cloud5_piece = this; } catch (e) { }
+    const attr = this.getAttribute('data-cloud5-stay-visible');
+    if (attr !== null) {
+      const v = String(attr).toLowerCase();
+      this.cloud5_stay_visible =
+        (v === '' || v === 'true' || v === '1' || v === 'yes');
+    }
+  }
+  /**
+   * Optional lifecycle hook called by the piece when this element is shown.
+   * Subclasses may override this method to change behavior when shown.
+   */
+  on_shown() { }
+  /** 
+   * Optional lifecycle hook called by the piece when this element is hidden.
+   * Subclasses may override this method to change behavior when hidden.
+   */
+  on_hidden() { }
+  /**
+   * Optional lifecycle hook called by the piece when it stops its performance. 
+   * Subclasses may override this method to change behavior when the piece stops.  
+   */
+  on_stop() { }
+  /**
+   * Optional lifecycle hook called by the piece when it is cleared. 
+   * Subclasses may override this method to change behavior when the piece is 
+   * cleared, such as clearing any performance-related internal state in 
+   * preparation for a new performance.
+   */
+  on_clear() { }
+  /**
+   * Optional lifecycle hook called by the piece when it generates a new 
+   * Score. Subclasses may override this method to add new Events to the 
+   * Score, or to modify existing Events.
+   */
+  on_generate() { }
+  /**
+   * Optional lifecycle hook called by the piece when it starts its 
+   * performance. Subclasses may override this method to change behavior when 
+   * the piece starts, such as to schedule real-time events.
+   */
+  on_play() { }
+
+  /**
+   * Optional lifecycle hook called after a persisted state has been restored
+   * into this element (or the owning piece).
+   *
+   * Default behavior: update any DOM elements that declare a
+   * `data-cloud5-bind="path"` attribute, where `path` is resolved relative to
+   * `this`.
+   *
+   * Subclasses may override. If you still want the default binding behavior,
+   * call `super.on_state_restored(restored_state)`.
+   */
+  on_state_restored(restored_state) {
+    this.cloud5_refresh_dom_from_state();
+  }
+
+  /**
+   * Applies `data-cloud5-bind` updates for this element.
+   */
+  cloud5_refresh_dom_from_state(options = {}) {
+    cloud5_apply_state_bindings(this, options);
+  }
+
+  sync_to_controls() {
+    cloud6_apply_state_bindings(this);
+  }
+
+  sync_from_controls() { }
+}
+
+/**
+ * Sets up the piece, and defines menu buttons. The user may assign the DOM 
+ * objects of other cloud-5 elements to the `_overlay` properties. 
+ */
+class Cloud5Piece extends Cloud5Element {
+  constructor() {
+    super();
+    this.csound = null;
+    this.csoundac = null;
+    this.score = null
+    this.is_rendering = false;
+    // Default duration and fadeout for rendering to a soundfile.
+    // These may be overridden by control parameters, and are somewhat less 
+    // than the setTimeout maximum.
+    this.duration = 2e6;
+    this.fadeout = 6;
+    this.safe_tail = 4;
+    this.total_duration = this.duration + this.fadeout + this.safe_tail;
+
+    // Performance/UI state.
+    this.is_performing = false;
+    this.latest_score_time = 0;
+    this._midi_perf_start_ms = null;
+    this._midi_perf_running = false;
+    this._display_raf_id = 0;
+    this._display_last_ms = 0;
+    this._ui_timer_id = 0;
+    this.ui_timer_interval_ms = 250; // 4 Hz UI/log/meter drain independent of RAF.
+
+    // Csound message / UI throttling to avoid main-thread overload that can
+    // induce GPU device/context loss.
+    this.csound_message_queue = [];
+    this.csound_message_queue_limit = 2000;
+    this.csound_message_max_per_tick = 200;
+    this.log_flush_max_chars = 12000;
+    this.log_flush_max_messages = 400;
+    this.log_flush_interval_ms = 200;
+    this._last_log_flush_ms = 0;
+    this.meter_update_interval_ms = 50; // 20 Hz
+    this._last_meter_update_ms = 0;
+    this._meter_poll_in_flight = false;
+    this._last_meter_poll_start_ms = 0;
+    this._meter_poll_token = 0;
+  }
+
+  on_midi_start() {
+    this._midi_perf_start_ms = performance.now();
+    this._midi_perf_running = true;
+  }
+
+  on_midi_stop() {
+    this._midi_perf_running = false;
+  }
+
+  #csound_code_addon = null;
+  /**
+    * May be assigned the text of a Csound .csd patch. If so, the Csound 
+    * patch will be compiled and run for every performance.
+    */
+  set csound_code_addon(code) {
+    this.#csound_code_addon = code;
+  }
+  get csound_code_addon() {
+    return this.#csound_code_addon;
+  }
+  #shader_overlay = null;
+  /**
+  * May be assigned an instance of a cloud5-shadertoy overlay. If so, 
+  * the GLSL shader will run at all times, and will normally create the 
+  * background for other overlays. The shader overlay may call 
+  * addon functions either to visualize the audio of the performance, 
+  * and/or to sample the video canvas to generate notes for performance by 
+  * Csound.
+  */
+  set shader_overlay(shader) {
+    this.#shader_overlay = shader;
+    // Back reference for shader to access the piece.
+    shader.cloud5_piece = this;
+    this.show(this.#shader_overlay);
+  }
+  get shader_overlay() {
+    return this.#shader_overlay;
+  }
+  /**
+   * May be assigned the URL of a Web page to implement HTML-based controls 
+   * for the performance. This is normally used only if there is a secondary 
+   * display to use for these controls, so that the primary display can become 
+   * fullscreen. The resulting Web page can obtain a reference to this piece 
+   * from its `window.opener`, which is the window that opens the HTML 
+   * controls window, and the opener can be used to control all aspects of the 
+   * piece.
+   * 
+   * For this to work the HTML controls and the piece must have the same 
+   * origin.
+   */
+  html_controls_url_addon = null;
+  /**
+   * Stores a reference to the HTML controls window; this reference will be 
+   * used to close the HTML controls window upon leaving fullscreen.
+   */
+  html_controls_window = null;
+  #control_parameters_addon = null;
+  /**
+    * May be assigned a JavaScript object consisting of Csound control 
+    * parameters, with default values. The naming convention must be global 
+    * Csound variable type, underscore{ , Csound instrument name}, 
+    * underscore, Csound control channel name. For example:
+    * 
+    * control_parameters_addon = {
+    *  "gk_Duration_factor": 0.8682696259761612,
+    *  "gk_Iterations": 4,
+    *  "gk_MasterOutput_level": -2.383888203863542,
+    *  "gk_Shimmer_wetDry": 0.06843403205918619
+    * };
+    *
+    * The Csound orchestra should define matching control channels. Such 
+    * parameters may also be used to control other processes.
+    *   saveAs: function saveAs(presetName) {
+    if (!this.load.remembered) {
+      this.load.remembered = {};
+      this.load.remembered[DEFAULT_DEFAULT_PRESET_NAME] = getCurrentPreset(this, true);
+    }
+    this.load.remembered[presetName] = getCurrentPreset(this);
+    this.preset = presetName;
+    addPresetOption(this, presetName, true);
+    this.saveToLocalStorageIfPossible();
+  },
+
+    */
+  set control_parameters_addon(parameters) {
+      if (!this.#control_parameters_addon) {
+          this.#control_parameters_addon = parameters;
+      } else if (parameters &amp;&amp; parameters !== this.#control_parameters_addon) {
+          deep_merge_into(this.#control_parameters_addon, parameters, {
+              allow_new_keys: false,
+              ignore_null: true
+          });
+      }
+      this.create_dat_gui_menu();
+  }
+  get control_parameters_addon() {
+    return this.#control_parameters_addon;
+  }
+  #score_generator_function_addon = null;
+  /**
+   * May be assigned a score generating function. If so, the score generator 
+   * will be called for each performance, and must generate and return a 
+   * CsoundAC Score, which will be translated to a Csound score in text 
+   * format, appended to the Csound patch, displayed in the piano roll 
+   * overlay, and played or rendered by Csound.
+   */
+  set score_generator_function_addon(score_generator_function) {
+    this.#score_generator_function_addon = score_generator_function;
+  }
+  get score_generator_function_addon() {
+    return this.#score_generator_function_addon;
+  }
+
+  #piano_roll_overlay = null;
+  /**
+   * May be assigned the DOM object of a &lt;cloud5-piano-roll> element overlay. 
+   * If so, the Score button will show or hide an animated, zoomable piano 
+   * roll display of the generated CsoundAC Score.
+   */
+  set piano_roll_overlay(piano_roll) {
+    this.#piano_roll_overlay = piano_roll;
+    if (this.#piano_roll_overlay) {
+      this.#piano_roll_overlay.cloud5_piece = this;
+    }
+  }
+  get piano_roll_overlay() {
+    return this.#piano_roll_overlay;
+  }
+
+  /**
+   * May be assigned the DOM object of a &lt;cloud5-log> element overlay. If so, 
+   * the Log button will show or hide a scrolling view of messages from Csound or 
+   * other sources.
+   */
+  #log_overlay = null;
+  set log_overlay(overlay) {
+    this.#log_overlay = overlay;
+    if (this.#log_overlay) {
+      this.#log_overlay.cloud5_piece = this;
+    }
+  }
+  get log_overlay() {
+    return this.#log_overlay;
+  }
+
+  /**
+   * May be assigned the DOM object of a &lt;cloud5-about> element overlay. If 
+   * so, the About button will show or hide the overlay. The inner HTML of 
+   * this element may contain license information, authorship, credits, 
+   * program notes for the piece, or other information.
+   */
+  #about_overlay = null;
+  set about_overlay(overlay) {
+    this.#about_overlay = overlay;
+  }
+  get about_overlay() {
+    return this.#about_overlay;
+  }
+
+  /**
+   * May be assigned the DOM object of a &lt;cloud5-strudel> element overlay. If 
+   * so, the Strudel button will show or hide the Strudel REPL.
+   */
+  #strudel_overlay = null;
+  set strudel_overlay(overlay) {
+    this.#strudel_overlay = overlay;
+    if (this.#strudel_overlay) {
+      this.#strudel_overlay.cloud5_piece = this;
+    }
+  }
+  get strudel_overlay() {
+    return this.#strudel_overlay;
+  }
+  /**
+   * Called on a timer as long as the piece exists.
+   */
+  update_display = async () => {
+    // Refresh metering/time and drive any overlays that follow score position.
+    try {
+      this.process_csnd_messages_and_meters(performance.now());
+    } catch (e) {
+      console.warn(e);
+    }
+
+    // Update piano-roll progress (red ball) if present.
+    try {
+      this?.piano_roll_overlay?.show_score_time?.();
+    } catch (e) {
+      console.warn(e);
+    }
+
+    const t = this.latest_score_time;
+    if (typeof t === 'number' &amp;&amp; isFinite(t)) {
+      // Total duration policy:
+      // - During Csound performance: use ONLY the CsoundAC score duration.
+      // - During MIDI playback: use ONLY the Silencio score duration, or (if absent)
+      //   a derived duration from the MIDI scheduler.
+      const is_good_total = (v) => (typeof v === 'number' &amp;&amp; isFinite(v) &amp;&amp; v > 0);
+
+      let total = 0;
+
+      // MIDI playback path.
+      if (typeof __midi !== 'undefined' &amp;&amp; __midi?.playing) {
+        const pdur = this.piano_roll_overlay?.silencio_score?.getDuration?.();
+        if (is_good_total(pdur)) {
+          total = pdur;
+        } else if (is_good_total(__midi?.totalBeats) &amp;&amp; is_good_total(__midi?.bpm)) {
+          // __midi.totalBeats is in beats; convert to seconds using the playback bpm.
+          total = (msFromBeats(__midi.totalBeats, __midi.bpm) / 1000.0);
+        }
+      } else {
+        // Csound performance path.
+        const sdur = this.score?.getDuration?.();
+        if (is_good_total(sdur)) {
+          total = sdur;
+        }
+      }
+
+      for (const overlay of this._get_all_overlays()) {
+        try {
+          overlay?.on_score_time?.(t, total || 0);
+        } catch (e) {
+        }
+      }
+    }
+  };
+
+  _is_overlay_visible(overlay) {
+    if (!overlay) return false;
+
+    // Treat checkVisibility() as advisory: only short-circuit on true.
+    try {
+      if (typeof overlay.checkVisibility === 'function') {
+        if (overlay.checkVisibility()) {
+          return true;
+        }
+        // Fall through to style-based checks if it says "not visible".
+      }
+    } catch (e) { }
+
+    try {
+      const style = getComputedStyle(overlay);
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  _any_score_time_overlay_visible() {
+    for (const overlay of this._get_all_overlays()) {
+      if (!overlay) continue;
+      if (typeof overlay.on_score_time !== 'function') continue;
+      if (this._is_overlay_visible(overlay)) return true;
+    }
+    // Piano roll follows score time even if it does not implement on_score_time.
+    if (this.piano_roll_overlay &amp;&amp; this._is_overlay_visible(this.piano_roll_overlay)) return true;
+    return false;
+  }
+
+  _reset_score_time_followers() {
+    try { this.latest_score_time = 0; } catch (e) { }
+    try {
+      this?.piano_roll_overlay?.update_score_time?.(0);
+      this?.piano_roll_overlay?.show_score_time?.();
+    } catch (e) { }
+    try {
+      // Notify overlays that follow score time (e.g. ROI playheads).
+      for (const overlay of this._get_all_overlays()) {
+        overlay?.on_score_time?.(0, this.total_duration ?? this.duration ?? 0);
+      }
+    } catch (e) { }
+  }
+
+  _start_display_loop() {
+    if (this._display_raf_id) return;
+    const tick = async (now_ms) => {
+      // Throttle to reduce overhead while still smooth enough for playheads.
+      if (!this._display_last_ms) this._display_last_ms = now_ms;
+      const elapsed_ms = now_ms - this._display_last_ms;
+
+      const should_update = this.is_performing &amp;&amp; this._any_score_time_overlay_visible();
+      if (should_update &amp;&amp; elapsed_ms >= 100) { // ~10 Hz
+        this._display_last_ms = now_ms;
+        try { await this.update_display(); } catch (e) { }
+      }
+      this._display_raf_id = requestAnimationFrame(tick);
+    };
+    this._display_raf_id = requestAnimationFrame(tick);
+  }
+
+  _stop_display_loop() {
+    if (!this._display_raf_id) return;
+    try { cancelAnimationFrame(this._display_raf_id); } catch (e) { }
+    this._display_raf_id = 0;
+  }
+
+  /**
+     * Called by Csound during performance, and prints the message to the 
+     * scrolling text area of a &lt;csound5-log> element overlay. This function may 
+     * also be called by user code.
+     * 
+     * @param {string} message 
+     */
+  csound_message_callback = async (message) => {
+    // Keep this callback extremely cheap. Csound can emit messages at a high
+    // rate during performance; doing awaits/DOM writes per message can starve
+    // the main thread and trigger GPU device/context loss.
+    if (!message) {
+      return;
+    }
+    if (!this.csound_message_queue) {
+      this.csound_message_queue = [];
+    }
+    if (this.csound_message_queue.length >= (this.csound_message_queue_limit || 2000)) {
+      // Drop oldest to cap memory and prevent feedback loops.
+      this.csound_message_queue.shift();
+    }
+    this.csound_message_queue.push(message);
+  };
+
+  /**
+   * Drain queued Csound messages and update metering/time at a bounded rate.
+   * Call this from update_display (RAF) rather than doing expensive work from
+   * the realtime Csound message callback.
+   *
+   * @param {number} now_ms performance.now()
+   */
+  process_csnd_messages_and_meters = async (now_ms) => {
+    // 1) Flush queued messages at a controlled cadence (default: 2 Hz).
+    // This keeps the log responsive without forcing an Ace reflow per message.
+    this.maybe_flush_log_queue(now_ms);
+
+    // 2) Meter/time polling must not block RAF. If it is time, kick off an
+    // async poll but never await it here.
+    this.maybe_start_meter_poll(now_ms);
+  };
+
+  maybe_flush_log_queue = (now_ms) => {
+    const q = this.csound_message_queue || [];
+    if (!q.length || !this.log_overlay) {
+      return;
+    }
+    const interval = this.log_flush_interval_ms || 500;
+    const last = this._last_log_flush_ms || 0;
+    if ((now_ms - last) &lt; interval) {
+      return;
+    }
+    this._last_log_flush_ms = now_ms;
+    const max_messages = this.log_flush_max_messages || 400;
+    const max_chars = this.log_flush_max_chars || 12000;
+    let chunk = "";
+    for (let i = 0; i &lt; max_messages &amp;&amp; q.length > 0; i++) {
+      const msg = q.shift();
+      if (!msg) {
+        continue;
+      }
+      const line = msg.endsWith("\n") ? msg : (msg + "\n");
+      if ((chunk.length + line.length) > max_chars) {
+        // If we have at least one line, flush now; otherwise take the line anyway.
+        if (chunk.length > 0) {
+          break;
+        }
+      }
+      chunk += line;
+      if (chunk.length >= max_chars) {
+        break;
+      }
+    }
+    if (chunk) {
+      try {
+        this.log_overlay.log(chunk);
+      } catch (e) {
+      }
+    }
+  };
+
+  maybe_start_meter_poll = (now_ms) => {
+    if (!globalThis.csound) {
+      return;
+    }
+    const interval = this.meter_update_interval_ms || 50;
+    const last = this._last_meter_update_ms || 0;
+    if ((now_ms - last) &lt; interval) {
+      return;
+    }
+
+    // Watchdog: if a prior poll wedged, allow recovery.
+    if (this._meter_poll_in_flight) {
+      const started = this._last_meter_poll_start_ms || 0;
+      if ((now_ms - started) > 2000) {
+        console.warn("meter poll watchdog: releasing wedged poll");
+        this._meter_poll_in_flight = false;
+      } else {
+        return;
+      }
+    }
+
+    this._last_meter_update_ms = now_ms;
+    this._meter_poll_in_flight = true;
+    this._last_meter_poll_start_ms = now_ms;
+
+    // Token prevents late completions from writing stale UI.
+    const token = (this._meter_poll_token = (this._meter_poll_token || 0) + 1);
+
+    // Fire-and-forget; completion updates UI.
+    this.poll_meters_and_update_ui(token).finally(() => {
+      // Only clear if this is still the most recent poll.
+      if (this._meter_poll_token === token) {
+        this._meter_poll_in_flight = false;
+      }
+    });
+  };
+
+  poll_meters_and_update_ui = async (token) => {
+    let level_left = -100;
+    let level_right = -100;
+
+    let score_time = 0;
+    if (this._midi_perf_running &amp;&amp; typeof this._midi_perf_start_ms === "number") {
+      score_time = (performance.now() - this._midi_perf_start_ms) / 1000.0;
+    }
+    else {
+      score_time = await csound.getScoreTime();
+    }
+    this.latest_score_time = score_time;
+
+    level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
+    level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
+
+    let delta = score_time;
+
+    // calculate (and subtract) whole days
+    let days = Math.floor(delta / 86400);
+    delta -= days * 86400;
+    // calculate (and subtract) whole hours
+    let hours = Math.floor(delta / 3600) % 24;
+    delta -= hours * 3600;
+    // calculate (and subtract) whole minutes
+    let minutes = Math.floor(delta / 60) % 60;
+    delta -= minutes * 60;
+    // what's left is seconds
+    let seconds = delta % 60;
+
+
+    // If a newer poll has started, ignore these results.
+    if ((this._meter_poll_token || 0) !== token) {
+      return;
+    }
+
+    if (level_left > 0) {
+      $("#vu_meter_left").css("color", "red");
+    } else if (level_left > -12) {
+      $("#vu_meter_left").css("color", "orange");
+    } else {
+      $("#vu_meter_left").css("color", "lightgreen");
+    }
+    if (level_right > 0) {
+      $("#vu_meter_right").css("color", "red");
+    } else if (level_right > -12) {
+      $("#vu_meter_right").css("color", "orange");
+    } else {
+      $("#vu_meter_right").css("color", "lightgreen");
+    }
+
+    $("#mini_console").html(sprintf("d:%4d h:%02d m:%02d s:%06.3f", days, hours, minutes, seconds));
+    $("#vu_meter_left").html(sprintf("L%+7.1f dBA", level_left));
+    $("#vu_meter_right").html(sprintf("R%+7.1f dBA", level_right));
+
+    try {
+      this?.piano_roll_overlay?.update_score_time?.(score_time);
+    } catch (e) {
+    }
+  };
+
+
+  /**
+   * A convenience function for printing the message in the 
+   * scrolling &lt;csound5-log> element overlay.
+   * @param {string} message 
+   */
+  log(message) {
+    this.csound_message_callback(message);
+  }
+  /**
+    * Metadata to be written to output files. The user may assign 
+    * values to any of these fields.
+    */
+  metadata = {
+    "artist": null,
+    "copyright": null,
+    "performer": null,
+    "title": null,
+    "album": null,
+    "track": null,
+    "tracknumber": null,
+    "date": null,
+    "publisher": null,
+    "comment": null,
+    "license": null,
+    "genre": null,
+  };
+  connectedCallback() {
+
+    const filename = document.location.pathname.split("/").pop();
+
+    this.innerHTML = `
+    &lt;div class="w3-bar cloud5-menu" id="main_menu">
+      &lt;ul class="menu" id="main_menu_list">
+        &lt;li id="menu_item_play"
+            title="Play piece on audio output"
+            class="w3-btn w3-hover-text-light-green">Play&lt;/li>
+
+        &lt;li id="menu_item_render"
+            title="Render piece to soundfile then play on audio output"
+            class="w3-btn w3-hover-text-light-green">Render&lt;/li>
+
+        &lt;li id="menu_item_stop"
+            title="Stop performance"
+            class="w3-btn w3-hover-text-light-green">Stop&lt;/li>
+
+        &lt;li id="menu_item_fullscreen"
+            class="w3-btn w3-hover-text-light-green">Fullscreen&lt;/li>
+
+        &lt;!-- Built-in overlay items (if their overlays exist) will reuse these.
+             Generic overlays will get new &lt;li> items injected before About. -->
+        &lt;li id="menu_item_strudel"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Strudel&lt;/li>
+
+        &lt;li id="menu_item_piano_roll"
+            title="Show/hide piano roll score"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Score&lt;/li>
+
+        &lt;li id="menu_item_log"
+            title="Show/hide message log"
+            class="w3-btn w3-hover-text-light-green">Log&lt;/li>
+
+        &lt;li id="menu_item_snapshot"
+            title="Create a new version snapshot (HTML + state) in a chosen directory"
+            class="w3-btn w3-hover-text-light-green"
+            style="display:none;">Snapshot...&lt;/li>
+
+        &lt;li id="menu_item_about"
+            title="Show/hide information about this piece"
+            class="w3-btn w3-hover-text-light-green">About ${filename}&lt;/li>
+
+        &lt;li id="mini_console"
+            class="w3-btn w3-text-green w3-hover-text-light-green">&lt;/li>
+
+        &lt;li id="vu_meter_left"
+            class="w3-btn w3-hover-text-light-green">&lt;/li>
+
+        &lt;li id="vu_meter_right"
+            class="w3-btn w3-hover-text-light-green">&lt;/li>
+
+        &lt;li id="menu_item_dat_gui"
+            title="Show/hide performance controls; 'Save' copies all control parameters to system clipboard"
+            class="w3-btn w3-left-align w3-hover-text-light-green w3-right">&lt;/li>
+      &lt;/ul>
+    &lt;/div>`;
+
+    // Cache status elements
+    this.vu_meter_left = this.querySelector("#vu_meter_left");
+    this.vu_meter_right = this.querySelector("#vu_meter_right");
+    this.mini_console = this.querySelector("#mini_console");
+
+    // Transport buttons
+    const menu_item_play = this.querySelector('#menu_item_play');
+    menu_item_play.onclick = (event) => {
+      console.info("menu_item_play click...");
+      this.cancel_scheduled_stop();
+      // Show shader background if available
+      if (this.shader_overlay) {
+        this.show(this.shader_overlay);
+      }
+      // Hide overlays that should not be visible while playing
+      this.hide(this.piano_roll_overlay);
+      this.hide(this.log_overlay);
+      this.hide(this.about_overlay);
+      this.hide(this.strudel_overlay);
+      // Start performance
+      (() => this.render(1))();
+    };
+
+    const menu_item_render = this.querySelector('#menu_item_render');
+    menu_item_render.onclick = (event) => {
+      console.info("menu_item_render click...");
+      this.cancel_scheduled_stop();
+      this.show(this.piano_roll_overlay);
+      this.hide(this.strudel_overlay);
+      this.hide(this.log_overlay);
+      this.hide(this.about_overlay);
+
+      let duration;
+      let fadeout;
+      if (this.#control_parameters_addon) {
+        duration = this.#control_parameters_addon.gi_cloud5_duration;
+        if (this.#control_parameters_addon.gi_cloud5_fadeout) {
+          fadeout = this.#control_parameters_addon.gi_cloud5_fadeout;
+        }
+      }
+      if (duration) {
+        this.duration = duration;
+      }
+      if (fadeout) {
+        this.fadeout = fadeout;
+      }
+      this.total_duration = this.duration + this.fadeout + this.safe_tail;
+      this?.csound_message_callback(
+        `Duration: ${this.duration} fadeout: ${this.fadeout}\n`
+      );
+      this?.csound_message_callback(
+        `Rendering will be stopped ${this.total_duration} seconds after starting...\n`
+      );
+      (() => this.render(4))();
+    };
+
+    const menu_item_stop = this.querySelector('#menu_item_stop');
+    menu_item_stop.onclick = (event) => {
+      console.info("menu_item_stop click...");
+      this.csound?.setControlChannel("gk_cloud5_performance_mode", 0);
+      this.stop();
+      if (this.is_rendering) {
+        const soundfile_url = url_for_soundfile(this.csound);
+        this.is_rendering = false;
+        this.cancel_scheduled_stop();
+        // Optionally, do something with soundfile_url.
+      }
+    };
+
+    const menu_item_fullscreen = this.querySelector('#menu_item_fullscreen');
+    menu_item_fullscreen.onclick = async (event) => {
+      console.info("menu_item_fullscreen click...");
+      try {
+        if (this.#shader_overlay?.canvas?.requestFullscreen) {
+          let new_window = null;
+          // Make the shader canvas fullscreen in the primary window.
+          await this.#shader_overlay.canvas.requestFullscreen();
+        }
+      } catch (e) {
+        console.warn("Fullscreen failed:", e);
+      }
+    };
+
+    // Snapshot... (version export)
+    const menu_item_snapshot = this.querySelector("#menu_item_snapshot");
+    if (menu_item_snapshot) {
+      // Visibility depends on whether any state is serializable.
+      const ok = Array.isArray(this.fields_to_serialize) &amp;&amp; this.fields_to_serialize.length > 0;
+      menu_item_snapshot.style.display = ok ? "inline" : "none";
+      menu_item_snapshot.onclick = async (event) => {
+        await cloud5_snapshot_to_new_version(this);
+        // Re-evaluate visibility (fields may have been populated later).
+        const ok2 = Array.isArray(this.fields_to_serialize) &amp;&amp; this.fields_to_serialize.length > 0;
+        menu_item_snapshot.style.display = ok2 ? "inline" : "none";
+      };
+    }
+
+    // After base menu is in place, interrogate the DOM and wire overlays,
+    // but do it *after* the whole document has been parsed so that
+    // overlays declared later (like &lt;mandelbrot-julia>) exist.
+    const wireOverlays = () => this.init_overlays_from_dom();
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', wireOverlays, { once: true });
+    } else {
+      wireOverlays();
+      // Lightweight UI update loop; does work only while performing and when needed.
+      this._start_display_loop();
+    }
+    // queueMicrotask(() => {
+    //   cloud5_load_state_if_present(this);
+    // });
+  }
+
+  _get_all_overlays() {
+    const s = new Set(this._registered_overlays || []);
+    if (this.piano_roll_overlay) s.add(this.piano_roll_overlay);
+    if (this.log_overlay) s.add(this.log_overlay);
+    if (this.about_overlay) s.add(this.about_overlay);
+    if (this.strudel_overlay) s.add(this.strudel_overlay);
+    return [...s];
+  }
+
+  /**
+   * Scans the DOM for overlays belonging to this piece and ensures each has
+   * a menu item that toggles its visibility. Built-in overlays reuse existing
+   * menu items; generic overlays get new &lt;li> entries inserted before About.
+   */
+  init_overlays_from_dom() {
+    const menu_list = document.querySelector('#main_menu_list');
+    if (!menu_list) {
+      console.warn("Cloud5Piece.init_overlays_from_dom: no #main_menu_list found.");
+      return;
+    }
+
+    const menu_item_about = document.querySelector('#menu_item_about');
+    const mini_console = document.querySelector('#mini_console');
+
+    const overlays = [];
+
+    // --- Built-in overlays --------------------------------------------------
+    const piano_roll = document.querySelector('cloud5-piano-roll');
+    if (piano_roll) {
+      this.piano_roll_overlay = piano_roll;     // setter already sets cloud5_piece
+      overlays.push({
+        element: piano_roll,
+        existingMenuId: 'menu_item_piano_roll',
+        label: 'Score',
+        stayVisible: this._read_stay_visible_flag(piano_roll)
+      });
+    }
+
+    const log = document.querySelector('cloud5-log');
+    if (log) {
+      this.log_overlay = log;                   // setter already sets cloud5_piece
+      overlays.push({
+        element: log,
+        existingMenuId: 'menu_item_log',
+        label: 'Log',
+        stayVisible: this._read_stay_visible_flag(log)
+      });
+    }
+
+    const about = document.querySelector('cloud5-about');
+    if (about) {
+      this.about_overlay = about;
+      const filename = document.location.pathname.split("/").pop();
+      overlays.push({
+        element: about,
+        existingMenuId: 'menu_item_about',
+        label: about.getAttribute('data-cloud5-label') || `About ${filename}`,
+        stayVisible: this._read_stay_visible_flag(about)
+      });
+    }
+
+    const strudel = document.querySelector('cloud5-strudel');
+    if (strudel) {
+      this.strudel_overlay = strudel;           // setter already sets cloud5_piece
+      overlays.push({
+        element: strudel,
+        existingMenuId: 'menu_item_strudel',
+        label: 'Strudel',
+        stayVisible: this._read_stay_visible_flag(strudel)
+      });
+    }
+
+    // --- Generic overlays ---------------------------------------------------
+    const generic_candidates = Array.from(
+      document.querySelectorAll('[data-cloud5-overlay], .cloud5-overlay')
+    );
+
+    const built_in_set = new Set(
+      [piano_roll, log, about, strudel].filter(Boolean)
+    );
+
+    generic_candidates
+      .filter(el => !built_in_set.has(el))
+      // TODO: Undo this?
+      .filter(el => !el.closest('#main_menu'))   // prevents menu DOM becoming overlays
+      .forEach(el => {
+        const label =
+          el.getAttribute('data-cloud5-label') ||
+          el.getAttribute('data-overlay-label') ||
+          el.getAttribute('title') ||
+          el.id ||
+          el.tagName.toLowerCase();
+
+        const isDefault =
+          el.hasAttribute('data-cloud5-default-visible') ||
+          el.hasAttribute('data-cloud5-default-overlay');
+
+        overlays.push({
+          element: el,
+          existingMenuId: null,
+          label,
+          isDefault
+        });
+      });
+
+    // --- Create / wire menu items ------------------------------------------
+    const registered = [];
+
+    overlays.forEach(cfg => {
+      const overlay = cfg.element;
+      if (!overlay) return;
+
+      // Back-reference for ALL overlays (built-in + generic).
+      overlay.cloud5_piece = this;
+
+      // Remember whether this overlay wants to stay visible when others toggle.
+      overlay._cloud5_stay_visible = !!cfg.stayVisible;
+
+      // Start hidden by default; menu click will toggle.
+      this.hide(overlay);
+
+      let li = null;
+      if (cfg.existingMenuId) {
+        li = document.querySelector(`#${cfg.existingMenuId}`);
+      }
+
+      if (!li) {
+        li = document.createElement('li');
+        li.className = 'w3-btn w3-hover-text-light-green';
+        li.textContent = cfg.label;
+
+        // Insert new button before About (if present), otherwise before mini_console,
+        // otherwise appended at end.
+        if (menu_item_about &amp;&amp; menu_item_about.parentNode === menu_list) {
+          menu_list.insertBefore(li, menu_item_about);
+        } else if (mini_console &amp;&amp; mini_console.parentNode === menu_list) {
+          menu_list.insertBefore(li, mini_console);
+        } else {
+          menu_list.appendChild(li);
+        }
+      } else {
+        // Reuse existing button but ensure it has a sensible label.
+        if (!li.textContent.trim()) {
+          li.textContent = cfg.label;
+        }
+      }
+
+      li.style.display = 'inline';
+      li.dataset.cloud5Overlay = 'true';
+
+      li.addEventListener('click', () => {
+        this._toggleOverlayExclusive(overlay);
+      });
+
+      registered.push(overlay);
+    });
+
+    this._registered_overlays = registered;
+    // Now that overlay references exist, restore state once.
+    cloud5_load_state_if_present(this);
+
+    // Show whichever overlay is marked as default, if any.
+    const defaultCfg = overlays.find(o => o.isDefault &amp;&amp; o.element);
+    if (defaultCfg) {
+      this.show(defaultCfg.element);
+    }
+  }
+
+  /**
+   * Reads the "stay visible" flag from overlay attributes.
+   * Recognized:
+   *   data-cloud5-stay-visible="true" | "1"
+   *   data-overlay-stay-visible="true" | "1"
+   *   visibility="keep"
+   */
+  _read_stay_visible_flag(el) {
+    if (!el || !el.getAttribute) return false;
+    const raw =
+      el.getAttribute('data-cloud5-stay-visible') ??
+      el.getAttribute('data-overlay-stay-visible') ??
+      el.getAttribute('visibility');
+
+    if (!raw) return false;
+    const v = String(raw).toLowerCase().trim();
+    return (v === 'true' || v === '1' || v === 'keep');
+  }
+
+
+  /**
+   * Toggles one overlay and hides all others that we know about.
+   * Overlays marked with _cloud5_stay_visible (via attributes) are not hidden.
+   * Does NOT touch the shader overlay (which can remain as background).
+   */
+  _toggleOverlayExclusive(target) {
+    if (!target) return;
+
+    const all = new Set(this._registered_overlays || []);
+    if (this.piano_roll_overlay) all.add(this.piano_roll_overlay);
+    if (this.log_overlay) all.add(this.log_overlay);
+    if (this.about_overlay) all.add(this.about_overlay);
+    if (this.strudel_overlay) all.add(this.strudel_overlay);
+
+    all.forEach(overlay => {
+      if (!overlay) return;
+
+      const stayVisible = !!overlay._cloud5_stay_visible;
+
+      if (overlay === target) {
+        // Always toggle the requested overlay.
+        this.toggle(overlay);
+      } else if (!stayVisible) {
+        // Only hide overlays that are not marked as "stay visible".
+        this.hide(overlay);
+      }
+      // If stayVisible === true and overlay !== target, we leave it as-is.
+    });
+  }
+
+  /**
+    * Copies all _current_ dat.gui parameters to the system clipboard in 
+    * JSON format.
+    * 
+    * @param {Object} parameters A dictionary containing the current state of all 
+    * controls; keys are control parameter names, values are control parameter 
+    * values. This can be pasted from the clipboard into source code, as a 
+    * convenient method of updating a piece with parameters that have been tweaked 
+    * during performance.
+    */
+  copy_parameters() {
+    let copied_parameters = JSON.parse(JSON.stringify(this?.control_parameters_addon))
+    delete copied_parameters?.load;
+    const json_text = JSON.stringify(copied_parameters, null, 4);
+    navigator.clipboard.writeText(json_text);
+    if (this.csound) {
+      this.csound.Message("Copied all control parameters to system clipboard.\n");
+    }
+  }
+
+  stop_and_download = async () => {
+    await this.stop();
+    if (this.is_rendering) {
+      const soundfile_name = await url_for_soundfile(this.csound);
+      this.is_rendering = false;
+      this.csound_message_callback(`Rendering has stopped; automatically downloaded ${soundfile_name}\n`);
+    }
+  };
+
+  schedule_stop_after(seconds) {
+    this.csound_message_callback(`Scheduling stop ${seconds} seconds from now...\n`);
+    const milliseconds = seconds * 1000;
+    const deadline = performance.now() + milliseconds;
+    this._stop_timer = setTimeout(() => {
+      const remaining = Math.ceil(deadline - performance.now());
+      if (remaining > 0) {
+        this.csound_message_callback(
+          `Timed out early, rescheduling in ${(remaining / 1000).toFixed(3)} seconds...\n`
+        );
+        this._stop_timer = setTimeout(() => this.stop_and_download(), remaining);
+        return; // &lt;-- critical: do not fall through to the immediate stop
+      }
+      this.stop_and_download();
+    }, milliseconds);
+  }
+
+  cancel_scheduled_stop() {
+    if (this._stop_timer) {
+      clearTimeout(this._stop_timer);
+      this.csound_message_callback(`Canceled scheduled stop.\n`);
+    }
+    this._stop_timer = null;
+  }
+
+  /**
+   * @function render
+   * 
+   * @memberof Cloud5Piece
+   * 
+   * @description Invokes Csound and/or Strudel to perform music, by default 
+   * to the audio output interface, but optionally also to a local soundfile. 
+   * Acts as an async member function because it is bound to this.
+   * 
+   * @param {Number}  gk_cloud5_performance_mode
+   *
+   * Possible values of gk_cloud5_performance_mode, which is sent as a control
+   * channel value to Csound before performance:
+   * 1. Start the Csound performance to audio out, and continue indefinitely
+   *    until the user stops it manually (default).
+   * 2. Start recording the audio output to the output soundfile.
+   * 3. Pause recording, and automatically download the output soundfile.
+   * 4. Start the Csound performance to the audio output for a fixed duration 
+   *    with a fadeout, and also record the audio output to the output soundfile;
+   *    when the performance has finished or is stopped, automatically download
+   *    the output soundfile.
+   */
+  render = async function (gk_cloud5_performance_mode) {
+    this.log(`render(${gk_cloud5_performance_mode})...\n`);
+    this.csound = await get_csound(this.csound_message_callback);
+    this.csoundac = await get_csound_ac();
+    if (gk_cloud5_performance_mode == 2 || gk_cloud5_performance_mode == 4) {
+      this.is_rendering = true;
+    }
+    if (non_csound(this.csound)) return;
+    // Stop any current performance first.
+    await this.stop();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_stop();
+    }
+    this._reset_score_time_followers();
+    // Clear performance-related state from all components.
+    await this?.log_overlay?.clear?.();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_clear();
+    }
+
+    // Reset score-following UI for a fresh performance.
+    this.is_performing = false;
+    this._display_last_ms = 0;
+    this._reset_score_time_followers();
+    for (const key in this.metadata) {
+      const value = this.metadata[key];
+      if (value !== null) {
+        // CsoundAudioNode does not have the metadata facility,
+        // csound.nwjs does have it.
+        if (this.csound.setMetadata) {
+          this.csound?.setMetadata(key, value);
+        }
+      }
+    }
+    let csd = this.csound_code_addon.slice();
+    if (this.score_generator_function_addon) {
+      this.score = await this.score_generator_function_addon();
+    } else {
+      this.score = new globalThis.csound_ac.Score();
+    }
+    if (this.score) {
+      // Generate score from all components.
+      for (const overlay of this._get_all_overlays()) {
+        await overlay?.on_generate(this.score);
+      }
+      if (this.piano_roll_overlay &amp;&amp; this.piano_roll_overlay.silencio_score) {
+        this?.piano_roll_overlay?.draw_csoundac_score(this.score);
+        this?.piano_roll_overlay?.on_shown?.()
+        this?.piano_roll_overlay?.show_score_time();
+      }
+      let csound_score = await this.score.getCsoundScore(12., false);
+      csound_score = csound_score.concat("\n&lt;/CsScore>");
+      csd = this.csound_code_addon.replace("&lt;/CsScore>", csound_score);
+    }
+    const output_soundfile_name = document.title + ".wav";
+    const orc_globals = `
+&lt;CsInstruments>
+
+; The following global variables were defined by cloud-5 and are available to 
+; use in the rest of the orchestra for controlling the performance mode, 
+; duration, and fadeout time of the piece.
+
+gi_cloud5_performance_mode init ${gk_cloud5_performance_mode}
+gi_cloud5_duration init ${this.duration}
+gi_cloud5_fadeout init ${this.fadeout}
+gS_cloud5_soundfile_name init "${output_soundfile_name}"
+
+`
+    csd = csd.replace("&lt;CsInstruments>", orc_globals);
+    // Save the .csd file so we can debug a failing orchestra,
+    // instead of it just nullifying Csound.        
+    const csd_filename = document.title + '-generated.csd';
+    write_file(csd_filename, csd);
+    try {
+      let result = await this.csound.compileCsdText(csd);
+      this.csound_message_callback("CompileCsdText returned: " + result + "\n");
+    } catch (e) {
+      alert(e);
+    }
+    /// await cloud5_save_state_if_needed(this);
+    await this.csound.start();
+
+    this.is_performing = true;
+    this._start_display_loop();
+    this._start_ui_timer();
+    try { await this.update_display(); } catch (e) { }
+    if (gk_cloud5_performance_mode == 4) {
+      this.csound_message_callback("Csound has started rendering to " + output_soundfile_name + "...\n");
+      this.schedule_stop_after(this.total_duration);
+    } else {
+      this.csound_message_callback("Csound is not rendering a soundfile.\n")
+    }
+    this.csound_message_callback("Csound has started...\n");
+    // Send _current_ dat.gui parameter values to Csound 
+    // before actually performing.
+    this.send_parameters(this.control_parameters_addon);
+
+    // Also save the generated .csd file again, this time with current control 
+    // parameter values.
+    const csd_filename_parameters = cloud5_generated_csd_filename_from_title(document.title);
+    // Replace all values defined in global control channel init statements with the 
+    // values defined in the control parameters addon.
+    csd = this.update_parameters_in_csd(csd, this.control_parameters_addon);
+    write_file(csd_filename_parameters, csd);
+    await cloud5_write_text_to_snapshot_dir_if_available(csd_filename_parameters, csd, "application/x-csound");
+
+    // Start performance in all components.
+    if (!(this?.csound.getNode)) {
+      this.csound.perform();
+      for (const overlay of this._get_all_overlays()) {
+        overlay?.on_play();
+      }
+    }
+    if (typeof strudel_view !== 'undefined') {
+      if (strudel_view !== null) {
+        console.info("strudel_view:", this.strudel_view);
+        strudel_view?.setCsound(this.csound);
+        strudel_view?.setCsoundAC(this.csoundac);
+        strudel_view?.setParameters(this.control_parameters_addon);
+        strudel_view?.startPlaying();
+      }
+    }
+    this?.csound_message_callback("Csound is playing...\n");
+  }
+  /**
+   * Stops both Csound and Strudel from performing.
+   */
+  stop = async function () {
+    this.csound_message_callback("cloud-5 is stopping...\n");
+    this.is_performing = false;
+    // Stop performance in all components.
+    await this.csound.stop();
+    await this.csound.cleanup();
+    this.csound.reset();
+    this.strudel_overlay?.stop();
+    for (const overlay of this._get_all_overlays()) {
+      overlay?.on_stop();
+    }
+    /// await cloud5_save_state_if_needed(this);
+    this._stop_display_loop();
+    this._stop_ui_timer();
+    this.csound_message_callback("cloud-5 has stopped.\n");
+  };
+
+  /**
+   * Helper function to show custom element overlays. Resizes overlay 
+   * if required to fit layout.
+   * 
+   * @param {Object} overlay 
+   */
+  show(overlay) {
+    if (!overlay) return;
+
+    // Force visibility even if a stylesheet uses display:none !important.
+    overlay.style.setProperty('display', 'block', 'important');
+
+    const is_built_in_overlay =
+      ['CLOUD5-LOG', 'CLOUD5-PIANO-ROLL', 'CLOUD5-ABOUT'].includes(overlay.tagName);
+
+    const is_generic_overlay =
+      overlay.classList &amp;&amp; overlay.classList.contains('cloud5-overlay');
+
+    if (is_built_in_overlay || is_generic_overlay) {
+      // Use the menu bar (or its list) to determine bottom edge.
+      let menu_bar = document.getElementById('main_menu');
+      if (!menu_bar) {
+        menu_bar = document.getElementById('main_menu_list');
+      }
+
+      let menu_bar_bottom = 0;
+      if (menu_bar) {
+        const rect = menu_bar.getBoundingClientRect();
+        menu_bar_bottom = rect.bottom;
+      }
+
+      // Pin the overlay to fill the viewport below the menu.
+      overlay.style.position = 'fixed';
+      overlay.style.left = '0';
+      overlay.style.right = '0';
+      overlay.style.top = `${menu_bar_bottom}px`;
+      overlay.style.height = `calc(100% - ${menu_bar_bottom}px)`;
+      overlay.style.width = '100vw';
+
+      // Ensure generic overlays sit above the shader but below the menu.
+      if (is_generic_overlay) {
+        // Only override if author CSS hasn't already set an explicit z-index.
+        if (!overlay.style.zIndex) {
+          overlay.style.zIndex = '1300'; // between log/score/strudel and menu
+        }
+      }
+    }
+
+    // If the overlay has its own hook, let it know it's now visible.
+    if (typeof overlay.on_shown === 'function') {
+      overlay.on_shown();
+    }
+  }
+
+  /**
+   * Helper function to hide custom element overlays.
+   * 
+   * @param {Object} overlay 
+   */
+  hide(overlay) {
+    if (!overlay) return;
+    // Force hidden even in the presence of CSS !important.
+    overlay.style.setProperty('display', 'none', 'important');
+    // Give overlays a chance to stop expensive work (e.g. GPU render loops)
+    // while they are not visible.
+    if (typeof overlay.on_hidden === 'function') {
+      try { overlay.on_hidden(); } catch (e) { }
+    }
+  }
+
+  /**
+   * Helper function to show the overlay if it is 
+   * hidden, or to hide the overlay if it is visible.
+   * 
+   * @param {Object} overlay 
+   */
+  toggle(overlay) {
+    if (!overlay) return;
+
+    const visible = overlay.checkVisibility
+      ? overlay.checkVisibility()
+      : getComputedStyle(overlay).display !== 'none';
+
+    if (visible) {
+      this.hide(overlay);
+    } else {
+      this.show(overlay);
+    }
+  }
+
+  /**
+   * Walks the dat.gui menu and returns a dictionary of all current
+   * values of all controls in the menu.
+   */
+  snapshot_dat_gui_menu() {
+    const snapshot = {};
+    (function walk(pane, path = '') {
+      pane.__controllers.forEach(ctrl => {
+        const name = ctrl._name || ctrl.property;
+        const key = path ? `${path}.${name}` : name;
+        snapshot[key] = ctrl.object[ctrl.property];   // now committed
+      });
+      Object.values(pane.__folders || {}).forEach((folder, fname) => {
+        walk(folder, path ? `${path}.${fname}` : fname);
+      });
+    })(this.gui);
+    return snapshot;
+  }
+
+  create_dat_gui_menu()
+  {
+      if (!this.control_parameters_addon) {
+          this.control_parameters_addon = this.get_default_preset();
+      }
+
+      if (!this.gui) {
+          const dat_gui_parameters = {
+              autoPlace: false,
+              closeOnTop: true,
+              closed: true,
+              width: 400,
+              useLocalStorage: false
+          };
+
+          this.gui = new dat.GUI(dat_gui_parameters);
+
+          const dat_gui = document.getElementById('menu_item_dat_gui');
+
+          if (dat_gui.children.length === 0) {
+              dat_gui.appendChild(this.gui.domElement);
+          } else if (dat_gui.children.item(0) !== this.gui.domElement) {
+              dat_gui.replaceChild(this.gui.domElement, dat_gui.children.item(0));
+          }
+      }
+
+      const menu_item_snapshot = this.querySelector("#menu_item_snapshot");
+      if (menu_item_snapshot) {
+          const ok = Array.isArray(this.fields_to_serialize) &amp;&amp; this.fields_to_serialize.length > 0;
+          menu_item_snapshot.style.display = ok ? "inline" : "none";
+      }
+
+      update_gui_displays(this.gui);
+  }
+
+  get_default_preset() {
+    if (this.#control_parameters_addon.hasOwnProperty('preset')) {
+      const preset_name = this.#control_parameters_addon.preset;
+      const preset = this.#control_parameters_addon.remembered[preset_name][0];
+      return preset;
+    } else {
+      return this.#control_parameters_addon;
+    }
+  }
+  /**
+   * Sends a dictionary of parameters to Csound at the start of performance. 
+   * The keys are the literal Csound control channel names, and the values are 
+   * the values of those channels.
+   * 
+   * @param {Object} parameters 
+   */
+  send_parameters(parameters) {
+    if (non_csound(this.csound) == false) {
+      this.csound_message_callback("Sending initial state of control perameters to Csound...\n")
+      let parameters_ = this.snapshot_dat_gui_menu();
+      for (const [name, value] of Object.entries(parameters)) {
+        this.csound_message_callback(name + ": " + value + "\n");
+        this.csound?.setControlChannel(name, parseFloat(value));
+      }
+    }
+  }
+  /**
+   * Replaces global variables initialized in global scope, that is, not 
+   * within instr definitions, with values defined in the parameters addon
+   * (from ChatGPT).
+   */
+  update_parameters_in_csd(csdText, parameters) {
+    let inInstrBlock = false;
+    let lines = csdText.split("\n");
+    for (let i = 0; i &lt; lines.length; i++) {
+      let line = lines[i].trim();
+      // Detect entering/exiting an instr block
+      if (/^instr\b/i.test(line)) {
+        inInstrBlock = true;
+      } else if (/^endin\b/i.test(line)) {
+        inInstrBlock = false;
+      }
+      // Only modify lines outside instr blocks.
+      if (!inInstrBlock) {
+        // If the line contains " init " we may update it.
+        let parts = line.split(' ');
+        if (parts[1] === "init") {
+          let parameter = parts[0]
+          if (parameter in parameters) {
+            let new_value = parameters[parameter];
+            // If the first token is one of our parameters, we will give it a 
+            // new value, and append the original line as a comment.
+            let new_line = `${parameter} init ${new_value} ; Updated from: ${line}`
+            lines[i] = new_line;
+          }
+        }
+      }
+    }
+    return lines.join("\n");
+  }
+
+  /**
+   * Adds a new folder to the Controls menu of the piece.
+   * 
+   * @param {string} name The name of the folder. 
+   * @returns {Object} The new folder.
+   */
+  menu_folder_addon(name) {
+    let folder = this.gui.addFolder(name);
+    return folder;
+  }
+  /**
+   * Adds a new slider to a folder of the Controls menu of the piece.
+   * 
+   * @param {Object} gui_folder The folder in which to place the slider.
+   * @param {string} token The name of the slider, usually the name of a 
+   * Csound message channel.
+   * @param {number} minimum The minimum value of the slider (may be 
+   * negative).
+   * @param {number} maximum The maximum value of the slider.
+   * @param {number} step An optional value for the granularity of values.
+   */
+  menu_slider_addon(gui_folder, token, minimum, maximum, step, name_) {
+    const on_parameter_change = (value) => this.gk_update(token, value);
+
+    const ctrl = name_
+      ? gui_folder.add(this.get_default_preset(), token, minimum, maximum, step).name(name_)
+      : gui_folder.add(this.get_default_preset(), token, minimum, maximum, step);
+
+    // live while dragging slider:
+    ctrl.onChange(on_parameter_change);
+    // commit when user finishes typing (Enter/blur):
+    ctrl.onFinishChange(on_parameter_change);
+
+    this.gui.remember(this.control_parameters_addon);
+  }
+  /**
+   * Called by the browser when the user updates the value of a control in the 
+   * Controls menu, and sends the update to the Csound control channel with 
+   * the same name.
+   * 
+   * @param {string} name The literal name of the Csound control channel.
+   * @param {number} value The current value of that channel.
+   */
+  gk_update(name, value) {
+    const numberValue = parseFloat(value);
+    console.info("gk_update: name: " + name + " value: " + numberValue);
+    if (non_csound(this.csound) == false) {
+      this.csound?.setControlChannel(name, numberValue);
+    }
+  };
+  /**
+   * Adds a user-defined onclick handler function to the Controls menu of the 
+   * piece.
+   * 
+   * @param {Object} control_parameters_addon Dictionary containing all control parameters.
+   * @param {Object} gui_folder The folder to which the command will be added.
+   * @param {string} name The name of the command.
+   * @param {Function} onclick User-defined function to execute the command.
+   */f
+  menu_add_command(control_parameters_addon, gui_folder, name, onclick) {
+    control_parameters_addon['name'] = onclick;
+    gui_folder.add(this.control_parameters_addon, name)
+  }
+  _start_ui_timer() {
+    if (this._ui_timer_id) {
+      return;
+    }
+    const tick = () => {
+      // Drain log queue + meter polling at a modest cadence without tying it to RAF
+      // or overlay visibility.
+      try {
+        this.process_csnd_messages_and_meters(performance.now());
+      } catch (e) {
+      }
+    };
+    this._ui_timer_id = setInterval(tick, this.ui_timer_interval_ms || 250);
+  }
+
+  _stop_ui_timer() {
+    if (!this._ui_timer_id) {
+      return;
+    }
+    try {
+      clearInterval(this._ui_timer_id);
+    } catch (e) {
+    }
+    this._ui_timer_id = 0;
+  }
+
+  on_midi_start(start_ms) {
+    // Start an independent mini_console clock during MIDI playback.
+    try {
+      this._midi_start_ms = (typeof start_ms === "number" &amp;&amp; isFinite(start_ms)) ? start_ms : performance.now();
+      this._start_midi_clock();
+    } catch (e) {
+    }
+  }
+
+  on_midi_stop() {
+    try {
+      this._stop_midi_clock();
+      // Leave the last time displayed.
+    } catch (e) {
+    }
+  }
+
+  _start_midi_clock() {
+    if (this._midi_timer_id) {
+      return;
+    }
+    const tick = () => {
+      try {
+        if (!globalThis.__midi?.playing) {
+          this._stop_midi_clock();
+          return;
+        }
+        const start = this._midi_start_ms || globalThis.__midi.startMS || performance.now();
+        const elapsed_sec = (performance.now() - start) / 1000.0;
+        // Drive mini_console in the same format as Csound rendering time.
+        const txt = cloud5_format_elapsed_time(elapsed_sec);
+        const el = this.mini_console || document.getElementById("mini_console");
+        if (el) {
+          el.innerHTML = txt;
+        }
+        // Also expose elapsed as latest_score_time so score-following overlays can move.
+        this.latest_score_time = elapsed_sec;
+      } catch (e) {
+      }
+    };
+    // 20 Hz update is smooth enough for playheads.
+    this._midi_timer_id = setInterval(tick, 50);
+    tick();
+  }
+
+  _stop_midi_clock() {
+    if (!this._midi_timer_id) {
+      return;
+    }
+    try { clearInterval(this._midi_timer_id); } catch (e) { }
+    this._midi_timer_id = 0;
+  }
+
+}
+customElements.define("cloud5-piece", Cloud5Piece);
+
+/**
+ * Displays a CsoundAC Score as a 3-dimensional piano roll. During 
+ * performance, a moving red ball indicates the current position of 
+ * the performance in the score. The user may use the trackball 
+ * to zoom in or out of the score, to drag it, or to spin it around.
+ */
+class Cloud5PianoRoll extends Cloud5Element {
+  constructor() {
+    super();
+    this.silencio_score = new Silencio.Score();
+    this.csoundac_score = null;
+    this.canvas = null;
+  }
+
+  _onWindowResize = () => {
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) return;
+    requestAnimationFrame(() => this.on_shown());
+  };
+
+  connectedCallback() {
+    super.connectedCallback?.();
+    this.innerHTML = `
+     &lt;canvas id="display" class="cloud5-score-canvas">
+    `;
+    this.canvas = this.querySelector('#display');
+    window.addEventListener('resize', this._onWindowResize, { passive: true });
+    window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
+    if (this.csoundac_score !== null) {
+      this.draw_csoundac_score(this.csoundac_score);
+    }
+    let menu_button = document.getElementById("menu_item_piano_roll");
+    menu_button.style.display = 'inline';
+  }
+  disconnectedCallback() {
+    window.removeEventListener('resize', this._onWindowResize);
+    window.visualViewport?.removeEventListener('resize', this._onWindowResize);
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
+  }
+  /**
+   * Called by the browser to update the display of the Score. It is 
+   * translated to a Silencio.Score object, which is what is actually 
+   * displayed.
+   * 
+   * @param {CsoundAC.Score} score A generated CsoundAC.Score object.
+   */
+  draw_csoundac_score(score) {
+    this.silencio_score = new Silencio.Score();
+    let i;
+    let n = score.size();
+    for (i = 0; i &lt; n; ++i) {
+      let event = score.get(i);
+      let p0_time = event.getTime();
+      let p1_duration = event.getDuration();
+      let p2_status = event.getStatus();
+      let p3_channel = event.getChannel();
+      let p4_key = event.getKey();
+      let p5_velocity = event.getVelocity();
+      let p6_x = event.getHeight();
+      let p7_y = event.getPan();
+      let p8_z = event.getDepth();
+      let p9_phase = event.getPhase();
+      this.silencio_score.add(p0_time, p1_duration, p2_status, p3_channel, p4_key, p5_velocity, p6_x, p7_y, p8_z, p9_phase);
+    }
+    this.draw_silencio_score(this.silencio_score);
+  }
+  /**
+   * A updates the WebGL display of the generated Silencio Score object.
+   * 
+   * @param {Silencio.Score} score 
+   */
+  draw_silencio_score(score) {
+    this.silencio_score = score;
+    this.silencio_score.draw3D(this.canvas);
+  }
+
+  update_score_time(score_time) {
+    if (!this.silencio_score) return;
+    this.silencio_score.progress3D(score_time);
+  }
+
+  /**
+   * Called by a timer during performance to update the play 
+   * position in the piano roll display.
+   */
+
+  _raf_guard = false;
+
+  show_score_time = async () => {
+    // Skip if piano-roll not visible
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) return;
+
+    // Need a piece &amp; Silencio score
+    const piece = this.cloud5_piece;
+    if (!piece || typeof piece.latest_score_time !== 'number') return;
+    if (!this.silencio_score) return;
+
+    // Throttle to one progress3D per animation frame
+    if (this._raf_guard) return;
+    this._raf_guard = true;
+    const t = piece.latest_score_time;
+    requestAnimationFrame(() => {
+      this._raf_guard = false;
+      this.silencio_score.progress3D(t);
+    });
+  };
+
+  /**
+   * Stops the timer that is updating the play position of the score.
+   */
+  recenter() {
+    this.silencio_score.lookAtFullScore3D();
+  }
+  on_shown() {
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = document.documentElement.clientWidth;
+    const cssH = document.documentElement.clientHeight;
+    // 2a) backing store
+    this.canvas.width = Math.max(1, Math.floor(cssW * dpr));
+    this.canvas.height = Math.max(1, Math.floor(cssH * dpr));
+    // 2b–d) if Silencio exposes hooks; otherwise re-call draw3D
+    if (this.silencio_score?.resize3D) {
+      this.silencio_score.resize3D(this.canvas.width, this.canvas.height);
+      if (this.silencio_score.lookAtFullScore3D) this.silencio_score.lookAtFullScore3D();
+      if (this.silencio_score.redraw3D) this.silencio_score.redraw3D();
+    } else {
+      // Fallback: rebuild the renderer with the now-correct size
+      this.silencio_score?.draw3D?.(this.canvas);
+      this.silencio_score?.lookAtFullScore3D?.();
+    }
+  }
+}
+customElements.define("cloud5-piano-roll", Cloud5PianoRoll);
+
+/**
+ * Contains an instance of the Strudel REPL that can use Csound as an output,
+ * and that starts and stops along wth Csound.
+ */
+class Cloud5Strudel extends Cloud5Element {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    super.connectedCallback?.();
+    this.innerHTML = `
+    &lt;strudel-repl-component id="strudel_view" class='cloud5-strudel-repl'>
+        &lt;!--
+        ${this.#strudel_code_addon}
+        -->
+    &lt;/strudel-repl-component>
+    `;
+    this.strudel_component = this.querySelector('#strudel_view');
+    this.strudel_component.addEventListener("focusout", (event) => {
+      console.log("strudel_component lost focus.");
+    });
+
+    let menu_button = document.getElementById("menu_item_strudel");
+    menu_button.style.display = 'inline';
+  }  /**
+   * Starts the Strudel performance loop (the Cyclist).
+   */
+  start() {
+    this.strudel_component.startPlaying();
+
+  }
+  /**
+   * Stops the Strudel performance loop (the Cyclist).
+   */
+  stop() {
+    this.strudel_component.stopPlaying();
+
+  }
+  #strudel_code_addon = null;
+  /**
+    * Contains the text of a user-defined Strudel patch, exactly as would 
+    * normally be entered by the user in the Strudel REPL. This patch may 
+    * also import and reference modules defined by the cloud-5 system, such 
+    * as statefulpatterns.mjs or csoundac.js.
+    */
+  set strudel_code_addon(code) {
+    this.#strudel_code_addon = code;
+    // Reconstruct the element.
+    this.connectedCallback();
+  }
+  get strudel_code_addon() {
+    return this.#strudel_code_addon;
+  }
+  #control_parameters_addon = null;
+  /**
+    * Gets or sets optional control parameters.
+    */
+  set control_parameters_addon(parameters_) {
+    this.#control_parameters_addon = parameters_;
+    globalThis.parameters = parameters_;
+    // Reconstruct the element.
+    this.connectedCallback();
+  }
+  get control_parameters_addon() {
+    return this.#control_parameters_addon;
+  }
+}
+customElements.define("cloud5-strudel", Cloud5Strudel);
+
+/**
+ * Presents visuals generated by a GLSL shader. These visuals can show a 
+ * visualization of the music, or be sampled to generate notes for Csound to 
+ * perform.
+ * 
+ * This class is specifically designed to simplify the use of shaders 
+ * developed in or adapted from the ShaderToy Web site. Other types of shader 
+ * also can be used.
+ */class Cloud5ShaderToy extends Cloud5Element {
+  gl = null;
+  shader_program = null;
+  analyser = null;
+  uniforms = {};
+  uniform_locations = {};
+  attributes = null;
+  set_uniforms = null;
+  get_attributes = null;
+  frequency_domain_data = null;
+  time_domain_data = null;
+  image_sample_buffer = null;
+  channel0_texture_unit = null;
+  channel0_texture = null;
+  channel0_sampler = null;
+  current_events = {};
+  prior_events = {};
+  rendering_frame = 0;
+  image_sample_buffer = null;
+  prior_image_sample_buffer = null;
+  vertex_shader_code_addon = `#version 300 es
+  in vec2 inPos;
+  void main() {
+      gl_Position = vec4(inPos.xy, 0.0, 1.0);
+  }
+  `;
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    super.connectedCallback?.();
+    this.innerHTML = `
+     &lt;canvas id="display" class="cloud5-shader-canvas">
+    `;
+    this.canvas = this.querySelector('#display');
+
+    // Attach WebGL context-loss handlers to this canvas (Cloud5ShaderToy does not
+    // use obtainWebGL2, so we must handle this here).
+    if (!this._context_listeners_installed) {
+      this._context_listeners_installed = true;
+      this.canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        this._context_lost = true;
+
+        const msg = 'WebGL context lost (Cloud5ShaderToy)';
+        console.error(msg);
+        try {
+          this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+        } catch { }
+
+        if (this._raf) {
+          cancelAnimationFrame(this._raf);
+          this._raf = 0;
+        }
+      }, false);
+      this.canvas.addEventListener('webglcontextrestored', () => {
+        const msg = 'WebGL context restored (Cloud5ShaderToy)';
+        console.log(msg);
+        try {
+          this.cloud5_piece?.csound_message_callback?.(msg + '\n');
+        } catch { }
+
+        this._context_lost = false;
+        this._rebuild_after_context_restore();
+      }, false);
+    }
+    window.addEventListener('resize', this._onWindowResize, { passive: true });
+    window.visualViewport?.addEventListener('resize', this._onWindowResize, { passive: true });
+  }
+
+  // ...rest of Cloud5ShaderToy unchanged...
+  disconnectedCallback() {
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
+    window.removeEventListener('resize', this._onWindowResize);
+    window.visualViewport?.removeEventListener('resize', this._onWindowResize);
+  }
+  #cloud5_piece = null;
+  /**
+   * Back reference to the piece, which can be used e.g. to get a reference to 
+   * Csound.
+   */
+  set cloud5_piece(piece) {
+    this.#cloud5_piece = piece;
+  }
+  get cloud5_piece() {
+    return this.#cloud5_piece;
+  }
+  #shader_parameters_addon = null;
+  /**
+   * A number of parameters must be up to date at the same time before the 
+   * shader program can be compiled. These are passed to this property in an 
+   * object, upon which the shader is compiled and begins to run. The 
+   * paramameters are:
+   * &lt;pre>
+   * {
+   *  fragment_shader_addon: code,    \\ Required GLSL code.
+   *  vertex_shader_addon: code,      \\ Has a default value, but may be 
+   *                                  \\ overridden with custom GLSL code.
+   *  pre_draw_frame_function_addon,  \\ Optional JavaScript function to be 
+   *                                  \\ caalled in the animation loop before 
+   *                                  \\ drawing each frame, e.g. for setting 
+   *                                  \\ program uniforms.
+   *  post_draw_frame_function_addon, \\ Optional JavaScript function to called 
+   *                                  \\ the animation loop immediately after 
+   *                                  \\ drawing each frame, e.g. for getting 
+   *                                  \\ attributes or reading buffers.                
+   * }
+   * &lt;/pre>
+   */
+  set shader_parameters_addon(shader_parameters) {
+    this.#shader_parameters_addon = shader_parameters;
+    this.create_shader();
+  }
+  get shader_parameters_addon() {
+    return this.#shader_parameters_addon;
+  }
+  /**
+   * Compiles the shader program, and starts rendering the shader.
+   */
+  create_shader() {
+    // Assign parameters fields to this.
+    if (this.#shader_parameters_addon.vertex_shader_code_addon) {
+      this.vertex_shader_code_addon = this.#shader_parameters_addon.vertex_shader_code_addon;
+    }
+    this.fragment_shader_code_addon = this.#shader_parameters_addon.fragment_shader_code_addon;
+    this.pre_draw_frame_function_addon = this.#shader_parameters_addon.pre_draw_frame_function_addon;
+    this.post_draw_frame_function_addon = this.#shader_parameters_addon.post_draw_frame_function_addon;
+    this.prepare_canvas();
+    this.compile_shader();
+    this.get_uniforms();
+    this?.set_attributes();
+    requestAnimationFrame((milliseconds) => this.on_shown(milliseconds));
+  }
+  /**
+   * Called by the browser when the element is resized.
+   */
+  resize() {
+    this.webgl_viewport_size = [window.innerWidth, window.innerHeight];
+    this.canvas.width = this.webgl_viewport_size[0] * window.devicePixelRatio;
+    this.canvas.height = this.webgl_viewport_size[1] * window.devicePixelRatio;
+    this.image_sample_buffer = new Uint8ClampedArray(this.canvas.width * 4);
+    this.prior_image_sample_buffer = new Uint8ClampedArray(this.canvas.width * 4);
+    console.info("resize: image_sample_buffer.length: " + this.image_sample_buffer.length);
+  }
+  /**
+   * Prepares the element's canvas for use by WebGL.
+   */
+  prepare_canvas() {
+    // Set up for high-resolution displays.
+    let devicePixelRatio_ = window.devicePixelRatio || 1
+    this.canvas.width = this.canvas.clientWidth * devicePixelRatio_;
+    this.canvas.height = this.canvas.clientHeight * devicePixelRatio_;
+    console.info("canvas.height: " + this.canvas.height);
+    console.info("canvas.width:  " + this.canvas.width);
+    this.gl = this.canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false });
+    if (!this.gl) {
+      throw new Error('WebGL2 is required for #version 300 es shaders.');
+    }
+    let extensions = this.gl.getSupportedExtensions();
+    console.info("Supported extensions:\n" + extensions);
+    if ("gpu" in navigator) {
+      var gpu_adapter = navigator.gpu.requestAdapter();
+      console.info("WebGPU adapter: " + gpu_adapter);
+    } else {
+      console.warn("WebGPU is not available on this platform.");
+    }
+    var EXT_color_buffer_float = this.gl.getExtension("EXT_color_buffer_float");
+    if (!EXT_color_buffer_float) {
+      alert("EXT_color_buffer_float is not available on this platform.");
+    }
+    this.mouse_position = [0, 0, 0, 0];
+    this.canvas.addEventListener('mousemove', ((e) => {
+      this.mouse_position = [e.clientX, e.clientY];
+    }));
+    this.audio_texture_level = 0;
+    this.audio_texture_internalFormat = this.gl.R32F;
+    this.audio_texture_width = 512;
+    this.audio_texture_height = 2;
+    this.audio_texture_border = 0;
+    this.audio_texture_srcFormat = this.gl.RED;
+    this.audio_texture_srcType = this.gl.FLOAT;
+    this.frequency_domain_data = new Uint8Array(this.audio_texture_width * 2);
+    this.time_domain_data = new Uint8Array(this.audio_texture_width * 2);
+    this.audio_data = new Float32Array(this.audio_texture_width * 2);
+    this.image_sample_buffer = new Uint8ClampedArray();
+    this.channel0_texture_unit = 0;
+    this.channel0_texture = this.gl.createTexture();
+    this.channel0_texture.name = "channel0_texture";
+    this.channel0_sampler = this.gl.createSampler();
+    this.channel0_sampler.name = "channel0_sampler";
+    this.current_events = {};
+    this.prior_events = {};
+    this.rendering_frame = 0;
+    this.midpoint = this.audio_texture_width / 2;
+  }
+
+  write_audio_texture(analyser, texture_unit, texture, sampler) {
+    if (analyser != null) {
+      analyser.getByteFrequencyData(this.frequency_domain_data);
+      analyser.getByteTimeDomainData(this.time_domain_data);
+      for (let i = 0; i &lt; this.audio_texture_width; ++i) {
+        // Map frequency domain magnitudes to [0, 1].
+        let sample = this.frequency_domain_data[i];
+        sample = sample / 255.;
+        this.audio_data[i] = sample;
+      }
+      this.audio_data_width = this.audio_texture_width * 2;
+      for (let j = 0; j &lt; this.audio_texture_width; ++j) {
+        // Map time domain amplitudes to [-1, 1].
+        let sample = this.time_domain_data[j];
+        sample = sample / 255.;
+        this.audio_data[this.audio_texture_width + j] = sample;
+      }
+    }
+    this.gl.activeTexture(this.gl.TEXTURE0 + texture_unit);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.bindSampler(texture_unit, sampler);
+    this.gl.texImage2D(this.gl.TEXTURE_2D,
+      this.audio_texture_level,
+      this.audio_texture_internalFormat,
+      this.audio_texture_width,
+      this.audio_texture_height,
+      this.audio_texture_border,
+      this.audio_texture_srcFormat,
+      this.audio_texture_srcType,
+      this.audio_data);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_WRAP_R, this.gl.CLAMP_TO_EDGE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_COMPARE_MODE, this.gl.NONE);
+    this.gl.samplerParameteri(sampler, this.gl.TEXTURE_COMPARE_FUNC, this.gl.LEQUAL);
+    if (false &amp;&amp; analyser) { // For debugging.
+      let is_texture = gl.isTexture(texture);
+      let uniform_count = gl.getProgramParameter(shader_program, gl.ACTIVE_UNIFORMS);
+      let uniform_index;
+      for (let uniform_index = 0; uniform_index &lt; uniform_count; ++uniform_index) {
+        uniform_info = gl.getActiveUniform(shader_program, uniform_index);
+        console.log(uniform_info);
+        const location = gl.getUniformLocation(shader_program, uniform_info.name);
+        const value = gl.getUniform(shader_program, location);
+        console.log("Uniform location: " + location);
+        console.log("Uniform value: " + value);
+      }
+      const unit = gl.getUniform(shader_program, shader_program.iChannel0);
+      console.log("Sampler texture unit: " + unit);
+      console.log("Texture unit: " + texture_unit);
+      gl.activeTexture(gl.TEXTURE0 + texture_unit);
+      let texture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+      console.log("Texture binding 2D " + texture2D);
+      var debug_framebuffer = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, debug_framebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture2D, 0);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        console.log("These attachments don't work.");
+      }
+      // Read the contents of the debug_framebuffer (data stores the pixel data).
+      var data = new Float32Array(1024);
+      // What comes out, should be what went in.
+      gl.readPixels(0, 0, 512, 2, gl.RED, gl.FLOAT, data);
+      //console.log("\nfrequency domain: \n" + data.slice(0, 512));
+      //console.log("time domain: \n" + data.slice(512));
+      gl.deleteFramebuffer(debug_framebuffer);
+    }
+  }
+
+  /**
+   * Actually compiles and links the vertex shader and fragment shader.
+   */
+  compile_shader() {
+    let WEBGL_debug_shaders = this.gl.getExtension("WEBGL_debug_shaders");
+    this.webgl_viewport_size = null;
+    this.webgl_buffers = {};
+    this.shader_program = this.gl.createProgram();
+    for (let i = 0; i &lt; 2; ++i) {
+      let shader_code = (i == 0 ? this.vertex_shader_code_addon : this.fragment_shader_code_addon);
+      let shader_object = this.gl.createShader(i == 0 ? this.gl.VERTEX_SHADER : this.gl.FRAGMENT_SHADER);
+      this.gl.shaderSource(shader_object, shader_code);
+      this.gl.compileShader(shader_object);
+      let status = this.gl.getShaderParameter(shader_object, this.gl.COMPILE_STATUS);
+      if (!status) {
+        console.warn(this.gl.getShaderInfoLog(shader_object));
+      }
+      this.gl.attachShader(this.shader_program, shader_object);
+      this.gl.linkProgram(this.shader_program);
+      let translated_shader = WEBGL_debug_shaders.getTranslatedShaderSource(shader_object);
+    }
+    status = this.gl.getProgramParameter(this.shader_program, this.gl.LINK_STATUS);
+    if (!status) {
+      console.warn(this.gl.getProgramInfoLog(this.shader_program));
+    }
+    this.shader_program.inPos = this.gl.getAttribLocation(this.shader_program, "inPos");
+    this.shader_program.iMouse = this.gl.getUniformLocation(this.shader_program, "iMouse");
+    this.shader_program.iResolution = this.gl.getUniformLocation(this.shader_program, "iResolution");
+    this.shader_program.iTime = this.gl.getUniformLocation(this.shader_program, "iTime");
+    this.shader_program.iTimeDelta = this.gl.getUniformLocation(this.shader_program, "iTimeDelta");
+    this.shader_program.iFrame = this.gl.getUniformLocation(this.shader_program, "iFrame");
+    this.shader_program.iChannel0 = this.gl.getUniformLocation(this.shader_program, "iChannel0");
+    this.shader_program.iChannel1 = this.gl.getUniformLocation(this.shader_program, "iChannel1");
+    this.shader_program.iChannel2 = this.gl.getUniformLocation(this.shader_program, "iChannel2");
+    this.shader_program.iChannel3 = this.gl.getUniformLocation(this.shader_program, "iChannel3");
+    this.shader_program.iSampleRate = this.gl.getUniformLocation(this.shader_program, "iSampleRate");
+    this.gl.useProgram(this.shader_program);
+
+    this.gl.uniform1f(this.shader_program.iSampleRate, 48000.);
+    var pos = [-1, -1,
+      1, -1,
+      1, 1,
+    -1, 1];
+    var inx = [0, 1, 2, 0, 2, 3];
+    this.webgl_buffers.pos = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.webgl_buffers.pos);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(pos), this.gl.STATIC_DRAW);
+    this.webgl_buffers.inx = this.gl.createBuffer();
+    this.webgl_buffers.inx.len = inx.length;
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.webgl_buffers.inx);
+    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inx), this.gl.STATIC_DRAW);
+    this.gl.enableVertexAttribArray(this.shader_program.inPos);
+    this.gl.vertexAttribPointer(this.shader_program.inPos, 2, this.gl.FLOAT, false, 0, 0);
+    this.gl.enable(this.gl.DEPTH_TEST);
+    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this?.write_audio_texture(this.analyser, this.channel0_texture_unit, this.channel0_texture, this.channel0_sampler);
+    // Do not overwrite the page's global resize handler.
+    this.resize();
+    if (!this._raf) {
+      this._raf = requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+    }
+  }
+
+  set_attributes() {
+
+  }
+  /**
+   * Obtains all active uniforms from the compiled GLSL shader.
+   * Addons may use these to control the shader.
+   */
+  get_uniforms() {
+    // Obtains all active uniforms and their locations, with which visuals 
+    // can be controlled.
+    this.uniforms = {};
+    this.uniform_locations = {};
+    let uniform_count = this.gl.getProgramParameter(this.shader_program, this.gl.ACTIVE_UNIFORMS);
+    for (let uniform_index = 0; uniform_index &lt; uniform_count; ++uniform_index) {
+      let uniform_info = this.gl.getActiveUniform(this.shader_program, uniform_index);
+      this.uniforms[uniform_info.name] = uniform_info;
+      let uniform_location = this.gl.getUniformLocation(this.shader_program, uniform_info.name);
+      this.uniform_locations[uniform_info.name] = uniform_location;
+    }
+  }
+  // Obtains all program attributes, which can be used to sample the visuals in 
+  // order to generate notes.
+  get_attributes() {
+
+  }
+  /**
+   * Called by the browseer to run the shader in an endless loop of animation frames.
+   * 
+   * @param {number} milliseconds The time since the start of the loop.
+   */
+  async render_frame(milliseconds) {
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) {
+      if (this._raf) {
+        cancelAnimationFrame(this._raf);
+        this._raf = 0;
+      }
+      return;
+    }
+    if (this._context_lost || !this.gl) {
+      this._raf = 0;
+      return;
+    }
+    // Here we create an AnalyserNode as soon as Csound is available.
+    if (this.analyser) {
+    } else {
+      let csound = this?.cloud5_piece?.csound;
+      if (csound) {
+        var node;
+        if (typeof csound.getNode == 'undefined') {
+        } else {
+          node = await csound.getNode()
+          this.analyser = new AnalyserNode(node.context);
+          this.analyser.fftSize = 2048;
+          console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
+          node.connect(this.analyser);
+        }
+      }
+    }
+    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    // Custom uniforms may be set in this addon. Such uniforms can be used 
+    // e.g. to control audio visualizations.
+    if (this.pre_draw_frame_function_addon) {
+      this.pre_draw_frame_function_addon();
+    }
+    // There are some default uniforms, modeled on ShaderToy.
+    let seconds = milliseconds / 1000;
+    this.gl.uniform1f(this.shader_program.iTime, seconds);
+    this.gl.uniform3f(this.shader_program.iResolution, this.canvas.width, this.canvas.height, 0);
+    this.gl.uniform4f(this.shader_program.iMouse, this.mouse_position[0], this.mouse_position[1], 0, 0);
+    this?.write_audio_texture(this.analyser, this.channel0_texture_unit, this.channel0_texture, this.channel0_sampler);
+    // Actually render the frame.
+    this.gl.drawElements(this.gl.TRIANGLES, this.webgl_buffers.inx.len, this.gl.UNSIGNED_SHORT, 0);
+    // Ï attributes may be accessed in this addon. Such attributes can be 
+    // used e.g. to sample visuals and translate them to musical notes.
+    if (this.post_draw_frame_function_addon) {
+      this.post_draw_frame_function_addon();
+    }
+    this.rendering_frame++;
+    this._raf = requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
+  }
+
+  on_shown() {
+    if (!this.canvas) return;
+
+    // 1) Compute visible CSS size; fall back to viewport when display:none had zeroed sizes
+    const dpr = window.devicePixelRatio || 1;
+    let cssW = this.clientWidth, cssH = this.clientHeight;
+    if (!cssW || !cssH) { cssW = document.documentElement.clientWidth; cssH = document.documentElement.clientHeight; }
+
+    // 2) Backing store = CSS size × DPR (>=1)
+    const bw = Math.max(1, Math.floor(cssW * dpr));
+    const bh = Math.max(1, Math.floor(cssH * dpr));
+    if (this.canvas.width !== bw || this.canvas.height !== bh) {
+      this.canvas.width = bw;
+      this.canvas.height = bh;
+      // keep the CSS size in sync so hit-testing/mouse coords match
+      this.canvas.style.width = cssW + 'px';
+      this.canvas.style.height = cssH + 'px';
+      // (re)allocate any size-dependent scratch buffers if you use them
+      this.image_sample_buffer = new Uint8ClampedArray(this.canvas.width * 4);
+      this.prior_image_sample_buffer = new Uint8ClampedArray(this.canvas.width * 4);
+    }
+
+    // 3) Ensure GL is ready, then update viewport &amp; size uniforms
+    if (!this.gl) {
+      // Your class already has these helpers:
+      // - prepare_canvas() creates the context and sets up state
+      // - compile_shader() builds the program
+      // - get_uniforms() caches uniform locations
+      // - set_attributes() binds VBOs/IBOs
+      this.prepare_canvas?.();
+      this.compile_shader?.();
+      this.get_uniforms?.();
+      this?.set_attributes?.();
+    }
+    if (!this.gl) return;
+
+    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+
+    // ShaderToy-style uniforms if present
+    if (this.shader_program) {
+      this.gl.useProgram(this.shader_program);
+      if (this.shader_program.iResolution) {
+        // pass DPR in .z like ShaderToy (optional; many shaders ignore it)
+        this.gl.uniform3f(this.shader_program.iResolution, this.canvas.width, this.canvas.height, dpr);
+      }
+    }
+
+    // 4) Make sure the render loop is running
+    if (!this._raf) {
+      this._raf = requestAnimationFrame(ms => this.render_frame(ms));
+    }
+  }
+  on_hidden() {
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+    }
+  }
+
+  _raf = 0;
+  _onWindowResize = () => {
+    const visible = this.checkVisibility
+      ? this.checkVisibility()
+      : getComputedStyle(this).display !== 'none';
+    if (!visible) return;
+    requestAnimationFrame(() => this.on_shown?.());
+  };
+
+  _raf = 0;
+  _context_lost = false;
+  _context_listeners_installed = false;
+
+  _rebuild_after_context_restore() {
+    // GL resources are invalidated on context restore; rebuild program/buffers.
+    try {
+      this.prepare_canvas?.();
+      this.compile_shader?.();
+      this.get_uniforms?.();
+      this.set_attributes?.();
+      this.on_shown?.();
+    } catch (e) {
+      console.warn('Cloud5ShaderToy: rebuild after context restore failed:', e);
+    }
+  }
+
+
+}
+customElements.define("cloud5-shadertoy", Cloud5ShaderToy);
+
+/**
+ * Displays a scrolling list of runtime messages from Csound and/or other sources.
+ */
+class Cloud5Log extends Cloud5Element {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    super.connectedCallback?.();
+    this.innerHTML = `&lt;div id="console_view" class="cloud5-log-editor no-scroll">&lt;/div>`;
+    this.console_editor = ace.edit("console_view");
+    this.console_editor.setShowPrintMargin(false);
+    this.console_editor.setDisplayIndentGuides(false);
+    this.console_editor.renderer.setOption("showGutter", true);
+  }
+
+  // ...rest of Cloud5Log unchanged...
+  _pin_to_bottom() {
+    if (!this.console_editor) {
+      return;
+    }
+    const editor = this.console_editor;
+    const session = editor.getSession();
+    // When the log overlay has been display:none, Ace often needs a resize
+    // before its scroller metrics are valid.
+    try { editor.resize(true); } catch (e) { }
+    const lastRow = Math.max(0, session.getLength() - 1);
+    // Ace's own helper is more reliable than manual Y math when soft-wrap is enabled.
+    try {
+      editor.scrollToLine(lastRow, true, true, function () { });
+    } catch (e) {
+      // Fallback: best-effort renderer scroll.
+      const renderer = editor.renderer;
+      const scroller = renderer &amp;&amp; renderer.scroller;
+      const scrollerHeight = (renderer &amp;&amp; renderer.$size &amp;&amp; renderer.$size.scrollerHeight) || (scroller &amp;&amp; scroller.clientHeight) || 0;
+      if (scrollerHeight > 0) {
+        const lineHeight = (renderer &amp;&amp; renderer.lineHeight) || 16;
+        const maxY = Math.max(0, lastRow * lineHeight - scrollerHeight);
+        try { renderer.scrollToY(maxY); } catch (e2) { }
+      }
+    }
+  }
+
+  /**
+   * Appends message text to the end of the editor, trimming old lines if needed.
+   * @param {string} message
+   */
+  log(message) {
+    if (!this.console_editor) return;
+    const editor = this.console_editor;
+    const session = editor.getSession();
+    const doc = session.getDocument();
+    // Trim if too large (prevent runaway memory).
+    let lines = session.getLength();
+    if (lines > 5000) {
+      session.removeFullLines(0, 2500);
+      lines = session.getLength();
+    }
+    // Append at end-of-document (regardless of visibility or cursor position).
+    const lastRow = Math.max(0, doc.getLength() - 1);
+    const lastCol = (session.getLine(lastRow) || "").length;
+    session.insert({ row: lastRow, column: lastCol }, message);
+    this._pin_to_bottom();
+    // Some browsers/Ace builds only settle scroll metrics after paint.
+    requestAnimationFrame(() => this._pin_to_bottom());
+  }
+}
+customElements.define("cloud5-log", Cloud5Log);
+
+
+/**
+ * May contain license, authorship, credits, and program notes as inner HTML.
+ */
+class Cloud5About extends Cloud5Element {
+  constructor() {
+    super();
+  }
+}
+customElements.define("cloud5-about", Cloud5About);
+
+// A sad workaround....
+// In some environments a stub `require` exists but Node's 'fs' module is unavailable.
+// Guard carefully to avoid crashing in browsers.
+var __dirname = ".";
+try {
+  if (typeof require === "function") {
+    const fs = require("fs");
+    if (fs &amp;&amp; typeof fs.realpathSync === "function") {
+      __dirname = fs.realpathSync(".");
+    }
+  }
+}
+catch (e) {
+  // Ignore.
+}
+
+/**
+ * The title of the document and of the piece is always the filename part, 
+ * without extension, of the HTML file.
+ */
+document.title = get_filename(document.location.href)
+
+/**
+ * Tries to clear all browser caches upon loading.
+ */
+if ('caches' in window) {
+  caches.keys().then(function (names) {
+    for (let name of names)
+      caches.delete(name);
+    console.info(`deleted ${name} from caches.`);
+  });
+}
+
+/**
+ * Tests if Csound is null or undefined.
+ */
+function non_csound(csound_) {
+  if (typeof csound_ === 'undefined') {
+    console.warn("csound is undefined.");
+    console.trace();
+    return true;
+  }
+  if (csound_ === null) {
+    console.warn("csound is null.");
+    console.trace();
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Replaces the order of instruments in a Silencio Score with a new order.
+ * Instrument numbers are re-ordered as if they are integers. The 
+ * new_order parameter is a map, e.g. `{1:5, 3:1, 4:17}`. The map need not 
+ * be complete.
+ *
+ * @param {Silencio.Score} score A generated CsoundAC Score.
+ * @param {Object} new_order_ A map assigning new Csound instrument numbers 
+ * (values) to old Csound instrument numbers (keys)
+ */
+function arrange_silencio(score, new_order_) {
+  console.info("arrange: reassigning instrument numbers...")
+  let new_order = new Map(Object.entries(new_order_));
+  // Renumber the insnos in the Score. Fractional parts of old insnos are 
+  // preserved.
+  for (i = 0, n = score.data.length; i &lt; n; ++i) {
+    let event_ = score.data[i];
+    let current_insno = event_.channel;
+    let current_insno_integer = Math.floor(current_insno);
+    let string_key = current_insno_integer.toString();
+    if (new_order.has(string_key)) {
+      let new_insno_integer = new_order.get(string_key);
+      let new_insno_fraction = current_insno - current_insno_integer;
+      let new_insno = new_insno_integer + new_insno_fraction;
+      console.info("renumbered: " + event_.toIStatement());
+      event_.channel = new_insno;
+      score.data[i] = event_;
+      console.info("        to: " + score.data[i].toIStatement());
+    }
+  }
+  console.info("arrange: finished reassigning instrument numbers.\n")
+}
+
+/**
+ * Replaces the order of instruments in a generated CsoundAC Score with a new 
+ * order. Instrument numbers are re-ordered as if they are integers. The 
+ * new_order parameter is a map, e.g. `{1:5, 3:1, 4:17}`. The map need not 
+ * be complete.
+ *
+ * @param {CsoundAC.Score} score A generated CsoundAC Score.
+ * @param {Object} new_order_ A map assigning new Csound instrument numbers 
+ * (values) to old Csound instrument numbers (keys)
+ */
+function arrange(score, new_order_) {
+  console.info("arrange: reassigning instrument numbers...\n")
+  let new_order = new Map(Object.entries(new_order_));
+  // Renumber the insnos in the Score. Fractional parts of old insnos are 
+  // preserved.
+  for (i = 0, n = score.size(); i &lt; n; ++i) {
+    let event_ = score.get(i);
+    let current_insno = event_.getInstrument();
+    let current_insno_integer = Math.floor(current_insno);
+    let string_key = current_insno_integer.toString();
+    if (new_order.has(string_key)) {
+      let new_insno_integer = new_order.get(string_key);
+      let new_insno_fraction = current_insno - current_insno_integer;
+      let new_insno = new_insno_integer + new_insno_fraction;
+      console.info("renumbered: " + event_.toIStatement());
+      event_.setInstrument(new_insno);
+      score.set(i, event_);
+      console.info("        to: " + event_.toIStatement());
+    }
+  }
+  console.info("arrange: finished reassigning instrument numbers.\n")
+}
+
+/**
+ * May be called to store data to the local filesystem. This is used e.g. to 
+ * save a copy of the generated Csound .csd file before starting the 
+ * performance. This can help with debugging. Note that in a browser-based 
+ * performance, the local filesystem is inside the sandbox.
+ * 
+ * @param {string} filepath 
+ * @param {string} data 
+ */
+function write_file(filepath, data) {
+  try {
+    // Sync, so a bad .csd file doesn't blow up Csound 
+    // before the .csd file is written so it can be tested!
+    fs.writeFileSync(filepath, data, function (err) {
+      console.warn(err);
+    });
+  } catch (err) {
+    try {
+      navigator.clipboard.writeText(data);
+      console.info("Copied generated csd to system clipboard.\n")
+    } catch (err1) {
+      console.warn(err1);
+    }
+  }
+}
+
+/**
+ * Called by the browser to resize arrays that are used to sample the WebGL
+ * canvas during performance.
+ */
+function resize() {
+  webgl_viewport_size = [window.innerWidth, window.innerHeight];
+  canvas.width = webgl_viewport_size[0] * window.devicePixelRatio;
+  canvas.height = webgl_viewport_size[1] * window.devicePixelRatio;
+  image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
+  prior_image_sample_buffer = new Uint8ClampedArray(canvas.width * 4);
+  console.info("resize: image_sample_buffer.length: " + image_sample_buffer.length);
+}
+
+function client_wait_async(gl, sync, flags, interval_ms) {
+  return new Promise((resolve, reject) => {
+    function test() {
+      const result = gl.clientWaitSync(sync, flags, 0);
+      if (result === gl.WAIT_FAILED) {
+        reject();
+        return;
+      }
+      // This is the workaround for platforms where maximum 
+      // timeout is always 0.
+      if (result === gl.TIMEOUT_EXPIRED) {
+        setTimeout(test, interval_ms);
+        return;
+      }
+      resolve();
+    }
+    test();
+  });
+}
+
+async function get_buffer_sub_data_async(gl, target, buffer, srcByteOffset, dstBuffer,
+  /* optional */ dstOffset, /* optional */ length) {
+  const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+  gl.flush();
+  await client_wait_async(gl, sync, 0, 10);
+  gl.deleteSync(sync);
+  gl.bindBuffer(target, buffer);
+  gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
+  gl.bindBuffer(target, null);
+}
+
+/**
+ * @function rgb_to_hsv 
+ * 
+ * @description Converts an RGB color value to HSV. The formula is 
+ * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+ * 
+ * @param {Array} rgb RGB color in [0, 255]
+ * @returns {Array} An HSV color in [0, 1].
+ */
+var rgb_to_hsv = function (rgb) {
+  r = rgb[0] / 255;
+  g = rgb[1] / 255;
+  b = rgb[2] / 255;
+  let max = Math.max(r, g, b);
+  let min = Math.min(r, g, b);
+  let h, s, v = max;
+  let d = max - min;
+  s = max === 0 ? 0 : d / max;
+  if (max == min) {
+    h = 0;
+  } else {
+    // More efficient than switch?
+    if (max == r) {
+      h = (g - b) / d + (g &lt; b ? 6 : 0);
+    } else if (max == g) {
+      h = (b - r) / d + 2;
+    } else if (max == b) {
+      h = (r - g) / d + 4;
+    }
+    h /= 6;
+  }
+  return [h, s, v];
+}
+
+async function read_pixels_async(gl, x, y, w, h, format, type, sample) {
+  // Reuse a single PBO per context rather than creating/deleting one per call.
+  // Frequent buffer churn + sync readback is a common trigger for WebGL context loss.
+  if (!gl.__cloud5_read_pbo) {
+    gl.__cloud5_read_pbo = gl.createBuffer();
+    gl.__cloud5_read_pbo_size = 0;
+  }
+  const buffer = gl.__cloud5_read_pbo;
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+  if ((gl.__cloud5_read_pbo_size | 0) &lt; sample.byteLength) {
+    gl.bufferData(gl.PIXEL_PACK_BUFFER, sample.byteLength, gl.DYNAMIC_READ);
+    gl.__cloud5_read_pbo_size = sample.byteLength;
+  }
+  gl.readPixels(x, y, w, h, format, type, 0);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  await get_buffer_sub_data_async(gl, gl.PIXEL_PACK_BUFFER, buffer, 0, sample);
+}
+
+/**
+ * Called by cloud-5 when sampling the WebGL video canvas to 
+ * reduce the bandwidth of the data, e.g. in preparation for 
+ * translating it to musical notes.
+ * 
+ * Adapts https://github.com/pingec/downsample-lttb from time 
+ * series data to vectors of float HSV pixels. Our data is not 
+ * [[time, value], [time, value],...], but rather 
+ * [[column, value, [h,s,v]],...]. The algorithm uses 
+ * column and value, but [h,s,v] go along for the ride.
+ * 
+ * @param {Array} data Data from the canvas, e.g. a row of pixels.
+ * @param {Array} buckets Placeholder data.
+ * @returns {Array} The downsampled data.
+ */
+function downsample_lttb(data, buckets) {
+  if (buckets >= data.length || buckets === 0) {
+    return data; // Nothing to do
+  }
+  let sampled_data = [],
+    sampled_data_index = 0;
+  // Bucket size. Leave room for start and end data points
+  let bucket_size = (data.length - 2) / (buckets - 2);
+  // Triangles are points {a, b, c}.
+  let a = 0,  // Initially a is the first point in the triangle
+    max_area_point,
+    max_area,
+    area,
+    next_a;
+  sampled_data[sampled_data_index++] = data[a]; // Always add the first point
+  for (let i = 0; i &lt; buckets - 2; i++) {
+    // Calculate point average for next bucket (containing c)
+    let avg_x = 0,
+      avg_y = 0,
+      avg_range_start = Math.floor((i + 1) * bucket_size) + 1,
+      avg_range_end = Math.floor((i + 2) * bucket_size) + 1;
+    avg_range_end = avg_range_end &lt; data.length ? avg_range_end : data.length;
+    let avg_range_length = avg_range_end - avg_range_start;
+    for (; avg_range_start &lt; avg_range_end; avg_range_start++) {
+      avg_x += data[avg_range_start][0] * 1; // * 1 enforces Number (value may be Date)
+      avg_y += data[avg_range_start][1] * 1;
+    }
+    avg_x /= avg_range_length;
+    avg_y /= avg_range_length;
+    // Get the range for this bucket
+    let range_offs = Math.floor((i + 0) * bucket_size) + 1,
+      range_to = Math.floor((i + 1) * bucket_size) + 1;
+    // Point a
+    let point_a_x = data[a][0] * 1, // enforce Number (value may be Date)
+      point_a_y = data[a][1] * 1;
+    max_area = area = -1;
+    for (; range_offs &lt; range_to; range_offs++) {
+      // Calculate triangle area over three buckets
+      area = Math.abs((point_a_x - avg_x) * (data[range_offs][1] - point_a_y) -
+        (point_a_x - data[range_offs][0]) * (avg_y - point_a_y)
+      ) * 0.5;
+      if (area > max_area) {
+        max_area = area;
+        max_area_point = data[range_offs];
+        // Next a is this b
+        next_a = range_offs;
+      }
+    }
+    // Pick this point from the bucket; it is the point with the maximum
+    // area by value, but that point actually includes [h,s,v].
+    sampled_data[sampled_data_index++] = max_area_point;
+    a = next_a; // This a is the next a (chosen b)
+  }
+  sampled_data[sampled_data_index++] = data[data.length - 1]; // Always add last
+  return sampled_data; ///sampled_data;
+}
+
+/**
+  * In the browser, creates a URL for a soundfile recorded by this piece.
+  * All such files exist by default in the Emscripten MEMFS filesystem 
+  * at '/', and are automatically downloaded to the user's Downloads 
+  * directory. The filename is returned.
+  * 
+  * Does nothing in NW.js, where files are written directly to the 
+  * local filesystem.
+  * 
+  * @param {Csound} csound The Csound instance.
+  * @returns {string} The name of the soundfile, if successful.
+  */
+async function url_for_soundfile(csound) {
+  try {
+    if (non_csound(csound)) {
+      return;
+    }
+    if (!csound.GetFileData) {
+      console.warn("csound.GetFileData() is not available.");
+      return;
+    }
+    let soundfile_name = document.title + ".wav";
+    let mime_type = "audio/wav";
+    let file_data = await csound.GetFileData(soundfile_name);
+    console.info(`Offering download of "${soundfile_name}", with ${file_data.length} bytes...`);
+    var a = document.createElement('a');
+    a.download = soundfile_name;
+    a.href = URL.createObjectURL(new Blob([file_data], { type: mime_type }));
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    requestAnimationFrame(() => a.click());
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }, 2000);
+    return soundfile_name;
+  } catch (x) {
+    console.error("Download failed:", x);
+  }
+}
+
+/**
+ * Generates a new copy(s) of the Score in canon to the original, at the 
+ * specified delay in seconds and transposition in semitones (which may be 
+ * fractional). If a Scale is supplied, the new Score is conformed to that 
+ * Scale.
+ * @param {CsoundAC.Score} Score or fragment of score. 
+ * @param {number} delay in seconds.
+ * @param {number} transposition in semitones.
+ * @param {number} layers.
+ * @param {CsoundAC.Scale} csoundac_scale if supplied, the new voice will 
+ * be conformed to this scale.
+ * @returns a modified {Score}
+ */
+function canon(CsoundAC, csoundac_score, delay, transposition, layers, csoundac_scale) {
+  let new_score = new CsoundAC.Score();
+  // Append both an event and that event in canon to the new Score.
+  for (let layer = 1; layer &lt;= layers; ++layer) {
+    for (let i = 0; i &lt; csoundac_score.size(); ++i) {
+      let event = csoundac_score.get(i);
+      if (layer == 1) {
+        new_score.append_event(event);
+      }
+      let new_time = event.getTime() + (delay * layer);
+      event.setTime(new_time);
+      let new_key = event.getKey() + (transposition * layer);
+      event.setKey(new_key);
+      new_score.append_event(event);
+    }
+  }
+  if (csoundac_scale) {
+    CsoundAC.apply(new_score, csoundac_scale, 0, 1000000, true);
+  }
+  return new_score;
+}
+
+function get_filename(pathOrUrl) {
+  const parts = pathOrUrl.split('/');
+  let filename = parts.pop() || parts.pop(); // handles trailing slash
+  const dotIndex = filename.lastIndexOf('.');
+  if (dotIndex > 0) {
+    return filename.slice(0, dotIndex);
+  } else {
+    return filename; // No extension
+  }
+}
+
+// --- Monkey-patch CsoundAC.Score with Web MIDI playback (mirrors MandelbrotJulia.playMIDIFromScore) ---
+(function attachScoreMIDIPatch(root = (typeof window !== "undefined" ? window : globalThis)) {
+  if (globalThis.cloud5_score_midi_patch_installed) {
+    return;
+  }
+  globalThis.cloud5_score_midi_patch_installed = true;
+  const C = globalThis?.CsoundAC;
+  if (!C || !C.Score) {
+    console.warn('CsoundAC.Score not found; MIDI patch skipped.');
+    return;
+  }
+
+  const Score = C.Score;
+
+  // Private-ish state keys (per-document, not exported)
+  const __midi = {
+    access: null,
+    outIdKey: 'cloud5.midiOutId',
+    playing: false,
+    timers: new Set(),
+    startMS: 0,
+    totalBeats: 0,
+    bpm: 120,
+  };
+
+  // Expose MIDI scheduler state for the rest of cloud-5.
+  globalThis.__midi = __midi;
+
+
+  function clearTimers() {
+    for (const id of __midi.timers) clearTimeout(id);
+    __midi.timers.clear();
+  }
+
+  function msFromBeats(beats, bpm) {
+    return (beats * 60 / Math.max(20, bpm | 0)) * 1000;
+  }
+
+  async function getMIDIAccess() {
+    if (__midi.access) return __midi.access;
+    if (!navigator.requestMIDIAccess) throw new Error('Web MIDI not supported in this browser.');
+    __midi.access = await navigator.requestMIDIAccess({ sysex: false });
+    return __midi.access;
+  }
+
+  function currentMIDIOutput() {
+    const acc = __midi.access;
+    if (!acc) return null;
+    const outs = acc.outputs;
+    if (!outs || outs.size === 0) return null;
+
+    const saved = localStorage.getItem(__midi.outIdKey);
+    if (saved &amp;&amp; outs.has(saved)) return outs.get(saved);
+
+    // Prefer IAC / Loopback / Bus style outputs; else first available
+    for (const o of outs.values()) {
+      if (/iac|loop|bus/i.test(o.name)) {
+        localStorage.setItem(__midi.outIdKey, o.id);
+        return o;
+      }
+    }
+    const first = outs.values().next().value;
+    if (first) localStorage.setItem(__midi.outIdKey, first.id);
+    return first || null;
+  }
+
+  function panicAllNotes() {
+    const out = currentMIDIOutput();
+    if (!out) return;
+    for (let ch = 0; ch &lt; 16; ch++) {
+      out.send([0xB0 | ch, 120, 0]); // All Sound Off
+      out.send([0xB0 | ch, 123, 0]); // All Notes Off
+      out.send([0xB0 | ch, 121, 0]); // Reset All Controllers
+      for (let k = 0; k &lt; 128; k += 8) out.send([0x80 | ch, k, 0]);
+    }
+  }
+
+  // ---------------------------
+  // Class (static) helper APIs
+  // ---------------------------
+
+  /**
+   * Choose an output by (partial, case-insensitive) name; falls back to first match.
+   * Returns the chosen MIDIOutput or null.
+   */
+  Score.select_midi_output_by_name = async function (namePart) {
+    await getMIDIAccess();
+    const outs = __midi.access?.outputs;
+    if (!outs?.size) return null;
+    const lower = String(namePart || '').toLowerCase();
+    for (const o of outs.values()) {
+      if (o.name.toLowerCase().includes(lower)) {
+        localStorage.setItem(__midi.outIdKey, o.id);
+        return o;
+      }
+    }
+    return currentMIDIOutput();
+  };
+
+  /** Get the current MIDI output (or null). */
+  Score.get_current_midi_output = function () {
+    return currentMIDIOutput();
+  };
+
+  /** Global stop: cancels timers and sends panic. */
+  Score.stop_play_midi = function () {
+    __midi.playing = false;
+    try { globalThis.cloud5_piece?.on_midi_stop?.(); } catch (e) { }
+
+    __midi.totalBeats = 0;
+    clearTimers();
+    panicAllNotes();
+  };
+
+  /** Global panic only (does not clear timers). */
+  Score.panic_midi = function () {
+    panicAllNotes();
+  };
+
+  // ----------------------------------
+  // Instance method: play this score
+  // ----------------------------------
+
+  /**
+   * Play this CsoundAC.Score to Web MIDI.
+   * @param {Object} opts
+   * @param {number} [opts.bpm=120]            Beats per minute if times are in beats.
+   * @param {boolean} [opts.time_is_beats=true]If false, interpret time/duration as seconds.
+   */
+  Score.prototype.play_midi = async function (opts = {}) {
+    const { bpm = 120, time_is_beats = true } = opts;
+
+    await getMIDIAccess();
+    const out = currentMIDIOutput();
+    if (!out) {
+      console.warn('Score.play_midi: no MIDI outputs available.');
+      return;
+    }
+
+    const n = (typeof this.size === 'function') ? this.size() : 0;
+    if (!n) {
+      console.warn('Score.play_midi: empty score.');
+      return;
+    }
+
+    // Normalize to [ch, tBeats, dBeats, key, vel]
+    const toBeat = (x) => time_is_beats ? x : (x * bpm / 60.0);
+    const notes = [];
+
+    for (let i = 0; i &lt; n; ++i) {
+      const ev = this.get(i);
+      const ch = (ev.getChannel ? ev.getChannel() : ev.getInstrument?.()) | 0;
+      const t = toBeat(ev.getTime ? ev.getTime() : 0);
+      const d = toBeat(ev.getDuration ? ev.getDuration() : 0.25);
+      const key = (ev.getKey ? ev.getKey() : 60) | 0;
+      const vel = (ev.getVelocity ? ev.getVelocity() : 100) | 0;
+      notes.push([(ch | 0) &amp; 0x0F, t, d, (key | 0) &amp; 0x7F, Math.max(1, Math.min(127, vel | 0))]);
+    }
+
+    __midi.bpm = bpm;
+    __midi.playing = true;
+    clearTimers();
+    __midi.startMS = performance.now();
+
+    try { globalThis.cloud5_piece?.on_midi_start?.(__midi.startMS); } catch (e) { }
+    __midi.totalBeats = Math.max(0, ...notes.map(n => n[1] + n[2]));
+    const t0 = __midi.startMS;
+
+    for (const [ch, tBeats, dBeats, key, vel] of notes) {
+      const on = 0x90 | ch;
+      const off = 0x80 | ch;
+      const whenOn = t0 + msFromBeats(tBeats, bpm);
+      const whenOff = t0 + msFromBeats(tBeats + dBeats, bpm);
+
+      __midi.timers.add(setTimeout(() => {
+        if (__midi.playing) out.send([on, key, vel]);
+      }, Math.max(0, whenOn - performance.now())));
+
+      __midi.timers.add(setTimeout(() => {
+        if (__midi.playing) out.send([off, key, 0]);
+      }, Math.max(0, whenOff - performance.now())));
+    }
+
+    // Auto-stop slightly after last note
+    __midi.timers.add(setTimeout(() => Score.stop_play_midi(),
+      Math.ceil(msFromBeats(__midi.totalBeats, bpm) + 50)));
+  };
+
+  // Optional: convenience alias (static) to play any score
+  Score.play_midi = async function (score, opts) {
+    if (!score || typeof score.play_midi !== 'function') {
+      throw new Error('Score.play_midi(score, opts): invalid score object');
+    }
+    return score.play_midi(opts);
+  };
+
+  console.info('CsoundAC.Score MIDI monkey-patch installed.');
+})();
+
+function is_plain_object(value) {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function deep_merge_into(target, patch, options = {}) {
+  const {
+    ignore_null = true,
+    allow_new_keys = true
+  } = options;
+
+  if (target === null || target === undefined) {
+    return target;
+  }
+
+  if (patch === null || patch === undefined) {
+    return target;
+  }
+
+  for (const key of Object.keys(patch)) {
+    if (!allow_new_keys &amp;&amp; !(key in target)) {
+      continue;
+    }
+
+    const incoming = patch[key];
+
+    if (incoming === null &amp;&amp; ignore_null) {
+      continue;
+    }
+
+    const current = target[key];
+
+    // Arrays: preserve array identity by mutating in place.
+    if (Array.isArray(incoming)) {
+      if (Array.isArray(current)) {
+        current.length = incoming.length;
+
+        for (let i = 0; i &lt; incoming.length; ++i) {
+          const incoming_item = incoming[i];
+          const current_item = current[i];
+
+          if (is_plain_object(incoming_item) &amp;&amp; is_plain_object(current_item)) {
+            deep_merge_into(current_item, incoming_item, options);
+          } else if (
+            is_plain_object(incoming_item) &amp;&amp;
+            current_item &amp;&amp;
+            typeof current_item === 'object' &amp;&amp;
+            !is_plain_object(current_item) &amp;&amp;
+            !Array.isArray(current_item)
+          ) {
+            deep_merge_into(current_item, incoming_item, options);
+          } else if (Array.isArray(incoming_item) &amp;&amp; Array.isArray(current_item)) {
+            current[i] = current_item;
+            deep_merge_into_array(current_item, incoming_item, options);
+          } else {
+            current[i] = clone_for_merge(incoming_item);
+          }
+        }
+      } else {
+        target[key] = clone_for_merge(incoming);
+      }
+
+      continue;
+    }
+
+    // Plain object into plain object: mutate existing object in place.
+    if (is_plain_object(incoming) &amp;&amp; is_plain_object(current)) {
+      deep_merge_into(current, incoming, options);
+      continue;
+    }
+
+    // Plain object into class instance: mutate existing instance in place.
+    if (
+      is_plain_object(incoming) &amp;&amp;
+      current &amp;&amp;
+      typeof current === 'object' &amp;&amp;
+      !is_plain_object(current) &amp;&amp;
+      !Array.isArray(current)
+    ) {
+      deep_merge_into(current, incoming, options);
+      continue;
+    }
+
+    // Primitive or replacement value.
+    target[key] = clone_for_merge(incoming);
+  }
+
+  return target;
+}
+
+function deep_merge_into_array(target_array, patch_array, options = {}) {
+  target_array.length = patch_array.length;
+
+  for (let i = 0; i &lt; patch_array.length; ++i) {
+    const incoming_item = patch_array[i];
+    const current_item = target_array[i];
+
+    if (Array.isArray(incoming_item) &amp;&amp; Array.isArray(current_item)) {
+      deep_merge_into_array(current_item, incoming_item, options);
+    } else if (is_plain_object(incoming_item) &amp;&amp; is_plain_object(current_item)) {
+      deep_merge_into(current_item, incoming_item, options);
+    } else if (
+      is_plain_object(incoming_item) &amp;&amp;
+      current_item &amp;&amp;
+      typeof current_item === 'object' &amp;&amp;
+      !is_plain_object(current_item) &amp;&amp;
+      !Array.isArray(current_item)
+    ) {
+      deep_merge_into(current_item, incoming_item, options);
+    } else {
+      target_array[i] = clone_for_merge(incoming_item);
+    }
+  }
+
+  return target_array;
+}
+
+function clone_for_merge(value) {
+  if (Array.isArray(value)) {
+    return value.map(clone_for_merge);
+  }
+
+  if (is_plain_object(value)) {
+    const result = {};
+
+    for (const key of Object.keys(value)) {
+      result[key] = clone_for_merge(value[key]);
+    }
+
+    return result;
+  }
+
+  return value;
+}
+
+function merge_json_into_instance(instance, json_string, options) {
+  const patch = JSON.parse(json_string);
+  return deep_merge_into(instance, patch, options);
+}
+
+function is_object(value) {
+  return value !== null &amp;&amp; typeof value === 'object' &amp;&amp; !Array.isArray(value);
+}
+
+function update_gui_displays(gui) {
+  if (gui.__controllers) {
+    for (const c of gui.__controllers) {
+      c.updateDisplay();
+    }
+  }
+  if (gui.__folders) {
+    for (const name of Object.keys(gui.__folders)) {
+      update_gui_displays(gui.__folders[name]);
+    }
+  }
+}
+
+function cloud5_get_last_snapshot_title() {
+  try {
+    const v = localStorage.getItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY);
+    return v ? String(v) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function cloud5_set_last_snapshot_title(title) {
+  try {
+    localStorage.setItem(CLOUD5_LAST_SNAPSHOT_TITLE_KEY, String(title || ""));
+  } catch (e) {
+  }
+}
+
+async function cloud5_save_data(data, filename, directory_handle) {
+  try {
+    if (!directory_handle) {
+      directory_handle = await cloud5_try_get_snapshot_dir_handle();
+    }
+    if (directory_handle) {
+      const file_handle = await directory_handle.getFileHandle(filename, { create: true });
+      const writable = await file_handle.createWritable();
+      await writable.write(data);
+      await writable.close();
+      return;
+    }
+  } catch (e) {
+    // fall through to blob download.
+  }
+  const content = (typeof data === 'string')
+    ? data
+    : JSON.stringify(data, null, 2);
+  const blob = new Blob([content], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="-_anonymous_-ParametricLindenmayer.PLSystem.html">PLSystem</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Turtle.html">Turtle</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Word.html">Word</a></li><li><a href="ChordPatterns.html">ChordPatterns</a></li><li><a href="Cloud5.html">Cloud5</a></li><li><a href="Cloud5About.html">Cloud5About</a></li><li><a href="Cloud5Element.html">Cloud5Element</a></li><li><a href="Cloud5Log.html">Cloud5Log</a></li><li><a href="Cloud5PianoRoll.html">Cloud5PianoRoll</a></li><li><a href="Cloud5Piece.html">Cloud5Piece</a></li><li><a href="Cloud5ShaderToy.html">Cloud5ShaderToy</a></li><li><a href="Cloud5Strudel.html">Cloud5Strudel</a></li><li><a href="CsoundAudioNode.html">CsoundAudioNode</a></li><li><a href="PitvPatterns.html">PitvPatterns</a></li><li><a href="ScalePatterns.html">ScalePatterns</a></li><li><a href="StatefulPatterns.html">StatefulPatterns</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Chord">Chord</a></li><li><a href="global.html#Clone">Clone</a></li><li><a href="global.html#Pitv">Pitv</a></li><li><a href="global.html#Scale">Scale</a></li><li><a href="global.html#arrange">arrange</a></li><li><a href="global.html#arrange_silencio">arrange_silencio</a></li><li><a href="global.html#canon">canon</a></li><li><a href="global.html#csound">csound</a></li><li><a href="global.html#csound_message_callback">csound_message_callback</a></li><li><a href="global.html#csoundac">csoundac</a></li><li><a href="global.html#csoundn">csoundn</a></li><li><a href="global.html#diagnostic">diagnostic</a></li><li><a href="global.html#diagnostic_level">diagnostic_level</a></li><li><a href="global.html#diagnostic_level_">diagnostic_level_</a></li><li><a href="global.html#downsample_lttb">downsample_lttb</a></li><li><a href="global.html#frequencyToMidiInteger">frequencyToMidiInteger</a></li><li><a href="global.html#frequencyToMidiReal">frequencyToMidiReal</a></li><li><a href="global.html#getFrequency">getFrequency</a></li><li><a href="global.html#get_csound">get_csound</a></li><li><a href="global.html#hsvToRgb">hsvToRgb</a></li><li><a href="global.html#load_csound">load_csound</a></li><li><a href="global.html#non_csound">non_csound</a></li><li><a href="global.html#obtainWebGL2">obtainWebGL2</a></li><li><a href="global.html#parameters">parameters</a></li><li><a href="global.html#resize">resize</a></li><li><a href="global.html#rgb_to_hsv">rgb_to_hsv</a></li><li><a href="global.html#setPitch">setPitch</a></li><li><a href="global.html#tee">tee</a></li><li><a href="global.html#track">track</a></li><li><a href="global.html#url_for_soundfile">url_for_soundfile</a></li><li><a href="global.html#velmap">velmap</a></li><li><a href="global.html#write_file">write_file</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Jun 06 2026 13:17:42 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

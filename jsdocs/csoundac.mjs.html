@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: csoundac.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: csoundac.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
+ * CSOUNDAC MODULE FOR STRUDEL
+ *
+ * Author: Michael Gogins
+ * 
+ * [csound-ac](https://github.com/gogins/csound-ac), or CsoundAC, is a C++ 
+ * algorithmic composition library designed for use with Csound.
+ *
+ * [csound-wasm](https://github.com/gogins/csound-wasm) is a WebAssembly 
+ * library containing both Csound and CsoundAC, with a JavaScript API, 
+ * designed for use in Web browsers and npm applications.
+ *
+ * This module brings chords and scales, and operations upon them, 
+ * from the CsoundAC library for algorithmic composition into the 
+ * Strudel (Tidal Cycles-based) JavaScript pattern language. This is 
+ * done by deriving from the StatefulPatterns class new classes whose 
+ * member functions become Patterns.
+ *
+ * Another use of StatefulPatterns is to define algorithmic note generators, 
+ * often driven by a `pure` pattern that acts as a clock.
+ *
+ * Please note, however, that this module, although it defines a number of 
+ * Patterns, is not built into Strudel and is designed to be dynamically 
+ * imported in patches created by users in the Strudel REPL. Therefore, code 
+ * in this module, as with all other modules directly imported in code 
+ * run by the Strudel REPL, must not use template strings.
+ */
+
+/**
+ * Global instance of Csound, shared from cloud-5 to Strudel.
+ */
+let csound = parent.window.globalThis.csound;
+/**
+ * Global instance of CsoundAC, shared from cloud-5 to Strudel.
+ */
+let csoundac = parent.window.globalThis.csound_ac;
+/**
+ * Global reference to the cloud-5 parameters addon.
+ */
+let parameters = parent.window.globalThis.__parameters__;
+
+let audioContext = new AudioContext();
+
+import { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns } from './statefulpatterns.mjs';
+export { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns };
+
+/**
+ * Similar to `arrange,` but permits a section to be silenced by setting its 
+ * number of cycles to 0; useful for assembling Patterns into longer-form 
+ * compositions.
+ * 
+ * @param  {...any} sections An array of arrays, in the format 
+ * `[[cycles, Pattern],...]`. 
+ * @returns {Pattern} A Pattern.
+ */
+export function track(...sections) {
+    sections = sections.filter(function (element) {
+        return element[0] >= 1;
+    });
+    const total = sections.reduce((sum, [cycles]) => sum + cycles, 0);
+    sections = sections.map(([cycles, section]) => [cycles, section.fast(cycles)]);
+    return timeCat(...sections).slow(total);
+};
+
+/**
+ * Returns the frequency corresponding to any of various ways that pitch 
+ * is represented in Strudel events.
+ *
+ * @param {Hap} hap A Hap that has some sort of pitch. 
+ * @returns {number} Its frequency in cycles per second.
+ */
+const getFrequency = (hap) => {
+    let {
+        value,
+        context
+    } = hap;
+    // if value is number => interpret as midi number as long as its not marked as frequency
+    if (typeof value === 'object') {
+        if (value.freq) {
+            return value.freq;
+        }
+        return getFreq(value.note || value.n || value.value);
+    }
+    if (typeof value === 'number' &amp;&amp; context.type !== 'frequency') {
+        value = midiToFreq(hap.value);
+    } else if (typeof value === 'string' &amp;&amp; isNote(value)) {
+        value = midiToFreq(noteToMidi(hap.value));
+    } else if (typeof value !== 'number') {
+        throw new Error('not a note or frequency: ' + value);
+    }
+    return value;
+};
+
+/**
+ * A utility that assigns a pitch represented as a MIDI key number to the Hap, 
+ * using the existing pitch property if it exists.
+ *
+ * @param {Hap} hap The Hap.
+ * @param {number} midi_key A MIDI key number.
+ * @returns {Hap} A new Hap.
+ */
+export function setPitch(hap, midi_key) {
+    if (typeof hap.value === 'undefined') {
+        hap.value = midi_key;
+    } else if (typeof hap.value === 'object') {
+        if (typeof hap.value.freq !== 'undefined') {
+            hap.value.freq = midiToFreq(midi_key);
+        } else if (typeof hap.value.note !== 'undefined') {
+            hap.value.note = midi_key;
+        } else if (typeof hap.value.n !== 'undefined') {
+            hap.value.n = midi_key;
+        }
+    } else {
+        // Number or string all get the MIDI key.
+        hap.value = midi_key;
+    }
+    return hap;
+}
+
+/**
+ * A utility that returns the MIDI key number for a frequency in Hz, 
+ * as a real number allowing fractions for microtones.
+ *
+ * @param {number} frequency The frequency in cycles per second.
+ * @returns {number} A (possibly fractional) MIDI key number.
+ */
+export function frequencyToMidiReal(frequency) {
+    const middle_c = 261.62558;
+    let octave_ = Math.log(frequency / middle_c) / Math.log(2.) + 8.;
+    let midi_key = octave_ * 12. - 36.;
+    return midi_key;
+}
+
+/**
+ * A utility that returns the MIDI key number for a frequency in Hz, 
+ * as the nearest integer.
+ * 
+ * @param {number} frequency The frequency in cycles per second.
+ * @returns {number} The MIDI key number as an integer.
+ */
+export function frequencyToMidiInteger(frequency) {
+    let midi_key = frequencyToMidiReal(frequency);
+    return Math.round(midi_key);
+}
+
+/**
+ * A utility for making a _value_ copy of a Chord (or a Scale, which 
+ * is derived from Chord). Object b is resized to the size of a, and a's 
+ * pitches are copied to b. Currently, only pitches are copied.
+ * 
+ * @param {Chord} a The source Chord (or Scale).
+ * @param {Chord} b The target Chord (or Scale).
+ */
+export function Clone(a, b) {
+    b.resize(a.voices())
+    for (let voice = 0; voice &lt; a.voices(); ++voice) {
+        let a_pitch = a.getPitch(voice);
+        let b_pitch = b.getPitch(voice);
+        b.setPitch(voice, a_pitch);
+        if (diagnostic_level() >= DEBUG) registerPatterns(['[voice ', voice, 'a:', a_pitch, 'old b:', b_pitch, 'new b:', b.getPitch(voice), '\n'].join(' '));
+    }
+}
+
+export function print_counter(pattern, counter, value) {
+    if (value.constructor.name === 'Hap') {
+        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value.show() + '\n', DEBUG);
+    } else if (value.constructor.name === 'Chord') {
+        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value.toString() + '\n', DEBUG);
+    } else {
+        diagnostic('[' + pattern + '] sync: counter: ' + counter + ' value: ' + value + '\n', DEBUG);
+    }
+}
+
+let instrument_count = 10;
+
+export function set_instrument_count(new_count) {
+    let old_count = instrument_count;
+    instrument_count = new_count;
+    return old_count;
+}
+/**
+ * Returns the RGB color for an HSV color.
+ * 
+ * @param {number} h The hue.
+ * @param {number} s The saturation.
+ * @param {number} v The value.
+ * @returns {Array} The RGB color.
+ */
+export function hsvToRgb(h, s, v) {
+    var rgb, i, data = [];
+    if (s === 0) {
+        rgb = [v, v, v];
+    } else {
+        h = h / 60;
+        i = Math.floor(h);
+        data = [v * (1 - s), v * (1 - s * (h - i)), v * (1 - s * (1 - (h - i)))];
+        switch (i) {
+            case 0:
+                rgb = [v, data[2], data[0]];
+                break;
+            case 1:
+                rgb = [data[1], v, data[0]];
+                break;
+            case 2:
+                rgb = [data[0], v, data[2]];
+                break;
+            case 3:
+                rgb = [data[0], data[1], v];
+                break;
+            case 4:
+                rgb = [data[2], data[0], v];
+                break;
+            default:
+                rgb = [v, data[0], data[1]];
+                break;
+        }
+    }
+    return '#' + rgb.map(function (x) {
+        return ('0a' + Math.round(x * 255).toString(16)).slice(-2);
+    }).join('');
+};
+
+let csoundn_counter = 0;
+
+/**
+ * @function velmap
+ * 
+ * @description A Pattern that increases or decreases the loudness of notes as 
+ * a function of pitch ('velocity map'). The function can be concave, linear, 
+ * or convex.
+ *
+ * Adjust MIDI velocity based on key number with tunable scale and curvature.
+ *
+ * @param {number} key - MIDI note number (0 to 127).
+ * @param {number} baseVelocity - Base velocity to adjust (0 to 127).
+ * @param {number} scale - Strength of adjustment. 0 = no change, 1 = full range. Default is 1.
+ * @param {number} curve - Curve exponent. 1 = linear, &lt;1 = concave, >1 = convex. Default is 1.
+ * @returns {number} Adjusted velocity (1 to 127).
+ */
+function adjustedVelocityAdvanced(key, baseVelocity, scale = 1, curve = 1) {
+    // Clamp inputs.
+    key = Math.max(0, Math.min(127, key));
+    baseVelocity = Math.max(0, Math.min(127, baseVelocity));
+    // Define useful MIDI pitch range (typically piano keys).
+    const minKey = 21;  // A0
+    const maxKey = 108; // C8
+    // Normalize key to range 0 (high) to 1 (low).
+    const t = 1 - (key - minKey) / (maxKey - minKey);
+    const shaped = Math.pow(t, curve); // Apply curvature
+    // Apply scale from 1.0 ± scale (e.g., if scale = 0.5 → range 0.5–1.5)
+    const factor = 1 + scale * (shaped - 0.5) * 2;
+    const velocity = Math.round(baseVelocity * factor);
+    return Math.max(1, Math.min(127, velocity));
+}
+
+export const velmap = register('velmap', (base_velocity, scale, curve, pat) => {
+
+});
+
+// ---------- helpers ----------
+const isNum = (x) => typeof x === 'number' &amp;&amp; Number.isFinite(x);
+
+// If you can inject Strudel's AudioContext: set globalThis.getAudioNow = () => ctx.currentTime
+let _dlEpoch = null, _tEpoch = null;
+function secondsFromNow(deadline) {
+    const d = Number(deadline) || 0;
+    if (d >= 0 &amp;&amp; d &lt; 16) return Math.max(0, d); // likely already relative
+    const wallNow = (typeof performance !== 'undefined' &amp;&amp; performance.now ? performance.now() : Date.now()) / 1000;
+    if (_dlEpoch == null) { _dlEpoch = d; _tEpoch = wallNow; return 0; }
+    return Math.max(0, (d - _dlEpoch) - (wallNow - _tEpoch));
+}
+function computeP2(deadline) {
+    const d = Number(deadline) || 0;
+    const now = (typeof globalThis.getAudioNow === 'function')
+        ? globalThis.getAudioNow()
+        : (globalThis.audioContext &amp;&amp; isNum(globalThis.audioContext.currentTime)
+            ? globalThis.audioContext.currentTime
+            : null);
+    return (now != null) ? Math.max(0, d > now + 1e-3 ? d - now : d) : secondsFromNow(d);
+}
+
+// Resolve MIDI note from common fields or via frequency; returns undefined for rests/meta.
+function resolveMidi(hap) {
+    // Prefer explicit fractional MIDI pitch
+    if (isNum(hap?.pitch)) return hap.pitch;
+    if (isNum(hap?.midi)) return hap.midi;
+    if (isNum(hap?.note)) return hap.note;
+    // Then check structured value payloads
+    if (isNum(hap?.value?.pitch)) return hap.value.pitch;
+    if (isNum(hap?.value?.midi)) return hap.value.midi;
+    if (isNum(hap?.value?.note)) return hap.value.note;
+    // Frequency fallbacks
+    let f;
+    if (isNum(hap?.freq) &amp;&amp; hap.freq > 0) {
+        f = hap.freq;
+    } else if (isNum(hap?.value?.freq) &amp;&amp; hap.value.freq > 0) {
+        f = hap.value.freq;
+    } else if (typeof getFrequency === 'function') {
+        try {
+            const g = getFrequency(hap);
+            if (isNum(g) &amp;&amp; g > 0) f = g;
+        } catch (_) { }
+    }
+    if (isNum(f) &amp;&amp; f > 0) {
+        return 69 + 12 * Math.log2(f / 440); // Hz → fractional MIDI
+    }
+    return undefined;
+}
+
+function hapCycles(h) {
+    var s = h.part ? h.part : h.whole;
+    if (!s) return 0;
+    var b = (typeof s.begin === "number") ? s.begin : (s.begin &amp;&amp; s.begin.value);
+    var e = (typeof s.end === "number") ? s.end : (s.end &amp;&amp; s.end.value);
+    return (typeof b === "number" &amp;&amp; typeof e === "number") ? (e - b) : 0;
+}
+
+function engineCycles(span) {
+    if (span &amp;&amp; typeof span.valueOf === "function") return Number(span.valueOf());
+    if (span &amp;&amp; typeof span.n === "number" &amp;&amp; typeof span.d === "number" &amp;&amp; span.d) return span.n / span.d;
+    if (typeof span === "number") return span;
+    return 0;
+}
+
+/**
+ * @function csoundn
+ * 
+ * @description  This is the actual Csound output function, and should work 
+ * much like Strudel's `piano`. Sends Strudel Hap onsets with pitches to 
+ * Csound for rendering with MIDI semantics. The values of the onset Haps are 
+ * translated to Csound pfields as follows:
+ * &lt;pre>
+ *  p1 -- Csound instrument either as a number (1-based, can be a fraction),
+ *        or as a string name.
+ *  p2 -- time in beats (usually seconds) from Strudel's 'now`.
+ *  p3 -- duration in beats (usually seconds).
+ *  p4 -- MIDI key number from Strudel's Hap value (as a real number, not an 
+ *        integer, i.e. in [0., 127.]; normally, Hap.pitch.
+ *  p5 -- MIDI velocity from Strudel's `gain` control (as a real number, not 
+ *        an integer, in [0., 127.].
+ *  p6 -- Spatial depth dimension, from a `depth` control, defaulting to 0.
+ *  p7 -- Spatial pan dimension, from Strudel's `pan` control, in [0, 1],
+ *        defaulting to 0.5.
+ *  p8 -- Spatial height dimension, from a `height` control, defaulting to 0.
+ * &lt;/pre>
+ * @param {number} instrument The Csound instrument number (p1); may be patternified.
+ * @param {Pattern} pat The target of this Pattern.
+ */
+
+globalThis.csoundo = function (pattern) {
+    pattern.each((hap, deadline, duration) => {
+        try {
+            if (!csound) {
+                diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
+                return hap;
+            }
+            const p1 = (typeof instrument === 'string') ? `"${instrument}"` : instrument;
+            const p2 = computeP2(deadline);
+            // Prefer Strudel's own seconds via hap.duration.valueOf()
+            let p3;
+            const secFromValueOf =
+                (hap?.duration &amp;&amp; typeof hap.duration.valueOf === 'function')
+                    ? Number(hap.duration.valueOf())
+                    : NaN;
+            if (isNum(secFromValueOf) &amp;&amp; secFromValueOf > 0) {
+                p3 = Math.max(1e-4, secFromValueOf);
+            } else {
+                // Fallbacks: cycles -> seconds using cps, then sustain (sec), then scheduler duration
+                const cps = (typeof getcps === 'function') ? Math.max(1e-9, getcps()) : 0.5; // REPL default
+                let cycles = undefined;
+                // Prefer the event's own span first
+                const bPart = hap?.part?.begin, ePart = hap?.part?.end;
+                const b = hap?.begin, e = hap?.end;
+                const bWhole = hap?.whole?.begin, eWhole = hap?.whole?.end;
+                if (isNum(bPart) &amp;&amp; isNum(ePart)) cycles = ePart - bPart;
+                else if (isNum(b) &amp;&amp; isNum(e)) cycles = e - b;
+                else if (isNum(bWhole) &amp;&amp; isNum(eWhole)) cycles = eWhole - bWhole;
+                else if (isNum(hap?.duration)) cycles = hap.duration; // cycles
+                else if (isNum(hap?.delta)) cycles = hap.delta;    // cycles
+                if (isNum(cycles) &amp;&amp; cycles > 0) p3 = Math.max(1e-4, cycles / cps);
+                else if (isNum(hap?.value?.sustain)) p3 = Math.max(1e-4, hap.value.sustain);
+                else p3 = Math.max(1e-4, Number(duration) || 0.5);
+            }
+            // Optional: apply legato as a ratio if present (common Strudel idiom)
+            if (isNum(hap?.value?.legato) &amp;&amp; p3 > 0) p3 = Math.max(1e-4, p3 * hap.value.legato);
+            if (!(p3 > 0)) {
+                return hap;
+            }
+            const midi = resolveMidi(hap);
+            // Don't send non-notes to csound -- I think.
+            if (!isNum(midi)) {
+                return hap;
+            };
+            const p4 = midi;
+            const gain = isNum(hap.gain) ? hap.gain : (isNum(hap.value?.gain) ? hap.value.gain : 0.9);
+            const p5 = Math.max(0, Math.min(127, 127 * gain));
+            const p6 = isNum(hap.value.depth) ? hap.value.depth : 0;
+            const p7 = isNum(hap.value.pan) ? hap.value.pan : 0;
+            const p8 = isNum(hap.value.height) ? hap.value.height : 0;
+            const score_line = `i ${p1} ${p2} ${p3} ${p4} ${p5} ${p6} ${p7} ${p8}\n`;
+            csound.readScore(score_line);
+            // gi/gk are Csound control channels.
+            for (const k in hap.value) {
+                if (k.startsWith('gi') || k.startsWith('gk')) {
+                    csound.SetControlChannel(k, parseFloat(hap.value[k]));
+                }
+            }
+        } catch (e) {
+            diagnostic('[csoundn] error: ' + e + '\n', ERROR);
+        }
+        return hap;
+    });
+    return pattern;
+};
+
+/**
+ * This the Csound output as a Pattern with side effect playing the note with 
+ * Csound, and never modifying the hap.
+ */
+export const csound_message_callback = register('csoundn', (instrument, pat) => {
+    return pat.onTrigger((hap, deadline, duration) => {
+        try {
+            if (!csound) {
+                diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
+                return hap;
+            }
+            const p1 = (typeof instrument === 'string') ? `"${instrument}"` : instrument;
+            const p2 = computeP2(deadline);
+            // Prefer Strudel's own seconds via hap.duration.valueOf()
+            let p3;
+            const secFromValueOf =
+                (hap?.duration &amp;&amp; typeof hap.duration.valueOf === 'function')
+                    ? Number(hap.duration.valueOf())
+                    : NaN;
+            if (isNum(secFromValueOf) &amp;&amp; secFromValueOf > 0) {
+                p3 = Math.max(1e-4, secFromValueOf);
+            } else {
+                // Fallbacks: cycles -> seconds using cps, then sustain (sec), then scheduler duration
+                const cps = (typeof getcps === 'function') ? Math.max(1e-9, getcps()) : 0.5; // REPL default
+                let cycles = undefined;
+                // Prefer the event's own span first
+                const bPart = hap?.part?.begin, ePart = hap?.part?.end;
+                const b = hap?.begin, e = hap?.end;
+                const bWhole = hap?.whole?.begin, eWhole = hap?.whole?.end;
+                if (isNum(bPart) &amp;&amp; isNum(ePart)) cycles = ePart - bPart;
+                else if (isNum(b) &amp;&amp; isNum(e)) cycles = e - b;
+                else if (isNum(bWhole) &amp;&amp; isNum(eWhole)) cycles = eWhole - bWhole;
+                else if (isNum(hap?.duration)) cycles = hap.duration; // cycles
+                else if (isNum(hap?.delta)) cycles = hap.delta;    // cycles
+                if (isNum(cycles) &amp;&amp; cycles > 0) p3 = Math.max(1e-4, cycles / cps);
+                else if (isNum(hap?.value?.sustain)) p3 = Math.max(1e-4, hap.value.sustain);
+                else p3 = Math.max(1e-4, Number(duration) || 0.5);
+            }
+            // Optional: apply legato as a ratio if present (common Strudel idiom)
+            if (isNum(hap?.value?.legato) &amp;&amp; p3 > 0) {
+                p3 = Math.max(1e-4, p3 * hap.value.legato);
+            }
+            if (!(p3 > 0)) {
+                return hap;
+            }
+            const midi = resolveMidi(hap);
+            // Don't send non-notes to csound -- I think.
+            if (!isNum(midi)) {
+                return hap;
+            };
+            const p4 = midi;
+            const gain = isNum(hap.gain) ? hap.gain : (isNum(hap.value?.gain) ? hap.value.gain : 0.9);
+            const p5 = Math.max(0, Math.min(127, 127 * gain));
+            const p6 = isNum(hap.value.depth) ? hap.value.depth : 0;
+            const p7 = isNum(hap.value.pan) ? hap.value.pan : 0;
+            const p8 = isNum(hap.value.height) ? hap.value.height : 0;
+            const score_line = `i ${p1} ${p2} ${p3} ${p4} ${p5} ${p6} ${p7} ${p8}\n`;
+            csound.readScore(score_line);
+            // Controls starting with `gi` or `gk` are Csound control channels.
+            for (const k in hap.value) {
+                if (k.startsWith('gi') || k.startsWith('gk')) {
+                    csound.SetControlChannel(k, parseFloat(hap.value[k]));
+                }
+            }
+        } catch (e) {
+            diagnostic('[csoundn] error: ' + e + '\n', ERROR);
+        }
+        return hap;
+    });
+});
+let chordn_counter = 0;
+
+/**
+ * Takes one or more functions with side effects, typically factored 
+ * out of a pattern's onTrigger body, and invokes them, dispatching 
+ * their return haps to the consumers or sinks in the chain.
+ */
+export const tee = register("tee", (functions, pat) => {
+    return pat.onTrigger((hap, deadline, span) => {
+        if (Array.isArray(functions)) {
+            for (const function_ of functions) {
+                try {
+                    function_(hap, deadline, span);
+                } catch (e) {
+                    console.warn("[tee] error:", e);
+                }
+            }
+        }
+        return hap;
+    });
+});
+
+/**
+ * Creates and initializes a CsoundAC Chord object. This function should be 
+ * called from module scope in Strudel code before creating any Patterns. The 
+ * Chord class is based on Dmitri Tymoczko's model of chord space, and 
+ * represents an equally tempered chord of the specified number of voices as 
+ * a single point in chord space, where each dimension of the space 
+ * corresponds to one voice of the Chord. Chords are equipped with numerous 
+ * operations from pragmatic music theory, atonal music theory, and 
+ * neo-Riemannian music theory.
+ *
+ * @param {string} name The common musical name of the Chord, e.g. "Cb9."
+ * @returns {Chord} A new CsoundAC Chord object.
+ */
+export function Chord(name) {
+    if (diagnostic_level() >= DEBUG) diagnostic('[csacChord] Creating Chord...\n');
+    let chord_ = csoundac.chordForName(name);
+    if (diagnostic_level() >= DEBUG) diagnostic('[csacChord]:' + chord_.toString() + '\n');
+    return chord_;
+}
+
+/**
+ * Creates and initializes a CsoundAC Scale object. This function can be 
+ * called from module scope in Strudel code before creating any Patterns. The 
+ * Scale class is derived from the CsoundAC Chord class, but has been 
+ * equipped with additional methods based on Dimitri Tymoczko's model of 
+ * functional harmony. This enables algorithmically generating Chords from 
+ * scale degrees, transposing Chords by scale degrees, generating all 
+ * possible modulations given a pivot chord, and implementing secondary 
+ * dominants and tonicizations based on scale degree.
+ * 
+ * @param {Scale} name The common musical name of the Scale, e.g. "C major."
+ * @returns {Scale} A new Scale object.
+ */
+export function Scale(name) {
+    name = name.replace('_', ' ');
+    if (diagnostic_level() >= DEBUG) diagnostic('[Scale] Creating Scale...\n');
+    let scale_ = csoundac.scaleForName(name);
+    if (diagnostic_level() >= DEBUG) diagnostic('[Scale] ' + scale_.name() + '\n');
+    return scale_;
+}
+
+/**
+ * Creates and initializes a CsoundAC PITV object. This function should be 
+ * called from module scope in Strudel code before creating any Patterns. The 
+ * PITV object is a 4 dimensional cyclic group whose dimensions are TI set 
+ * class (P), chord inversion (I), pitch-class transposition (T), and index 
+ * of octavewise revoicing within the specified range (V). The elements of 
+ * the group are chords in 12 tone equal temperament with the specified 
+ * number of voices. There is a one-to-one mapping between PITV indices and 
+ * chords, such that each voiced chord corresponds to a PITV index, and each 
+ * PITV index corresponds to a voiced chord. This enables algorithmically 
+ * generating harmonies and voicings by independently varying P, I, T, and V.
+ *
+ * @param {number} voices The number of voices in the chord space.
+ * @param {number} bass The lowest pitch (as a MIDI key number) in the chord 
+ * space.
+ * @param {number} range The range (in MIDI key numbers) of the chord space.
+ * @returns {PITV} A new PITV object.
+ */
+export function Pitv(voices, bass, range) {
+    if (diagnostic_level() >= DEBUG) diagnostic('[Pitv] Creating PITV group...\n');
+    let pitv = new csoundac.PITV();
+    pitv.bass = bass;
+    pitv.initialize(voices, range, 1., false);
+    pitv.P = 0;
+    pitv.I = 0;
+    pitv.T = 0;
+    pitv.V = 0;
+    pitv.list(true, false, false);
+    return pitv;
+}
+
+/**
+ * Creates a class to hold state, and defines Patterns for creating and using 
+ * that state to work with CsoundAC Chords. An instance of this class must be 
+ * created at module scope and passed to the relevant Patterns.
+ *
+ * Some hacks are used to co-ordinate state with triggers:
+ *  - Assume that chord changes happen only once at any given time.
+ *  - In the trigger, apply the input to the Pattern if and only if the input 
+ *    is different from the old input.
+ */
+export class ChordPatterns extends StatefulPatterns {
+    constructor(chord, modality) {
+        super();
+        this.registerPatterns();
+        if (typeof chord === 'string') {
+            this.ac_chord = csoundac.chordForName(chord);
+            if (diagnostic_level() >= DEBUG) diagnostic('[ChordPatterns] created new chord.\n');
+        } else {
+            this.ac_chord = chord; if (diagnostic_level() >= DEBUG) diagnostic('[ChordPatterns] using existing chord.\n');
+        }
+        if (typeof modality == 'undefined') {
+            this.ac_modality = this.ac_chord;
+        } else {
+            this.ac_modality = modality;
+        }
+        this.prior_chord = this.ac_chord;
+        this.value = 0;
+        this.acC_counter = 0;
+        this.acC_chord_string = null;
+        this.acCT_counter = 0;
+        this.acCT_semitones = null
+        this.acCI_counter = 0;
+        this.acCI_center = null;
+        this.acCK_counter = 0;
+        this.acCK_state = null;
+        this.acCQ_counter = 0;
+        this.acCQ_semitones = null;
+        this.acCOP_counter = 0;
+        this.acCRP_counter = 0;
+        this.acCO_counter = 0;
+        this.acCV_counter = 0;
+        this.acCVV_counter = 0;
+        this.acCVVL_counter = 0;
+    }
+    /**
+     * Applies a Chord or chord name to this.
+     * 
+     * @param {boolean} is_onset Whether this Hap is the onset of its cycle.
+     * @param {string} chord_id Identifies the chord.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acC(is_onset, chord_id, hap) {
+        if (is_onset === true) {
+            if (typeof chord_id === 'string') {
+                this.ac_chord = csoundac.chordForName(chord_id);
+                if (diagnostic_level() >= DEBUG) diagnostic('[acC onset] created new Chord.\n');
+            } else {
+                this.ac_scale = scale;
+                if (diagnostic_level() >= DEBUG) diagnostic('[acC onset] using existing Chord.\n');
+            }
+            if (this.acS_chord_string != this.ac_chord.toString()) {
+                this.acS_chord_string = this.ac_chord.toString();
+                this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
+                if (diagnostic_level() >= WARNING) {
+                    diagnostic(['[acS onset] new Chord:', this.ac_chord.toString(), this.ac_chord.name(), '\n'].join(' '));
+                }
+                this.acC_counter = this.acC_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acC', this.acC_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * Applies a transposition to the Chord of this.
+     * 
+     * @param {boolean} is_onset Indicates whether or not this is Hap onset of its cycle.
+     * @param {number} semitones Number of semitones to transpose; may be negative.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCT(is_onset, semitones, hap) {
+        if (is_onset === true) {
+            if (this.acCT_semitones != semitones) {
+                this.acCT_semitones = semitones;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acCT onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.ac_chord = this.ac_chord.T(semitones);
+                if (diagnostic_level() >= WARNING) diagnostic(['[acCT onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.acCT_counter = this.acCT_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acCT', this.acCT_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * Applies an inversion to the Chord of this. The transformation can be 
+     * patternified with a Pattern of flips (changes in the value of the flip 
+     * input).
+     * 
+     * @param {boolean} is_onset Indicates whether or not this is Hap onset of its cycle.
+     * @param {number} center The center of reflection.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} The new Hap.
+     */
+    acCI(is_onset, center, flip, hap) {
+        if (is_onset === true) {
+            if (this.acCI_flip != flip) {
+                this.acCI_flip = flip;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acCI] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.ac_chord = this.ac_chord.I(center);
+                if (diagnostic_level() >= WARNING) diagnostic(['[acCI] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.acCI_counter = this.acCI_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acCI', this.acCI_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * Applies the interchange by inversion operation of the Generalized 
+     * Contextual Group of Fiore and Satyendra to the Chord of this. The 
+     * transformation can be patternified with a Pattern of flips (changes in 
+     * the value of the flip input).
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} flip If this value changes, the transformation is applied.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCK(is_onset, flip, hap) {
+        if (is_onset === true) {
+            if (this.flip != flip) {
+                this.flip = flip;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acCK onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.ac_chord = this.ac_chord.K();
+                if (diagnostic_level() >= WARNING) diagnostic(['[acCK onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+                this.acCK_counter = this.acCK_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acCK', this.acCK_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * Applies the contexual transposition operation of the Generalized 
+     * Contextual Group of Fiore and Satyendra to the Chord of this. The 
+     * modality is set in the constructor of this class.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} semitones The number of semitones by which this Chord 
+     * is to be tranposed; may be negative.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCQ(is_onset, semitones, hap) {
+        if (is_onset === true) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCQ onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.Q(semitones, this.ac_modality, 1);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCQ onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acCQ_counter = this.acCQ_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acCQ', this.acCQ_counter, hap);
+            }
+        }
+        return hap;
+    }
+    /**
+     * Transforms the Chord of this to its 'OP' form; 'chord' is an extremely 
+     * flexible and therefore ambiguous term, but the 'OP' form is what most 
+     * musicians usually mean by 'chord': A chord where the octaves of the 
+     * pitches do not matter and the order of the voices does not matter. This 
+     * transformation can be useful for returning chords that have been 
+     * transformed such that their voices are out of range back to a more 
+     * normal form.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCOP(is_onset, hap) {
+        if (is_onset === true) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCOP onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.eOP();
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCOP onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acCOP_counter = this.acCOP_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acCOP', this.acCOP_counter, hap);
+            }
+        }
+        return hap;
+    }
+    /**
+     * Transforms the Chord of this to its 'RP' form; 'chord' is an extremely 
+     * flexible and therefore ambiguous term, but the 'RP' form is a chord 
+     * where the octaves are folded within the indicated range, and like 'OP'
+     * the order of the voices does not matter. This 
+     * transformation can be useful for returning chords that have been 
+     * transformed such that their voices are out of range back to a user-
+     * defined range.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} range The range of this chord space.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCRP(is_onset, range, hap) {
+        if (is_onset === true) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCRP onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.eRP(range);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCRP onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acCRP_counter = this.acCRP_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acCRP', this.acCRP_counter, hap);
+            }
+        }
+        return hap;
+    }
+    /**
+     * Applies the Chord of this to the _pitch-class_ of the Hap, i.e., moves 
+     * the _pitch-class_ of the Hap to the nearest _pitch-class_ of the Chord.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCV(is_onset, hap) {
+        if (is_onset === true) {
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acCV value]: not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
+            let epcs = this.ac_chord.epcs();
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCV value] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCV value] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            ChordPatterns.acCV_counter = ChordPatterns.acCV_counter + 1;
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCV value] new hap:        ', hap.show(), '\n'].join(' '));
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acCV onset', ChordPatterns.acCV_counter, hap);
+            }
+        } else {
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acCV value]: not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
+            let epcs = this.ac_chord.epcs();
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCV value] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCV value] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            //~ if (diagnostic_level() >= DEBUG) diagnostic(['[acCV value] new hap:        ', hap.show(), '\n'].join(' '));
+            //~ if (diagnostic_level() >= INFORMATION) {
+            //~ print_counter('acCV value', ChordPatterns.acCV_counter, hap);
+            //~ }
+        }
+        return hap;
+    }
+
+    /**  
+     * acCO:      Transforms the Chord of this by the indicated number of 
+     *            octavewise revoicings: negative means subtract an octave 
+     *            from the highest voice, positive means add an octave to the 
+     *            lowest voice. This corresponds to the musician's notion of 
+     *            "inversion."
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} revoicings The number of octavewise revoicings to apply.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCO(is_onset, revoicings, hap) {
+        if (is_onset) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acCO] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.v(revoicings);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acCO] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acCO_counter = this.acCO_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acCO', this.acCO_counter, hap);
+            }
+            this.prior_chord = this.ac_chord;
+        }
+        return hap;
+    }
+
+    /**
+     * acCVV:      Generate a note that represents a particular voice of the 
+     *             Chord.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} bass The MIDI key number of the lowest pitch.
+     * @param {number} voice The number of the voice of the Chord to use.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCVV(is_onset, bass, voice, hap) {
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acCVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;
+        return hap;
+    }
+    /**
+     * acCVVL:     Generate a note that represents a particular voice of the 
+     *             Chord, as the closest voice-leading from the prior Chord.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} bass The MIDI key of the lowest pitch to use.
+     * @param {number} range The range in MIDI keys. Pitches are wrapped back up or down
+     * if the revoicing takes them out of this range.
+     * @param {number} voice The number of the voice in the Chord to use.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCVVL(is_onset, bass, range, voice, hap) {
+        if (this.prior_chord != this.ac_chord) {
+            let new_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
+            const message = ['[acCVVL]:', '\n  prior_chord: ', this.prior_chord.toString(), '\n  ac_chord:    ', this.ac_chord.toString(), '\n  new ac_chord:', new_chord.toString() + '\n'].join(' ');
+            if (diagnostic_level() >= DEBUG) diagnostic(message);
+            console.log(message);
+            this.ac_chord = new_chord;
+        }
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acCVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;
+        return hap;
+    }
+}
+
+/**
+ * Creates a class to hold state, and defines Patterns for creating and using 
+ * that state to work with CsoundAC Scales. An instance of this class must be 
+ * created at module scope and passed to the relevant Patterns. The 
+ * constructor sets the number of voices in Chords associated with the Scale,
+ * by default 4.
+ *
+ * State is co-ordinated with the triggers of the Patterns by only updating 
+ * the state when the input of the Pattern changes.
+*/
+export class ScalePatterns extends StatefulPatterns {
+    constructor(scale, voices = 3) {
+        super();
+        this.registerPatterns();
+        this.voices = voices;
+        if (typeof scale === 'string') {
+            // Have to use underscores instead of spaces in the Strudel REPL.
+            scale = scale.replace('_', ' ');
+            this.ac_scale = csoundac.scaleForName(scale);
+            if (diagnostic_level() >= WARNING) diagnostic('[acS onset] created new scale.\n');
+        } else {
+            this.ac_scale = scale;
+            if (diagnostic_level() >= DEBUG) diagnostic('[acS onset] using existing scale.\n');
+        }
+        this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
+        this.prior_chord = this.ac_chord;
+        this.acS_counter = 0;
+        this.acS_scale_string = null;
+        this.acSS_counter = 0;
+        this.acSS_scale_step = null;
+        this.acST_counter = 0;
+        this.acST_scale_steps = null;
+        this.acSM_counter = 0;
+        this.acSM_index = null;
+        this.acSO_counter = 0;
+        this.acSV_counter = 0;
+        this.acSCV_counter = 0;
+
+    }
+    /**
+     * acS:        Insert a CsoundAC Scale into the Pattern's state.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Scale} scale The Scale object to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acS(is_onset, scale, hap) {
+        if (is_onset === true) {
+            if (typeof scale === 'string') {
+                // Have to use underscores instead of spaces in the Strudel REPL.
+                scale = scale.replace('_', ' ');
+                this.ac_scale = csoundac.scaleForName(scale);
+                if (diagnostic_level() >= DEBUG) diagnostic('[acS onset] created new scale.\n');
+            } else {
+                this.ac_scale = scale;
+                if (diagnostic_level() >= DEBUG) diagnostic('[acS onset] using existing scale.\n');
+            }
+            if (this.acS_scale_string != this.ac_scale.toString()) {
+                this.acS_scale_string = this.ac_scale.toString();
+                this.ac_chord = this.ac_scale.chord(1, this.voices, 3);
+                if (diagnostic_level() >= WARNING) {
+                    diagnostic(['[acS onset] new scale:', this.ac_scale.toString(), this.ac_scale.name(), '\n'].join(' '));
+                    diagnostic(['[acS onset] new chord:', this.ac_chord.toString(), this.ac_chord.name(), '\n'].join(' '));
+                }
+                this.acS_counter = this.acS_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acS', this.acS_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /** 
+     * acSS:       Insert the Chord at the specified scale step of the Scale in 
+     *             the Pattern's state, into the state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} scale_step The specific scale step of the Chord in the Scale.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acSS(is_onset, scale_step, hap) {
+        if (is_onset === true) {
+            if (this.acSS_scale_step != scale_step) {
+                this.acSS_scale_step = scale_step;
+                if (diagnostic_level() >= DEBUG) diagnostic(['[acSS onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.ac_chord = this.ac_scale.chord(scale_step, this.voices, 3);
+                if (diagnostic_level() >= WARNING) diagnostic(['[acSS onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.acSS_counter = this.acSS_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acSS', this.acSS_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * acST:       Transpose the Chord in the Pattern's state by the specified 
+     *             number of scale steps in the Scale in the state.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} scale_steps The number of steps in this Scale by which to 
+     * transpose the Chord in this.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acST(is_onset, scale_steps, hap) {
+        if (is_onset === true) {
+            if (this.acST_scale_steps != scale_steps) {
+                this.acST_scale_steps = scale_steps;
+                if (diagnostic_level() >= WARNING) diagnostic(['[acST onset] current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.ac_chord = this.ac_scale.transpose_degrees(this.ac_chord, scale_steps, 3);
+                if (diagnostic_level() >= WARNING) diagnostic(['[acST onset] transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+                this.acST_counter = this.acST_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acST', this.acST_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * acSM:       Modulate from the Scale in the Pattern's state, using the 
+     *             Chord in the state as a pivot, choosing one of the possible 
+     *             modulations by index.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} index The index of the specific modulation to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acSM(is_onset, index, hap) {
+        if (is_onset === true) {
+            if (this.acSM_index != index) {
+                this.acSM_index = index;
+                let pivot_chord_eop = this.ac_chord.eOP();
+                let possible_modulations = this.ac_scale.modulations(pivot_chord_eop);
+                let new_scale = this.ac_scale;
+                let modulation_count = possible_modulations.size();
+                let wrapped_index = -1;
+                if (modulation_count > 0) {
+                    wrapped_index = index % modulation_count;
+                    new_scale = possible_modulations.get(wrapped_index);
+                    if (diagnostic_level() >= WARNING) {
+                        diagnostic('[acSM onset] modulating in: ' + this.ac_scale.toString() + ' ' + this.ac_scale.name() + '\n');
+                        diagnostic('[acSM onset] from pivot:    ' + pivot_chord_eop.toString(), + ' ' + pivot_chord_eop.name() + '\n');
+                        diagnostic('[acSM onset] modulations:   ' + modulation_count + ' => ' + wrapped_index + '\n');
+                        diagnostic('[acSM onset] modulated to:  ' + new_scale.toString() + ' ' + new_scale.name() + '\n');
+                        diagnostic('[acSM onset] hap:           ' + hap.show() + '\n');
+                    }
+                    this.ac_scale = new_scale;
+                }
+                this.acSM_counter = this.acSM_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acSM', this.acSM_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * acSV:       Move notes in the Pattern to fit the Scale in the Pattern's 
+     *             state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acSV(is_onset, hap) {
+        if (is_onset === true) {
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acSV value] not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
+            let epcs = this.ac_scale.epcs();
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSV value] current scale:  ', this.ac_scale.toString(), this.ac_scale.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSV value] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acSV value] new hap:        ', hap.show(), '\n'].join(' '));
+            this.acSV_counter = this.acSV_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acSV', this.acSV_counter, hap);
+            }
+        } else {
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acSV value] not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
+            let epcs = this.ac_scale.epcs();
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSV value] current scale:  ', this.ac_scale.toString(), this.ac_scale.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSV value] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSV value] new hap:        ', hap.show(), '\n'].join(' '));
+        }
+        return hap;
+    }
+    /**
+     * acSCV:      Move notes in the Pattern to fit the Chord in the Pattern's 
+     *             state.
+     *
+     * @param {number} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acSCV(is_onset, hap) {
+        if (is_onset === true) {
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acSCV value] not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
+            let epcs = this.ac_chord.epcs();
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV onset] current scale:  ', this.ac_scale.toString(), this.ac_scale.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV onset] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV onset] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acSCV onset] new hap:        ', hap.show(), '\n'].join(' '));
+            this.acSCV_counter = this.acSCV_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acSCV', this.acSCV_counter, hap);
+            }
+        } else {
+            let frequency;
+            try {
+                frequency = getFrequency(hap);
+            } catch (error) {
+                diagnostic('[acSCV value] not a note!\n');
+                return;
+            }
+            let current_midi_key = frequencyToMidiInteger(frequency);
+            let epcs = this.ac_chord.epcs();
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV value] current scale:  ', this.ac_scale.toString(), this.ac_scale.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV value] current chord:  ', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV value] current hap:    ', hap.show(), '\n'].join(' '));
+            let note = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+            hap = setPitch(hap, note);
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSCV value] new hap:        ', hap.show(), '\n'].join(' '));
+            this.acSCV_counter = this.acSCV_counter + 1;
+        }
+        return hap;
+    }
+    /**  
+     * acSO:      Transforms the Chord of this by the indicated number of 
+     *            octavewise revoicings: negative means subtract an octave 
+     *            from the highest voice, positive means add an octave to the 
+     *            lowest voice. This corresponds to the musician's notion of 
+     *            "inversion."
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} revoicings The number of octavewise revoicings to apply 
+     * to the Chord in this.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acSO(is_onset, revoicings, hap) {
+        if (is_onset) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acSO] onset: current chord:    ', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.ac_chord = this.ac_chord.v(revoicings);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acSO] onset: transformed chord:', this.ac_chord.toString(), this.ac_chord.eOP().name(), hap.show(), '\n'].join(' '));
+            this.acSO_counter = this.acSO_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acSO', this.acSO_counter, hap);
+            }
+            this.prior_chord = this.ac_chord;
+        }
+        return hap;
+    }
+
+    /**
+     * acSVV:      Generate a note that represents a particular voice of the 
+     *             Chord of this.
+     *
+     * @param {boolean} is_onset Indicates whether the Hap is the onset of this cycle.
+     * @param {number} bass The lowest possible voice; lower pitches are 
+     * reflected back up.
+     * @param {number} voice The voice of the Chord to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acCVV(is_onset, bass, voice, hap) {
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acCVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;
+        return hap;
+    }
+    /**
+     * acSVVL:     Generate a note that represents a particular voice of the 
+     *             current Chord, as the closest voice-leading from the prior 
+     *             Chord.
+     *
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} bass The lowest pitch in this chord space.
+     * @param {number} range The range of this chord space.
+     * @param {number} voice The number of the Chord voice to be used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acSVVL(is_onset, bass, range, voice, hap) {
+        if (this.prior_chord != this.ac_chord) {
+            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
+        }
+        let new_midi_key = bass + this.ac_chord.getPitch(voice);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acSVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;
+        return hap;
+    }
+}
+
+/**
+ * Creates a class to hold state and defines Patterns for creating and using 
+ * that state to work with CsoundAC PITV groups. An instance of this class 
+ * must be created at module scope and passed to the relevant Patterns.
+ */
+export class PitvPatterns extends StatefulPatterns {
+    constructor(pitv) {
+        super();
+        this.registerPatterns();
+        this.prior_chord = null;
+        this.pitv = pitv;
+        this.acPP_counter = 0;
+        this.acPP_P = null;
+        this.acPI_counter = 0;
+        this.acPI_I = null;
+        this.acPT_counter = 0;
+        this.acPT_T = null;
+        this.acPV_counter = 0;
+        this.acPV_V = null;
+        this.acPO_counter = 0;
+        this.acPO_value = null;
+        this.acPC_counter = 0;
+        this.acPVS_counter = 0;
+        this.acPVV_counter = 0;
+    }
+    /**
+     * acP:        Insert a CsoundAC PITV group into the Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {PITV} pitv The PITV object to be inserted.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acP(is_onset, pitv, hap) {
+        if (is_onset == true) {
+            if (diagnostic_level() >= DEBUG) diagnostic(['[acP onset] current PITV:  ', this.this.pitv.list(true, true, false), '\n'].join(' '));
+            this.pitv = pitv;
+            this.acP_counter = this.acP_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acP', this.acP_counter, hap);
+            }
+        }
+        return hap;
+    }
+    /**
+     * acPP:       Set the prime form index of the PITV element in the Pattern's 
+     *             state.
+     * 
+     * @param {boolean} is_onset 
+     * @param {number} P The PITV index of the prime form.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPP(is_onset, P, hap) {
+        if (is_onset === true) {
+            if (this.acPP_P != P) {
+                this.acPP_P = P;
+                this.pitv.P = P;
+                this.acPP_counter = this.acPP_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPP', this.acPP_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+
+    static acPI_counter = 1;
+
+    /**
+     * acPI:       Set the inversion index of the PITV element in the Pattern's 
+     *             state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} I The PITV inversion.
+     * @param {Hap} hap  The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPI(is_onset, I, hap) {
+        if (is_onset === true) {
+            if (this.acPI_I != I) {
+                this.acPI_I = I;
+                this.pitv.I = I;
+                this.acPI_counter = this.acPI_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPI', this.acPI_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * acPT:       Set the transposition of the PITV element in the 
+     *             Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} T The PITV transposition.
+     * @param {Hap} hap  The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPT(is_onset, T, hap) {
+        if (is_onset === true) {
+            if (this.acPT_T != T) {
+                this.acPT_T = T;
+                this.pitv.T = T;
+                this.acPT_counter = this.acPT_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPT', this.acPT_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * acPO:       Set the octavewise voicing index of the PITV element in the 
+     *             Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} V The index of the octavewise revoicing in this PITV.
+     * @param {Hap} hap  The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPO(is_onset, V, hap) {
+        if (is_onset == true) {
+            if (this.acPO_O != V) {
+                this.acPO_O = V;
+                this.pitv.V = V;
+                this.acPO_counter = this.acPO_counter + 1;
+                if (diagnostic_level() >= INFORMATION) {
+                    print_counter('acPO', this.acPO_counter, hap);
+                }
+            }
+        }
+        return hap;
+    }
+    /**
+     * acPC:       Insert the Chord corresponding to the current PITV element 
+     *             into the Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPC(is_onset, hap) {
+        if (is_onset === true) {
+            this.ac_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+            if (diagnostic_level() >= WARNING) diagnostic(['[acPC onset]:', this.ac_chord.toString(), this.ac_chord.eOP().name(), '\n'].join(' '));
+            this.acPC_counter = this.acPC_counter + 1;
+            if (diagnostic_level() >= INFORMATION) {
+                print_counter('acPC', this.acPC_counter, hap);
+            }
+        }
+        return hap;
+    }
+    /**
+     * acPV:       Move notes in the Pattern to fit the pitch-class set of the 
+     *             current element of the PITV group in the Pattern's state.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPV(is_onset, hap) {
+        let frequency;
+        try {
+            frequency = getFrequency(hap);
+        } catch (error) {
+            diagnostic('[acPV] not a note!\n');
+            return;
+        }
+        let current_midi_key = frequencyToMidiInteger(frequency);
+        let result = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true);
+        let eop = result.get(1);
+        let epcs = eop.epcs();
+        let new_midi_key = csoundac.conformToPitchClassSet(current_midi_key, epcs);
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acPV value]:', eop.toString(), eop.name(), 'old note:', current_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = result.get(0);
+        return hap;
+    }
+    /**
+     * acPVV:      Generate a note that represents a particular voice of the 
+     *             Chord represented by the current elemet of the PITV in this.
+     * 
+     * @param {boolean} is_onset 
+     * @param {number} voice 
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPVV(is_onset, voice, hap) {
+        let voiced_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+        let new_midi_key = voiced_chord.getPitch(voice) + this.pitv.bass;
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acPVV value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = voiced_chord;
+        return hap;
+    }
+    /**
+     * acPVVL:     Generate a note that represents a particular voice of the 
+     *             Chord, as the closest voice-leading from the prior element of this.
+     * 
+     * @param {boolean} is_onset Indicates whether this Hap is the onset of its cycle.
+     * @param {number} voice The number of the voice in thre chord that is to ber used.
+     * @param {Hap} hap The current Hap.
+     * @returns {Hap} A new Hap.
+     */
+    acPVVL(is_onset, voice, hap) {
+        this.ac_chord = this.pitv.toChord(this.pitv.P, this.pitv.I, this.pitv.T, this.pitv.V, true).get(0);
+        if (this.prior_chord != this.ac_chord) {
+            this.ac_chord = csoundac.voiceleadingClosestRange(this.prior_chord, this.ac_chord, range, true);
+        }
+        let new_midi_key = this.ac_chord.getPitch(voice) + this.pitv.bass;
+        hap = setPitch(hap, new_midi_key);
+        if (diagnostic_level() >= DEBUG) diagnostic(['[acPVVL value]:', 'new_midi_key:', new_midi_key, 'new note:', hap.show(), '\n'].join(' '));
+        this.prior_chord = this.ac_chord;
+        return hap;
+    }
+}
+
+/**
+ * Assigns the value of the Pattern of this to a cloud-5 control parameter 
+ * addon. Enables controlling external JavaScript code in the browser using  
+ * Strudel Patterns. The following example controls the hue of a GLSL shader, 
+ * and the hue in turn is sampled to determine the orchestration of the music 
+ * generated from the shader:
+ * 
+ * const csac = await import('../csoundac.mjs');
+ * let hue = new csac.Cloud5('GraphicsHue');
+ * pure(0)
+ *   .control(hue, "&lt;.1 .8>".slow(8))
+ */
+export class Cloud5 extends StatefulPatterns {
+    constructor(name_) {
+        super();
+        this.registerPatterns();
+        this.name = name_;
+    }
+    control(is_onset, value_, hap) {
+        // Assign on every query, or only at onsets?
+        globalThis.__parameters__[this.name] = value_;
+        return hap;
+    }
+}
+
+
+
+
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="-_anonymous_-ParametricLindenmayer.PLSystem.html">PLSystem</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Turtle.html">Turtle</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Word.html">Word</a></li><li><a href="ChordPatterns.html">ChordPatterns</a></li><li><a href="Cloud5.html">Cloud5</a></li><li><a href="Cloud5About.html">Cloud5About</a></li><li><a href="Cloud5Element.html">Cloud5Element</a></li><li><a href="Cloud5Log.html">Cloud5Log</a></li><li><a href="Cloud5PianoRoll.html">Cloud5PianoRoll</a></li><li><a href="Cloud5Piece.html">Cloud5Piece</a></li><li><a href="Cloud5ShaderToy.html">Cloud5ShaderToy</a></li><li><a href="Cloud5Strudel.html">Cloud5Strudel</a></li><li><a href="CsoundAudioNode.html">CsoundAudioNode</a></li><li><a href="PitvPatterns.html">PitvPatterns</a></li><li><a href="ScalePatterns.html">ScalePatterns</a></li><li><a href="StatefulPatterns.html">StatefulPatterns</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Chord">Chord</a></li><li><a href="global.html#Clone">Clone</a></li><li><a href="global.html#Pitv">Pitv</a></li><li><a href="global.html#Scale">Scale</a></li><li><a href="global.html#arrange">arrange</a></li><li><a href="global.html#arrange_silencio">arrange_silencio</a></li><li><a href="global.html#canon">canon</a></li><li><a href="global.html#csound">csound</a></li><li><a href="global.html#csound_message_callback">csound_message_callback</a></li><li><a href="global.html#csoundac">csoundac</a></li><li><a href="global.html#csoundn">csoundn</a></li><li><a href="global.html#diagnostic">diagnostic</a></li><li><a href="global.html#diagnostic_level">diagnostic_level</a></li><li><a href="global.html#diagnostic_level_">diagnostic_level_</a></li><li><a href="global.html#downsample_lttb">downsample_lttb</a></li><li><a href="global.html#frequencyToMidiInteger">frequencyToMidiInteger</a></li><li><a href="global.html#frequencyToMidiReal">frequencyToMidiReal</a></li><li><a href="global.html#getFrequency">getFrequency</a></li><li><a href="global.html#get_csound">get_csound</a></li><li><a href="global.html#hsvToRgb">hsvToRgb</a></li><li><a href="global.html#load_csound">load_csound</a></li><li><a href="global.html#non_csound">non_csound</a></li><li><a href="global.html#obtainWebGL2">obtainWebGL2</a></li><li><a href="global.html#parameters">parameters</a></li><li><a href="global.html#resize">resize</a></li><li><a href="global.html#rgb_to_hsv">rgb_to_hsv</a></li><li><a href="global.html#setPitch">setPitch</a></li><li><a href="global.html#tee">tee</a></li><li><a href="global.html#track">track</a></li><li><a href="global.html#url_for_soundfile">url_for_soundfile</a></li><li><a href="global.html#velmap">velmap</a></li><li><a href="global.html#write_file">write_file</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Jun 06 2026 13:17:42 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
