@@ -92,7 +92,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
          * @returns {Turtle} A value copy of this Turtle.
          */
         clone() {
-            clone_ = new ParametricLindenmayer.Turtle();
+            let clone_ = new ParametricLindenmayer.Turtle();
             clone_.step = this.step.slice();
             clone_.scale = this.scale.slice();
             clone_.note = this.note.clone();
@@ -141,7 +141,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
          * @returns {Word} A deep value copy of this Word.
          */
         clone() {
-            clone_ = new ParametricLindenmayer.Word('');
+            let clone_ = new ParametricLindenmayer.Word('');
             clone_.text = this.text;
             clone_.key = this.key;
             clone_.actual_parameter_expressions = this.actual_parameter_expressions.slice();
