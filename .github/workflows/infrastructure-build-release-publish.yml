@@ -1,9 +1,9 @@
-# cloud-5: build Strudel site, publish a source+bundle zip to GitHub Releases, and
-# push strudel/website/dist into gogins.github.io.
+# cloud-5: build Strudel site; on version tags publish bundle + gogins.github.io.
 #
 # Triggers
-#   - push (any branch): build only, except main on gogins/cloud-5 also releases + Pages
-#   - workflow_dispatch: build; optional release zip and/or gogins.github.io sync
+#   - push (any branch): build only (CI verify)
+#   - push tag v*: build, update rolling cloud-5-bundle release, sync gogins.github.io
+#   - workflow_dispatch: build; optional bundle and/or Pages sync
 #
 # gogins.github.io
 #   - strudel/website/dist is merged at the repo root via scripts/publish-github-pages-from-dist.sh
@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_github_release:
-        description: Upload rolling cloud-5-bundle release (main builds only on push)
+        description: Upload rolling cloud-5-bundle release
         type: boolean
         default: true
       publish_gogins_github_io:
@@ -30,9 +30,13 @@ on:
         type: boolean
         default: true
   push:
+    tags:
+      - 'v*'
+    branches:
+      - '**'
 
 concurrency:
-  group: cloud-5-infrastructure-${{ github.ref }}
+  group: cloud-5-infrastructure-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -51,12 +55,15 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Update Strudel submodule to tracked branch tip
+      - name: Initialize submodules
         run: |
           set -euo pipefail
           git submodule sync --recursive
           git submodule update --init --recursive
-          git submodule update --remote strudel
+
+      - name: Update Strudel submodule to branch tip
+        if: github.ref_type != 'tag'
+        run: git submodule update --remote strudel
 
       - name: Install pandoc
         run: |
@@ -109,7 +116,7 @@ jobs:
     if: >-
       github.repository == 'gogins/cloud-5' &&
       (
-        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v')) ||
         (github.event_name == 'workflow_dispatch' && inputs.publish_github_release)
       )
     runs-on: ubuntu-latest
@@ -137,7 +144,7 @@ jobs:
             gh release create "${BUNDLE_RELEASE_TAG}" \
               --repo "${{ github.repository }}" \
               --title "cloud-5 bundle (rolling)" \
-              --notes "Source tree (excluding node_modules and .git) plus built strudel/website/dist. Updated by GitHub Actions."
+              --notes "Source tree (excluding node_modules and .git) plus built strudel/website/dist. Updated when a v* tag is pushed."
           fi
           gh release upload "${BUNDLE_RELEASE_TAG}" "${BUNDLE_ZIP}" \
             --repo "${{ github.repository }}" \
@@ -152,7 +159,8 @@ jobs:
       (
         (
           github.event_name == 'push' &&
-          github.ref == 'refs/heads/main' &&
+          github.ref_type == 'tag' &&
+          startsWith(github.ref_name, 'v') &&
           needs.release.result == 'success'
         ) ||
         (
@@ -203,6 +211,7 @@ jobs:
       - name: Commit and push gogins.github.io (main)
         env:
           TOKEN: ${{ secrets.GOGINS_IO_DEPLOY_TOKEN }}
+          CLOUD5_REF: ${{ github.ref_name }}
           CLOUD5_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -216,5 +225,10 @@ jobs:
             echo "No changes on gogins/gogins.github.io."
             exit 0
           fi
-          git commit -m "Sync cloud-5 site from ${CLOUD5_SHA:0:12}"
+          if [[ "${{ github.ref_type }}" == "tag" ]]
+          then
+            git commit -m "Sync cloud-5 site from ${CLOUD5_REF}"
+          else
+            git commit -m "Sync cloud-5 site from ${CLOUD5_SHA:0:12}"
+          fi
           git push "https://x-access-token:${TOKEN}@github.com/gogins/gogins.github.io.git" HEAD:main

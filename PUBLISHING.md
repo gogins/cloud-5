@@ -4,17 +4,37 @@ The live site [gogins.github.io](https://gogins.github.io) is the **root** of
 [gogins/gogins.github.io](https://github.com/gogins/gogins.github.io). Built assets come from
 `strudel/website/dist/` in this repo.
 
+## Production publish (CI)
+
+**Pushing to `main` only runs a build** (CI verify). It does **not** update the live site or
+the rolling [`cloud-5-bundle`](https://github.com/gogins/cloud-5/releases) release.
+
+To ship:
+
+```bash
+git tag vX.Y.Z    # on the commit you want live
+git push origin vX.Y.Z
+```
+
+That triggers CI to:
+
+1. Build at the **tagged commit** (Strudel submodule pinned — no `update --remote` on tags).
+2. Refresh the rolling **`cloud-5-bundle`** release zip.
+3. Merge `strudel/website/dist/` into **gogins.github.io** and push.
+
+Use semver-style tags matching `v*` (e.g. `v1.0.0`, `v1.0.0-beta`).
+
 ## Three ways to publish
 
-All three merge dist into the Pages repo with the same rules
+All paths that update the live site merge dist with the same rules
 (`scripts/publish-github-pages-from-dist.sh`). Only **how** the build runs and **who** pushes
 to git differs.
 
 | # | How | When to use |
 |---|-----|-------------|
-| **1** | **Push to `main`** on `gogins/cloud-5` | Default: every merge to `main` builds, updates the rolling [`cloud-5-bundle`](https://github.com/gogins/cloud-5/releases) release, then syncs gogins.github.io (Pages push runs only if the release job succeeded). |
+| **1** | **Push tag `v*`** on `gogins/cloud-5` | **Production:** updates rolling `cloud-5-bundle` and gogins.github.io. |
 | **2** | **Run workflow** in GitHub Actions | **Actions → Build, bundle release, publish Pages → Run workflow**. Rebuild and publish on demand (any branch/ref). Checkboxes control the bundle release and/or Pages sync. |
-| **3** | **`./publish.sh`** locally | After `pnpm run build` in cloud-5; you confirm merge and commit/push to your gogins.github.io clone. No Actions; uses your git credentials. |
+| **3** | **`./publish.sh`** locally | After `pnpm run build`; you confirm merge and commit/push to your gogins.github.io clone. Dev or emergency override — not the normal production path. |
 
 **CI (1 and 2)** need repo secret `GOGINS_IO_DEPLOY_TOKEN` (PAT with `contents: write` on
 gogins.github.io). Workflow:
@@ -44,8 +64,9 @@ on the Pages tree (that can remove files committed only on gogins.github.io).
 
 | Trigger | Build | Rolling release `cloud-5-bundle` | Push to gogins.github.io |
 |--------|-------|----------------------------------|---------------------------|
-| Push to any branch | Yes | Only on `main` (`gogins/cloud-5`) | Only after release succeeds on `main` |
-| **Run workflow** (manual) | Yes | Optional (default on) | Optional (default on); after release unless release is turned off |
+| Push to any branch | Yes | No | No |
+| Push tag `v*` | Yes | Yes | Yes (after release job) |
+| **Run workflow** (manual) | Yes | Optional (default on) | Optional (default on) |
 
 On manual runs you can disable **Publish to gogins.github.io** or **Upload rolling release**
 independently. Pages sync on dispatch still expects a successful release job unless you turn
@@ -54,4 +75,5 @@ the release step off (then only the Pages job runs, using the build artifact).
 ## Local publish detail
 
 `publish.sh` calls `scripts/publish-github-pages-from-dist.sh` (manifest-safe merge, not
-whole-tree `rsync --delete`). It prompts before merging and before `git push`.
+whole-tree `rsync --delete`). It resets to `origin/main` before merging (avoids rebase conflicts
+on generated `jsdocs/`), prompts before merging, and before `git push`.
