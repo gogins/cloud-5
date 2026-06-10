@@ -1,104 +1,148 @@
 /**
- * This class embeds the Strudel REPL in an IFrame with a (basic) API so that 
- * the host of the IFrame can programmatically control Strudel.
+ * Embeds the Strudel REPL in an iframe with a basic API so the host page can
+ * wire Csound and control playback.
  */
+function strudelCodeToHash(code) {
+  const utf8Bytes = new TextEncoder().encode(code);
+  let binaryString = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+    const chunk = utf8Bytes.subarray(i, i + chunkSize);
+    binaryString += String.fromCharCode.apply(null, chunk);
+  }
+  return encodeURIComponent(btoa(binaryString));
+}
+
+function strudelReplUrl(code) {
+  const url = new URL('/strudel_repl.html', window.location.origin);
+  url.hash = strudelCodeToHash(code);
+  return url.href;
+}
+
 class StrudelReplComponent extends HTMLElement {
   constructor() {
     super();
-      this.play_button = null;
-      this.update_button = null;
-      this.i_frame = null;
-      this.content_window = null;
-      this.content_document = null;
+    this.play_button = null;
+    this.update_button = null;
+    this.i_frame = null;
+    this.content_window = null;
+    this.content_document = null;
+    this._ready = null;
   }
+
+  _extractCode() {
+    return (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
+  }
+
+  whenReady() {
+    if (!this._ready) {
+      this._ready = new Promise((resolve) => {
+        const deadline = Date.now() + 120000;
+        const finish = () => resolve(this);
+        const poll = () => {
+          if (this.i_frame?.contentWindow?.strudelMirror) {
+            finish();
+            return;
+          }
+          if (Date.now() > deadline) {
+            console.warn('Strudel REPL not ready within timeout');
+            finish();
+            return;
+          }
+          setTimeout(poll, 100);
+        };
+        if (this.i_frame) {
+          this.i_frame.addEventListener('load', poll, { once: true });
+        }
+        poll();
+      });
+    }
+    return this._ready;
+  }
+
   connectedCallback() {
-    setTimeout(() => {
-      const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
-      let iframe = document.createElement('iframe');
-      console.log("location.origin: ", location.origin);
-      // Fix up the "home" part of the URI to work with my version of Strudel's REPL.
-      // We need to find the part of the pathname in between the origin 
-      // and the file name, and insert that into the request URI.
-      let src;
-      let last_slash = location.href.lastIndexOf("/");
-      if (last_slash > origin.length) {
-        let to_insert = location.href.substring(origin.length, last_slash);
-        src = `${location.origin}${to_insert}/strudel_repl.html#${encodeURIComponent(btoa(code))}`;
-      } else {
-        src = `${location.origin}/strudel_repl.html#${encodeURIComponent(btoa(code))}`;
-      }
-      console.log("src:", src);
-      iframe.setAttribute('src', src);
-      iframe.setAttribute('allow-same-origin', '');
-      iframe.setAttribute('allowfullscreen', 'true');
-      this.appendChild(iframe);
-      iframe.setAttribute('width', '1200');
-      iframe.setAttribute('height', '800');
-      iframe.style.display = "visible";
-      iframe.style.background = "transparent";
-      this.i_frame = iframe;
-      this.content_window = this.i_frame.contentWindow;
-      this.content_document = this.i_frame.contentDocument;
-    });
-  }
-  startPlaying() {
-    console.log("StrudelReplComponent.startPlaying:");
-    this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
-    let play_button = this.buttons[0];
-    // Fragile, depends on the Repl implementation.
-    if (play_button.title === "play") {
-        play_button.click();
-    }
-  }
-  stopPlaying() {
-    console.log("StrudelReplComponent.stopPlaying:");
-    this.buttons = this.i_frame.contentDocument.getElementsByTagName("button");
-    let play_button = this.buttons[0];
-    // Fragile, depends on the Repl implementation.
-    if (play_button.title === "stop") {
-        play_button.click();
-    }
-  }
-  updateRepl() {
-    console.log("StrudelReplComponent.updateRepl:");
-    this.buttons = this.i_frame.contentDocument.getElementsByTagName("BUTTON");
-    $(this.buttons[1]).click();
-  }
-  setCode(tidal_code) {
-    tidal_code = '<!-- ' + tidal_code + ' -->';
-    this.innerHTML = tidal_code;
-    // Fix up the "home" part of the URI to work with Strudel's REPL.
-    // We need to find the part of the pathname in between the origin 
-    // and the file name, and insert that into the request URI.
-    let src;
-    let last_slash = location.href.lastIndexOf("/");
-    if (last_slash > origin.length) {
-      let to_insert = location.href.substring(origin.length, last_slash);
-      src = `${location.origin}/${to_insert}#${encodeURIComponent(btoa(tidal_code))}`;
-    } else {
-      src = `${location.origin}#${encodeURIComponent(btoa(tidal_code))}`;
-    }
-    console.log("src:", src);
+    this._ready = null;
+    const code = this._extractCode();
+    const iframe = document.createElement('iframe');
+    const src = strudelReplUrl(code);
+    console.log('StrudelReplComponent src:', src);
     iframe.setAttribute('src', src);
+    iframe.setAttribute('allow', 'autoplay');
+    iframe.setAttribute('width', '1200');
+    iframe.setAttribute('height', '800');
+    iframe.style.display = 'visible';
+    iframe.style.background = 'transparent';
+    iframe.addEventListener('load', () => {
+      this.content_window = iframe.contentWindow;
+      this.content_document = iframe.contentDocument;
+    });
+    this.replaceChildren(iframe);
+    this.i_frame = iframe;
+    this.content_window = iframe.contentWindow;
+    this.content_document = iframe.contentDocument;
   }
+
+  _mirror() {
+    return this.i_frame?.contentWindow?.strudelMirror;
+  }
+
+  async startPlaying() {
+    console.log('StrudelReplComponent.startPlaying');
+    await this.whenReady();
+    const mirror = this._mirror();
+    if (mirror) {
+      if (!mirror.repl?.scheduler?.started) {
+        await mirror.toggle();
+      }
+      return;
+    }
+    this.i_frame?.contentDocument?.querySelector('button[title="play"]')?.click();
+  }
+
+  async stopPlaying() {
+    console.log('StrudelReplComponent.stopPlaying');
+    await this.whenReady();
+    const mirror = this._mirror();
+    if (mirror?.repl?.scheduler?.started) {
+      await mirror.toggle();
+      return;
+    }
+    this.i_frame?.contentDocument?.querySelector('button[title="stop"]')?.click();
+  }
+
+  updateRepl() {
+    console.log('StrudelReplComponent.updateRepl');
+    this.i_frame?.contentDocument?.querySelector('button[title="update"]')?.click();
+  }
+
+  setCode(tidal_code) {
+    this.innerHTML = '<!-- ' + tidal_code + ' -->';
+    this.connectedCallback();
+  }
+
   getCode() {
-    const code = (this.innerHTML + '').replace('<!--', '').replace('-->', '').trim();
-    return code;
+    return this._extractCode();
   }
+
   async setCsound(csound_) {
-    /// let cs = await get_csound(csound_message_callback);
+    await this.whenReady();
+    if (!this.i_frame?.contentWindow) return;
     this.i_frame.contentWindow.csound = csound_;
     this.i_frame.contentWindow.__csound__ = csound_;
   }
+
   async setCsoundAC(csoundac_) {
+    await this.whenReady();
+    if (!this.i_frame?.contentWindow) return;
     if (!csoundac_) {
       csoundac_ = await get_csound_ac();
     }
-    /// let csac = await get_csound_ac();
-    this.i_frame.contentWindow.csoundac = csoundac_
+    this.i_frame.contentWindow.csoundac = csoundac_;
     this.i_frame.contentWindow.__csoundac__ = csoundac_;
   }
+
   setParameters(parameters_) {
+    if (!this.i_frame?.contentWindow) return;
     this.i_frame.contentWindow.__parameters__ = parameters_;
   }
 }
