@@ -166,7 +166,7 @@ pre {
       <input id="iterJ" data-cloud5-bind="maxIterJ" type="number" value="1000">
     </label>
     <label>Timesteps:
-      <input id="binsN" data-cloud5-bind="nTime" type="number" value="4096"> 
+      <input id="binsN" data-cloud5-bind="nTime" type="number" value="600"> 
     </label>
     <label>Bass:
       <input id="bass" data-cloud5-bind="bass" type="number" value="36" min="0" max="127" step="1">
@@ -1384,7 +1384,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     pIn.value = `${this.exponent ?? 2.0}`;
     mIn.value = `${this.maxIterM ?? 500}`;
     jIn.value = `${this.maxIterJ ?? 1000}`;
-    nIn.value = `${this.nTime ?? 4096}`;
+    nIn.value = `${this.nTime ?? 600}`;
     bassIn.value = `${this.bass ?? 36}`;
     MIn.value = `${this.nPitch ?? 60}`;
     base_instrument.value = `${this.base_instrument ?? 1}`;

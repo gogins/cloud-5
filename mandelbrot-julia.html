@@ -2657,7 +2657,7 @@ styles.join("\n")
         <div>
             <h1>mandelbrot-julia</h1>
             <h2>Michael Gogins<br>
-                November 2025</h2>
+                June 2026</h2>
 
             <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0;height:30px;width:auto;" src="cc-by-nc-sa.png"></a>
             <p>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons
@@ -2678,7 +2678,11 @@ styles.join("\n")
                 to select a portion of the Julia set, which can then be translated into music in 
                 real time. The performance can be rendering either using an embedded Csound 
                 orch (<b>Play</b> / <b>Stop</b>), or via a MIDI loopback interface 
-                (<b>Play MIDI</b> / <b>Stop MIDI</b>) to an external MIDI synthesizer.
+                (<b>Play MIDI</b> / <b>Stop MIDI</b>) to an external MIDI synthesizer. If the 
+                external MIDI synthesizer accepts multi-channel MIDI, the performance can be 
+                rendered to multiple channels of MIDI, one for each instrument; for example, using 
+                the Modartt <a href="https://www.modartt.com/organteq_overview">Organteq</a>, you can configure 
+                the organ with four keyboards, each one with its own registration and its own MIDI channel.
 
             </p><p>The selected region of the Julia set is mapped to musical notes as follows: 
                 the y coordinate of each point in the region is mapped to pitch, and the x coordinate 
