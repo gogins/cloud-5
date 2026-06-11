@@ -2087,26 +2087,35 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
   }
 
   /**
-   * Standalone <strudel-repl-component id="strudel_view"> (not inside cloud5-strudel).
+   * Standalone <strudel-repl-component> elements (not inside cloud5-strudel).
    */
+  _standalone_strudel_repls() {
+    return [...document.querySelectorAll('strudel-repl-component')].filter(
+      (el) => !el.closest('cloud5-strudel'),
+    );
+  }
+
   async _start_legacy_strudel() {
-    const legacy = document.getElementById('strudel_view');
-    if (!legacy || legacy === this.strudel_overlay || this.strudel_overlay?.contains?.(legacy)) {
+    const repls = this._standalone_strudel_repls();
+    if (!repls.length) {
       return;
     }
-    await legacy.whenReady?.();
-    await legacy.setCsound?.(this.csound);
-    await legacy.setCsoundAC?.(this.csoundac);
-    legacy.setParameters?.(this.control_parameters_addon);
-    await legacy.startPlaying?.();
+    await Promise.all(
+      repls.map(async (legacy) => {
+        legacy.setCsound?.(this.csound);
+        legacy.setCsoundAC?.(this.csoundac);
+        legacy.setParameters?.(this.control_parameters_addon);
+        await legacy.startPlaying?.();
+      }),
+    );
   }
 
   async _stop_legacy_strudel() {
-    const legacy = document.getElementById('strudel_view');
-    if (!legacy || legacy === this.strudel_overlay || this.strudel_overlay?.contains?.(legacy)) {
+    const repls = this._standalone_strudel_repls();
+    if (!repls.length) {
       return;
     }
-    await legacy.stopPlaying?.();
+    await Promise.all(repls.map((legacy) => legacy.stopPlaying?.()));
   }
   /**
    * Stops both Csound and Strudel from performing.
@@ -2658,9 +2667,8 @@ class Cloud5Strudel extends Cloud5Element {
     const comp = this.strudel_component;
     if (!comp) return;
     const piece = this.cloud5_piece;
-    await comp.whenReady?.();
-    await comp.setCsound?.(piece?.csound);
-    await comp.setCsoundAC?.(piece?.csoundac);
+    comp.setCsound?.(piece?.csound);
+    comp.setCsoundAC?.(piece?.csoundac);
     comp.setParameters?.(this.#control_parameters_addon ?? piece?.control_parameters_addon);
     await comp.startPlaying?.();
   }

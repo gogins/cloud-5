@@ -140,6 +140,10 @@ class CsoundAudioNode extends AudioWorkletNode {
         options.outputChannelCount = [context.destination.channelCount];
         super(context, 'csound-audio-processor', options);
         this.message_callback = message_callback_;
+        this.output_gain = context.createGain();
+        this.output_gain.gain.value = 0;
+        this.connect(this.output_gain);
+        this.output_gain.connect(context.destination);
         this.message_callback("CsoundAudioNode constructor...\n");
         this.reset_();
         this.CompileCsdTextPromise = null;
@@ -161,6 +165,12 @@ class CsoundAudioNode extends AudioWorkletNode {
         this.userMediaAudioInputNode = null;
         this.input = null;
         this.output = null;
+    }
+    ramp_output_gain_(value, duration_seconds) {
+        const t = this.context.currentTime;
+        this.output_gain.gain.cancelScheduledValues(t);
+        this.output_gain.gain.setValueAtTime(this.output_gain.gain.value, t);
+        this.output_gain.gain.linearRampToValueAtTime(value, t + duration_seconds);
     }
     
     // NOTE: All class member function names, i.e. the actual Csound API, 
@@ -519,6 +529,7 @@ class CsoundAudioNode extends AudioWorkletNode {
         try {
             this.port.postMessage(["Start"]);
             this.is_playing = true;
+            this._publishPlayingState();
             this.message_callback("is_playing...\n");
         } catch (e) {
             this.message_callback(e);
@@ -537,6 +548,9 @@ class CsoundAudioNode extends AudioWorkletNode {
     async start() {
         // this.message_callback("[" + window.performance.now() + " Start.]\n");
         try {
+            if (this.context.state === 'suspended') {
+                await this.context.resume();
+            }
             let device_list = await navigator.mediaDevices.enumerateDevices();
             var message_callback_ = this.message_callback;
             var index = 0;
@@ -548,7 +562,7 @@ class CsoundAudioNode extends AudioWorkletNode {
             device_list.forEach(print_device);
             this.message_callback("WebAudio frames per second:         " +  this.context.sampleRate + "\n");
             this.message_callback("WebAudio maximum output channels:   " +  this.context.destination.maxChannelCount + "\n");
-            this.connect(this.context.destination);
+            this.ramp_output_gain_(1, 0.05);
             if (navigator.requestMIDIAccess) {
               let midi_access = await navigator.requestMIDIAccess({sysex:false});
               const inputs = midi_access.inputs.values();
@@ -584,10 +598,17 @@ class CsoundAudioNode extends AudioWorkletNode {
             }
             this.port.postMessage(["Start"]);
             this.is_playing = true;
+            this._publishPlayingState();
             this.message_callback("is_playing...\n");
         } catch (e) {
             this.message_callback(e);
         }
+    }
+    _publishPlayingState() {
+        window.top.globalThis.csound = this;
+        window.top.dispatchEvent(
+            new CustomEvent('cloud5:csound-playing', { detail: { csound: this } }),
+        );
     }
     async Start() {
         await this.start();
@@ -602,7 +623,7 @@ class CsoundAudioNode extends AudioWorkletNode {
                 ///this.userMediaAudioInputNode.stop();
                 this.userMediaAudioInputNode.disconnect(this);
             }
-            this.disconnect();
+            this.ramp_output_gain_(0, 0.01);
             this.reset_();
         });
         await promise;
@@ -644,13 +665,13 @@ class CsoundAudioNode extends AudioWorkletNode {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="-_anonymous_-ParametricLindenmayer.PLSystem.html">PLSystem</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Turtle.html">Turtle</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Word.html">Word</a></li><li><a href="ChordPatterns.html">ChordPatterns</a></li><li><a href="Cloud5.html">Cloud5</a></li><li><a href="Cloud5About.html">Cloud5About</a></li><li><a href="Cloud5Element.html">Cloud5Element</a></li><li><a href="Cloud5Log.html">Cloud5Log</a></li><li><a href="Cloud5PianoRoll.html">Cloud5PianoRoll</a></li><li><a href="Cloud5Piece.html">Cloud5Piece</a></li><li><a href="Cloud5ShaderToy.html">Cloud5ShaderToy</a></li><li><a href="Cloud5Strudel.html">Cloud5Strudel</a></li><li><a href="CsoundAudioNode.html">CsoundAudioNode</a></li><li><a href="PitvPatterns.html">PitvPatterns</a></li><li><a href="ScalePatterns.html">ScalePatterns</a></li><li><a href="StatefulPatterns.html">StatefulPatterns</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Chord">Chord</a></li><li><a href="global.html#Clone">Clone</a></li><li><a href="global.html#Pitv">Pitv</a></li><li><a href="global.html#Scale">Scale</a></li><li><a href="global.html#arrange">arrange</a></li><li><a href="global.html#arrange_silencio">arrange_silencio</a></li><li><a href="global.html#canon">canon</a></li><li><a href="global.html#csound">csound</a></li><li><a href="global.html#csound_message_callback">csound_message_callback</a></li><li><a href="global.html#csoundac">csoundac</a></li><li><a href="global.html#csoundn">csoundn</a></li><li><a href="global.html#diagnostic">diagnostic</a></li><li><a href="global.html#diagnostic_level">diagnostic_level</a></li><li><a href="global.html#diagnostic_level_">diagnostic_level_</a></li><li><a href="global.html#downsample_lttb">downsample_lttb</a></li><li><a href="global.html#frequencyToMidiInteger">frequencyToMidiInteger</a></li><li><a href="global.html#frequencyToMidiReal">frequencyToMidiReal</a></li><li><a href="global.html#getFrequency">getFrequency</a></li><li><a href="global.html#get_csound">get_csound</a></li><li><a href="global.html#hsvToRgb">hsvToRgb</a></li><li><a href="global.html#load_csound">load_csound</a></li><li><a href="global.html#non_csound">non_csound</a></li><li><a href="global.html#obtainWebGL2">obtainWebGL2</a></li><li><a href="global.html#parameters">parameters</a></li><li><a href="global.html#resize">resize</a></li><li><a href="global.html#rgb_to_hsv">rgb_to_hsv</a></li><li><a href="global.html#setPitch">setPitch</a></li><li><a href="global.html#tee">tee</a></li><li><a href="global.html#track">track</a></li><li><a href="global.html#url_for_soundfile">url_for_soundfile</a></li><li><a href="global.html#velmap">velmap</a></li><li><a href="global.html#write_file">write_file</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="-_anonymous_-ParametricLindenmayer.PLSystem.html">PLSystem</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Turtle.html">Turtle</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Word.html">Word</a></li><li><a href="ChordPatterns.html">ChordPatterns</a></li><li><a href="Cloud5.html">Cloud5</a></li><li><a href="Cloud5About.html">Cloud5About</a></li><li><a href="Cloud5Element.html">Cloud5Element</a></li><li><a href="Cloud5Log.html">Cloud5Log</a></li><li><a href="Cloud5PianoRoll.html">Cloud5PianoRoll</a></li><li><a href="Cloud5Piece.html">Cloud5Piece</a></li><li><a href="Cloud5ShaderToy.html">Cloud5ShaderToy</a></li><li><a href="Cloud5Strudel.html">Cloud5Strudel</a></li><li><a href="CsoundAudioNode.html">CsoundAudioNode</a></li><li><a href="PitvPatterns.html">PitvPatterns</a></li><li><a href="ScalePatterns.html">ScalePatterns</a></li><li><a href="StatefulPatterns.html">StatefulPatterns</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Chord">Chord</a></li><li><a href="global.html#Clone">Clone</a></li><li><a href="global.html#Pitv">Pitv</a></li><li><a href="global.html#Scale">Scale</a></li><li><a href="global.html#arrange">arrange</a></li><li><a href="global.html#arrange_silencio">arrange_silencio</a></li><li><a href="global.html#canon">canon</a></li><li><a href="global.html#csound_message_callback">csound_message_callback</a></li><li><a href="global.html#csoundn">csoundn</a></li><li><a href="global.html#diagnostic">diagnostic</a></li><li><a href="global.html#diagnostic_level">diagnostic_level</a></li><li><a href="global.html#diagnostic_level_">diagnostic_level_</a></li><li><a href="global.html#downsample_lttb">downsample_lttb</a></li><li><a href="global.html#frequencyToMidiInteger">frequencyToMidiInteger</a></li><li><a href="global.html#frequencyToMidiReal">frequencyToMidiReal</a></li><li><a href="global.html#getFrequency">getFrequency</a></li><li><a href="global.html#get_csound">get_csound</a></li><li><a href="global.html#globalRef">globalRef</a></li><li><a href="global.html#hsvToRgb">hsvToRgb</a></li><li><a href="global.html#load_csound">load_csound</a></li><li><a href="global.html#non_csound">non_csound</a></li><li><a href="global.html#obtainWebGL2">obtainWebGL2</a></li><li><a href="global.html#parameters">parameters</a></li><li><a href="global.html#resize">resize</a></li><li><a href="global.html#rgb_to_hsv">rgb_to_hsv</a></li><li><a href="global.html#setPitch">setPitch</a></li><li><a href="global.html#tee">tee</a></li><li><a href="global.html#track">track</a></li><li><a href="global.html#url_for_soundfile">url_for_soundfile</a></li><li><a href="global.html#velmap">velmap</a></li><li><a href="global.html#write_file">write_file</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Jun 11 2026 12:41:52 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Jun 11 2026 14:12:24 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

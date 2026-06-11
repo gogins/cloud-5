@@ -27,13 +27,25 @@
  */
 
 /**
- * Global instance of Csound, shared from cloud-5 to Strudel.
+ * Lazy bindings to Csound/CsoundAC on the embedding page (set before evaluate).
  */
-let csound = parent.window.globalThis.csound;
-/**
- * Global instance of CsoundAC, shared from cloud-5 to Strudel.
- */
-let csoundac = parent.window.globalThis.csound_ac;
+function globalRef(name) {
+    return new Proxy({}, {
+        get(_target, prop) {
+            const inst = parent.window.globalThis[name];
+            if (inst == null) {
+                return undefined;
+            }
+            const val = inst[prop];
+            return typeof val === 'function' ? val.bind(inst) : val;
+        }
+    });
+}
+const csound = globalRef('csound');
+const csoundac = globalRef('csound_ac');
+function csoundLoaded() {
+    return parent.window.globalThis.csound != null;
+}
 /**
  * Global reference to the cloud-5 parameters addon.
  */
@@ -350,7 +362,7 @@ function engineCycles(span) {
 globalThis.csoundo = function (pattern) {
     pattern.each((hap, deadline, duration) => {
         try {
-            if (!csound) {
+            if (!csoundLoaded()) {
                 diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
                 return hap;
             }
@@ -420,7 +432,7 @@ globalThis.csoundo = function (pattern) {
 export const csound_message_callback = register('csoundn', (instrument, pat) => {
     return pat.onTrigger((hap, deadline, duration) => {
         try {
-            if (!csound) {
+            if (!csoundLoaded()) {
                 diagnostic('[csoundn]: Csound is not yet loaded.\n', WARNING);
                 return hap;
             }

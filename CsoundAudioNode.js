@@ -112,6 +112,10 @@ class CsoundAudioNode extends AudioWorkletNode {
         options.outputChannelCount = [context.destination.channelCount];
         super(context, 'csound-audio-processor', options);
         this.message_callback = message_callback_;
+        this.output_gain = context.createGain();
+        this.output_gain.gain.value = 0;
+        this.connect(this.output_gain);
+        this.output_gain.connect(context.destination);
         this.message_callback("CsoundAudioNode constructor...\n");
         this.reset_();
         this.CompileCsdTextPromise = null;
@@ -133,6 +137,12 @@ class CsoundAudioNode extends AudioWorkletNode {
         this.userMediaAudioInputNode = null;
         this.input = null;
         this.output = null;
+    }
+    ramp_output_gain_(value, duration_seconds) {
+        const t = this.context.currentTime;
+        this.output_gain.gain.cancelScheduledValues(t);
+        this.output_gain.gain.setValueAtTime(this.output_gain.gain.value, t);
+        this.output_gain.gain.linearRampToValueAtTime(value, t + duration_seconds);
     }
     
     // NOTE: All class member function names, i.e. the actual Csound API, 
@@ -491,6 +501,7 @@ class CsoundAudioNode extends AudioWorkletNode {
         try {
             this.port.postMessage(["Start"]);
             this.is_playing = true;
+            this._publishPlayingState();
             this.message_callback("is_playing...\n");
         } catch (e) {
             this.message_callback(e);
@@ -509,6 +520,9 @@ class CsoundAudioNode extends AudioWorkletNode {
     async start() {
         // this.message_callback("[" + window.performance.now() + " Start.]\n");
         try {
+            if (this.context.state === 'suspended') {
+                await this.context.resume();
+            }
             let device_list = await navigator.mediaDevices.enumerateDevices();
             var message_callback_ = this.message_callback;
             var index = 0;
@@ -520,7 +534,7 @@ class CsoundAudioNode extends AudioWorkletNode {
             device_list.forEach(print_device);
             this.message_callback("WebAudio frames per second:         " +  this.context.sampleRate + "\n");
             this.message_callback("WebAudio maximum output channels:   " +  this.context.destination.maxChannelCount + "\n");
-            this.connect(this.context.destination);
+            this.ramp_output_gain_(1, 0.05);
             if (navigator.requestMIDIAccess) {
               let midi_access = await navigator.requestMIDIAccess({sysex:false});
               const inputs = midi_access.inputs.values();
@@ -556,10 +570,17 @@ class CsoundAudioNode extends AudioWorkletNode {
             }
             this.port.postMessage(["Start"]);
             this.is_playing = true;
+            this._publishPlayingState();
             this.message_callback("is_playing...\n");
         } catch (e) {
             this.message_callback(e);
         }
+    }
+    _publishPlayingState() {
+        window.top.globalThis.csound = this;
+        window.top.dispatchEvent(
+            new CustomEvent('cloud5:csound-playing', { detail: { csound: this } }),
+        );
     }
     async Start() {
         await this.start();
@@ -574,7 +595,7 @@ class CsoundAudioNode extends AudioWorkletNode {
                 ///this.userMediaAudioInputNode.stop();
                 this.userMediaAudioInputNode.disconnect(this);
             }
-            this.disconnect();
+            this.ramp_output_gain_(0, 0.01);
             this.reset_();
         });
         await promise;

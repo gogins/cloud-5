@@ -134,20 +134,21 @@ var load_csound = async function(csound_message_callback_) {
         csound_message_callback_("Trying to load CsoundAudioNode.js...\n");
         var AudioContext = window.AudioContext || window.webkitAudioContext;
         var audioContext_ = new AudioContext();
-        await audioContext_.audioWorklet.addModule('CsoundAudioProcessor.js').then(function() {
-            csound_message_callback_("Creating CsoundAudioNode...\n");
-            csound_audio_node = new CsoundAudioNode(audioContext_, csound_message_callback_);
-            csound_is_loaded = true;
-            csound_message_callback_("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
-            return;
-        }, function(error) {
-           csound_message_callback_(error + '\n');
-        });
+        await audioContext_.audioWorklet.addModule('CsoundAudioProcessor.js');
+        csound_message_callback_("Creating CsoundAudioNode...\n");
+        csound_audio_node = new CsoundAudioNode(audioContext_, csound_message_callback_);
+        csound_is_loaded = true;
+        csound_message_callback_("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
     } catch (e) {
         csound_message_callback_(e + '\n');
     }
-    // Also ensure CsoundAC right away.
-    await get_csound_ac();
+    if (typeof createCsoundAC !== 'undefined') {
+        try {
+            await get_csound_ac();
+        } catch (e) {
+            csound_message_callback_("CsoundAC not loaded (optional): " + e + '\n');
+        }
+    }
 }
 
 /**
@@ -158,7 +159,11 @@ var load_csound = async function(csound_message_callback_) {
  */
 var get_csound = async function(csound_message_callback_) {
     if (csound_is_loaded === false) {
-        await load_csound(csound_message_callback_);
+        try {
+            await load_csound(csound_message_callback_);
+        } catch (e) {
+            csound_message_callback_(e + '\n');
+        }
     }
     if (csound_injected != null) {
         window.top.globalThis.csound = csound_injected;
@@ -183,6 +188,9 @@ var get_csound = async function(csound_message_callback_) {
 var get_csound_ac = async function() {
     if (window.top.globalThis.csound_ac) {
         return window.top.globalThis.csound_ac;
+    }
+    if (typeof createCsoundAC === 'undefined') {
+        return null;
     }
     // Calls into WebAssembly.
     window.top.globalThis.csound_ac = await createCsoundAC();
