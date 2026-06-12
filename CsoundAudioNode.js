@@ -534,7 +534,6 @@ class CsoundAudioNode extends AudioWorkletNode {
             device_list.forEach(print_device);
             this.message_callback("WebAudio frames per second:         " +  this.context.sampleRate + "\n");
             this.message_callback("WebAudio maximum output channels:   " +  this.context.destination.maxChannelCount + "\n");
-            this.ramp_output_gain_(1, 0.05);
             if (navigator.requestMIDIAccess) {
               let midi_access = await navigator.requestMIDIAccess({sysex:false});
               const inputs = midi_access.inputs.values();
@@ -568,6 +567,7 @@ class CsoundAudioNode extends AudioWorkletNode {
             } catch (e) {
                 this.message_callback(e + "\n");
             }
+            this.ramp_output_gain_(1, 0.05);
             this.port.postMessage(["Start"]);
             this.is_playing = true;
             this._publishPlayingState();

@@ -724,7 +724,7 @@
                 let height = 1;
                 let format = gl.RGBA;
                 let type = gl.UNSIGNED_BYTE;
-                readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
+                await readPixelsAsync(x, y, width, height, format, type, image_sample_buffer);
                 // Translate the sample format from byte RGBA to float HSV.
                 let hsv_image_sample = [];
                 for (let byte_i = 0; byte_i < image_sample_buffer.length; byte_i = byte_i + 4) {
@@ -792,10 +792,10 @@
                 CsoundAC.setCorrectNegativeDurations(false);
                 // Limit number of on events, play N loudest only. Could also pick at random.
                 on_events.sort(function (a, b) {
-                    if (a[5] < b[5]) {
+                    if (a[4] < b[4]) {
                         return 1;
                     }
-                    if (b[5] < a[5]) {
+                    if (b[4] < a[4]) {
                         return -1;
                     }
                     return 0;
@@ -837,7 +837,7 @@
                     }
                     CsoundAC.apply(score, chord, 0, 1000000, true);
                     let score_text = score.getCsoundScore(12., true);
-                    csound.ReadScore(score_text);
+                    await csound.ReadScore(score_text);
                 }
                 sample_count++;
             }
@@ -2650,33 +2650,48 @@
             $("#console_view").css("display", "none");
             $("#menu_item_play").click(async function (event) {
                 console.log("menu_item_play click...");
-                try {
-                    csound_message_callback("Trying to load CsoundAudioNode...\n");
-                    var AudioContext = window.AudioContext || window.webkitAudioContext;
-                    var audioContext = new AudioContext();
-                    await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function () {
-                        csound_message_callback("Creating CsoundAudioNode...\n");
-                        csound = new CsoundAudioNode(audioContext, csound_message_callback);
-                        csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
-                        analyser = new AnalyserNode(audioContext);
-                        analyser.fftSize = 2048;
-                        console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
-                        csound.connect(analyser);
-                        console.log("csound: " + csound);
-                    }, function (error) {
-                        csound_message_callback(error + '\n');
-                    });
-                    csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
-                } catch (e) {
-                    csound_message_callback(e + '\n');
+                if (csound == null) {
+                    try {
+                        csound_message_callback("Trying to load CsoundAudioNode...\n");
+                        var AudioContext = window.AudioContext || window.webkitAudioContext;
+                        var audioContext = new AudioContext();
+                        await audioContext.audioWorklet.addModule('CsoundAudioProcessor.js').then(function () {
+                            csound_message_callback("Creating CsoundAudioNode...\n");
+                            csound = new CsoundAudioNode(audioContext, csound_message_callback);
+                            csound_message_callback("CsoundAudioNode (AudioWorklet) is available in this JavaScript context.\n");
+                            analyser = new AnalyserNode(audioContext);
+                            analyser.fftSize = 2048;
+                            console.log("Analyzer buffer size: " + analyser.frequencyBinCount);
+                            csound.connect(analyser);
+                            console.log("csound: " + csound);
+                        }, function (error) {
+                            csound_message_callback(error + '\n');
+                        });
+                        if (typeof CsoundImagePlayer !== 'undefined') {
+                            csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
+                        }
+                    } catch (e) {
+                        csound_message_callback(e + '\n');
+                    }
+                }
+                if (csound == null) {
+                    return;
+                }
+                if (csound.is_playing == true) {
+                    await csound.Stop();
+                    await csound.Cleanup();
+                    csound.Reset();
+                    csound_message_callback("Csound is stopping...\n");
+                    $("#menu_item_play").html("Play");
+                    return;
                 }
                 let csd = await document.getElementById('csd').value;
                 console_editor.setValue("");
                 let result = await csound.CompileCsdText(csd);
                 csound_message_callback("CompileCsdText returned: " + result);
                 await csound.Start();
-                // Send _current_ dat.gui control channel values to Csound 
-                // before actually performing. Default parameters pasted in from a 
+                // Send _current_ dat.gui control channel values to Csound
+                // before actually performing. Default parameters pasted in from a
                 // decent rendering are used.
                 let parameters_ = default_json.remembered.Default[0];
                 for (let channel_name in parameters_) {
@@ -2687,6 +2702,7 @@
                 scale = new CsoundAC.Scale("F major");
                 csound_message_callback("Csound is playing...\n");
                 next_time = 0;
+                $("#menu_item_play").html("Stop");
             });
             $("#menu_item_record").click(async function (event) {
                 console.log("menu_item_record click...");
