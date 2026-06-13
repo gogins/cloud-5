@@ -496,7 +496,21 @@ function removeStaleCsoundAcJsdocArtifacts() {
     }
 }
 
+function ensureCsoundAcReadme() {
+    const mdPath = path.join(cloud5Root, "CsoundAC.md");
+    const content = `# CsoundAC
+
+The CsoundAC WebAssembly API is documented in a single reference page:
+
+**[CsoundAC API Reference](CsoundAC.html)**
+
+That page lists only Embind-exported classes and functions, with full C++ Doxygen comments inlined.
+`;
+    fs.writeFileSync(mdPath, content, "utf8");
+}
+
 function main() {
+    ensureCsoundAcReadme();
     let embindPath;
     try {
         embindPath = resolveEmbindPath(process.argv[2]);
