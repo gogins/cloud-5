@@ -20,7 +20,7 @@
     "dist:copy-root-jsdocs": "rsync -a --delete ./jsdocs/ strudel/website/dist/jsdocs/",
     "dist:copy-root-state-json": "bash -lc 'shopt -s nullglob && for f in *.state.json; do cp -f \"$f\" strudel/website/dist/; done'",
     "dist:promote-cloud5-index": "sh -c 'cd strudel/website/dist && [ -f cloud-5-index.html ] && mv -f cloud-5-index.html index.html || echo \"cloud-5-index.html not found; skipped\"'",
-    "build": "pnpm run document && pnpm run build-strudel && pnpm run dist:rename-strudel-index && pnpm run dist:copy-root-files && pnpm run dist:copy-root-state-json && pnpm run dist:copy-root-jsdocs && pnpm run dist:promote-cloud5-index && pnpm run dist:static-site && pnpm run package",
+    "build": "pnpm run install-csound-wasm && pnpm run document && pnpm run build-strudel && pnpm run dist:rename-strudel-index && pnpm run dist:copy-root-files && pnpm run dist:copy-root-state-json && pnpm run dist:copy-root-jsdocs && pnpm run dist:promote-cloud5-index && pnpm run dist:static-site && pnpm run package",
     "dist:static-site": "bash scripts/dist-static-site.sh",
     "dist:neutralize-sw": "pnpm run dist:static-site",
     "local": "pnpm run marshal && cd strudel/website/dist && echo 'Serving cloud-5 at http://localhost:8000/ (standalone: /scrims.html)' && python3 -m http.server"

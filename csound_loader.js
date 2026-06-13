@@ -83,8 +83,7 @@ var get_operating_system = function() {
  * There is an issue on Android in that csound may be undefined when the page is 
  * first rendered, and be defined only when the user plays the piece.
  */
-var load_csound = async function(csound_message_callback_, options) {
-    options = options || {};
+var load_csound = async function(csound_message_callback_) {
     let operating_system = get_operating_system();
     if (operating_system === "Android" && typeof csound === 'undefined') {
         csound_message_callback("Operating system is Android, but Csound is not yet defined.\n");
@@ -143,7 +142,7 @@ var load_csound = async function(csound_message_callback_, options) {
     } catch (e) {
         csound_message_callback_(e + '\n');
     }
-    if (!options.skipCsoundAC && typeof createCsoundAC !== 'undefined') {
+    if (typeof createCsoundAC !== 'undefined') {
         try {
             await get_csound_ac();
         } catch (e) {
@@ -158,11 +157,10 @@ var load_csound = async function(csound_message_callback_, options) {
  * to load it from various sources. The csound_message_callback parameter is 
  * required, but console.log can be passed. 
  */
-var get_csound = async function(csound_message_callback_, options) {
-    options = options || {};
+var get_csound = async function(csound_message_callback_) {
     if (csound_is_loaded === false) {
         try {
-            await load_csound(csound_message_callback_, options);
+            await load_csound(csound_message_callback_);
         } catch (e) {
             csound_message_callback_(e + '\n');
         }

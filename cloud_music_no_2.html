@@ -145,7 +145,7 @@
             <p>
                 <input type="button" id='save' value="Save" class="w3-btn w3-hover-text-light-green" />
                 <input type="button" id='restore' value="Restore" class="w3-btn w3-hover-text-light-green" />
-                <input type="button" id='copy' value="Copy" class="w3-btn w3-hover-text-light-green" />
+                <input type="button" id='copy_score' value="Copy" class="w3-btn w3-hover-text-light-green" />
                 <input type="button" id='paste' value="Paste" class="w3-btn w3-hover-text-light-green" />
                 <input type="button" id='default' value="Defaults" class="w3-btn w3-hover-text-light-green" />
         </form>
@@ -981,15 +981,15 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                 if (score.size() > 0) {
                     if (sample_count % 4 == 0) {
                         if (sample_count % 24 == 0) {
-                            let scales = scale.modulations(chord);
+                            let scales = music_scale.modulations(chord);
                             if (scales.size() > 1) {
-                                scale = scales.get(Math.floor(Math.random() * scales.size()));
-                                csound_message_callback(sprintf("\n%s\n\n", scale.name()));
+                                music_scale = scales.get(Math.floor(Math.random() * scales.size()));
+                                csound_message_callback(sprintf("\n%s\n\n", music_scale.name()));
                             }
                         }
                         let root_progression = root_progressions[Math.floor(Math.random() * root_progressions.length)];
                         csound_message_callback(sprintf("\n%s\n\n", chord.eOP().name()));
-                        chord = scale.transpose_degrees(chord, root_progression, 3)
+                        chord = music_scale.transpose_degrees(chord, root_progression, 3)
                     }
                     CsoundAC.apply(score, chord, 0, 1000000, true);
                     let score_text = score.getCsoundScore(12., true);
@@ -1022,7 +1022,7 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
         var strange_attractor = null;
         var csound = null;
         var score = null;
-        var scale = null;
+        var music_scale = null;
         var chord = null;
         var cs_random = null;
         var message_callback_buffer = "";
@@ -1061,6 +1061,41 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
         var pitv = null;
         var tempo = 10 * 1000;
         var interval_id = null;
+
+        function pitvIndex(normalized, count) {
+            let index = Math.floor(normalized * count);
+            if (index < 0) {
+                index = 0;
+            }
+            if (index >= count) {
+                index = count - 1;
+            }
+            return index;
+        }
+
+        function initializeScoreGenerator() {
+            if (strange_attractor_initialized) {
+                return;
+            }
+            csound_message_callback("Initializing chord space (PITV)...\n");
+            pitv = new CsoundAC.PITV();
+            pitv.initialize(4, 48, 1, false);
+            CsoundAC.Random.seed(380493);
+            strange_attractor.reset();
+            strange_attractor.setDimensionCount(4);
+            strange_attractor.setAttractorType(4);
+            cs_random.sample();
+            csound_message_callback("Searching for strange attractor, this can take seconds to minutes...\n");
+            while (true) {
+                let not_found = strange_attractor.searchForAttractor();
+                console.log("code: " + strange_attractor.getCode());
+                if (not_found === false) {
+                    break;
+                }
+            }
+            csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
+            strange_attractor_initialized = true;
+        }
         function generate_score_fragment() {
             let tempo = document.getElementById("gi_tempo").value;
             let interval = 60 / tempo;
@@ -1071,7 +1106,11 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                 return;
             }
             if (strange_attractor_initialized) {
-                strange_attractor.iterate_without_rendering();
+                if (strange_attractor.iterate_without_rendering() === false) {
+                    let interval_milliseconds = interval * 1000;
+                    setTimeout(generate_score_fragment, interval_milliseconds);
+                    return;
+                }
                 let n = strange_attractor.getIteration();
                 let x = strange_attractor.getX();
                 let y = strange_attractor.getY();
@@ -1084,10 +1123,10 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                 let diagnostic = sprintf("iteration: %9d x:  %16.9f y:  %16.9f z:  %16.9f w:  %16.9f", n, x, y, z, w);
                 console.log(diagnostic);
                 diagnostic = sprintf("                     xn: %16.9f yn: %16.9f zn: %16.9f wn: %16.9f", xn, yn, zn, wn);
-                let p = Math.floor(xn * pitv.countP);
-                let i = Math.floor(yn * pitv.countI);
-                let t = Math.floor(zn * pitv.countT);
-                let v = Math.floor(wn * pitv.countV);
+                let p = pitvIndex(xn, pitv.countP);
+                let i = pitvIndex(yn, pitv.countI);
+                let t = pitvIndex(zn, pitv.countT);
+                let v = pitvIndex(wn, pitv.countV);
                 let chord = pitv.toChord(p, i, t, v, false).get(0);
                 csound_message_callback(sprintf("New chord: %s  %s\n", chord.toString(), chord.eOP().name()));
                 let notes = []
@@ -1124,8 +1163,8 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             strange_attractor = new CsoundAC.StrangeAttractor();
             conversions = new CsoundAC.Conversions();
             score = new CsoundAC.Score();
-            scale = new CsoundAC.Scale("F major");
-            chord = scale.chord(1, 5, 3);
+            music_scale = new CsoundAC.Scale("F major");
+            chord = music_scale.chord(1, 5, 3);
             cs_random = new CsoundAC.Random();
             //CsoundAC.CHORD_SPACE_DEBUGGING(false);
             var txt = "\n";
@@ -1143,10 +1182,7 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             txt += "gl.SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION) + "\n";
             csound_message_callback(txt);
             csound_message_callback(CsoundAC.chord_space_version() + "\n");
-            let CM = CsoundAC.chordForName("CM");
-            CM = CM.T(-4.);
-            csound_message_callback(CM.information());
-            csound_message_callback(CM.information_debug(-1));
+            initializeScoreGenerator();
         }());
 
         window.onload = function () {
@@ -1172,7 +1208,9 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                         }, function (error) {
                             csound_message_callback(error + '\n');
                         });
-                        csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
+                        if (typeof CsoundImagePlayer !== 'undefined') {
+                            csound_image_player = new CsoundImagePlayer(csound, CsoundAC, canvas);
+                        }
                     } catch (e) {
                         csound_message_callback(e + '\n');
                     }
@@ -1190,32 +1228,12 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                         // not correct; we need _html_ defaults.
                         $('#default').trigger('click');
                     }
+                    initializeScoreGenerator();
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
-                    scale = new CsoundAC.Scale("F major");
-                    alert("Please wait, searching for strange attractor, this can take seconds to minutes...\n");
                     let tempo = document.getElementById("gi_tempo").value;
-                    let interval = 1 / tempo;
-                    let interval_milliseconds = interval * 1000;
-                    if (strange_attractor_initialized == false) {
-                        CsoundAC.Random.seed(380493);
-                        strange_attractor.reset();
-                        strange_attractor.setDimensionCount(4);
-                        strange_attractor.setAttractorType(4);
-                        cs_random.sample();
-                        while (true) {
-                            let not_found = strange_attractor.searchForAttractor();
-                            console.log("code: " + strange_attractor.getCode());
-                            if (not_found === false) {
-                                break;
-                            }
-                        }
-                        csound_message_callback(sprintf("Found strange attractor (code: %s)\n", strange_attractor.getCode()));
-                        pitv = new CsoundAC.PITV();
-                        pitv.initialize(4, 48, 1, true);
-                        strange_attractor_initialized = true;
-                    }
-                    interval_id = setTimeout(generate_score_fragment, tempo);
+                    let interval_milliseconds = (60 / tempo) * 1000;
+                    interval_id = setTimeout(generate_score_fragment, interval_milliseconds);
                     $("#menu_item_play").html("Stop");
                 } else {
                     await clearInterval(interval_id);
@@ -1321,7 +1339,7 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     $(output_selector).val(this.value);
                 });
             });
-            $('#copy').on('click', function () {
+            $('#copy_score').on('click', function () {
                 let controls_json = JSON.stringify(localStorage);
                 navigator.clipboard.writeText(controls_json);
                 csound_message_callback("Copied controls state to system clipboard.\n");
