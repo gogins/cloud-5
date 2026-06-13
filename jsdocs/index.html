@@ -43,125 +43,10 @@
 
 
     <section>
-        <article><h1>csound-wasm</h1>
-<p>Michae Gogins, Edward Costello, Steven Yi, Henri Manson<br>
-https://github.com/gogins<br>
-http://michaelgogins.tumblr.com</p>
-<h2>Important Note</h2>
-<p>In order for Csound to use audio, the microphone, and MIDI, the user must
-grant these permissions for the site hosting Csound to the Web browser
-(usually by right-clicking on the lock symbol to the left of the URL, or
-on a permissions icon to the left of the URL).</p>
-<h2>Introduction</h2>
-<p>THis directory builds and packages csound-wasm (Csound for WebAssembly),
-which includes my WebAssembly build of <a href="https://github.com/csound/csound">Csound</a>
-and a WebAssembly build of my <a href="https://github.com/gogins/csound-ac">Csound Algorithmic Composition</a>
-library.</p>
-<p>This project has now been ported to Csound version 7. The Csound class in
-this build is compatible with the Csound API from Csound 6, and much is
-compatible with the API from Csound 7.</p>
-<p>The canonical <code>@csound/browser</code> and <code>@csound/web_audio</code> projects also offer
-a WebAssembly build of Csound. I am retaining and will continue to maintain
-<code>csound-wasm</code> because my version of the Csound API is much closer to the
-original C++ interface, supports printing Csound messages from JavaScript, can
-be used after simply dropping a few files into a static Web site without
-requiring rollups, and also remains backwardly compatible with earlier
-compositions that used this library. As long as this project is easy to
-maintain, I will continue to support it and use it.</p>
-<p>This build uses the new WebAudio AudioWorklet for superior performance with
-fewer audio issues. Features include:</p>
-<ul>
-<li>
-<p>A new JavaScript interface to Csound that follows, as exactly as possible,
-the interface defined by the Csound class in <code>csound.hpp</code> and also
-implemented in CsoundOboe by <code>csound_oboe.hpp</code> for the Csound for Android
-app, and by <code>csound.node</code>.</p>
-</li>
-<li>
-<p>Additional Csound API methods exposed to JavaScript.</p>
-</li>
-</ul>
-<p>Please log any bug reports or requests for enhancements at
-https://github.com/gogins/csound-extended/issues.</p>
-<h2>Changes</h2>
-<p>See https://github.com/gogins/csound-wasm/commits/develop for the commit log.</p>
-<h2>Installation</h2>
-<p>Download the latest version of <code>csound-wasm-{version.zip}</code> from the
-<a href="https://github.com/gogins/csound-extended/releases">release page here</a>. Unzip
-it and it is ready to use.</p>
-<h2>Testing</h2>
-<p>To validate your build or installation, go the <code>csound-wasm/web</code> directory. Execute:</p>
-<pre class="prettyprint source"><code>python3 -m http.server
-</code></pre>
-<p>Then navigate to <code>http://localhost:8000</code> and view <code>minimal.html</code>. Click on
-the Play button to validate your installation. Do the same with
-<code>trichord_space.html</code> which uses CsoundAC in addition to Csound.</p>
-<h2>Building</h2>
-<p>If you are simply going to <em>use</em> csound-wasm, download the binary release
-hosted here. If you are going to <em>build</em> csound-wasm, for example in order to
-debug or contribute to it, follow these instructions.</p>
-<p>You will need to make sure that the boost header files and the Eigen library
-for matrix algebra are available to the Emscripten toolchain. The easiest way
-to do this is to install the <code>libeigen3-dev</code> and <code>libboost-dev</code> system
-packages, and make them available to the Emscripten toolchain. Only header
-files from these packages are used here.</p>
-<p>The main build scripts are:</p>
-<ol>
-<li>
-<p><code>build-prequisites-wasm.sh</code>, which installs or updates the Emscripten SDK.</p>
-</li>
-<li>
-<p><code>build-wasm.sh</code>, which updates submodules, builds libsndfile, Csound for WASM,
-and CsoundAC for WASM, and creates a release package that also includes
-examples, Csound instrument definitions, miscellaneous JavaScript files,
-and so on.</p>
-</li>
-</ol>
-<h2>Release Notes</h2>
-<h3>[v4.0.0-beta]</h3>
-<ul>
-<li>
-<p>Ported to Csound version 7.</p>
-</li>
-<li>
-<p>It is now possible to optimize the WASM build for speed.</p>
-</li>
-<li>
-<p>Many build scripts have been re-implemented in CMakeLists.txt.</p>
-</li>
-<li>
-<p>Changed directory layout.</p>
-</li>
-</ul>
-<h3><a href="https://github.com/gogins/csound-wasm/commits/v0.3.2">v0.3.3</a></h3>
-<ul>
-<li>
-<p>Added a <code>CsoundAudioNode.GetFileData</code> method to enable users to get data
-from ta file in the memory filesystem of the AudioWorkletGlobalScope, e.g. a
-soundfile record by Csound's <code>fout</code> opcode, into the browser's JavaScript
-context, where it can be downloaded.</p>
-</li>
-<li>
-<p>Enable source level debugging of C/C++ code compiled to WASM in DWARF
-format. Very useful!</p>
-</li>
-<li>
-<p>Updated Csound.</p>
-</li>
-</ul>
-<h3><a href="https://github.com/gogins/csound-wasm/commits/v0.3.2">v0.3.2</a></h3>
-<ul>
-<li>
-<p>Updated Csound to version 6.19.0.</p>
-</li>
-<li>
-<p>Improved the WebAssembly builds of Csound and CsoundAC to support
-running either in NW.js with native Csound, or in Web browsers with
-Csound for WebAssembly. This makes it possible, e.g., to compose pieces
-using Strudel with native Csound, VST plugins, access to the local
-filesystem, and so on.</p>
-</li>
-</ul></article>
+        <article><h1>CsoundAC</h1>
+<p>The CsoundAC WebAssembly API is documented in a single reference page:</p>
+<p><strong><a href="CsoundAC.html">CsoundAC API Reference</a></strong></p>
+<p>That page lists only Embind-exported classes and functions, with full C++ Doxygen comments inlined.</p></article>
     </section>
 
 
@@ -178,7 +63,7 @@ filesystem, and so on.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Jun 11 2026 20:30:13 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Jun 13 2026 10:23:36 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

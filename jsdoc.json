@@ -2,8 +2,8 @@
     "source": {
         "include": [
             "README.md",
-            "CsoundAudioNode.js", 
-            "CsoundAC.js", 
+            "CsoundAC.md",
+            "CsoundAudioNode.js",
             "csoundac.mjs",
             "statefulpatterns.mjs",
             "csound_loader.js",
@@ -24,7 +24,7 @@
     },
     "recurseDepth": 3,                        
     "opts": {
-        "destination": "./strudel/website/dist/jsdocs/",               
+        "destination": "./jsdocs/",               
         "recurse": true                      
     },
     "plugins": ["plugins/markdown"]
