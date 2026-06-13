@@ -65,10 +65,24 @@ jobs:
         if: github.ref_type != 'tag'
         run: git submodule update --remote strudel
 
-      - name: Install pandoc
+      - name: Checkout csound-wasm (Embind API source)
+        uses: actions/checkout@v4
+        with:
+          repository: gogins/csound-wasm
+          path: csound-wasm
+          fetch-depth: 1
+
+      - name: Checkout csound-ac (Doxygen)
+        uses: actions/checkout@v4
+        with:
+          repository: gogins/csound-ac
+          path: csound-ac
+          fetch-depth: 1
+
+      - name: Install pandoc and doxygen
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends pandoc
+          sudo apt-get install -y --no-install-recommends pandoc doxygen
 
       - uses: pnpm/action-setup@v4
         with:

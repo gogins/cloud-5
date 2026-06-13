@@ -27,13 +27,37 @@ const defaultCsoundAcCandidates = [
     path.resolve(cloud5Root, "dependencies/csound-ac"),
 ];
 
-function firstExisting(paths, label) {
+function tryFirstExisting(paths) {
     for (const candidate of paths) {
         if (fs.existsSync(candidate)) {
             return candidate;
         }
     }
+    return null;
+}
+
+function firstExisting(paths, label) {
+    const found = tryFirstExisting(paths);
+    if (found) {
+        return found;
+    }
     throw new Error(`${label} not found. Checked: ${paths.join(", ")}`);
+}
+
+function embindCandidates() {
+    const fromEnv = process.env.CSOUND_WASM_EMBIND?.trim();
+    return [
+        ...(fromEnv ? [path.resolve(fromEnv)] : []),
+        ...defaultEmbindCandidates,
+    ];
+}
+
+function csoundAcCandidates() {
+    const fromEnv = process.env.CSOUND_AC_ROOT?.trim();
+    return [
+        ...(fromEnv ? [path.resolve(fromEnv)] : []),
+        ...defaultCsoundAcCandidates,
+    ];
 }
 
 function resolveEmbindPath(argvPath) {
@@ -44,16 +68,11 @@ function resolveEmbindPath(argvPath) {
         }
         return resolved;
     }
-    return firstExisting(defaultEmbindCandidates, "csoundac_embind.cpp");
+    return firstExisting(embindCandidates(), "csoundac_embind.cpp");
 }
 
 function tryResolveCsoundAcRoot() {
-    for (const candidate of defaultCsoundAcCandidates) {
-        if (fs.existsSync(candidate)) {
-            return candidate;
-        }
-    }
-    return null;
+    return tryFirstExisting(csoundAcCandidates());
 }
 
 function ensureDoxygen(csoundAcRoot) {
@@ -475,7 +494,18 @@ function removeStaleCsoundAcJsdocArtifacts() {
 }
 
 function main() {
-    const embindPath = resolveEmbindPath(process.argv[2]);
+    let embindPath;
+    try {
+        embindPath = resolveEmbindPath(process.argv[2]);
+    } catch (err) {
+        const fallback = path.join(jsdocsDir, "CsoundAC.html");
+        if (fs.existsSync(fallback)) {
+            console.warn(`${err.message}`);
+            console.warn(`Keeping existing ${fallback}`);
+            return;
+        }
+        throw err;
+    }
     const csoundAcRoot = tryResolveCsoundAcRoot();
 
     let docs = { members: new Map(), classes: new Map() };
