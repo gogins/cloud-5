@@ -95,6 +95,9 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies and build
+        env:
+          CSOUND_WASM_EMBIND: ${{ github.workspace }}/csound-wasm/CsoundAC/csoundac_embind.cpp
+          CSOUND_AC_ROOT: ${{ github.workspace }}/csound-ac
         run: |
           set -euo pipefail
           pnpm install --frozen-lockfile

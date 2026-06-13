@@ -18,11 +18,14 @@ const cloud5Root = path.resolve(__dirname, "..");
 const jsdocsDir = path.join(cloud5Root, "jsdocs");
 
 const defaultEmbindCandidates = [
+    // actions/checkout path: csound-wasm (under GITHUB_WORKSPACE / cloud-5 root)
+    path.resolve(cloud5Root, "csound-wasm/CsoundAC/csoundac_embind.cpp"),
     path.resolve(cloud5Root, "../csound-wasm/CsoundAC/csoundac_embind.cpp"),
     path.resolve(cloud5Root, "dependencies/csound-wasm/CsoundAC/csoundac_embind.cpp"),
 ];
 
 const defaultCsoundAcCandidates = [
+    path.resolve(cloud5Root, "csound-ac"),
     path.resolve(cloud5Root, "../csound-ac"),
     path.resolve(cloud5Root, "dependencies/csound-ac"),
 ];
