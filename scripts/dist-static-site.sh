@@ -10,6 +10,10 @@ if [[ ! -d "$DIST" ]]; then
   exit 0
 fi
 
+# GitHub Pages runs Jekyll unless this file is present; Jekyll would drop _astro/ and
+# exclude paths starting with "strudel" if a legacy _config.yml is ever reintroduced.
+: > "$DIST/.nojekyll"
+
 # Replace any Workbox service worker with one that clears caches and unregisters itself.
 cat > "$DIST/sw.js" <<'SW'
 // cloud-5 static site: retire any previously installed PWA service worker.
