@@ -662,7 +662,7 @@
             var root_progression = 0;
             var on_events = new Array();
             var off_events = new Array();
-            var playing_events = new Map();
+            var playing_events = new Map(); // p1 -> expiry time (seconds)
             var event_tag = 0;
             var root_progressions = [2, 3, -4, 5, -1, 3];
 
@@ -717,53 +717,37 @@
                     sampled_events.push(event_for_pixel);
                 }
                 console.log(sprintf("sampled_events.length: %d\n", sampled_events.length));
-                // Events that are playing but not loud enough, are turned off.
-                for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
-                    let sampled_event = sampled_events[sampled_event_i];
-                    let key = sampled_event[0];
-                    if (playing_events.has(key) == true) {
-                        let off_event = playing_events.get(key);
-                        let instrument_number = off_event[0];
-                        if (threshold > sampled_event[4]) {
-                            csound.KillInstance(instrument_number, "", 4, true);
-                            console.log("Turned off instrument number: " + instrument_number + ".");
-                            playing_events.delete(key);
-                        }
+                // Drop expired voices from the map; let Csound finish them via p3/xtratim.
+                let now_seconds = performance.now() / 1000;
+                for (let playing_key of playing_events.keys()) {
+                    if (now_seconds >= playing_events.get(playing_key)) {
+                        playing_events.delete(playing_key);
                     }
                 }
-                console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
-                // Events that are loud enough but not playing, are turned on.
+                // Events that are loud enough but not already playing, are candidates.
+                let on_threshold = threshold;
                 for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
                     let sampled_event = sampled_events[sampled_event_i];
                     let key = sampled_event[0];
-                    if (playing_events.has(key) == false) {
-                        if (sampled_event[4] >= threshold) {
-                            playing_events.set(key, sampled_event);
-                            on_events.push(sampled_event);
-                        }
+                    if (playing_events.has(key) == false && sampled_event[4] >= on_threshold) {
+                        on_events.push(sampled_event);
                     }
                 }
                 console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
                 console.log(sprintf("on_events.length:      %d\n", on_events.length));
                 CsoundAC.setCorrectNegativeDurations(false);
-                // Limit number of on events, play N loudest only. Could also pick at random.
+                // Play the loudest candidates only, up to the voice limit.
                 on_events.sort(function (a, b) {
-                    if (a[5] < b[5]) {
-                        return 1;
-                    }
-                    if (b[5] < a[5]) {
-                        return -1;
-                    }
-                    return 0;
+                    return b[4] - a[4];
                 });
-                let voices = Math.min(on_events.length, maximum_voices);
+                let voice_slots = maximum_voices - playing_events.size;
+                let voices = Math.min(on_events.length, voice_slots);
                 for (let i = 0; i < voices; i++) {
                     let on_event = on_events[i];
                     let time = 0;
                     let duration = on_event[2];
                     let status = 144;
                     let instrument_number = on_event[0];
-                    ///let instrument_number = 8;
                     let key = on_event[3];
                     let velocity = on_event[4];
                     velocity = 60 + (velocity / 7);
@@ -773,6 +757,7 @@
                     let height = 0;
                     let pitches = 4095;
                     score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
+                    playing_events.set(instrument_number, now_seconds + duration);
                 }
                 if (score.size() > 0) {
                     if (sample_count % 4 == 0) {

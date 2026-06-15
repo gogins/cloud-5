@@ -3109,10 +3109,13 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
     } else {
       let csound = this?.cloud5_piece?.csound;
       if (csound) {
-        var node;
-        if (typeof csound.getNode == 'undefined') {
-        } else {
-          node = await csound.getNode()
+        let node = null;
+        if (typeof csound.getNode === 'function') {
+          node = await csound.getNode();
+        } else if (csound instanceof AudioNode) {
+          node = csound;
+        }
+        if (node) {
           this.analyser = new AnalyserNode(node.context);
           this.analyser.fftSize = 2048;
           console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);

@@ -29,10 +29,25 @@
 /**
  * Lazy bindings to Csound/CsoundAC on the embedding page (set before evaluate).
  */
+function hostGlobal() {
+    return parent.window?.top?.globalThis ?? parent.window?.globalThis ?? globalThis;
+}
+
+function resolveHostInstance(name) {
+    const host = hostGlobal();
+    if (name === 'csound') {
+        return host?.csound ?? host?.__csound__ ?? null;
+    }
+    if (name === 'csound_ac') {
+        return host?.csound_ac ?? host?.csoundac ?? host?.__csoundac__ ?? null;
+    }
+    return host?.[name] ?? null;
+}
+
 function globalRef(name) {
     return new Proxy({}, {
         get(_target, prop) {
-            const inst = parent.window.globalThis[name];
+            const inst = resolveHostInstance(name);
             if (inst == null) {
                 return undefined;
             }
@@ -44,14 +59,17 @@ function globalRef(name) {
 const csound = globalRef('csound');
 const csoundac = globalRef('csound_ac');
 function csoundLoaded() {
-    return parent.window.globalThis.csound != null;
+    return resolveHostInstance('csound') != null;
 }
 /**
  * Global reference to the cloud-5 parameters addon.
  */
-let parameters = parent.window.globalThis.__parameters__;
+let parameters = hostGlobal().__parameters__;
 
-let audioContext = new AudioContext();
+function hostAudioContext() {
+    const inst = resolveHostInstance('csound');
+    return inst?.context ?? hostGlobal().audioContext ?? null;
+}
 
 import { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns } from './statefulpatterns.mjs';
 export { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns };
@@ -283,38 +301,82 @@ function secondsFromNow(deadline) {
 }
 function computeP2(deadline) {
     const d = Number(deadline) || 0;
-    const now = (typeof globalThis.getAudioNow === 'function')
-        ? globalThis.getAudioNow()
-        : (globalThis.audioContext && isNum(globalThis.audioContext.currentTime)
-            ? globalThis.audioContext.currentTime
-            : null);
+    const host = hostGlobal();
+    const now = (typeof host.getAudioNow === 'function')
+        ? host.getAudioNow()
+        : (() => {
+            const ctx = hostAudioContext();
+            return ctx && isNum(ctx.currentTime) ? ctx.currentTime : null;
+        })();
     return (now != null) ? Math.max(0, d > now + 1e-3 ? d - now : d) : secondsFromNow(d);
 }
 
 // Resolve MIDI note from common fields or via frequency; returns undefined for rests/meta.
+const CSOUND_MIN_MIDI = 24; // C1 — lowest pitch accepted by cpsmidinn in cloud-5 pieces
+
+function normalizeMidiForCsound(midi) {
+    if (!isNum(midi)) {
+        return midi;
+    }
+    let m = midi;
+    while (m < CSOUND_MIN_MIDI) {
+        m += 12;
+    }
+    while (m > 127) {
+        m -= 12;
+    }
+    return Math.max(CSOUND_MIN_MIDI, Math.min(127, m));
+}
+
 function resolveMidi(hap) {
-    // Prefer explicit fractional MIDI pitch
-    if (isNum(hap?.pitch)) return hap.pitch;
-    if (isNum(hap?.midi)) return hap.midi;
-    if (isNum(hap?.note)) return hap.note;
-    // Then check structured value payloads
-    if (isNum(hap?.value?.pitch)) return hap.value.pitch;
-    if (isNum(hap?.value?.midi)) return hap.value.midi;
-    if (isNum(hap?.value?.note)) return hap.value.note;
-    // Frequency fallbacks
-    let f;
-    if (isNum(hap?.freq) && hap.freq > 0) {
-        f = hap.freq;
-    } else if (isNum(hap?.value?.freq) && hap.value.freq > 0) {
-        f = hap.value.freq;
-    } else if (typeof getFrequency === 'function') {
+    if (isNum(hap?.pitch)) {
+        return normalizeMidiForCsound(hap.pitch);
+    }
+    // Prefer Strudel's own pitch resolution (handles note names like "D-2").
+    if (typeof getFrequency === 'function') {
         try {
-            const g = getFrequency(hap);
-            if (isNum(g) && g > 0) f = g;
+            const freq = getFrequency(hap);
+            if (isNum(freq) && freq > 0) {
+                return normalizeMidiForCsound(69 + 12 * Math.log2(freq / 440));
+            }
         } catch (_) { }
     }
-    if (isNum(f) && f > 0) {
-        return 69 + 12 * Math.log2(f / 440); // Hz → fractional MIDI
+    if (isNum(hap?.midi)) {
+        return normalizeMidiForCsound(hap.midi);
+    }
+    if (isNum(hap?.value?.pitch)) {
+        return normalizeMidiForCsound(hap.value.pitch);
+    }
+    if (isNum(hap?.value?.midi)) {
+        return normalizeMidiForCsound(hap.value.midi);
+    }
+    if (typeof hap?.value?.note === 'string' && typeof noteToMidi === 'function') {
+        try {
+            return normalizeMidiForCsound(noteToMidi(hap.value.note));
+        } catch (_) { }
+    }
+    if (typeof hap?.value === 'string' && typeof isNote === 'function' && isNote(hap.value)) {
+        try {
+            return normalizeMidiForCsound(noteToMidi(hap.value));
+        } catch (_) { }
+    }
+    if (isNum(hap?.value?.freq) && hap.value.freq > 0) {
+        return normalizeMidiForCsound(69 + 12 * Math.log2(hap.value.freq / 440));
+    }
+    if (isNum(hap?.freq) && hap.freq > 0) {
+        return normalizeMidiForCsound(69 + 12 * Math.log2(hap.freq / 440));
+    }
+    const ctxType = hap?.context?.type;
+    // hap.note / value.note as bare numbers are scale degrees from n(), not MIDI,
+    // unless Strudel has marked the context as midi.
+    if (isNum(hap?.value?.note) && ctxType === 'midi') {
+        return normalizeMidiForCsound(hap.value.note);
+    }
+    if (isNum(hap?.note) && ctxType === 'midi') {
+        return normalizeMidiForCsound(hap.note);
+    }
+    if (typeof hap?.value === 'number' && ctxType !== 'frequency') {
+        return normalizeMidiForCsound(hap.value);
     }
     return undefined;
 }

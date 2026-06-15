@@ -33,6 +33,30 @@
         .w3-bar {
             z-index: 1;
         }
+
+        #initializing_message {
+            display: none;
+            position: fixed;
+            z-index: 20;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        #initializing_message_box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 1.5em 2.5em;
+            background-color: #333;
+            color: #f5deb3;
+            border: 1px solid #666;
+            border-radius: 4px;
+            font-size: 1.1em;
+        }
     </style>
 </head>
 
@@ -67,6 +91,9 @@
             <li id="menu_item_console" class="w3-btn w3-hover-text-light-green">Log</li>
             <li id="menu_item_about" class="w3-btn w3-hover-text-light-green">About Cloud Music No. 2</li>
         </ul>
+    </div>
+    <div id="initializing_message">
+        <div id="initializing_message_box">Initializing...</div>
     </div>
     <canvas id="display" class="w3-container" style="background-color:black;height:100%;margin:0;padding:0;z-index:0;">
     </canvas>
@@ -1073,18 +1100,32 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             return index;
         }
 
+        function showInitializingMessage() {
+            document.getElementById("initializing_message").style.display = "block";
+        }
+
+        function hideInitializingMessage() {
+            document.getElementById("initializing_message").style.display = "none";
+        }
+
+        function waitForNextPaint() {
+            return new Promise(function (resolve) {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(resolve);
+                });
+            });
+        }
+
         function initializeScoreGenerator() {
-            if (strange_attractor_initialized) {
-                return;
+            if (pitv == null) {
+                csound_message_callback("Initializing chord space (PITV)...\n");
+                pitv = new CsoundAC.PITV();
+                pitv.initialize(4, 48, 1, false);
             }
-            csound_message_callback("Initializing chord space (PITV)...\n");
-            pitv = new CsoundAC.PITV();
-            pitv.initialize(4, 48, 1, false);
-            CsoundAC.Random.seed(380493);
+            CsoundAC.Random.seed(Date.now() ^ ((performance.now() * 1000) | 0));
             strange_attractor.reset();
             strange_attractor.setDimensionCount(4);
             strange_attractor.setAttractorType(4);
-            cs_random.sample();
             csound_message_callback("Searching for strange attractor, this can take seconds to minutes...\n");
             while (true) {
                 let not_found = strange_attractor.searchForAttractor();
@@ -1182,7 +1223,6 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
             txt += "gl.SHADING_LANGUAGE_VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION) + "\n";
             csound_message_callback(txt);
             csound_message_callback(CsoundAC.chord_space_version() + "\n");
-            initializeScoreGenerator();
         }());
 
         window.onload = function () {
@@ -1228,7 +1268,13 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                         // not correct; we need _html_ defaults.
                         $('#default').trigger('click');
                     }
-                    initializeScoreGenerator();
+                    showInitializingMessage();
+                    await waitForNextPaint();
+                    try {
+                        initializeScoreGenerator();
+                    } finally {
+                        hideInitializingMessage();
+                    }
                     await csound.Perform();
                     csound_message_callback("Csound is playing...\n");
                     let tempo = document.getElementById("gi_tempo").value;
@@ -1240,6 +1286,7 @@ f3 0 524288 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
                     await csound.Stop();
                     await csound.Cleanup();
                     csound.Reset();
+                    strange_attractor_initialized = false;
                     csound_message_callback("Csound is stopping...\n");
                     $("#menu_item_play").html("Play");
                 }

@@ -57,10 +57,25 @@
 /**
  * Lazy bindings to Csound/CsoundAC on the embedding page (set before evaluate).
  */
+function hostGlobal() {
+    return parent.window?.top?.globalThis ?? parent.window?.globalThis ?? globalThis;
+}
+
+function resolveHostInstance(name) {
+    const host = hostGlobal();
+    if (name === 'csound') {
+        return host?.csound ?? host?.__csound__ ?? null;
+    }
+    if (name === 'csound_ac') {
+        return host?.csound_ac ?? host?.csoundac ?? host?.__csoundac__ ?? null;
+    }
+    return host?.[name] ?? null;
+}
+
 function globalRef(name) {
     return new Proxy({}, {
         get(_target, prop) {
-            const inst = parent.window.globalThis[name];
+            const inst = resolveHostInstance(name);
             if (inst == null) {
                 return undefined;
             }
@@ -72,14 +87,17 @@ function globalRef(name) {
 const csound = globalRef('csound');
 const csoundac = globalRef('csound_ac');
 function csoundLoaded() {
-    return parent.window.globalThis.csound != null;
+    return resolveHostInstance('csound') != null;
 }
 /**
  * Global reference to the cloud-5 parameters addon.
  */
-let parameters = parent.window.globalThis.__parameters__;
+let parameters = hostGlobal().__parameters__;
 
-let audioContext = new AudioContext();
+function hostAudioContext() {
+    const inst = resolveHostInstance('csound');
+    return inst?.context ?? hostGlobal().audioContext ?? null;
+}
 
 import { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns } from './statefulpatterns.mjs';
 export { diagnostic, diagnostic_level, ALWAYS, DEBUG, INFORMATION, WARNING, ERROR, NEVER, StatefulPatterns };
@@ -311,38 +329,82 @@ function secondsFromNow(deadline) {
 }
 function computeP2(deadline) {
     const d = Number(deadline) || 0;
-    const now = (typeof globalThis.getAudioNow === 'function')
-        ? globalThis.getAudioNow()
-        : (globalThis.audioContext &amp;&amp; isNum(globalThis.audioContext.currentTime)
-            ? globalThis.audioContext.currentTime
-            : null);
+    const host = hostGlobal();
+    const now = (typeof host.getAudioNow === 'function')
+        ? host.getAudioNow()
+        : (() => {
+            const ctx = hostAudioContext();
+            return ctx &amp;&amp; isNum(ctx.currentTime) ? ctx.currentTime : null;
+        })();
     return (now != null) ? Math.max(0, d > now + 1e-3 ? d - now : d) : secondsFromNow(d);
 }
 
 // Resolve MIDI note from common fields or via frequency; returns undefined for rests/meta.
+const CSOUND_MIN_MIDI = 24; // C1 — lowest pitch accepted by cpsmidinn in cloud-5 pieces
+
+function normalizeMidiForCsound(midi) {
+    if (!isNum(midi)) {
+        return midi;
+    }
+    let m = midi;
+    while (m &lt; CSOUND_MIN_MIDI) {
+        m += 12;
+    }
+    while (m > 127) {
+        m -= 12;
+    }
+    return Math.max(CSOUND_MIN_MIDI, Math.min(127, m));
+}
+
 function resolveMidi(hap) {
-    // Prefer explicit fractional MIDI pitch
-    if (isNum(hap?.pitch)) return hap.pitch;
-    if (isNum(hap?.midi)) return hap.midi;
-    if (isNum(hap?.note)) return hap.note;
-    // Then check structured value payloads
-    if (isNum(hap?.value?.pitch)) return hap.value.pitch;
-    if (isNum(hap?.value?.midi)) return hap.value.midi;
-    if (isNum(hap?.value?.note)) return hap.value.note;
-    // Frequency fallbacks
-    let f;
-    if (isNum(hap?.freq) &amp;&amp; hap.freq > 0) {
-        f = hap.freq;
-    } else if (isNum(hap?.value?.freq) &amp;&amp; hap.value.freq > 0) {
-        f = hap.value.freq;
-    } else if (typeof getFrequency === 'function') {
+    if (isNum(hap?.pitch)) {
+        return normalizeMidiForCsound(hap.pitch);
+    }
+    // Prefer Strudel's own pitch resolution (handles note names like "D-2").
+    if (typeof getFrequency === 'function') {
         try {
-            const g = getFrequency(hap);
-            if (isNum(g) &amp;&amp; g > 0) f = g;
+            const freq = getFrequency(hap);
+            if (isNum(freq) &amp;&amp; freq > 0) {
+                return normalizeMidiForCsound(69 + 12 * Math.log2(freq / 440));
+            }
         } catch (_) { }
     }
-    if (isNum(f) &amp;&amp; f > 0) {
-        return 69 + 12 * Math.log2(f / 440); // Hz → fractional MIDI
+    if (isNum(hap?.midi)) {
+        return normalizeMidiForCsound(hap.midi);
+    }
+    if (isNum(hap?.value?.pitch)) {
+        return normalizeMidiForCsound(hap.value.pitch);
+    }
+    if (isNum(hap?.value?.midi)) {
+        return normalizeMidiForCsound(hap.value.midi);
+    }
+    if (typeof hap?.value?.note === 'string' &amp;&amp; typeof noteToMidi === 'function') {
+        try {
+            return normalizeMidiForCsound(noteToMidi(hap.value.note));
+        } catch (_) { }
+    }
+    if (typeof hap?.value === 'string' &amp;&amp; typeof isNote === 'function' &amp;&amp; isNote(hap.value)) {
+        try {
+            return normalizeMidiForCsound(noteToMidi(hap.value));
+        } catch (_) { }
+    }
+    if (isNum(hap?.value?.freq) &amp;&amp; hap.value.freq > 0) {
+        return normalizeMidiForCsound(69 + 12 * Math.log2(hap.value.freq / 440));
+    }
+    if (isNum(hap?.freq) &amp;&amp; hap.freq > 0) {
+        return normalizeMidiForCsound(69 + 12 * Math.log2(hap.freq / 440));
+    }
+    const ctxType = hap?.context?.type;
+    // hap.note / value.note as bare numbers are scale degrees from n(), not MIDI,
+    // unless Strudel has marked the context as midi.
+    if (isNum(hap?.value?.note) &amp;&amp; ctxType === 'midi') {
+        return normalizeMidiForCsound(hap.value.note);
+    }
+    if (isNum(hap?.note) &amp;&amp; ctxType === 'midi') {
+        return normalizeMidiForCsound(hap.note);
+    }
+    if (typeof hap?.value === 'number' &amp;&amp; ctxType !== 'frequency') {
+        return normalizeMidiForCsound(hap.value);
     }
     return undefined;
 }
@@ -1544,13 +1606,13 @@ export class Cloud5 extends StatefulPatterns {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="-_anonymous_-ParametricLindenmayer.PLSystem.html">PLSystem</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Turtle.html">Turtle</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Word.html">Word</a></li><li><a href="ChordPatterns.html">ChordPatterns</a></li><li><a href="Cloud5.html">Cloud5</a></li><li><a href="Cloud5About.html">Cloud5About</a></li><li><a href="Cloud5Element.html">Cloud5Element</a></li><li><a href="Cloud5Log.html">Cloud5Log</a></li><li><a href="Cloud5PianoRoll.html">Cloud5PianoRoll</a></li><li><a href="Cloud5Piece.html">Cloud5Piece</a></li><li><a href="Cloud5ShaderToy.html">Cloud5ShaderToy</a></li><li><a href="Cloud5Strudel.html">Cloud5Strudel</a></li><li><a href="CsoundAudioNode.html">CsoundAudioNode</a></li><li><a href="PitvPatterns.html">PitvPatterns</a></li><li><a href="ScalePatterns.html">ScalePatterns</a></li><li><a href="StatefulPatterns.html">StatefulPatterns</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Chord">Chord</a></li><li><a href="global.html#Clone">Clone</a></li><li><a href="global.html#Pitv">Pitv</a></li><li><a href="global.html#Scale">Scale</a></li><li><a href="global.html#arrange">arrange</a></li><li><a href="global.html#arrange_silencio">arrange_silencio</a></li><li><a href="global.html#canon">canon</a></li><li><a href="global.html#csound_message_callback">csound_message_callback</a></li><li><a href="global.html#csoundn">csoundn</a></li><li><a href="global.html#diagnostic">diagnostic</a></li><li><a href="global.html#diagnostic_level">diagnostic_level</a></li><li><a href="global.html#diagnostic_level_">diagnostic_level_</a></li><li><a href="global.html#downsample_lttb">downsample_lttb</a></li><li><a href="global.html#frequencyToMidiInteger">frequencyToMidiInteger</a></li><li><a href="global.html#frequencyToMidiReal">frequencyToMidiReal</a></li><li><a href="global.html#getFrequency">getFrequency</a></li><li><a href="global.html#get_csound">get_csound</a></li><li><a href="global.html#globalRef">globalRef</a></li><li><a href="global.html#hsvToRgb">hsvToRgb</a></li><li><a href="global.html#load_csound">load_csound</a></li><li><a href="global.html#non_csound">non_csound</a></li><li><a href="global.html#obtainWebGL2">obtainWebGL2</a></li><li><a href="global.html#parameters">parameters</a></li><li><a href="global.html#resize">resize</a></li><li><a href="global.html#rgb_to_hsv">rgb_to_hsv</a></li><li><a href="global.html#setPitch">setPitch</a></li><li><a href="global.html#tee">tee</a></li><li><a href="global.html#track">track</a></li><li><a href="global.html#url_for_soundfile">url_for_soundfile</a></li><li><a href="global.html#velmap">velmap</a></li><li><a href="global.html#write_file">write_file</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="-_anonymous_-ParametricLindenmayer.PLSystem.html">PLSystem</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Turtle.html">Turtle</a></li><li><a href="-_anonymous_-ParametricLindenmayer.Word.html">Word</a></li><li><a href="ChordPatterns.html">ChordPatterns</a></li><li><a href="Cloud5.html">Cloud5</a></li><li><a href="Cloud5About.html">Cloud5About</a></li><li><a href="Cloud5Element.html">Cloud5Element</a></li><li><a href="Cloud5Log.html">Cloud5Log</a></li><li><a href="Cloud5PianoRoll.html">Cloud5PianoRoll</a></li><li><a href="Cloud5Piece.html">Cloud5Piece</a></li><li><a href="Cloud5ShaderToy.html">Cloud5ShaderToy</a></li><li><a href="Cloud5Strudel.html">Cloud5Strudel</a></li><li><a href="CsoundAudioNode.html">CsoundAudioNode</a></li><li><a href="PitvPatterns.html">PitvPatterns</a></li><li><a href="ScalePatterns.html">ScalePatterns</a></li><li><a href="StatefulPatterns.html">StatefulPatterns</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Chord">Chord</a></li><li><a href="global.html#Clone">Clone</a></li><li><a href="global.html#Pitv">Pitv</a></li><li><a href="global.html#Scale">Scale</a></li><li><a href="global.html#arrange">arrange</a></li><li><a href="global.html#arrange_silencio">arrange_silencio</a></li><li><a href="global.html#canon">canon</a></li><li><a href="global.html#csound_message_callback">csound_message_callback</a></li><li><a href="global.html#csoundn">csoundn</a></li><li><a href="global.html#diagnostic">diagnostic</a></li><li><a href="global.html#diagnostic_level">diagnostic_level</a></li><li><a href="global.html#diagnostic_level_">diagnostic_level_</a></li><li><a href="global.html#downsample_lttb">downsample_lttb</a></li><li><a href="global.html#frequencyToMidiInteger">frequencyToMidiInteger</a></li><li><a href="global.html#frequencyToMidiReal">frequencyToMidiReal</a></li><li><a href="global.html#getFrequency">getFrequency</a></li><li><a href="global.html#get_csound">get_csound</a></li><li><a href="global.html#hostGlobal">hostGlobal</a></li><li><a href="global.html#hsvToRgb">hsvToRgb</a></li><li><a href="global.html#load_csound">load_csound</a></li><li><a href="global.html#non_csound">non_csound</a></li><li><a href="global.html#obtainWebGL2">obtainWebGL2</a></li><li><a href="global.html#parameters">parameters</a></li><li><a href="global.html#resize">resize</a></li><li><a href="global.html#rgb_to_hsv">rgb_to_hsv</a></li><li><a href="global.html#setPitch">setPitch</a></li><li><a href="global.html#tee">tee</a></li><li><a href="global.html#track">track</a></li><li><a href="global.html#url_for_soundfile">url_for_soundfile</a></li><li><a href="global.html#velmap">velmap</a></li><li><a href="global.html#write_file">write_file</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Jun 13 2026 11:53:25 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Jun 15 2026 07:53:17 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

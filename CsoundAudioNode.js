@@ -83,6 +83,12 @@ class CsoundAudioNode extends AudioWorkletNode {
                 case "GetFileDataResult":
                     this.resolveGetFileData(data[1]);
                     break;
+                case "OfflineRenderFinished":
+                    if (this.resolveOfflineRender) {
+                        this.resolveOfflineRender();
+                        this.resolveOfflineRender = null;
+                    }
+                    break;
                 case "GetScoreTimeResult":
                      // this.message_callback("[" + window.performance.now() + " Received GetScoreTimeResult with: " + data[1] + ".]\n");
                     this.resolveGetScoreTime(data[1]);
@@ -250,6 +256,14 @@ class CsoundAudioNode extends AudioWorkletNode {
     };
     async GetFileData(name) {
         return this.getFileData(name);
+    };
+    async waitForOfflineRender() {
+        return new Promise((resolve) => {
+            this.resolveOfflineRender = resolve;
+        });
+    };
+    async WaitForOfflineRender() {
+        return this.waitForOfflineRender();
     };
     getCurrentTimeSamples() {
         this.port.postMessage(["GetCurrentTimeSamples"]);

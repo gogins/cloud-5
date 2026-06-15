@@ -23,6 +23,21 @@ function publishTopGlobal(name, value) {
   window.top.globalThis[name] = value;
 }
 
+function publishHostAudioClock(csound_) {
+  if (!csound_?.context) {
+    return;
+  }
+  const publish = (scope) => {
+    if (!scope?.globalThis) {
+      return;
+    }
+    scope.globalThis.audioContext = csound_.context;
+    scope.globalThis.getAudioNow = () => csound_.context.currentTime;
+  };
+  publish(window.top);
+  publish(window);
+}
+
 function hostCsound() {
   const top = window.top;
   return top.globalThis?.csound ?? top.csound;
@@ -255,6 +270,7 @@ class StrudelReplComponent extends HTMLElement {
     if (this._pendingCsound !== undefined) {
       win.csound = this._pendingCsound;
       win.__csound__ = this._pendingCsound;
+      publishHostAudioClock(this._pendingCsound);
     }
     if (this._pendingCsoundAC !== undefined) {
       win.csoundac = this._pendingCsoundAC;
@@ -314,6 +330,7 @@ class StrudelReplComponent extends HTMLElement {
     this._pendingCsound = csound_;
     publishTopGlobal('csound', csound_);
     publishTopGlobal('__csound__', csound_);
+    publishHostAudioClock(csound_);
     this._syncHostBindingsToIframe();
     void this.whenReady().then(() => this._syncHostBindingsToIframe());
   }
