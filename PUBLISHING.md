@@ -20,7 +20,8 @@ That triggers CI to:
 
 1. Build at the **tagged commit** (Strudel submodule pinned — no `update --remote` on tags).
 2. Refresh the rolling **`cloud-5-bundle`** release zip.
-3. Merge `strudel/website/dist/` into **gogins.github.io** and push.
+3. Attach **`cloud-5.zip`** (built site only) and **`cloud-5-bundle.zip`** (full source + dist, same as the rolling bundle) to the **version tag** release (e.g. `v2.1.4`).
+4. Merge `strudel/website/dist/` into **gogins.github.io** and push.
 
 Use semver-style tags matching `v*` (e.g. `v1.0.0`, `v1.0.0-beta`).
 
@@ -62,11 +63,11 @@ on the Pages tree (that can remove files committed only on gogins.github.io).
 
 ## GitHub Actions detail
 
-| Trigger | Build | Rolling release `cloud-5-bundle` | Push to gogins.github.io |
-|--------|-------|----------------------------------|---------------------------|
-| Push to any branch | Yes | No | No |
-| Push tag `v*` | Yes | Yes | Yes (after release job) |
-| **Run workflow** (manual) | Yes | Optional (default on) | Optional (default on) |
+| Trigger | Build | Rolling release `cloud-5-bundle` | Version tag assets | Push to gogins.github.io |
+|--------|-------|----------------------------------|--------------------|---------------------------|
+| Push to any branch | Yes | No | No | No |
+| Push tag `v*` | Yes | Yes | Yes (`cloud-5.zip`, `cloud-5-bundle.zip`) | Yes (after release job) |
+| **Run workflow** (manual) | Yes | Optional (default on) | No | Optional (default on) |
 
 On manual runs you can disable **Publish to gogins.github.io** or **Upload rolling release**
 independently. Pages sync on dispatch still expects a successful release job unless you turn

@@ -2,7 +2,8 @@
 #
 # Triggers
 #   - push (any branch): build only (CI verify)
-#   - push tag v*: build, update rolling cloud-5-bundle release, sync gogins.github.io
+#   - push tag v*: build, update rolling cloud-5-bundle release, attach assets to the
+#     version tag release (cloud-5.zip + cloud-5-bundle.zip), sync gogins.github.io
 #   - workflow_dispatch: build; optional bundle and/or Pages sync
 #
 # gogins.github.io
@@ -126,6 +127,7 @@ jobs:
           if-no-files-found: error
           path: |
             strudel/website/dist/
+            cloud-5.zip
             cloud-5-bundle.zip
 
   release:
@@ -164,6 +166,50 @@ jobs:
               --notes "Source tree (excluding node_modules and .git) plus built strudel/website/dist. Updated when a v* tag is pushed."
           fi
           gh release upload "${BUNDLE_RELEASE_TAG}" "${BUNDLE_ZIP}" \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+  versioned-release:
+    needs: [build, release]
+    if: >-
+      github.repository == 'gogins/cloud-5' &&
+      github.event_name == 'push' &&
+      github.ref_type == 'tag' &&
+      startsWith(github.ref_name, 'v') &&
+      needs.release.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release zips
+        uses: actions/download-artifact@v4
+        with:
+          name: cloud-5-build
+          path: artifacts
+
+      - name: Attach dist and rolling bundle to version tag release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          DIST_ZIP="artifacts/cloud-5.zip"
+          BUNDLE_ZIP="artifacts/cloud-5-bundle.zip"
+          for zip in "${DIST_ZIP}" "${BUNDLE_ZIP}"
+          do
+            if [[ ! -f "${zip}" ]]
+            then
+              echo "${zip} not found in artifact" >&2
+              find artifacts -type f | head -50 >&2 || true
+              exit 1
+            fi
+          done
+          if ! gh release view "${VERSION_TAG}" --repo "${{ github.repository }}" >/dev/null 2>&1
+          then
+            gh release create "${VERSION_TAG}" \
+              --repo "${{ github.repository }}" \
+              --title "Cloud-5 ${VERSION_TAG}" \
+              --notes "Built site (cloud-5.zip) and full source tree plus dist (cloud-5-bundle.zip, same as the rolling [cloud-5-bundle](https://github.com/gogins/cloud-5/releases/tag/cloud-5-bundle) release at this tag)."
+          fi
+          gh release upload "${VERSION_TAG}" "${DIST_ZIP}" "${BUNDLE_ZIP}" \
             --repo "${{ github.repository }}" \
             --clobber
 
