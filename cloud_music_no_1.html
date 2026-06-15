@@ -668,14 +668,24 @@
             var frame_translation_count = 0;
             var midi_key_begin = 36;
             var midi_key_range = 60;
-            var maximum_voices = 8;
+            var maximum_voices = 12;
+            var note_off_threshold_ratio = 0.72;
+            var note_off_debounce_frames = 2;
+            var note_release_tail_seconds = 0.75;
+            function note_release_tail_for(event) {
+                let ins = Math.floor(event[0]);
+                if (ins === 3 || ins === 7 || ins === 8) {
+                    return 1.35;
+                }
+                return note_release_tail_seconds;
+            }
             var event_velocity_threshold = 100;
             var midi_key_end = midi_key_begin + midi_key_range;
             var sample_count = 0;
             var root_progression = 0;
             var on_events = new Array();
             var off_events = new Array();
-            var playing_events = new Map(); // p1 -> expiry time (seconds)
+            var playing_events = new Map();
             var event_tag = 0;
             var root_progressions = [2, 3, -4, 5, -1, 3];
 
@@ -730,30 +740,58 @@
                     sampled_events.push(event_for_pixel);
                 }
                 console.log(sprintf("sampled_events.length: %d\n", sampled_events.length));
-                // Drop expired voices from the map; let Csound finish them via p3/xtratim.
                 let now_seconds = performance.now() / 1000;
-                for (let playing_key of playing_events.keys()) {
-                    if (now_seconds >= playing_events.get(playing_key)) {
-                        playing_events.delete(playing_key);
+                let off_threshold = threshold * note_off_threshold_ratio;
+                // Free slots after scored duration plus orchestra release tail (gi_note_off_release).
+                for (let playing_key of [...playing_events.keys()]) {
+                    let playing = playing_events.get(playing_key);
+                    if (playing.releasing === true) {
+                        if (now_seconds >= playing.release_until) {
+                            playing_events.delete(playing_key);
+                        }
+                    } else {
+                        let expires_at = playing.started_at + playing.event[2] + note_release_tail_for(playing.event);
+                        if (now_seconds >= expires_at) {
+                            playing_events.delete(playing_key);
+                        }
                     }
                 }
-                // Events that are loud enough but not already playing, are candidates.
-                let on_threshold = threshold;
+                // Early note-off when the pixel is no longer bright enough.
                 for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
                     let sampled_event = sampled_events[sampled_event_i];
                     let key = sampled_event[0];
-                    if (playing_events.has(key) == false && sampled_event[4] >= on_threshold) {
+                    if (playing_events.has(key) == true) {
+                        let playing = playing_events.get(key);
+                        let instrument_number = playing.event[0];
+                        if (playing.releasing !== true) {
+                            if (sampled_event[4] < off_threshold) {
+                                playing.dim_count = (playing.dim_count || 0) + 1;
+                            } else {
+                                playing.dim_count = 0;
+                            }
+                            if (playing.dim_count >= note_off_debounce_frames) {
+                                csound.KillInstance(instrument_number, "", 4, true);
+                                playing.releasing = true;
+                                playing.release_until = now_seconds + note_release_tail_for(playing.event);
+                            }
+                        }
+                    }
+                }
+                // Note-on candidates for voices that are not already sounding.
+                for (let sampled_event_i = 0; sampled_event_i < sampled_events.length; sampled_event_i++) {
+                    let sampled_event = sampled_events[sampled_event_i];
+                    let key = sampled_event[0];
+                    if (playing_events.has(key) == false && sampled_event[4] >= threshold) {
                         on_events.push(sampled_event);
                     }
                 }
                 console.log(sprintf("playing_events.size:   %d\n", playing_events.size));
                 console.log(sprintf("on_events.length:      %d\n", on_events.length));
                 CsoundAC.setCorrectNegativeDurations(false);
-                // Play the loudest candidates only, up to the voice limit.
                 on_events.sort(function (a, b) {
                     return b[4] - a[4];
                 });
-                let voice_slots = maximum_voices - playing_events.size;
+                let voice_slots = Math.max(0, maximum_voices - playing_events.size);
                 let voices = Math.min(on_events.length, voice_slots);
                 for (let i = 0; i < voices; i++) {
                     let on_event = on_events[i];
@@ -770,7 +808,7 @@
                     let height = 0;
                     let pitches = 4095;
                     score.add(time, duration, status, instrument_number, key, velocity, phase, pan, depth, height, pitches);
-                    playing_events.set(instrument_number, now_seconds + duration);
+                    playing_events.set(instrument_number, {event: on_event, started_at: now_seconds});
                 }
                 if (score.size() > 0) {
                     if (sample_count % 4 == 0) {
@@ -1090,7 +1128,7 @@
             gk_Bower_level: 0,
             gk_Bower_pressure: 0.25,
             gk_MasterOutput_level: 0,
-            gk_ReverbSC_wet: 0.5,
+            gk_ReverbSC_wet: 0.45,
             gk_ReverbSC_feedback: 0.85,
             gk_ReverbSC_delay_modulation: 0.0075,
             gk_ReverbSC_frequency_cutoff: 9000,
@@ -1106,8 +1144,8 @@
                         "gk_MasterOutput_level": 0,
                         "gi_Composition_density": 75.50575421290587,
                         "gi_Composition_tempo": 180,
-                        "gk_ReverbSC_wet": 0.5,
-                        "gk_ReverbSC_feedback": 0.9167694204685574,
+                        "gk_ReverbSC_wet": 0.45,
+                        "gk_ReverbSC_feedback": 0.85,
                         "gk_ReverbSC_delay_modulation": 0.0075,
                         "gk_ReverbSC_frequency_cutoff": 9000,
                         "gk_Guitar_level": -9.272503082614058,
@@ -1318,6 +1356,9 @@
     maxalloc 7, 8
     maxalloc 8, 8
     
+    ; Tail length for KillInstance(release=1) note-offs. Must match instrument xtratim.
+    gi_note_off_release init 0.65
+    
     connect "Bower", "outleft", "ReverbSC", "inleft"
     connect "Bower", "outright", "ReverbSC", "inright"
     connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
@@ -1395,7 +1436,8 @@
     ; As with most software instruments that are modeled on an impulse exciting a 
     ; resonator, there should be two envelopes. The "physical" envelope must have a 
     ; fixed decay ending at zero.
-    i_declick_minimum = .003
+    ;; i_declick_minimum = .003
+    i_declick_minimum = .008
     i_attack = .001 / i_frequency + i_declick_minimum
     i_exponent = 7
     a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
@@ -1403,16 +1445,16 @@
     ; artifacts in the signal. The duration of these segments depends on 
     ; the behavior of the instrument, and may vary as a function of frequency.
     i_declick_attack = i_attack
-    i_declick_release = i_declick_minimum * 2
+    i_declick_release = gi_note_off_release
     ; The end of the note must be extended _past_ the end of the release segment.
-    xtratim 1
+    xtratim gi_note_off_release + 0.05
     a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
     ; The envelope of the instrument is the product of the physical envelope times 
     ; the declicking envelope. 
     a_envelope = a_physical_envelope * a_declicking_envelope
     ; That envelope is then low-pass filtered to remove most discontinuities.
-    a_filtered_envelope tonex a_envelope, 40, 4
-    a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain *.001
+    a_filtered_envelope tonex a_envelope, 15, 4
+    a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain
     
     #ifdef USE_SPATIALIZATION
     a_spatial_reverb_send init 0
@@ -1490,15 +1532,15 @@
     ; artifacts in the signal. The duration of these segments depends on 
     ; the behavior of the instrument, and may vary as a function of frequency.
     i_declick_attack = i_attack
-    i_declick_release = i_declick_minimum * 2
+    i_declick_release = gi_note_off_release
     ; The end of the note must be extended _past_ the end of the release segment.
-    xtratim 1
+    xtratim gi_note_off_release + 0.05
     a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
     ; The envelope of the instrument is the product of the physical envelope times 
     ; the declicking envelope. 
     a_envelope = a_physical_envelope * a_declicking_envelope
     ; That envelope is then low-pass filtered to remove most discontinuities.
-    a_filtered_envelope tonex a_envelope, 40, 4
+    a_filtered_envelope tonex a_envelope, 15, 4
     a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain
     
     #ifdef USE_SPATIALIZATION
@@ -1532,7 +1574,8 @@
     
     gk_FMWaterBell_level init -8
     gi_FMWaterBell_attack init 0.002
-    gi_FMWaterBell_release init 0.01
+    gi_FMWaterBell_release init 0.5
+    gi_FMWaterBell_piece_release init 0.75
     gi_FMWaterBell_sustain init 20
     gi_FMWaterBell_sustain_level init .1
     gk_FMWaterBell_index init .5
@@ -1549,10 +1592,14 @@
     instr FMWaterBell
     i_instrument = p1
     i_time = p2
+    if p3 == -1 then
+    i_duration = 1000
+    else
     i_duration = p3
+    endif
     ; One of the envelopes in this instrument should be releasing, and use this:
     i_sustain = 1000
-    xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
+    xtratim gi_FMWaterBell_attack + gi_FMWaterBell_piece_release + 0.05
     i_midi_key = p4
     i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
     i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
@@ -1570,13 +1617,20 @@
     i_normalization = ampdb(-i_level_correction) / 2
     i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
     k_gain = ampdb(gk_FMWaterBell_level)
-    i_releasing_attack = 3 / min(i_frequency, 256)
-    i_releasing_release = .01
+    i_releasing_attack = 0.03
+    if gi_FMWaterBell_attack > i_releasing_attack then
+    i_releasing_attack = gi_FMWaterBell_attack
+    endif
+    i_releasing_release = gi_FMWaterBell_piece_release
     a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
-    a_envelope transeg 0, gi_FMWaterBell_attack, 6,  1, gi_FMWaterBell_sustain, -6,  0
-    a_declicking cossegr 0, i_releasing_attack, 1, gi_FMWaterBell_sustain - 1, 1, i_releasing_release, 0
-    ;;;a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
-    a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
+    a_declicking cossegr 0, i_releasing_attack, 1, i_duration, 1, i_releasing_release, 0
+    a_smoothed tonex a_declicking, 8, 4
+    i_fmbell_lp = i_frequency * 8
+    if i_fmbell_lp > 7500 then
+    i_fmbell_lp = 7500
+    endif
+    a_signal butterlp a_signal, i_fmbell_lp
+    a_signal = a_signal * i_amplitude * a_smoothed * k_gain
     
     #ifdef USE_SPATIALIZATION
     a_spatial_reverb_send init 0
@@ -1637,7 +1691,7 @@
     iattack = gi_YiString_overlap
     isustain = i_duration
     idecay = gi_YiString_overlap
-    xtratim 1
+    xtratim gi_note_off_release + 0.05
     a_physical_envelope transeg 0.0, iattack / 2.0, 1.5, i_amplitude / 2.0, iattack / 2.0, -1.5, i_amplitude, isustain, 0.0, i_amplitude, idecay / 2.0, 1.5, i_amplitude / 2.0, idecay / 2.0, -1.5, 0
     ;ampenv = madsr:a(1, 0.1, 0.95, 0.5)
     a_signal = vco2(1, i_frequency)
@@ -1647,15 +1701,13 @@
     ; artifacts in the signal. The duration of these segments depends on 
     ; the behavior of the instrument, and may vary as a function of frequency.
     i_declick_attack = iattack
-    i_declick_release = i_declick_attack * 2
-    ; The end of the note must be extended _past_ the end of the release segment.
-    xtratim 1
+    i_declick_release = gi_note_off_release
     a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
     ; The envelope of the instrument is the product of the physical envelope times 
     ; the declicking envelope. 
     a_envelope = a_physical_envelope * a_declicking_envelope
     ; That envelope is then low-pass filtered to remove most discontinuities.
-    a_filtered_envelope tonex a_envelope, 40, 4
+    a_filtered_envelope tonex a_envelope, 15, 4
     a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
     
     #ifdef USE_SPATIALIZATION
@@ -1724,20 +1776,16 @@
     iHz = cpsmidinn(i_midi_key)
     kHz = k(iHz)
     a_physical_envelope transeg 1.0, i_physical_decay, -25.0, 0.0
-    apluck pluck i_amplitude * k_gain, kHz, iHz, 0, 1
-    aharp poscil a_physical_envelope, kHz, gi_Harpsichord_harptable
-    aharp2 balance apluck, aharp
-    a_signal	= (apluck + aharp2)
-    i_attack = .0005
-    i_sustain = p3
-    i_release = 0.01
-    ; The end of the note must be extended _past_ the end of the release segment.
-    xtratim 1
+    xtratim gi_note_off_release + 0.05
     i_declick_attack init .0008
-    i_declick_release init .01
+    i_declick_release = gi_note_off_release
     a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
-    a_envelope = a_declicking_envelope
-    a_filtered_envelope tonex a_envelope, 40, 4
+    a_physical_fade = a_physical_envelope * a_declicking_envelope
+    apluck pluck 1, kHz, iHz, 0, 1
+    aharp poscil a_physical_fade, kHz, gi_Harpsichord_harptable
+    aharp2 balance apluck, aharp
+    a_signal = (apluck + aharp2)
+    a_filtered_envelope tonex a_declicking_envelope, 22, 4
     a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
     
     
@@ -1988,12 +2036,12 @@
     i_sustain = i_duration
     i_release = 0.01
     i_declick_attack = i_attack
-    i_declick_release = i_declick_attack * 2
+    i_declick_release = gi_note_off_release
     ; The end of the note must be extended _past_ the end of the release segment.
-    xtratim 1
+    xtratim gi_note_off_release + 0.05
     a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
     ; That envelope is then low-pass filtered to remove most discontinuities.
-    a_filtered_envelope tonex a_declicking_envelope, 40, 4
+    a_filtered_envelope tonex a_declicking_envelope, 22, 4
     a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
     
     prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
@@ -2027,6 +2075,7 @@
     gi_Kung4_sine ftgen 0, 0, 65537, 10, 1
     gi_Kung4_cosine ftgen 0, 0, 65537, 11, 1
     gi_Kung4_ln ftgen 0, 9, 65537, -12, 20.0  ;unscaled ln(I(x)) from 0 to 20.0
+    gi_Kung4_release init 0.75
     /**
      * This is yet another attempt to adapt this beautiful sound for use in 
      * wider contexts.
@@ -2071,37 +2120,37 @@
     i_instrument_attack = i_duration / 3
     endif
     ;i_instrument_duration -= (2 * i_instrument_attack)
-    aadsr linsegr 0, i_instrument_attack, 1.0, i_duration, 1.0, i_instrument_attack, 0 ;ADSR envelope
-    amodi linseg 0, i_instrument_attack, 5, i_duration, 3, i_instrument_attack, 0 ;ADSR envelope for I
-    amodr linseg gi_Kung4_modulation_ratio_start, i_duration, gi_Kung4_modulation_ratio_end ;r moves from p6->p7 in p3 sec.
-    a1 = amodi*(amodr-1/amodr)/2
+    aadsr cossegr 0, i_instrument_attack, 1.0, i_duration, 1.0, gi_Kung4_release, 0
+    amodi cossegr 0, i_instrument_attack, 5, i_duration, 3, gi_Kung4_release, 0
+    iamodr_end = gi_Kung4_modulation_ratio_end
+    i_modr_ramp = i_duration
+    if i_duration < 2 then
+    iamodr_end = gi_Kung4_modulation_ratio_start
+    i_modr_ramp = 0.001
+    endif
+    if i_modr_ramp > 3.99 then
+    i_modr_ramp = 3.99
+    endif
+    if i_modr_ramp < 0.001 then
+    i_modr_ramp = 0.001
+    endif
+    amodr linseg gi_Kung4_modulation_ratio_start, i_modr_ramp, iamodr_end
+    amodr_eps = amodr + 0.05
+    a_gate tonex aadsr, 8, 4
+    a1 = amodi*(amodr_eps-1/amodr_eps)/2
     a1ndx = abs(a1*2/20) ;a1*2 is normalized from 0-1.
-    a2 = amodi*(amodr+1/amodr)/2
+    a2 = amodi*(amodr_eps+1/amodr_eps)/2
     a3 tablei a1ndx, gi_Kung4_ln, 1 ;lookup tbl in f3, normal index
     ao1 poscil a1, ipch, gi_Kung4_cosine ;cosine
     a4 = exp(-0.5*a3+ao1)
     ao2 poscil a2*ipch, ipch, gi_Kung4_cosine ;cosine
-    a_out_left poscil 1000*aadsr*a4, ao2+cpsoct(ioct+ishift), gi_Kung4_sine ;fnl outleft
-    a_out_right poscil 1000*aadsr*a4, ao2+cpsoct(ioct-ishift), gi_Kung4_sine ;fnl outright
-    i_declick_minimum = .003
-    i_attack = .001 / i_frequency + i_declick_minimum
-    i_exponent = 7
-    a_physical_envelope = aadsr ;  transeg 0,   i_attack, i_exponent,  1,   i_duration, -i_exponent,  0
-    ; The de-clicking envelope must have attack and release segments that damp 
-    ; artifacts in the signal. The duration of these segments depends on 
-    ; the behavior of the instrument, and may vary as a function of frequency.
-    i_declick_attack = i_attack
-    i_declick_release = i_declick_minimum * 2
-    ; The end of the note must be extended _past_ the end of the release segment.
-    xtratim 5
-    a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
-    ; The envelope of the instrument is the product of the physical envelope times 
-    ; the declicking envelope. 
-    a_envelope = a_physical_envelope * a_declicking_envelope
-    ; That envelope is then low-pass filtered to remove most discontinuities.
-    a_filtered_envelope tonex a_envelope, 40, 4
-    a_out_left = a_out_left * i_amplitude * a_filtered_envelope * k_gain 
-    a_out_right = a_out_right * i_amplitude * a_filtered_envelope * k_gain 
+    a_out_left poscil 1000*a4, ao2+cpsoct(ioct+ishift), gi_Kung4_sine ;fnl outleft
+    a_out_right poscil 1000*a4, ao2+cpsoct(ioct-ishift), gi_Kung4_sine ;fnl outright
+    xtratim gi_Kung4_release + 0.05
+    a_out_left = a_out_left * i_amplitude * a_gate * k_gain
+    a_out_right = a_out_right * i_amplitude * a_gate * k_gain
+    a_out_left butterlp a_out_left, 8500
+    a_out_right butterlp a_out_right, 8500
     
     outleta "outleft", a_out_left 
     outleta "outright", a_out_right
@@ -2124,6 +2173,7 @@
     gk_Kung2_space_left_to_right chnexport "gk_Kung2_space_left_to_right", 3
     gk_Kung2_space_left_to_right init .5
     gi_Kung2_sine ftgen 0, 0, 65537, 10, 1
+    gi_Kung2_release init 0.75
     opcode Kung2_, aa, 0
     setksmps 1
     i_instrument = p1
@@ -2155,35 +2205,25 @@
     ishift = gi_Kung2_detune_cents/12000
     ipch = cpsmidinn(i_midi_key)
     ioct = octmidinn(i_midi_key)
-    i_vibrato_frequency = (i_midi_key / 127) * 2
-    kvib poscil3 1/120, i_vibrato_frequency, gi_Kung2_sine
-    ag pluck 1, cpsoct(ioct+kvib), 1000, gi_Kung2_sine, 1
-    agleft pluck 1, cpsoct(ioct+ishift), 1000, gi_Kung2_sine, 1
-    agright pluck 1, cpsoct(ioct-ishift), 1000, gi_Kung2_sine, 1
-    i_physical_decay = 20
-    ; As with most software instruments that are modeled on an impulse exciting a 
-    ; resonator, there should be two envelopes. The "physical" envelope must have a 
-    ; fixed decay ending at zero.
-    i_declick_minimum = .003
+    icps = cpsoct(ioct)
+    icpsleft = cpsoct(ioct + ishift)
+    icpsright = cpsoct(ioct - ishift)
+    ag pluck 1, icps, 1000, gi_Kung2_sine, 1
+    agleft pluck 1, icpsleft, 1000, gi_Kung2_sine, 1
+    agright pluck 1, icpsright, 1000, gi_Kung2_sine, 1
+    i_declick_minimum = .008
     i_attack = .001 / i_frequency + i_declick_minimum
-    i_exponent = 3
-    a_physical_envelope transeg 0,   i_attack, i_exponent,  1,   i_physical_decay, -i_exponent,  0
-    a_declicking_envelope cossegr 0, .006, 1, i_instrument_duration, 1,  .06, 0
-    a_envelope = a_physical_envelope * a_declicking_envelope
-    a_filtered_envelope tonex a_envelope, 30, 3
-    xtratim 3
-    ag = a_declicking_envelope * ag
-    agleft = a_declicking_envelope * agleft
-    agright = a_declicking_envelope * agright
-    adump delayr 0.3
-    ad1 deltap3 0.1
-    ad2 deltap3 0.2
-    delayw ag
-    a_out_left = agleft + ad1
-    a_out_right = agright + ad2
-    a_filtered_declicking tonex a_declicking_envelope, 30, 4
-    a_out_left = a_out_left * k_gain * i_amplitude * a_filtered_declicking
-    a_out_right = a_out_right * k_gain * i_amplitude * a_filtered_declicking 
+    a_declicking_envelope cossegr 0, i_attack, 1, i_duration, 1, gi_Kung2_release, 0
+    a_pluck_gate tonex a_declicking_envelope, 8, 4
+    a_out_gate tonex a_declicking_envelope, 8, 4
+    xtratim gi_Kung2_release + 0.05
+    ag = ag * a_pluck_gate
+    agleft = agleft * a_pluck_gate
+    agright = agright * a_pluck_gate
+    a_out_left = agleft * k_gain * i_amplitude * a_out_gate
+    a_out_right = agright * k_gain * i_amplitude * a_out_gate
+    a_out_left butterlp a_out_left, 9000
+    a_out_right butterlp a_out_right, 9000 
     xout a_out_left, a_out_right
     endop
     
@@ -2203,7 +2243,7 @@
     
     gk_Bower_midi_dynamic_range init 20
     gk_Bower_attack init .125
-    gk_Bower_release init .125
+    gk_Bower_release init 0.35
     gk_Bower_level init 0
     gk_Bower_pressure init 0.25
     gk_Bower_space_left_to_right init 0.75
@@ -2213,7 +2253,11 @@
     instr Bower
     i_instrument = p1
     i_time = p2
+    if p3 == -1 then
+    i_duration = 1000
+    else
     i_duration = p3
+    endif
     i_midi_key = p4
     i_midi_dynamic_range = i(gk_Bower_midi_dynamic_range)
     i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
@@ -2233,10 +2277,10 @@
     i_amplitude = ampdb(i_midi_velocity) * i_normalization
     k_gain = ampdb(gk_Bower_level)
     iattack = i(gk_Bower_attack)
-    idecay = i(gk_Bower_release)
-    isustain = p3
+    idecay = gi_note_off_release
+    isustain = i_duration
     iamp = i_amplitude
-    xtratim iattack + idecay
+    xtratim iattack + idecay + 0.05
     kenvelope transegr 0.0, iattack / 2.0, 1.5, iamp / 2.0, iattack / 2.0, -1.5, iamp, isustain, 0.0, iamp, idecay / 2.0, 1.5, iamp / 2.0, idecay / 2.0, -1.5, 0
     ihertz = cpsmidinn(i_midi_key)
     kamp = kenvelope
@@ -2247,7 +2291,9 @@
     kvibamp = 0
     iminfreq = i(kfreq) / 1.5
     aSig wgbow kamp,kfreq,gk_Bower_pressure,krat,kvibf,kvibamp,gi_Bower_sine,iminfreq
-    a_signal = aSig * kenvelope * k_gain
+    a_declick cossegr 0, iattack, 1, isustain, 1, idecay, 0
+    a_declick_smooth tonex a_declick, 22, 4
+    a_signal = aSig * kenvelope * a_declick_smooth * k_gain
     
     prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
     #ifdef USE_SPATIALIZATION
@@ -2269,22 +2315,28 @@
     gi_ReverbSC_delay_modulation chnexport "gi_ReverbSC_delay_modulation", 3
     gk_ReverbSC_frequency_cutoff chnexport "gk_ReverbSC_frequency_cutoff", 3
     
-    gk_ReverbSC_feedback init 0.875
-    gk_ReverbSC_wet init 0.5
+    gk_ReverbSC_feedback init 0.85
+    gk_ReverbSC_wet init 0.45
     gi_ReverbSC_delay_modulation init 0.0075
     gk_ReverbSC_frequency_cutoff init 15000
     
     instr ReverbSC
     gk_ReverbSC_dry = 1.0 - gk_ReverbSC_wet
+    aleftdry init 0
+    arightdry init 0
     aleftin init 0
     arightin init 0
     aleftout init 0
     arightout init 0
-    aleftin inleta "inleft"
-    arightin inleta "inright"
+    aleftdry inleta "inleft"
+    arightdry inleta "inright"
+    aleftin butterlp aleftdry, 4000
+    arightin butterlp arightdry, 4000
     aleftout, arightout reverbsc aleftin, arightin, gk_ReverbSC_feedback, gk_ReverbSC_frequency_cutoff, sr, gi_ReverbSC_delay_modulation
-    aleftoutmix = aleftin * gk_ReverbSC_dry + aleftout * gk_ReverbSC_wet
-    arightoutmix = arightin * gk_ReverbSC_dry + arightout * gk_ReverbSC_wet
+    aleftwet butterlp aleftout, 7000
+    arightwet butterlp arightout, 7000
+    aleftoutmix = aleftdry * gk_ReverbSC_dry + aleftwet * gk_ReverbSC_wet
+    arightoutmix = arightdry * gk_ReverbSC_dry + arightwet * gk_ReverbSC_wet
     outleta "outleft", aleftoutmix
     outleta "outright", arightoutmix
     prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
@@ -2305,10 +2357,11 @@
     k_gain = ampdb(gk_MasterOutput_level)
     printks2 "Master gain: %f\n", k_gain
     iamp init 1
+    i_master_trim init 0.7
     aleft butterlp aleft, 18000
     aright butterlp aright, 18000
-    a_out_left = aleft * k_gain
-    a_out_right = aright * k_gain
+    a_out_left = aleft * k_gain * i_master_trim
+    a_out_right = aright * k_gain * i_master_trim
     outs a_out_left, a_out_right
     ; We want something that will play on my phone.
     i_amplitude_adjustment = ampdbfs(-3) / 32767
