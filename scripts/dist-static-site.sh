@@ -61,3 +61,25 @@ for html in dist.rglob("*.html"):
 
 print("dist-static-site: neutralized PWA hooks in", dist)
 PY
+
+BOOTSTRAP='strudel_repl_bootstrap.js'
+REPL_HTML="$DIST/strudel_repl.html"
+if [[ -f "$ROOT/$BOOTSTRAP" && -f "$REPL_HTML" ]]; then
+  cp -f "$ROOT/$BOOTSTRAP" "$DIST/$BOOTSTRAP"
+  python3 - "$REPL_HTML" <<'PY'
+import sys
+from pathlib import Path
+
+html_path = Path(sys.argv[1])
+text = html_path.read_text(encoding="utf-8")
+tag = '<script src="/strudel_repl_bootstrap.js"></script>'
+if tag not in text:
+    needle = "<head>"
+    if needle in text:
+        text = text.replace(needle, needle + tag, 1)
+        html_path.write_text(text, encoding="utf-8")
+        print("dist-static-site: injected strudel_repl_bootstrap.js into", html_path.name)
+    else:
+        print("dist-static-site: no <head> in", html_path.name, file=sys.stderr)
+PY
+fi

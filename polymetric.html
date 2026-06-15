@@ -2051,12 +2051,13 @@ n("61").cpm(120*61/64),
 n("62").cpm(120*62/64),
 n("63").cpm(120*63/64),
 )
-.scale("<C2:major:pentatonic F2:major:pentatonic G2:major:pentatonic>".slow(3))
+.scale('C-1:chromatic')
+.transpose(24)
 .csoundn("<1 4 15>").color("red green blue")
 .pan("<.1 .5 .8 .3 .7 .25>")
 .gain(.7)
 .slow(4)
-.pianoroll({labels:1,fold:0,scaleauto:0,minMidi:0,maxMidi:127,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
+.pianoroll({labels:1,fold:0,minMidi:4,maxMidi:107,fill:0,stroke:1,fillActive:1,cycles:32,playhead:.9})
         `;
     // #endregion
     // #region Controls 

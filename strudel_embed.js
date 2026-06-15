@@ -15,6 +15,7 @@ function strudelCodeToHash(code) {
 
 function strudelReplUrl(code) {
   const url = new URL('strudel_repl.html', window.location.href);
+  url.searchParams.set('cloud5-embed', '1');
   url.hash = strudelCodeToHash(code);
   return url.href;
 }
