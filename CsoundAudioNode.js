@@ -590,8 +590,26 @@ class CsoundAudioNode extends AudioWorkletNode {
             this.message_callback(e);
         }
     }
+    _publishHostAudioClock() {
+        const publish = (scope) => {
+            if (!scope) {
+                return;
+            }
+            scope.globalThis.audioContext = this.context;
+            scope.globalThis.getAudioNow = () => this.context.currentTime;
+        };
+        publish(window.top);
+        publish(window);
+    }
+    getNode() {
+        return Promise.resolve(this);
+    }
+    async GetNode() {
+        return await this.getNode();
+    }
     _publishPlayingState() {
         window.top.globalThis.csound = this;
+        this._publishHostAudioClock();
         window.top.dispatchEvent(
             new CustomEvent('cloud5:csound-playing', { detail: { csound: this } }),
         );
