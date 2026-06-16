@@ -1,11 +1,12 @@
 {
-  "_comments": "The build copies cloud-5 sources in the root directory to strudel/website/dist. The cloud-5 Web site runs from strudel/website/dist. On pnpm install, scripts/install-csound-wasm-dist.sh always installs csound-wasm (rsync from ../csound-wasm/dist when present, otherwise download the matching GitHub release zip).",
+  "_comments": "The build copies cloud-5 sources in the root directory to strudel/website/dist. The cloud-5 Web site runs from strudel/website/dist. On pnpm install, scripts/install-csound-wasm-dist.sh installs csound-wasm (local dist when present, else verified repo copy, else GitHub release) and scripts/verify-csound-wasm-dist.sh rejects builds without Wasm heap growth.",
   "config": {
     "csound_wasm_version": "4.0.0-beta"
   },
   "scripts": {
     "postinstall": "bash scripts/install-csound-wasm-dist.sh",
     "install-csound-wasm": "bash scripts/install-csound-wasm-dist.sh",
+    "verify-csound-wasm": "bash scripts/verify-csound-wasm-dist.sh",
     "clean-modules": "find . -name \"node_modules\" -type d -exec rm -r {} +;",
     "setup": "git submodule update --init --recursive --remote && cd strudel && git stash && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
     "build-strudel": "cd strudel && pnpm run setup && pnpm run build",

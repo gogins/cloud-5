@@ -3,16 +3,14 @@
 #
 # Source order:
 #   1. $CSOUND_WASM_DIST if set and directory exists
-#   2. ../csound-wasm/dist (sibling checkout)
-#   3. ~/csound-wasm/dist
-#   4. GitHub release zip (contents of csound-wasm/dist; dist/ is not in git)
+#   2. ../csound-wasm/dist (sibling checkout — local dev)
+#   3. ./csound-wasm/dist (in-repo checkout — CI)
+#   4. ~/csound-wasm/dist
+#   5. Already-verified CsoundAC.js/wasm in the repo root (do not replace with
+#      a stale GitHub release zip when CI has no local dist)
+#   6. GitHub release zip for config.csound_wasm_version
 #
-# When a local dist directory is found, rsync into cloud-5 on every run so
-# sibling csound-wasm edits propagate on pnpm install. If
-# csound-wasm/src/trichord_space.html is newer than dist/trichord_space.html,
-# copy src → dist first (HTML-only dev).
-#
-# When no local dist exists, download the release zip every run (no skip).
+# Every install path ends with scripts/verify-csound-wasm-dist.sh.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -36,6 +34,7 @@ read_config_version() {
 VERSION="${CSOUND_WASM_VERSION:-$(read_config_version)}"
 VERSION="${VERSION:-4.0.0-beta}"
 MARKER=".csound-wasm-dist-version"
+VERIFY="${ROOT}/scripts/verify-csound-wasm-dist.sh"
 
 install_from_dir() {
   local src="$1"
@@ -43,6 +42,7 @@ install_from_dir() {
   echo "Installing csound-wasm dist from ${src}"
   rsync -a "${src}/" "${ROOT}/"
   printf '%s\n%s:%s\n' "${VERSION}" "${source_kind}" "${src}" > "${MARKER}"
+  bash "${VERIFY}" "${ROOT}"
 }
 
 resolve_local_dist() {
@@ -52,6 +52,7 @@ resolve_local_dist() {
   else
     for candidate in \
       "${ROOT}/../csound-wasm/dist" \
+      "${ROOT}/csound-wasm/dist" \
       "${HOME}/csound-wasm/dist"; do
       if [[ -f "${candidate}/CsoundAudioProcessor.js" ]]; then
         echo "${candidate}"
@@ -68,6 +69,9 @@ resolve_local_dist() {
 stage_trichord_from_src() {
   local dist_dir="$1"
   local src_html="${ROOT}/../csound-wasm/src/trichord_space.html"
+  if [[ ! -f "${src_html}" && -f "${ROOT}/csound-wasm/src/trichord_space.html" ]]; then
+    src_html="${ROOT}/csound-wasm/src/trichord_space.html"
+  fi
   local dist_html="${dist_dir}/trichord_space.html"
   if [[ -f "${src_html}" \
     && ( ! -f "${dist_html}" || "${src_html}" -nt "${dist_html}" ) ]]; then
@@ -76,10 +80,23 @@ stage_trichord_from_src() {
   fi
 }
 
+dist_already_verified() {
+  bash "${VERIFY}" "${ROOT}" >/dev/null 2>&1
+}
+
 LOCAL_DIST="$(resolve_local_dist || true)"
 if [[ -n "${LOCAL_DIST}" ]]; then
   stage_trichord_from_src "${LOCAL_DIST}"
   install_from_dir "${LOCAL_DIST}" "local"
+  exit 0
+fi
+
+if dist_already_verified; then
+  echo "Csound wasm dist already present and verified; not downloading release zip."
+  if [[ ! -f "${MARKER}" ]]; then
+    printf '%s\nverified:%s\n' "${VERSION}" "${ROOT}" > "${MARKER}"
+  fi
+  bash "${VERIFY}" "${ROOT}"
   exit 0
 fi
 

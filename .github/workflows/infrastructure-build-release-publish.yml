@@ -102,6 +102,7 @@ jobs:
         run: |
           set -euo pipefail
           pnpm install --frozen-lockfile
+          bash scripts/verify-csound-wasm-dist.sh
           pnpm run build
 
       - name: Create source + dist zip (exclude node_modules and .git)

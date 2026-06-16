@@ -78,3 +78,15 @@ the release step off (then only the Pages job runs, using the build artifact).
 `publish.sh` calls `scripts/publish-github-pages-from-dist.sh` (manifest-safe merge, not
 whole-tree `rsync --delete`). It resets to `origin/main` before merging (avoids rebase conflicts
 on generated `jsdocs/`), prompts before merging, and before `git push`.
+
+## Csound wasm dist (CI)
+
+`pnpm install` runs `scripts/install-csound-wasm-dist.sh`. On GitHub Actions there is no
+sibling `../csound-wasm/dist`, so the script used to **always download** the
+`csound_wasm_version` release zip and **overwrite** the good `CsoundAC.js` / `CsoundAC.wasm`
+committed in cloud-5. An older release zip lacked Wasm heap growth and broke pieces such as
+Cloud Music No. 2 (`PITV.initialize` OOM).
+
+Install order now: local dist (sibling or in-repo `csound-wasm/dist`) → keep already-verified
+repo copy → download release. Every path runs `scripts/verify-csound-wasm-dist.sh`, which fails
+the build if `CsoundAC.js` aborts on heap growth.
