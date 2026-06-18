@@ -54,7 +54,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
      * 
      * Represents the position of a "pen" that is moving about 
      * and writing upon a Score. The state of the Turtle includes a note, 
-     * a chord, and another chord defining the modality of the Score.
+     * a chord, and another chord defining the scale of the Score.
      * 
      * @param {Event} note_ The current position of the Turtle in the chord 
      * space.
@@ -62,13 +62,13 @@ Part of Silencio, an algorithmic music composition library for Csound.
      * @param {Chord} chord_ The current Chord to which the Turtle will bre 
      * conformed.
      * 
-     * @param {Chord} modality_ The modality of the chord space, which 
+     * @param {Chord} scale_ The scale of the chord space, which 
      * controls the effect of certain chord transormations.
      */
     ParametricLindenmayer.Turtle = class {
-        constructor(note_, chord_, modality_) {
-            this.step = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
-            this.scale = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+        constructor(note_, chord_, scale_) {
+            this.direction = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+            this.magnitude = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
             if (typeof note_ === "undefined") {
                 this.note = new CsoundAC.Event();
             } else {
@@ -80,10 +80,10 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 this.chord = chord_.clone();
             }
             this.prior_chord = this.chord.clone();
-            if (typeof modality_ === "undefined") {
-                this.modality = new CsoundAC.Chord();
+            if (typeof scale_ === "undefined") {
+                this.scale = new CsoundAC.Chord();
             } else {
-                this.modality = modality_.clone();
+                this.scale = scale_.clone();
             }
         }
         /**
@@ -93,11 +93,11 @@ Part of Silencio, an algorithmic music composition library for Csound.
          */
         clone() {
             let clone_ = new ParametricLindenmayer.Turtle();
-            clone_.step = this.step.slice();
-            clone_.scale = this.scale.slice();
+            clone_.direction = this.direction.slice();
+            clone_.magnitude = this.magnitude.slice();
             clone_.note = this.note.clone();
             clone_.chord = this.chord.clone();
-            clone_.modality = this.modality.clone();
+            clone_.scale = this.scale.clone();
             clone_.prior_chord = this.prior_chord.clone();
             return clone_;
         }
@@ -298,13 +298,12 @@ Part of Silencio, an algorithmic music composition library for Csound.
             this.identity_command = function (lsystem, turtle_) {
                 return turtle_;
             };
-            let step;
             this.add_command('Assign(dimension, value)', function (lsystem, turtle, dimension, value) {
                 turtle.note[dimension] = value;
                 return turtle;
             });
             this.add_command('Scale(dimension, value)', function (lsystem, turtle, dimension, value) {
-                turtle.scale[dimension] = value;
+                turtle.magnitude[dimension] = value;
                 return turtle;
             });
             this.add_command('Move(dimension, value)', function (lsystem, turtle, dimension, value) {
@@ -312,55 +311,55 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             this.add_command('Steps(s)', function (lsystem, turtle, s) {
-                step_ = numeric.mul(turtle.step, s);
-                step_ = numeric.mul(step_, turtle.scale);
-                turtle.note.data = numeric.add(turtle.note.data, step_);
+                direction_ = numeric.mul(turtle.direction, s);
+                direction_ = numeric.mul(direction_, turtle.magnitude);
+                turtle.note.data = numeric.add(turtle.note.data, direction_);
                 return turtle;
             });
             this.add_command('Step()', function (lsystem, turtle) {
-                let scaled_step = numeric.mul(turtle.step, turtle.scale);
-                turtle.note.data = numeric.add(turtle.note.data, scaled_step);
+                let scaled_direction = numeric.mul(turtle.direction, turtle.magnitude);
+                turtle.note.data = numeric.add(turtle.note.data, scaled_direction);
                 return turtle;
             });
             // http://wscg.zcu.cz/wscg2004/Papers_2004_Short/N29.pdf: main rotations.
             this.add_command('Turn(from_axis, to_axis, angle)', function (lsystem, turtle, from_axis, to_axis, angle) {
-                let rotation = numeric.identity(turtle.step.length);
+                let rotation = numeric.identity(turtle.direction.length);
                 rotation[from_axis][from_axis] = Math.cos(angle);
                 rotation[from_axis][to_axis] = -Math.sin(angle);
                 rotation[to_axis][from_axis] = Math.sin(angle);
                 rotation[to_axis][to_axis] = Math.cos(angle);
-                // The step is a row vector, not a column vector.
-                turtle.step = numeric.dotVM(turtle.step, rotation);
+                // The direction is a row vector, not a column vector.
+                turtle.direction = numeric.dotVM(turtle.direction, rotation);
                 return turtle;
             });
             this.add_command('Assign(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
-                turtle.note.setTime(t * turtle.scale[0]);
-                turtle.note.setDuration(d * turtle.scale[1]);
-                turtle.note.setStatus(s * turtle.scale[2]);
-                turtle.note.setInstrument(c * turtle.scale[3]);
-                turtle.note.setKey(k * turtle.scale[4]);
-                turtle.note.setVelocity(v * turtle.scale[5]);
-                turtle.note.setPan(x * turtle.scale[6]);
+                turtle.note.setTime(t * turtle.magnitude[0]);
+                turtle.note.setDuration(d * turtle.magnitude[1]);
+                turtle.note.setStatus(s * turtle.magnitude[2]);
+                turtle.note.setInstrument(c * turtle.magnitude[3]);
+                turtle.note.setKey(k * turtle.magnitude[4]);
+                turtle.note.setVelocity(v * turtle.magnitude[5]);
+                turtle.note.setPan(x * turtle.magnitude[6]);
                 return turtle;
             });
             this.add_command('Move(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
-                turtle.note.setTime(turtle.note.getTime() + (t * turtle.scale[0]));
-                turtle.note.setDuration(turtle.note.getDuration() + (d * turtle.scale[1]));
-                turtle.note.setStatus(turtle.note.getStatus() + (s * turtle.scale[2]));
-                turtle.note.setInstrument(turtle.note.getInstrument() + (c * turtle.scale[3]));
-                turtle.note.setKey(turtle.note.getKey() + (k * turtle.scale[4]));
-                turtle.note.setVelocity(turtle.note.getVelocity() + (v * turtle.scale[5]));
-                turtle.note.setPan(turtle.note.getPan() + (x * turtle.scale[6]));
+                turtle.note.setTime(turtle.note.getTime() + (t * turtle.magnitude[0]));
+                turtle.note.setDuration(turtle.note.getDuration() + (d * turtle.magnitude[1]));
+                turtle.note.setStatus(turtle.note.getStatus() + (s * turtle.magnitude[2]));
+                turtle.note.setInstrument(turtle.note.getInstrument() + (c * turtle.magnitude[3]));
+                turtle.note.setKey(turtle.note.getKey() + (k * turtle.magnitude[4]));
+                turtle.note.setVelocity(turtle.note.getVelocity() + (v * turtle.magnitude[5]));
+                turtle.note.setPan(turtle.note.getPan() + (x * turtle.magnitude[6]));
                 return turtle;
             });
             this.add_command('Note(t, d, s, c, k, v, x)', function (lsystem, turtle, t, d, s, c, k, v, x) {
-                turtle.note.setTime(t * turtle.scale[0]);
-                turtle.note.setDuration(d * turtle.scale[1]);
-                turtle.note.setStatus(s * turtle.scale[2]);
-                turtle.note.setInstrument(c * turtle.scale[3]);
-                turtle.note.setKey(k * turtle.scale[4]);
-                turtle.note.setVelocity(v * turtle.scale[5]);
-                turtle.note.setPan(x * turtle.scale[6]);
+                turtle.note.setTime(t * turtle.magnitude[0]);
+                turtle.note.setDuration(d * turtle.magnitude[1]);
+                turtle.note.setStatus(s * turtle.magnitude[2]);
+                turtle.note.setInstrument(c * turtle.magnitude[3]);
+                turtle.note.setKey(k * turtle.magnitude[4]);
+                turtle.note.setVelocity(v * turtle.magnitude[5]);
+                turtle.note.setPan(x * turtle.magnitude[6]);
                 let note = turtle.note.clone();
                 if (turtle.chord !== null) {
                     note.chord = turtle.chord.clone();
@@ -397,7 +396,7 @@ Part of Silencio, an algorithmic music composition library for Csound.
                 return turtle;
             });
             this.add_command('Q(n)', function (lsystem, turtle, n) {
-                turtle.chord = turtle.chord.Q(n, turtle.modality);
+                turtle.chord = turtle.chord.Q(n, turtle.scale);
                 return turtle;
             });
             this.add_command('J(n, m)', function (lsystem, turtle, n, m) {
