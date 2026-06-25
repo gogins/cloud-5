@@ -103,6 +103,66 @@ Part of Silencio, an algorithmic music composition library for Csound.
             clone_.prior_chord = this.prior_chord.clone();
             return clone_;
         }
+        get n() {
+            return this.note;
+        }   
+        set n(value) {
+            this.note = value;
+        }
+        get c() {
+            return this.chord;
+        }
+        set c(value) {
+            this.chord = value;
+        }
+        get s() {
+            return this.scale;
+        }
+        set s(value) {
+            this.scale = value;
+        }
+        get d() {
+            return this.degree;
+        }
+        set d(value) {
+            this.degree = value;
+        }
+        get p() {
+            let pitv = this.pitv.fromChord(this.chord);
+            return pitv.P;
+        }
+        set p(value) {
+            let pitv = this.pitv.fromChord(this.chord);
+            pitv.P = value;
+            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+        }
+        get i() {
+            let pitv = this.pitv.fromChord(this.chord);
+            return pitv.I;
+        }
+        set i(value) {
+            let pitv = this.pitv.fromChord(this.chord);
+            pitv.I = value;
+            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+        }
+        get t() {
+            let pitv = this.pitv.fromChord(this.chord);
+            return pitv.T;
+        }
+        set t(value) {
+            let pitv = this.pitv.fromChord(this.chord);
+            pitv.T = value;
+            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+        }
+        get v() {
+            let pitv = this.pitv.fromChord(this.chord);
+            return pitv.V;
+        }
+        set v(value) {
+            let pitv = this.pitv.fromChord(this.chord);
+            pitv.V = value;
+            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+        }
     };
 
     /**
