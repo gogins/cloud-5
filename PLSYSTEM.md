@@ -5,7 +5,7 @@ include turtle commands for generating a musical score. Starting from an
 initial axiom, the system repeatedly replaces symbols with successor sequences 
 according to production rules. After a specified number of iterations, the 
 resulting sequence is interpreted from left to right as instructions for 
-moving a musical turtle through a compositional space and writing events into 
+moving a musical turtle through a compositional space and writing notes into 
 a score.
 
 A _parametric_ musical Lindenmayer system extends this model by allowing 
@@ -50,9 +50,9 @@ BuiltinCommand ::= "R"   [ArgumentList]
                  | "Hcv"
                  | "Hcs"
                  | "Hd"
-                 | "M"   [ArgumentList]
                  | "K"
                  | "Q"   [ArgumentList]
+                 | "M"   [ArgumentList]
                  | "["
                  | "]" ;
 ```
@@ -69,11 +69,11 @@ points in a vector space, with implied harmonies; in fact, the `PLSystem`
 defines several ways of working with harmony:
 
 - Matrix/vector arithmetic on `Turtle.note` and `Turtle.chord` using 
-  orientation and magnitude.
+  `Turtle.orientation` and `Turtle.magnitude`.
 - Neo-Riemannian transformations of `Turtle.chord`, including actions of the 
   Generalized Contextual Group.
-- Actions of the chord_space_group on the `Turtle.chord`.
-- Functional harmony operations on the `Turtle.chord` using the `Turtle.scale` 
+- Actions of `Turtle.chord_space_group` on `Turtle.chord`.
+- Functional harmony operations on `Turtle.chord` using `Turtle.scale` 
   and `Turtle.degree`, up to and including modulations and secondary 
   dominants.
 
@@ -94,9 +94,9 @@ subgroups:
  - `T`: transposition class, cyclic of order 12.
  - `V`: cyclic index over bounded octavewise voicings.
 
- Mathematically, the chord-space coordinates are denoted `P`, `I`, `T`, and 
- `V`. In the command language, the corresponding mutable turtle objects are 
- named `p`, `i`, `t`, and `v`.
+ Mathematically, the `chord_space_group` coordinates are denoted `P`, `I`, 
+ `T`, and `V`. In the command language, the corresponding mutable turtle 
+ objects are named `p`, `i`, `t`, and `v`.
 
 Thus the `chord_space_group` is a 4-dimensional discrete orbifold. The `chord` 
 element of the turtle can not only be factored into `P`, `I`, `T`, and `V` 
@@ -112,7 +112,7 @@ thus ignoring the `V` element of `{P, I, T, V}`.
 A `PLSystem.Rule` is created by giving a predecessor pattern, an optional 
 conditional expression, and a successor word.
 
-`PLSystem.add_rule("predecessor", "condition", "successor_word");`
+`PLSystem.add_rule("predecessor", [ "condition", ] "successor_word");`
 
 Item names are JavaScript identifiers or reserved command names. A word is a 
 sequence of semicolon-terminated items. Each item is either a symbol to be 
@@ -147,28 +147,28 @@ Turtle commands are either arithmetic operators or upper-case:
     - `i = x;`
     - `t = x;`
     - `v = x;`
-  - Add (actually `+=`): 
+  - Add (means `+=`): 
     - `n + dimension, x;`
     - `d + steps;`
     - `p + x;`
     - `i + x;`
     - `t + x;`
     - `v + x;`
-  - Subtract (actually `-=`): 
+  - Subtract (means `-=`): 
     - `n - dimension, x;`
     - `d - steps;`
     - `p - x;`
     - `i - x;`
     - `t - x;`
     - `v - x;`
-  - Multiply (actually `*=`): 
+  - Multiply (means `*=`): 
     - `n * dimension, x;`
     - `d * steps;` 
     - `p * x;`
     - `i * x;`
     - `t * x;`
     - `v * x;`
-  - Divide (actually `/=`): 
+  - Divide (means `/=`): 
     - `n / dimension, x;`
     - `d / steps;` 
     - `p / x;`
@@ -179,16 +179,20 @@ Turtle commands are either arithmetic operators or upper-case:
    - `R from_dimension, to_dimension, radians;`
  - Move `Turtle.note` along `Turtle.orientation` by `Turtle.magnitude`:
    - `F;`
- - Write `Turtle.note`, notes of `Turtle.chord`, or notes of `Turtle.chord` with duration into the generated _score_ at the turtle time:
+ - Write `Turtle.note`, notes of `Turtle.chord`, or notes of `Turtle.chord` 
+   with duration into the generated _score_ at the turtle time:
    - `Wn;`
    - `Wc;`
    - `Wcd;`
- - Write the pitch-classes of `Turtle.chord`, `Turtle.chord` as actually voiced, the pitch-classes of `Turtle.chord` at the smoothest voice-leading from `Turtle.prior_chord`, or the pitch-classes at `Turtle.degree` of `Turtle.scale`, into the _harmony_ at the turtle time:
+ - Write the pitch-classes of `Turtle.chord`, `Turtle.chord` as actually 
+   voiced, the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
+   from `Turtle.prior_chord`, or the pitch-classes at `Turtle.degree` of 
+   `Turtle.scale`, into the _harmony_ at the turtle time:
    - `Hc;`
    - `Hcv;`
    - `Hcs;`   
    - `Hd;`
- - Modulate `Turtle.scale` using `Turtle.chord` as a pivot. The system finds 
+ - Modulate `Turtle.scale` using `Turtle.chord` as the pivot. The system finds 
    all scales in which `Turtle.chord` occurs at some degree, and selects the 
    `i`th scale from that computed list of possible modulations. The modulation 
    occurs only if such scales exist. The number of voices to consider for 
