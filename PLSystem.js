@@ -7,7 +7,10 @@ Copyright (C) 2014, 2024 by Michael Gogins
 This software is licensed under the terms of the
 GNU Lesser General Public License
 
-Part of Silencio, an algorithmic music composition library for Csound.
+Part of cloud-5, a browser-based algorithmic music composition system for 
+Csound and Strudel.
+
+For more complete documentation, see PLSYSTEM.md.
 */
 
 (async function () {
