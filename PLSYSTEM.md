@@ -40,7 +40,7 @@ ArithmeticCommand
                ::= Object Operator ArgumentList ;
 Object         ::= "n" | "o" | "m" | "c" | "s" | "d"
                  | "p" | "i" | "t" | "v" ;
-Operator       ::= "=" | "+" | "-" | "*" | "/" ;
+Operator       ::= "=" | "+" | "-" | "*" | "/" | "^";
 BuiltinCommand ::= "R"   [ArgumentList]
                  | "F"
                  | "Wn"
@@ -53,12 +53,14 @@ BuiltinCommand ::= "R"   [ArgumentList]
                  | "K"
                  | "Q"   [ArgumentList]
                  | "M"   [ArgumentList]
+                 | "S"   [ArgumentList]
                  | "["
                  | "]" ;
 ```
 
 Every item in a word is terminated by `;`. Parentheses are not used for 
-parameters or arguments; commas separate parameters or arguments within an item.
+parameters or arguments; commas separate parameters or arguments within an 
+item.
 
 `PLSystem` is a class that implements this grammar: `{turtle, commands, axiom, 
 rules, stack, chord_space_group, chord_score}`.
@@ -77,13 +79,13 @@ defines several ways of working with harmony:
   and `Turtle.degree`, up to and including modulations and secondary 
   dominants.
 
-`PLSystem.chord_score` is a `CsoundAC.Score` that also contains a timeline of 
-`CsoundAC.Chord` that can be applied to harmonize the notes of the score. 
-Flags may be added to the Chords in the timeline to indicate how notes are to 
-be quantized: to the nearest pitch-class of the chord, to the nearest actual 
-pitch of the chord which may have been octavewise revoiced, or as the 
-smoothest voice-leading from the prior chord to the pitch-classes of 
-`Turtle.chord`.
+`PLSystem.chord_score` is a `CsoundAC.Score` also containing a timeline of 
+`CsoundAC.Chord` instances, i.e. a "harmony", that can be applied to harmonize 
+the notes of the score. Flags may be added to the Chords in the timeline to 
+indicate how notes are to be quantized: to the nearest pitch-class of the 
+chord, to the nearest actual pitch of the chord which may have been octavewise 
+revoiced, or as the smoothest voice-leading from the prior chord to the 
+pitch-classes of `Turtle.chord`.
 
 `PLSystem.chord_space_group` is a group in which all equally tempered Chords 
 within a given range of pitches can be represented by the orthogonal 
@@ -122,22 +124,29 @@ any, follow the object/operator or command name and are separated by commas.
 The number and meaning of the parameters are defined by the object and 
 operation. 
 
-Objects:
+## Objects
 
- - `n`: `Turtle.note`.
- - `o`: `Turtle.orientation`.
- - `m`: `Turtle.magnitude`.
- - `c`: `Turtle.chord`.
- - `s`: `Turtle.scale`.
- - `d`: `Turtle.degree`.
- - `p`: Index of set class or prime form, implied by `Turtle.chord` and `Turtle.chord_space_group`.
- - `i`: Inversion, implied by `Turtle.chord` and `Turtle.chord_space_group`.
- - `t`: Pitch-class transposition, implied by `Turtle.chord` and `Turtle.chord_space_group`.
- - `v`: Octavewise revoicing, implied by `Turtle.chord` and `Turtle.chord_space_group`.
+  - `n`: `Turtle.note`.
+  - `o`: `Turtle.orientation`.
+  - `m`: `Turtle.magnitude`.
+  - `c`: `Turtle.chord`.
+  - `s`: `Turtle.scale`.
+  - `d`: `Turtle.degree`.
+  - `p`: Index of set class or prime form, implied by `Turtle.chord` and 
+    `Turtle.chord_space_group`.
+  - `i`: Inversion, implied by `Turtle.chord` and 
+    `Turtle.chord_space_group`.
+  - `t`: Pitch-class transposition, implied by `Turtle.chord` and 
+    `Turtle.chord_space_group`.
+  - `v`: Octavewise revoicing, implied by `Turtle.chord` 
+    and `Turtle.chord_space_group`.
 
-Turtle commands are either arithmetic operators or upper-case:
+## Commands 
 
- - Assign: 
+Turtle commands are either arithmetic operators or upper-case. If the object 
+is discrete, the result of the command is rounded to the nearest integer.
+
+  - Assign: 
     - `n = dimension, value;`
     - `n = t, d, s, c, k, v, x;`
     - `c = {pitch};`
@@ -175,38 +184,61 @@ Turtle commands are either arithmetic operators or upper-case:
     - `i / x;`
     - `t / x;`
     - `v / x;`
- - Rotate:
-   - `R from_dimension, to_dimension, radians;`
- - Move `Turtle.note` along `Turtle.orientation` by `Turtle.magnitude`:
-   - `F;`
- - Write `Turtle.note`, notes of `Turtle.chord`, or notes of `Turtle.chord` 
-   with duration into the generated _score_ at the turtle time:
-   - `Wn;`
-   - `Wc;`
-   - `Wcd;`
- - Write the pitch-classes of `Turtle.chord`, `Turtle.chord` as actually 
-   voiced, the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
-   from `Turtle.prior_chord`, or the pitch-classes at `Turtle.degree` of 
-   `Turtle.scale`, into the _harmony_ at the turtle time:
-   - `Hc;`
-   - `Hcv;`
-   - `Hcs;`   
-   - `Hd;`
- - Modulate `Turtle.scale` using `Turtle.chord` as the pivot. The system finds 
-   all scales in which `Turtle.chord` occurs at some degree, and selects the 
-   `i`th scale from that computed list of possible modulations. The modulation 
-   occurs only if such scales exist. The number of voices to consider for 
-   matching the pivot chord may optionally be specified.
-   - `M i;`
-   - `M i, voices;`
- - Perform the `K` operation of the Generalized Contextual Group upon `Turtle.chord`.
-   - `K;`
- - Perform the `Q(steps)` operation of the Generalized Contextual Group, i.e. contextual transposition, upon `Turtle.chord`, with an optional value of `steps` semitones.
-   - `Q steps;`
- - Push the current turtle state onto the `PLSystem.stack`.
-   -  `[;`
- - Pop the current turtle state from the `PLSystem.stack`.
-   -  `];`
+  - Exponentiate (means `^=`): 
+    - `n ^ dimension, exponent;`
+    - `d ^ exponent;` 
+    - `p ^ exponent;`
+    - `i ^ exponent;`
+    - `t ^ exponent;`
+    - `v ^ exponent;`
+  - Rotate:
+    - `R from_dimension, to_dimension, radians;`
+  - Move `Turtle.note` along `Turtle.orientation` by `Turtle.magnitude`:
+    - `F;`
+  - Write `Turtle.note`, notes of `Turtle.chord`, or notes of `Turtle.chord` 
+    with duration into the generated _score_ at the turtle time:
+    - `Wn;`
+    - `Wc;`
+    - `Wcd;`
+  - Write the pitch-classes of `Turtle.chord`, `Turtle.chord` as actually 
+    voiced, the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
+    from `Turtle.prior_chord`, or the pitch-classes at `Turtle.degree` of 
+    `Turtle.scale`, into the _harmony_ at the turtle time:
+    - `Hc;`
+    - `Hcv;`
+    - `Hcs;`   
+    - `Hd;`
+  - Modulate `Turtle.scale` using `Turtle.chord` as the pivot. The system 
+    finds all scales in which `Turtle.chord` occurs at some degree, and 
+    selects the `i`th scale from that computed list of possible modulations. 
+    The modulation occurs only if such scales exist. The number of voices to 
+    consider for matching the pivot chord may optionally be specified. If no 
+    such modulation can be found, the command has no effect.
+    - `M index;`
+    - `M index, voices;`
+  - Mutate `Turtle.chord` to have a secondary function relative to a target 
+    degree of `Turtle.scale`, without changing `Turtle.scale`. The argument 
+    `function` gives the scale-degree function in the tonicized scale, and 
+    `target_degree` gives the degree of the current scale to be tonicized. 
+    For example, `S 5, 4, 4;` mutates the chord, if possible, to a four-voice 
+    dominant-seventh chord of the scale whose tonic is degree 4 of
+    `Turtle.scale`, i.e. V7/IV. It is then up to the user to progress to an
+    appropriate degree of the original `Turtle.scale`. If no such mutation 
+    preserves the required local root/degree relation, the command has no 
+    effect.
+    - `S function, target_degree;`
+    - `S function, target_degree, voices;`
+  - Perform the `K` operation of the Generalized Contextual Group, i.e. 
+    contextual inversion, upon `Turtle.chord`.
+    - `K;`
+  - Perform the `Q(steps)` operation of the Generalized Contextual Group, i.e. 
+    contextual transposition, upon `Turtle.chord`, with an optional value 
+    of `steps` semitones.
+    - `Q steps;`
+  - Push the current turtle state onto `PLSystem.stack`.
+    - `[;`
+  - Pop the current turtle state from `PLSystem.stack`.
+    - `];`
 
- 
+
  
