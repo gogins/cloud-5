@@ -1,7 +1,17 @@
 {
-  "_comments": "The build copies cloud-5 sources in the root directory to strudel/website/dist. The cloud-5 Web site runs from strudel/website/dist. On pnpm install, scripts/install-csound-wasm-dist.sh installs csound-wasm (local dist when present, else verified repo copy, else GitHub release) and scripts/verify-csound-wasm-dist.sh rejects builds without Wasm heap growth.",
+  "_comments": "The build copies cloud-5 sources in the root directory to strudel/website/dist. The cloud-5 Web site runs from strudel/website/dist. On pnpm install, scripts/install-csound-wasm-dist.sh installs csound-wasm (local dist when present, else verified repo copy, else GitHub release) and scripts/verify-csound-wasm-dist.sh rejects builds without Wasm heap growth. pnpm.allowBuilds documents approved native build scripts; pnpm 11 applies root approval via pnpm-workspace.yaml and Strudel via install-strudel (--config.dangerouslyAllowAllBuilds=true) without editing the strudel submodule.",
   "config": {
     "csound_wasm_version": "4.0.0-beta"
+  },
+  "pnpm": {
+    "allowBuilds": {
+      "@serialport/bindings-cpp": true,
+      "esbuild": true,
+      "nx": true,
+      "sharp": true,
+      "tree-sitter": true,
+      "tree-sitter-haskell": true
+    }
   },
   "scripts": {
     "postinstall": "bash scripts/install-csound-wasm-dist.sh",
@@ -9,7 +19,8 @@
     "verify-csound-wasm": "bash scripts/verify-csound-wasm-dist.sh",
     "clean-modules": "find . -name \"node_modules\" -type d -exec rm -r {} +;",
     "setup": "git submodule update --init --recursive --remote && cd strudel && git stash && git checkout main && git pull && cd .. && git commit -a -m 'Updated Strudel from origin.'",
-    "build-strudel": "cd strudel && pnpm run setup && pnpm run build",
+    "build-strudel": "pnpm run install-strudel && pnpm --dir strudel run build",
+    "install-strudel": "pnpm --dir strudel --config.dangerouslyAllowAllBuilds=true install",
     "generate-csoundac-jsdoc": "node scripts/generate-csoundac-jsdoc.mjs",
     "jsdoc": "pnpm run generate-csoundac-jsdoc && jsdoc -c jsdoc.json -d jsdocs",
     "package": "rm -f cloud-5.zip && cd strudel/website/dist && zip -r ../../../cloud-5.zip . -x '*.git*' -x'*.zip'",
@@ -32,7 +43,7 @@
     "dat.gui": "^0.7.9",
     "dependency-tree": "^9.0.0",
     "jquery": "^3.7.1",
-    "jsdoc": "^4.0.2",
+    "jsdoc": "^4.0.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sprintf-js": "^1.1.3",

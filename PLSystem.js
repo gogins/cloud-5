@@ -51,6 +51,167 @@ For more complete documentation, see PLSYSTEM.md.
     console.info("CsoundAC: " + CsoundAC);
     console.info("pitv: " + pitv);
 
+    const GRAMMAR_DISCRETE_OBJECTS = new Set(['d', 'p', 'i', 't', 'v']);
+    const GRAMMAR_BUILTIN_NAMES = [
+        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hc', 'Hd', 'R', 'Q', 'M', 'S', 'K', 'F', '[', ']'
+    ];
+
+    PLSystem.is_legacy_word_text = function (text) {
+        return /^[A-Za-z_$][\w$]*\s*\(/.test(text.trim());
+    };
+
+    PLSystem.split_expressions = function (text) {
+        let expressions = [];
+        let current = '';
+        let depth_paren = 0;
+        let depth_brace = 0;
+        let depth_bracket = 0;
+        for (let i = 0; i < text.length; i++) {
+            let c = text[i];
+            if (c === '(') {
+                depth_paren++;
+                current += c;
+            } else if (c === ')') {
+                depth_paren--;
+                current += c;
+            } else if (c === '{') {
+                depth_brace++;
+                current += c;
+            } else if (c === '}') {
+                depth_brace--;
+                current += c;
+            } else if (c === '[') {
+                depth_bracket++;
+                current += c;
+            } else if (c === ']') {
+                depth_bracket--;
+                current += c;
+            } else if (c === ',' && depth_paren === 0 && depth_brace === 0 && depth_bracket === 0) {
+                expressions.push(current.trim());
+                current = '';
+            } else {
+                current += c;
+            }
+        }
+        if (current.length > 0) {
+            expressions.push(current.trim());
+        }
+        return expressions;
+    };
+
+    PLSystem.parse_vector_literal = function (text) {
+        text = text.trim();
+        if (text.charAt(0) !== '{') {
+            return null;
+        }
+        let values = [];
+        let token = '';
+        for (let i = 1; i < text.length; i++) {
+            let c = text[i];
+            if (c === '}') {
+                if (token.length > 0) {
+                    values.push(parseFloat(token));
+                }
+                break;
+            } else if (c === ',') {
+                if (token.length > 0) {
+                    values.push(parseFloat(token));
+                    token = '';
+                }
+            } else if (!/\s/.test(c)) {
+                token += c;
+            }
+        }
+        return values;
+    };
+
+    PLSystem.round_if_discrete = function (object_name, value) {
+        if (GRAMMAR_DISCRETE_OBJECTS.has(object_name)) {
+            return Math.round(value);
+        }
+        return value;
+    };
+
+    PLSystem.chord_from_pitches = function (pitches) {
+        let chord = new CsoundAC.Chord();
+        chord.resize(pitches.length);
+        for (let i = 0; i < pitches.length; i++) {
+            chord.setPitch(i, pitches[i]);
+        }
+        return chord;
+    };
+
+    PLSystem.scale_from_pitches = function (pitches) {
+        let scale = new CsoundAC.Scale();
+        scale.resize(pitches.length);
+        for (let i = 0; i < pitches.length; i++) {
+            scale.setPitch(i, pitches[i]);
+        }
+        return scale;
+    };
+
+    PLSystem.parse_legacy_word = function (word, text) {
+        word.grammar = 'legacy';
+        word.kind = 'symbol';
+        word.name = /s*([^(]*)/.exec(text)[1].trim();
+        word.actual_parameter_expressions = [];
+        let opening_parenthesis = text.indexOf('(');
+        let ending_parenthesis = text.lastIndexOf(')');
+        if (opening_parenthesis != -1 && ending_parenthesis != -1) {
+            word.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(/, /);
+        }
+        word.key = word.name + '(' + word.actual_parameter_expressions.length + ')';
+    };
+
+    PLSystem.parse_grammar_word = function (word, text) {
+        word.grammar = 'plsystem';
+        let arithmetic_match = text.match(/^([nomcsdpitv])\s*([=+\-*/^])\s*(.+)$/);
+        if (arithmetic_match) {
+            word.kind = 'command';
+            word.command_type = 'arithmetic';
+            word.object = arithmetic_match[1];
+            word.operator = arithmetic_match[2];
+            word.name = word.object + word.operator;
+            word.actual_parameter_expressions = PLSystem.split_expressions(arithmetic_match[3]);
+            word.key = word.name + '(' + word.actual_parameter_expressions.length + ')';
+            return;
+        }
+        for (let i = 0; i < GRAMMAR_BUILTIN_NAMES.length; i++) {
+            let builtin_name = GRAMMAR_BUILTIN_NAMES[i];
+            if (text === builtin_name) {
+                word.kind = 'command';
+                word.command_type = 'builtin';
+                word.builtin_name = builtin_name;
+                word.name = builtin_name;
+                word.actual_parameter_expressions = [];
+                word.key = builtin_name + '()';
+                return;
+            }
+            if (text.indexOf(builtin_name + ' ') === 0) {
+                word.kind = 'command';
+                word.command_type = 'builtin';
+                word.builtin_name = builtin_name;
+                word.name = builtin_name;
+                word.actual_parameter_expressions = PLSystem.split_expressions(text.substring(builtin_name.length).trim());
+                word.key = builtin_name + '(' + word.actual_parameter_expressions.length + ')';
+                return;
+            }
+        }
+        let symbol_match = text.match(/^([A-Za-z_$][\w$]*)\s*(.*)$/);
+        if (symbol_match) {
+            word.kind = 'symbol';
+            word.name = symbol_match[1];
+            let remainder = symbol_match[2].trim();
+            word.actual_parameter_expressions = remainder.length > 0 ? PLSystem.split_expressions(remainder) : [];
+            word.key = word.name + '(' + word.actual_parameter_expressions.length + ')';
+            return;
+        }
+        word.kind = 'symbol';
+        word.name = text;
+        word.actual_parameter_expressions = [];
+        word.key = word.name + '(0)';
+    };
+
     /**
      * @class
      * @classdesc
@@ -104,7 +265,29 @@ For more complete documentation, see PLSYSTEM.md.
             clone_.scale = this.scale.clone();
             clone_.degree = this.degree;
             clone_.prior_chord = this.prior_chord.clone();
+            clone_.pitv = this.pitv;
             return clone_;
+        }
+        pitv_from_chord() {
+            if (typeof this.pitv === "undefined") {
+                throw new Error('Turtle.pitv is not set; assign lsystem.pitv to the turtle.');
+            }
+            return this.pitv.fromChord(this.chord);
+        }
+        apply_pitv(pitv) {
+            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+        }
+        get o() {
+            return this.orientation;
+        }
+        set o(value) {
+            this.orientation = value;
+        }
+        get m() {
+            return this.magnitude;
+        }
+        set m(value) {
+            this.magnitude = value;
         }
         get n() {
             return this.note;
@@ -131,40 +314,40 @@ For more complete documentation, see PLSYSTEM.md.
             this.degree = value;
         }
         get p() {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             return pitv.P;
         }
         set p(value) {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             pitv.P = value;
-            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+            this.apply_pitv(pitv);
         }
         get i() {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             return pitv.I;
         }
         set i(value) {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             pitv.I = value;
-            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+            this.apply_pitv(pitv);
         }
         get t() {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             return pitv.T;
         }
         set t(value) {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             pitv.T = value;
-            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+            this.apply_pitv(pitv);
         }
         get v() {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             return pitv.V;
         }
         set v(value) {
-            let pitv = this.pitv.fromChord(this.chord);
+            let pitv = this.pitv_from_chord();
             pitv.V = value;
-            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+            this.apply_pitv(pitv);
         }
     };
 
@@ -185,17 +368,13 @@ For more complete documentation, see PLSYSTEM.md.
      */
     PLSystem.Word = class {
         constructor(text) {
-            this.text = text;
-            this.name = /s*([^(]*)/.exec(text)[1].trim();
-            this.actual_parameter_expressions = [];
-            let opening_parenthesis = text.indexOf('(');
-            let ending_parenthesis = text.lastIndexOf(')');
-            if (opening_parenthesis != -1 && ending_parenthesis != -1) {
-                this.actual_parameter_expressions = text.substring(opening_parenthesis + 1, ending_parenthesis).split(/, /);
-            }
-
-            this.key = this.name + '(' + this.actual_parameter_expressions.length + ')';
+            this.text = text.trim();
             this.actual_parameter_values = [];
+            if (PLSystem.is_legacy_word_text(this.text)) {
+                PLSystem.parse_legacy_word(this, this.text);
+            } else {
+                PLSystem.parse_grammar_word(this, this.text);
+            }
             for (let i = 0; i < this.actual_parameter_expressions.length; i++) {
                 this.actual_parameter_values.push(null);
             }
@@ -209,6 +388,13 @@ For more complete documentation, see PLSYSTEM.md.
             let clone_ = new PLSystem.Word('');
             clone_.text = this.text;
             clone_.key = this.key;
+            clone_.name = this.name;
+            clone_.grammar = this.grammar;
+            clone_.kind = this.kind;
+            clone_.command_type = this.command_type;
+            clone_.object = this.object;
+            clone_.operator = this.operator;
+            clone_.builtin_name = this.builtin_name;
             clone_.actual_parameter_expressions = this.actual_parameter_expressions.slice();
             clone_.actual_parameter_values = this.actual_parameter_values.slice();
             return clone_;
@@ -353,13 +539,16 @@ For more complete documentation, see PLSYSTEM.md.
     PLSystem.PLSystem = class {
         constructor() {
             this.score = new CsoundAC.ChordScore();
+            this.chord_score = this.score;
             this.commands_for_words = {};
             this.formal_parameters_for_commands = {};
+            this.formal_parameters_for_words = {};
             this.axiom = [];
             this.rules_for_words = {};
-            /// this.chord_space_group = new ChordSpace.ChordSpaceGroup();
             this.pitv = new CsoundAC.PITV();
+            this.chord_space_group = this.pitv;
             this.turtle = new PLSystem.Turtle();
+            this.turtle.pitv = this.pitv;
             this.identity_command = function (lsystem, turtle_) {
                 return turtle_;
             };
@@ -604,16 +793,313 @@ For more complete documentation, see PLSYSTEM.md.
             });
             this.reset();
         }
+        formal_parameters_for(word_key) {
+            let formal_parameters = this.formal_parameters_for_commands[word_key];
+            if (typeof formal_parameters === "undefined") {
+                formal_parameters = this.formal_parameters_for_words[word_key];
+            }
+            return formal_parameters;
+        }
+        apply_arithmetic_scalar(target, operation, value, object_name) {
+            if (operation === '=') {
+                return PLSystem.round_if_discrete(object_name, value);
+            } else if (operation === '+') {
+                return PLSystem.round_if_discrete(object_name, target + value);
+            } else if (operation === '-') {
+                return PLSystem.round_if_discrete(object_name, target - value);
+            } else if (operation === '*') {
+                return PLSystem.round_if_discrete(object_name, target * value);
+            } else if (operation === '/') {
+                return PLSystem.round_if_discrete(object_name, target / value);
+            } else if (operation === '^') {
+                return PLSystem.round_if_discrete(object_name, Math.pow(target, value));
+            }
+            return target;
+        }
+        apply_arithmetic_array(target, operation, value, index, object_name) {
+            let result = target.slice();
+            if (typeof index === "number" && index >= 0 && index < result.length) {
+                result[index] = this.apply_arithmetic_scalar(result[index], operation, value, object_name);
+            } else {
+                for (let i = 0; i < result.length; i++) {
+                    result[i] = this.apply_arithmetic_scalar(result[i], operation, value, object_name);
+                }
+            }
+            return result;
+        }
+        apply_pitv_component(lsystem, turtle, component, operation, value) {
+            let pitv = lsystem.pitv.fromChord(turtle.chord);
+            pitv[component] = this.apply_arithmetic_scalar(pitv[component], operation, value, component.toLowerCase());
+            turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+            return turtle;
+        }
+        assign_note_fields(turtle, values, operation) {
+            let fields = [
+                ['setTime', 0],
+                ['setDuration', 1],
+                ['setStatus', 2],
+                ['setInstrument', 3],
+                ['setKey', 4],
+                ['setVelocity', 5],
+                ['setPan', 6]
+            ];
+            for (let i = 0; i < fields.length && i < values.length; i++) {
+                let setter = fields[i][0];
+                let magnitude_index = fields[i][1];
+                let scaled = values[i] * turtle.magnitude[magnitude_index];
+                if (operation === '=') {
+                    turtle.note[setter](scaled);
+                } else if (operation === '+') {
+                    let getter = setter.replace('set', 'get');
+                    turtle.note[setter](turtle.note[getter]() + scaled);
+                } else if (operation === '-') {
+                    let getter = setter.replace('set', 'get');
+                    turtle.note[setter](turtle.note[getter]() - scaled);
+                } else if (operation === '*') {
+                    let getter = setter.replace('set', 'get');
+                    turtle.note[setter](turtle.note[getter]() * scaled);
+                } else if (operation === '/') {
+                    let getter = setter.replace('set', 'get');
+                    turtle.note[setter](turtle.note[getter]() / scaled);
+                } else if (operation === '^') {
+                    let getter = setter.replace('set', 'get');
+                    turtle.note[setter](Math.pow(turtle.note[getter](), scaled));
+                }
+            }
+            return turtle;
+        }
+        interpret_grammar_arithmetic(word, turtle) {
+            let args = word.actual_parameter_values;
+            let object_name = word.object;
+            let operation = word.operator;
+            if (object_name === 'n') {
+                if (operation === '=' && args.length === 7) {
+                    return this.assign_note_fields(turtle, args, '=');
+                }
+                if (args.length >= 2) {
+                    let dimension = args[0];
+                    let value = args[1];
+                    if (operation === '=') {
+                        turtle.note[dimension] = value;
+                    } else if (operation === '+') {
+                        turtle.note[dimension] += value;
+                    } else if (operation === '-') {
+                        turtle.note[dimension] -= value;
+                    } else if (operation === '*') {
+                        turtle.note[dimension] *= value;
+                    } else if (operation === '/') {
+                        turtle.note[dimension] /= value;
+                    } else if (operation === '^') {
+                        turtle.note[dimension] = Math.pow(turtle.note[dimension], value);
+                    }
+                }
+                return turtle;
+            }
+            if (object_name === 'o') {
+                if (operation === '=' && args.length === 1) {
+                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    if (vector !== null) {
+                        turtle.orientation = vector;
+                    }
+                } else if (args.length >= 2) {
+                    turtle.orientation = this.apply_arithmetic_array(turtle.orientation, operation, args[1], args[0], object_name);
+                }
+                return turtle;
+            }
+            if (object_name === 'm') {
+                if (operation === '=' && args.length === 1) {
+                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    if (vector !== null) {
+                        turtle.magnitude = vector;
+                    }
+                } else if (args.length >= 2) {
+                    turtle.magnitude = this.apply_arithmetic_array(turtle.magnitude, operation, args[1], args[0], object_name);
+                }
+                return turtle;
+            }
+            if (object_name === 'c') {
+                if (operation === '=' && args.length === 1) {
+                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    if (vector !== null) {
+                        turtle.chord = PLSystem.chord_from_pitches(vector);
+                    }
+                } else if (args.length >= 2) {
+                    let index = args[0];
+                    let value = args[1];
+                    if (operation === '=') {
+                        turtle.chord.setPitch(index, value);
+                    } else {
+                        let current = turtle.chord.getPitch(index);
+                        turtle.chord.setPitch(index, this.apply_arithmetic_scalar(current, operation, value, object_name));
+                    }
+                }
+                return turtle;
+            }
+            if (object_name === 's') {
+                if (operation === '=' && args.length === 1) {
+                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    if (vector !== null) {
+                        turtle.scale = PLSystem.scale_from_pitches(vector);
+                    }
+                }
+                return turtle;
+            }
+            if (object_name === 'd') {
+                if (args.length >= 1) {
+                    let value = args[0];
+                    if (operation === '=') {
+                        turtle.degree = PLSystem.round_if_discrete('d', value);
+                    } else {
+                        turtle.degree = this.apply_arithmetic_scalar(turtle.degree, operation, value, 'd');
+                    }
+                }
+                return turtle;
+            }
+            if (object_name === 'p') {
+                return this.apply_pitv_component(this, turtle, 'P', operation, args[0]);
+            }
+            if (object_name === 'i') {
+                return this.apply_pitv_component(this, turtle, 'I', operation, args[0]);
+            }
+            if (object_name === 't') {
+                return this.apply_pitv_component(this, turtle, 'T', operation, args[0]);
+            }
+            if (object_name === 'v') {
+                return this.apply_pitv_component(this, turtle, 'V', operation, args[0]);
+            }
+            return turtle;
+        }
+        insert_harmony(turtle, chord) {
+            this.score.insertChord(turtle.note.getTime(), chord);
+            turtle.prior_chord = chord.clone();
+            return turtle;
+        }
+        interpret_grammar_builtin(word, turtle) {
+            let args = word.actual_parameter_values;
+            switch (word.builtin_name) {
+                case 'F': {
+                    let scaled_direction = numeric.mul(turtle.orientation, turtle.magnitude);
+                    turtle.note.data = numeric.add(turtle.note.data, scaled_direction);
+                    return turtle;
+                }
+                case 'R': {
+                    if (args.length >= 3) {
+                        let from_axis = args[0];
+                        let to_axis = args[1];
+                        let angle = args[2];
+                        let rotation = numeric.identity(turtle.orientation.length);
+                        rotation[from_axis][from_axis] = Math.cos(angle);
+                        rotation[from_axis][to_axis] = -Math.sin(angle);
+                        rotation[to_axis][from_axis] = Math.sin(angle);
+                        rotation[to_axis][to_axis] = Math.cos(angle);
+                        turtle.orientation = numeric.dotVM(turtle.orientation, rotation);
+                    }
+                    return turtle;
+                }
+                case 'Wn': {
+                    let note = turtle.note.clone();
+                    this.score.append_event(note);
+                    return turtle;
+                }
+                case 'Wc': {
+                    CsoundAC.insert(this.score, turtle.chord, turtle.note.getTime());
+                    turtle.prior_chord = turtle.chord.clone();
+                    return turtle;
+                }
+                case 'Wcd': {
+                    if (args.length > 0) {
+                        turtle.chord.setDuration(args[0]);
+                    }
+                    CsoundAC.insert(this.score, turtle.chord, turtle.note.getTime());
+                    turtle.prior_chord = turtle.chord.clone();
+                    return turtle;
+                }
+                case 'Hc': {
+                    return this.insert_harmony(turtle, turtle.chord.epcs());
+                }
+                case 'Hcv': {
+                    return this.insert_harmony(turtle, turtle.chord.clone());
+                }
+                case 'Hcs': {
+                    let harmony = CsoundAC.voiceleadingClosestRange(turtle.prior_chord, turtle.chord, this.pitv.range, true);
+                    return this.insert_harmony(turtle, harmony);
+                }
+                case 'Hd': {
+                    let voices = turtle.chord.voices();
+                    let harmony = turtle.scale.chord(turtle.degree, voices);
+                    return this.insert_harmony(turtle, harmony);
+                }
+                case 'M': {
+                    if (args.length > 0) {
+                        let voices = args.length > 1 ? args[1] : turtle.chord.voices();
+                        let modulations = turtle.scale.modulations_for_voices(turtle.chord, voices);
+                        if (modulations.length > 0) {
+                            let index = args[0];
+                            while (index < 0) {
+                                index += modulations.length;
+                            }
+                            while (index >= modulations.length) {
+                                index -= modulations.length;
+                            }
+                            turtle.scale = modulations[index];
+                        }
+                    }
+                    return turtle;
+                }
+                case 'S': {
+                    if (args.length >= 2) {
+                        let voices = args.length > 2 ? args[2] : -1;
+                        turtle.chord = turtle.scale.secondary_to_degree(turtle.chord, args[0], args[1], voices);
+                    }
+                    return turtle;
+                }
+                case 'K': {
+                    turtle.chord = turtle.chord.K();
+                    return turtle;
+                }
+                case 'Q': {
+                    let steps = args.length > 0 ? args[0] : 1;
+                    turtle.chord = turtle.chord.Q(steps, turtle.scale);
+                    return turtle;
+                }
+                case '[': {
+                    this.turtle_stack.push(turtle.clone());
+                    return turtle;
+                }
+                case ']': {
+                    if (this.turtle_stack.length > 0) {
+                        turtle = this.turtle_stack.pop();
+                        turtle.pitv = this.pitv;
+                    }
+                    return turtle;
+                }
+                default:
+                    return turtle;
+            }
+        }
+        interpret_grammar_command(word, turtle) {
+            turtle.pitv = this.pitv;
+            if (word.command_type === 'arithmetic') {
+                return this.interpret_grammar_arithmetic(word, turtle);
+            }
+            if (word.command_type === 'builtin') {
+                return this.interpret_grammar_builtin(word, turtle);
+            }
+            return turtle;
+        }
         reset(text) {
             this.iteration = 0;
             this.turtle_stack = [];
+            this.stack = this.turtle_stack;
             this.score = new window.CsoundAC.ChordScore();
+            this.chord_score = this.score;
+            this.turtle.pitv = this.pitv;
         }
         evaluate_actual_parameter_expressions(parent_word, child_word) {
             try {
                 let prologue = 'let iteration = ' + this.iteration + ';';
                 if (parent_word !== null) {
-                    let formal_parameters = this.formal_parameters_for_commands[child_word.key];
+                    let formal_parameters = this.formal_parameters_for(child_word.key);
                     if (typeof formal_parameters !== "undefined") {
                         for (let i = 0; i < formal_parameters.length; i++) {
                             let formal_parameter_name = formal_parameters[i];
@@ -639,7 +1125,7 @@ For more complete documentation, see PLSYSTEM.md.
         evaluate_condition_expression(parent_word, condition) {
             try {
                 let prologue = 'let iteration = ' + this.iteration + ';';
-                let formal_parameters = this.formal_parameters_for_commands[parent_word.key];
+                let formal_parameters = this.formal_parameters_for(parent_word.key);
                 if (typeof formal_parameters !== "undefined") {
                     for (let i = 0; i < formal_parameters.length; i++) {
                         let formal_parameter_name = formal_parameters[i];
@@ -670,6 +1156,7 @@ For more complete documentation, see PLSYSTEM.md.
         }
         set_turtle(turtle_) {
             this.turtle = turtle_;
+            this.turtle.pitv = this.pitv;
         }
         add_command(word_text, command) {
             let word = new PLSystem.Word(word_text);
@@ -679,6 +1166,7 @@ For more complete documentation, see PLSYSTEM.md.
         }
         add_rule(word_, condition, production) {
             let word = new PLSystem.Word(word_);
+            this.formal_parameters_for_words[word.key] = word.actual_parameter_expressions.slice();
             let rule = this.rule_for_word(word);
             if (typeof rule === "undefined") {
                 rule = new PLSystem.Rule(word, condition, production);
@@ -695,6 +1183,10 @@ For more complete documentation, see PLSYSTEM.md.
             return command;
         }
         invoke_command(word, turtle) {
+            turtle.pitv = this.pitv;
+            if (word.grammar === 'plsystem' && word.kind === 'command') {
+                return this.interpret_grammar_command(word, turtle);
+            }
             let actual_parameter_values = word.actual_parameter_values.slice();
             let command = this.command_for_word(word);
             actual_parameter_values.splice(0, 0, this, turtle);
@@ -717,10 +1209,12 @@ For more complete documentation, see PLSYSTEM.md.
                     initial_production = current_production.slice();
                 }
                 let working_turtle = this.turtle.clone();
+                working_turtle.pitv = this.pitv;
                 for (wordIndex = 0; wordIndex < current_production.length; wordIndex++) {
                     let word = current_production[wordIndex];
                     working_turtle = this.invoke_command(word, working_turtle);
                 }
+                this.turtle = working_turtle;
             } catch (ex) {
                 console.log(ex);
                 throw ex;
