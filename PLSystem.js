@@ -1097,6 +1097,8 @@ For more complete documentation, see PLSYSTEM.md.
                                 index -= modulations.length;
                             }
                             turtle.scale = modulations[index];
+                        } else {
+                            console.warn('No modulation is possible for the current scale and chord.');
                         }
                     }
                     return turtle;
@@ -1104,18 +1106,23 @@ For more complete documentation, see PLSYSTEM.md.
                 case 'S': {
                     if (args.length >= 2) {
                         let voices = args.length > 2 ? args[2] : -1;
-                        turtle.chord = turtle.scale.secondary_to_degree(turtle.chord, args[0], args[1], voices);
+                        let temporary_chord = turtle.scale.secondary_to_degree(turtle.chord, args[0], args[1], voices);
+                        if (temporary_chord == turtle.chord) {
+                            console.warn('No secondary function to degree mutation is possible for the current scale and chord.');
+                        } else {
+                            turtle.chord = temporary_chord;
+                        }   
+                        return this.insert_harmony(turtle, turtle.chord);
                     }
                     return turtle;
                 }
                 case 'K': {
                     turtle.chord = turtle.chord.K();
-                    return this.insert_harmony(turtle, turtle.chord);
+                    return turtle;
                 }
                 case 'T': {
                     if (args.length > 0) {
                         turtle.chord = turtle.chord.T(args[0]);
-                        return this.insert_harmony(turtle, turtle.chord);
                     }
                     return turtle;
                 }
