@@ -13,20 +13,22 @@ symbols to carry parameters. A symbol may appear either as a bare identifier
 item, such as `A;`, or as a parameterized symbol, such as `A x, y;`.
 Rules may refer to these parameters in their conditions and successor 
 expressions. During rewriting, parameter expressions are evaluated and 
-passed forward into newly generated symbols or terminal commands.
+passed forward into newly generated items.
 
 In this system, a word is a sequence of semicolon-terminated items. Each item 
-is either a symbol or a terminal command. Some symbols are nonterminal and are 
-rewritten by rules; terminal commands are copied through rewriting and later 
-interpreted as turtle operations. Rewriting produces a final word, and 
-interpretation of that word generates the score.
+is either a symbol or a command. Any item may be rewritten by a rule whose 
+predecessor matches its shape and argument count. During rewriting, parameter 
+expressions are evaluated and passed forward into successor items. Items with 
+no matching rule are copied to the next iteration. After the final iteration, 
+each remaining item is interpreted as a turtle command. Rewriting produces a 
+final word, and interpretation of that word generates the score.
 
 The formal grammar:
 ```
 Identifier     ::= JavaScriptIdentifier ;
 Expression     ::= JavaScriptExpression ;
 Rule           ::= Predecessor [Condition] "->" Word ;
-Predecessor    ::= Identifier [ParameterList] ;
+Predecessor    ::= Item ;
 Condition      ::= ":" Expression ;
 Word           ::= {Item ";"} ;
 Item           ::= Symbol | Command ;
@@ -43,6 +45,7 @@ Object         ::= "n" | "o" | "m" | "c" | "s" | "d"
 Operator       ::= "=" | "+" | "-" | "*" | "/" | "^";
 BuiltinCommand ::= "R"   [ArgumentList]
                  | "F"
+                 | "T"   [ArgumentList]
                  | "Wn"
                  | "Wc"
                  | "Wcd"
@@ -117,12 +120,18 @@ conditional expression, and a successor word.
 `PLSystem.add_rule("predecessor", [ "condition", ] "successor_word");`
 
 Item names are JavaScript identifiers or reserved command names. A word is a 
-sequence of semicolon-terminated items. Each item is either a symbol to be 
-rewritten, or a command to be interpreted. A command is either an arithmetic 
-operation on a turtle object, or a reserved built-in command. Arguments, if 
-any, follow the object/operator or command name and are separated by commas. 
-The number and meaning of the parameters are defined by the object and 
-operation. 
+sequence of semicolon-terminated items. Each item is either rewritten by a 
+matching rule or interpreted as a turtle command after the final iteration. 
+A command is either an arithmetic operation on a turtle object, or a reserved 
+built-in command. Arguments, if any, follow the object/operator or command 
+name and are separated by commas. The number and meaning of the parameters 
+are defined by the object and operation.
+
+Rule predecessors may be any item: a symbol such as `A x, y`, an arithmetic 
+command such as `n = t, d, s, c, k, v, x`, or a built-in command such as 
+`Wn` or `Q steps`. The predecessor's argument count and shape must match the 
+item being rewritten; identifier arguments in the rule predecessor are formal 
+parameters available in conditions and successor expressions.
 
 ## Objects
 
@@ -148,7 +157,8 @@ is discrete, the result of the command is rounded to the nearest integer.
 
   - Assign: 
     - `n = dimension, value;`
-    - `n = t, d, s, c, k, v, x;`
+    - `n = t, d, s, c, k, v, x;` assigns note fields and writes a note event 
+      (equivalent to legacy `Note(t, d, s, c, k, v, x)`).
     - `c = {pitch};`
     - `s = {pitch};`
     - `d = degree;`
@@ -172,6 +182,8 @@ is discrete, the result of the command is rounded to the nearest integer.
     - `v - x;`
   - Multiply (means `*=`): 
     - `n * dimension, x;`
+    - `m * dimension, x;` sets `Turtle.magnitude[dimension]` to `x` (equivalent to 
+      legacy `Scale(dimension, x)`).
     - `d * steps;` 
     - `p * x;`
     - `i * x;`
@@ -229,8 +241,12 @@ is discrete, the result of the command is rounded to the nearest integer.
     - `S function, target_degree;`
     - `S function, target_degree, voices;`
   - Perform the `K` operation of the Generalized Contextual Group, i.e. 
-    contextual inversion, upon `Turtle.chord`.
+    contextual inversion, upon `Turtle.chord`, and insert the result into the 
+    harmony at the turtle time.
     - `K;`
+  - Transpose `Turtle.chord` by semitones and insert into the harmony at the 
+    turtle time (legacy `T(n)` equivalent).
+    - `T interval;`
   - Perform the `Q(steps)` operation of the Generalized Contextual Group, i.e. 
     contextual transposition, upon `Turtle.chord`, with an optional value 
     of `steps` semitones.

@@ -53,11 +53,28 @@ For more complete documentation, see PLSYSTEM.md.
 
     const GRAMMAR_DISCRETE_OBJECTS = new Set(['d', 'p', 'i', 't', 'v']);
     const GRAMMAR_BUILTIN_NAMES = [
-        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hc', 'Hd', 'R', 'Q', 'M', 'S', 'K', 'F', '[', ']'
+        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hc', 'Hd', 'R', 'Q', 'M', 'S', 'K', 'F', 'T', '[', ']'
     ];
+
+    PLSystem.is_identifier_expression = function (text) {
+        return /^[A-Za-z_$][\w$]*$/.test(text.trim());
+    };
+
+    PLSystem.formal_parameters_from_item = function (word) {
+        return word.actual_parameter_expressions.filter(expr => PLSystem.is_identifier_expression(expr));
+    };
 
     PLSystem.is_legacy_word_text = function (text) {
         return /^[A-Za-z_$][\w$]*\s*\(/.test(text.trim());
+    };
+
+    PLSystem.formal_parameter_index = function (word, formal_name) {
+        let index = word.actual_parameter_expressions.indexOf(formal_name);
+        if (index < 0) {
+            let parent_formals = PLSystem.formal_parameters_from_item(word);
+            index = parent_formals.indexOf(formal_name);
+        }
+        return index;
     };
 
     PLSystem.split_expressions = function (text) {
@@ -800,6 +817,32 @@ For more complete documentation, see PLSYSTEM.md.
             }
             return formal_parameters;
         }
+        bind_parent_formals_to_prologue(parent_word, prologue) {
+            let formal_parameters = this.formal_parameters_for(parent_word.key);
+            if (typeof formal_parameters !== "undefined") {
+                for (let i = 0; i < formal_parameters.length; i++) {
+                    let formal_parameter_name = formal_parameters[i];
+                    let parent_actual_parameter_value = parent_word.actual_parameter_values[i];
+                    if (parent_actual_parameter_value === null) {
+                        parent_actual_parameter_value = PLSystem.evaluate_with_minimal_scope(
+                            parent_word.actual_parameter_expressions[i]);
+                    }
+                    prologue += 'let ' + formal_parameter_name + ' = ' + parent_actual_parameter_value + ';';
+                }
+            }
+            return prologue;
+        }
+        register_formal_parameters_for_item(word) {
+            let formals = PLSystem.formal_parameters_from_item(word);
+            if (formals.length > 0) {
+                let existing = this.formal_parameters_for_words[word.key];
+                // Rule LHS patterns (all-identifier formals) must not be replaced by
+                // production RHS lines where only some slots are bare identifiers (e.g. `s`).
+                if (typeof existing === "undefined" || formals.length > existing.length) {
+                    this.formal_parameters_for_words[word.key] = formals;
+                }
+            }
+        }
         apply_arithmetic_scalar(target, operation, value, object_name) {
             if (operation === '=') {
                 return PLSystem.round_if_discrete(object_name, value);
@@ -874,7 +917,13 @@ For more complete documentation, see PLSYSTEM.md.
             let operation = word.operator;
             if (object_name === 'n') {
                 if (operation === '=' && args.length === 7) {
-                    return this.assign_note_fields(turtle, args, '=');
+                    turtle = this.assign_note_fields(turtle, args, '=');
+                    let note = turtle.note.clone();
+                    if (turtle.chord !== null) {
+                        note.chord = turtle.chord.clone();
+                    }
+                    this.score.append_event(note);
+                    return turtle;
                 }
                 if (args.length >= 2) {
                     let dimension = args[0];
@@ -913,7 +962,13 @@ For more complete documentation, see PLSYSTEM.md.
                         turtle.magnitude = vector;
                     }
                 } else if (args.length >= 2) {
-                    turtle.magnitude = this.apply_arithmetic_array(turtle.magnitude, operation, args[1], args[0], object_name);
+                    let dimension = args[0];
+                    let value = args[1];
+                    if (operation === '*') {
+                        turtle.magnitude[dimension] = value;
+                    } else {
+                        turtle.magnitude = this.apply_arithmetic_array(turtle.magnitude, operation, value, dimension, object_name);
+                    }
                 }
                 return turtle;
             }
@@ -1055,6 +1110,13 @@ For more complete documentation, see PLSYSTEM.md.
                 }
                 case 'K': {
                     turtle.chord = turtle.chord.K();
+                    return this.insert_harmony(turtle, turtle.chord);
+                }
+                case 'T': {
+                    if (args.length > 0) {
+                        turtle.chord = turtle.chord.T(args[0]);
+                        return this.insert_harmony(turtle, turtle.chord);
+                    }
                     return turtle;
                 }
                 case 'Q': {
@@ -1099,19 +1161,7 @@ For more complete documentation, see PLSYSTEM.md.
             try {
                 let prologue = 'let iteration = ' + this.iteration + ';';
                 if (parent_word !== null) {
-                    let formal_parameters = this.formal_parameters_for(child_word.key);
-                    if (typeof formal_parameters !== "undefined") {
-                        for (let i = 0; i < formal_parameters.length; i++) {
-                            let formal_parameter_name = formal_parameters[i];
-                            let parent_actual_parameter_value = parent_word.actual_parameter_values[i];
-                            if (parent_actual_parameter_value === null) {
-                                let parent_word_parameter_expression = parent_word.actual_parameter_expressions[i];
-                                parent_actual_parameter_value = PLSystem.evaluate_with_minimal_scope(parent_word_parameter_expression);
-                            }
-                            let value_assignment = 'let ' + formal_parameter_name + ' = ' + parent_actual_parameter_value + ';';
-                            prologue += value_assignment;
-                        }
-                    }
+                    prologue = this.bind_parent_formals_to_prologue(parent_word, prologue);
                 }
                 for (let parameterIndex = 0; parameterIndex < child_word.actual_parameter_expressions.length; parameterIndex++) {
                     let child_word_actual_parameter_expression = child_word.actual_parameter_expressions[parameterIndex];
@@ -1125,19 +1175,7 @@ For more complete documentation, see PLSYSTEM.md.
         evaluate_condition_expression(parent_word, condition) {
             try {
                 let prologue = 'let iteration = ' + this.iteration + ';';
-                let formal_parameters = this.formal_parameters_for(parent_word.key);
-                if (typeof formal_parameters !== "undefined") {
-                    for (let i = 0; i < formal_parameters.length; i++) {
-                        let formal_parameter_name = formal_parameters[i];
-                        let parent_actual_parameter_value = parent_word.actual_parameter_values[i];
-                        if (parent_actual_parameter_value === null) {
-                            let parent_word_actual_parameter_expression = parent_word.actual_parameter_expressions[i];
-                            parent_actual_parameter_value = PLSystem.evaluate_with_minimal_scope(parent_word_actual_parameter_expression);
-                        }
-                        let value_assignment = 'let ' + formal_parameter_name + ' = ' + parent_actual_parameter_value + ';';
-                        prologue += value_assignment;
-                    }
-                }
+                prologue = this.bind_parent_formals_to_prologue(parent_word, prologue);
                 return PLSystem.evaluate_with_minimal_scope(prologue + condition);
             } catch (err) {
                 console.log(err.stack);
@@ -1166,7 +1204,7 @@ For more complete documentation, see PLSYSTEM.md.
         }
         add_rule(word_, condition, production) {
             let word = new PLSystem.Word(word_);
-            this.formal_parameters_for_words[word.key] = word.actual_parameter_expressions.slice();
+            this.register_formal_parameters_for_item(word);
             let rule = this.rule_for_word(word);
             if (typeof rule === "undefined") {
                 rule = new PLSystem.Rule(word, condition, production);
