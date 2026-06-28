@@ -1024,7 +1024,10 @@ For more complete documentation, see PLSYSTEM.md.
             }
             return turtle;
         }
-        insert_harmony(turtle, chord) {
+        insert_harmony(turtle, chord, command) {
+            if (command === 'Hc') {
+                chord = chord.epcs();
+            }
             this.score.insertChord(turtle.note.getTime(), chord);
             turtle.prior_chord = chord.clone();
             return turtle;
@@ -1070,19 +1073,19 @@ For more complete documentation, see PLSYSTEM.md.
                     return turtle;
                 }
                 case 'Hc': {
-                    return this.insert_harmony(turtle, turtle.chord.epcs());
+                    return this.insert_harmony(turtle, turtle.chord, 'Hc');
                 }
                 case 'Hcv': {
-                    return this.insert_harmony(turtle, turtle.chord.clone());
+                    return this.insert_harmony(turtle, turtle.chord.clone(), 'Hcv');
                 }
                 case 'Hcs': {
                     let harmony = CsoundAC.voiceleadingClosestRange(turtle.prior_chord, turtle.chord, this.pitv.range, true);
-                    return this.insert_harmony(turtle, harmony);
+                    return this.insert_harmony(turtle, harmony, 'Hcs');
                 }
                 case 'Hd': {
-                    let voices = turtle.chord.voices();
+                    let voices = args.length > 1 ? args[1] : turtle.chord.voices();
                     let harmony = turtle.scale.chord(turtle.degree, voices);
-                    return this.insert_harmony(turtle, harmony);
+                    return this.insert_harmony(turtle, harmony, 'Hd');
                 }
                 case 'M': {
                     if (args.length > 0) {
