@@ -214,12 +214,14 @@ is discrete, the result of the command is rounded to the nearest integer.
     - `Wcd;`
   - Write the pitch-classes of `Turtle.chord`, `Turtle.chord` as actually 
     voiced, the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
-    from `Turtle.prior_chord`, or the pitch-classes at `Turtle.degree` of 
-    `Turtle.scale`, into the _harmony_ at the turtle time:
+    from currently sounding notes in the score, or similarly for the 
+    pitch-classes at `Turtle.degree` of `Turtle.scale`, into the _harmony_ at 
+    the turtle time:
     - `Hc;`
     - `Hcv;`
     - `Hcs;`   
     - `Hd;`
+    - `Hds;`
   - Modulate `Turtle.scale` using `Turtle.chord` as the pivot. The system 
     finds all scales in which `Turtle.chord` occurs at some degree, and 
     selects the `i`th scale from that computed list of possible modulations. 
