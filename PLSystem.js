@@ -1024,9 +1024,13 @@ For more complete documentation, see PLSYSTEM.md.
             }
             return turtle;
         }
-        insert_harmony(turtle, chord, command) {
+        insert_harmony(turtle, chord, command, voices) {
             if (command === 'Hc') {
                 chord = chord.epcs();
+            }
+            if (typeof voices === 'number' && voices > 0 && chord.voices() > voices) {
+                chord = chord.clone();
+                chord.resize(voices);
             }
             this.score.insertChord(turtle.note.getTime(), chord);
             turtle.prior_chord = chord.clone();
@@ -1073,7 +1077,8 @@ For more complete documentation, see PLSYSTEM.md.
                     return turtle;
                 }
                 case 'Hc': {
-                    return this.insert_harmony(turtle, turtle.chord, 'Hc');
+                    let voices = args.length > 0 ? args[0] : turtle.chord.voices();
+                    return this.insert_harmony(turtle, turtle.chord, 'Hc', voices);
                 }
                 case 'Hcv': {
                     return this.insert_harmony(turtle, turtle.chord.clone(), 'Hcv');
