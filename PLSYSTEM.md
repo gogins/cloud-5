@@ -247,14 +247,17 @@ nearest integer.
     effect.
     - `S function, target_degree;`
     - `S function, target_degree, voices;`
+  - Transpose `Turtle.chord` by `interval` semitones.
+    - `T interval;`
+  - Invert `Turtle.chord` by reflecting it in the inversion flat of the 
+    cyclic region of `OP` to which it belongs.
+    - `I`
+  - Perform the `Q` operation of the Generalized Contextual Group, i.e. 
+    contextual transposition by `interval` steps, upon `Turtle.chord`.
+    - `Q interval;`
   - Perform the `K` operation of the Generalized Contextual Group, i.e. 
     contextual inversion, upon `Turtle.chord`.
     - `K;`
-  - Transpose `Turtle.chord` by `interval` semitones.
-    - `T interval;`
-  - Perform the `Q` operation of the Generalized Contextual Group, i.e. 
-    contextual transposition by `n` steps, upon `Turtle.chord`.
-    - `Q n;`
   - Push the current turtle state onto `PLSystem.stack`.
     - `[;`
   - Pop the current turtle state from `PLSystem.stack`.
