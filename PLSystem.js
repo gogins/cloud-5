@@ -53,7 +53,7 @@ For more complete documentation, see PLSYSTEM.md.
 
     const GRAMMAR_DISCRETE_OBJECTS = new Set(['d', 'p', 'i', 't', 'v']);
     const GRAMMAR_BUILTIN_NAMES = [
-        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hds', 'Hd', 'Hc', 'R', 'Q', 'M', 'S', 'K', 'F', 'T', '[', ']'
+        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hds', 'Hd', 'Hc', 'R', 'Q', 'M', 'S', 'K', 'I', 'F', 'T', '[', ']'
     ];
 
     PLSystem.harmony_mode = function (name) {
@@ -1151,8 +1151,11 @@ For more complete documentation, see PLSYSTEM.md.
                         } else {
                             turtle.chord = temporary_chord;
                         }
-                        return this.insert_harmony(turtle, turtle.chord, 'Hc', voices);
                     }
+                    return turtle;
+                }
+                case 'I': {
+                    turtle.chord = turtle.chord.eI();
                     return turtle;
                 }
                 case 'K': {
