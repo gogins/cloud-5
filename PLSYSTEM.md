@@ -4,24 +4,21 @@ A musical Lindenmayer system is a formal rewriting system whose symbols may
 include turtle commands for generating a musical score. Starting from an 
 initial axiom, the system repeatedly replaces symbols with successor sequences 
 of symbols according to production rules. After a specified number of 
-iterations, the finao sequence is interpreted from left to right as 
+iterations, the final sequence of symbols is interpreted from left to right as 
 instructions for moving a musical turtle through a compositional space and 
 writing notes into a score.
 
 A _parametric_ musical Lindenmayer system extends this model by allowing 
 symbols to carry parameters. A symbol may appear either as a bare identifier 
 item, such as `A;`, or as a parameterized symbol, such as `A x, y;`.
-Rules may refer to these parameters in their conditions and successor 
-expressions. During rewriting, parameter expressions are evaluated and 
-passed forward into newly generated items.
 
 In this system, a word is a sequence of semicolon-terminated items. Each item 
 is either a symbol or a command. Any item may be rewritten by a rule whose 
 predecessor matches its shape and argument count. During rewriting, parameter 
 expressions are evaluated and passed forward into successor items. Items with 
 no matching rule are copied to the next iteration. After the final iteration, 
-each remaining item is interpreted as a turtle command. Rewriting produces a 
-final word, and interpretation of that word generates the score.
+each remaining item is interpreted as a turtle command and evaluating them 
+from left to right generates the score.
 
 The formal grammar:
 ```
@@ -46,6 +43,7 @@ Operator       ::= "=" | "+" | "-" | "*" | "/" | "^";
 BuiltinCommand ::= "R"   [ArgumentList]
                  | "F"
                  | "T"   [ArgumentList]
+                 | "I"
                  | "Wn"
                  | "Wc"
                  | "Wcd"
@@ -54,8 +52,8 @@ BuiltinCommand ::= "R"   [ArgumentList]
                  | "Hcs"
                  | "Hd"
                  | "Hds"
-                 | "K"
                  | "Q"   [ArgumentList]
+                 | "K"
                  | "M"   [ArgumentList]
                  | "S"   [ArgumentList]
                  | "["
@@ -86,10 +84,7 @@ several ways of working with harmony:
 `PLSystem.chord_score` is a `CsoundAC.Score` also containing a timeline of 
 `CsoundAC.Chord` instances, i.e. a "harmony", that can be applied to harmonize 
 the notes of the score. Flags added to the Chords in the timeline indicate how 
-notes are to be quantized: to the nearest pitch-class of the chord, to the 
-nearest actual pitch of the chord which may have been octavewise revoiced, or 
-as the smoothest voice-leading from the currently sounding nots of the score 
-to the pitch-classes of `Turtle.chord`.
+notes are to be conformed to those chords.
 
 `PLSystem.chord_space_group` is a group in which all equally tempered Chords 
 within a given range of pitches can be represented by the orthogonal 
@@ -250,7 +245,7 @@ nearest integer.
   - Transpose `Turtle.chord` by `interval` semitones.
     - `T interval;`
   - Invert `Turtle.chord` by reflecting it in the inversion flat of the 
-    cyclic region of `OP` to which it belongs.
+    cyclic region of `OP` to which `Turtle.chord` belongs.
     - `I`
   - Perform the `Q` operation of the Generalized Contextual Group, i.e. 
     contextual transposition by `interval` steps, upon `Turtle.chord`.
