@@ -3,10 +3,10 @@
 A musical Lindenmayer system is a formal rewriting system whose symbols may 
 include turtle commands for generating a musical score. Starting from an 
 initial axiom, the system repeatedly replaces symbols with successor sequences 
-according to production rules. After a specified number of iterations, the 
-resulting sequence is interpreted from left to right as instructions for 
-moving a musical turtle through a compositional space and writing notes into 
-a score.
+of symbols according to production rules. After a specified number of 
+iterations, the finao sequence is interpreted from left to right as 
+instructions for moving a musical turtle through a compositional space and 
+writing notes into a score.
 
 A _parametric_ musical Lindenmayer system extends this model by allowing 
 symbols to carry parameters. A symbol may appear either as a bare identifier 
@@ -53,6 +53,7 @@ BuiltinCommand ::= "R"   [ArgumentList]
                  | "Hcv"
                  | "Hcs"
                  | "Hd"
+                 | "Hds"
                  | "K"
                  | "Q"   [ArgumentList]
                  | "M"   [ArgumentList]
@@ -65,13 +66,13 @@ Every item in a word is terminated by `;`. Parentheses are not used for
 parameters or arguments; commas separate parameters or arguments within an 
 item.
 
-`PLSystem` is a class that implements this grammar: `{turtle, commands, axiom, 
+The `PLSystem` class implements this grammar: `{turtle, commands, axiom, 
 rules, stack, chord_space_group, chord_score}`.
 
 The `PLSystem.turtle` consists of: `{note, orientation, magnitude, chord, 
 scale, degree}`. This odd structure represents my attempt to combine notes as 
-points in a vector space, with implied harmonies; in fact, the `PLSystem` 
-defines several ways of working with harmony:
+points in a vector space, with implied harmonies; in fact, `PLSystem` defines 
+several ways of working with harmony:
 
 - Matrix/vector arithmetic on `Turtle.note` and `Turtle.chord` using 
   `Turtle.orientation` and `Turtle.magnitude`.
@@ -80,23 +81,24 @@ defines several ways of working with harmony:
 - Actions of `Turtle.chord_space_group` on `Turtle.chord`.
 - Functional harmony operations on `Turtle.chord` using `Turtle.scale` 
   and `Turtle.degree`, up to and including modulations and secondary 
-  dominants.
+  functions.
 
 `PLSystem.chord_score` is a `CsoundAC.Score` also containing a timeline of 
 `CsoundAC.Chord` instances, i.e. a "harmony", that can be applied to harmonize 
-the notes of the score. Flags may be added to the Chords in the timeline to 
-indicate how notes are to be quantized: to the nearest pitch-class of the 
-chord, to the nearest actual pitch of the chord which may have been octavewise 
-revoiced, or as the smoothest voice-leading from the prior chord to the 
-pitch-classes of `Turtle.chord`.
+the notes of the score. Flags added to the Chords in the timeline indicate how 
+notes are to be quantized: to the nearest pitch-class of the chord, to the 
+nearest actual pitch of the chord which may have been octavewise revoiced, or 
+as the smoothest voice-leading from the currently sounding nots of the score 
+to the pitch-classes of `Turtle.chord`.
 
 `PLSystem.chord_space_group` is a group in which all equally tempered Chords 
 within a given range of pitches can be represented by the orthogonal 
 subgroups:
 
  - `P`: cyclic index over the system's ordered prime forms.
- - `I`: inversion bit, cyclic of order 2.
- - `T`: transposition class, cyclic of order 12.
+ - `I`: cyclic index of inversion in [0, 1].
+ - `T`: cyclic index of pitch-class transposition by `g` in 
+        [0..((12 / g) - g)], where 'g' is the generator of transposition.
  - `V`: cyclic index over bounded octavewise voicings.
 
  Mathematically, the `chord_space_group` coordinates are denoted `P`, `I`, 
@@ -108,11 +110,12 @@ element of the turtle can not only be factored into `P`, `I`, `T`, and `V`
 with respect to the chord space group of the system, but also derived from a 
 new `P`, `I`, `T`, and `V`. Hence, operations upon `P`, `I`, `T`, or `V` 
 involve factoring the chord into `P`, `I`, `T`, and `V`, performing the 
-operation, and then re-composing the chord from the new `P`, `I`, `T`, and `V`. 
+operation, and then re-composing the chord from the new `P`, `I`, `T`, and 
+`V`.
 
 Voice-leading means producing a new chord of the specified pitch-class set as 
-the smoothest voice-leading from the prior chord, omitting parallel fifths, 
-thus ignoring the `V` element of `{P, I, T, V}`.
+the smoothest voice-leading from the currently sounding notes in the score, 
+omitting parallel fifths, thus ignoring the `V` element of `{P, I, T, V}`.
 
 A `PLSystem.Rule` is created by giving a predecessor pattern, an optional 
 conditional expression, and a successor word.
@@ -127,9 +130,9 @@ built-in command. Arguments, if any, follow the object/operator or command
 name and are separated by commas. The number and meaning of the parameters 
 are defined by the object and operation.
 
-Rule predecessors may be any item: a symbol such as `A x, y`, an arithmetic 
-command such as `n = t, d, s, c, k, v, x`, or a built-in command such as 
-`Wn` or `Q steps`. The predecessor's argument count and shape must match the 
+Rule predecessors may be any item: any built-in command such as `Wn` or 
+`Q steps`, any arithmetic command such as `n * 1, 2`, or any other identifier 
+such as `A`. The predecessor's argument count and shape must match the 
 item being rewritten; identifier arguments in the rule predecessor are formal 
 parameters available in conditions and successor expressions.
 
@@ -152,13 +155,13 @@ parameters available in conditions and successor expressions.
 
 ## Commands 
 
-Turtle commands are either arithmetic operators or upper-case. If the object 
-is discrete, the result of the command is rounded to the nearest integer.
+Turtle commands are either arithmetic operators or begin with an upper-case 
+letter. If the object is discrete, the result of the command is rounded to the 
+nearest integer.
 
   - Assign: 
     - `n = dimension, value;`
-    - `n = t, d, s, c, k, v, x;` assigns note fields and writes a note event 
-      (equivalent to legacy `Note(t, d, s, c, k, v, x)`).
+    - `n = t, d, s, c, k, v, x;` assigns note fields and writes a note event.
     - `c = {pitch};`
     - `s = {pitch};`
     - `d = degree;`
@@ -212,22 +215,24 @@ is discrete, the result of the command is rounded to the nearest integer.
     - `Wn;`
     - `Wc;`
     - `Wcd;`
-  - Write the pitch-classes of `Turtle.chord`, `Turtle.chord` as actually 
-    voiced, the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
-    from currently sounding notes in the score, or similarly for the 
-    pitch-classes at `Turtle.degree` of `Turtle.scale`, into the _harmony_ at 
-    the turtle time:
+  - Write the pitch-classes of `Turtle.chord`; `Turtle.chord` as actually 
+    voiced; the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
+    from currently sounding notes in the score; the pitch-classes of the 
+    chord at `Turtle.degree` of `Turtle.scale`; or the pitch-classes of the 
+    chord at `Turtle.degree` of `Turtle.scale` at the smoothest voice-leading 
+    from currently sounding notes in the score, into the _harmony_ at the 
+    turtle time:
     - `Hc;`
     - `Hcv;`
     - `Hcs;`   
     - `Hd;`
     - `Hds;`
-  - Modulate `Turtle.scale` using `Turtle.chord` as the pivot. The system 
-    finds all scales in which `Turtle.chord` occurs at some degree, and 
-    selects the `i`th scale from that computed list of possible modulations. 
-    The modulation occurs only if such scales exist. The number of voices to 
-    consider for matching the pivot chord may optionally be specified. If no 
-    such modulation can be found, the command has no effect.
+  - Modulate fron `Turtle.scale` to a new `Turtle.scale` using `Turtle.chord` 
+    as the pivot. The system finds all scales in which `Turtle.chord` occurs 
+    at some degree, and selects the `i`th scale from that list of possible 
+    modulations. The number of voices to consider for matching the pivot chord 
+    may optionally be given. If the specified modulation cannot be found, the 
+    command has no effect.
     - `M index;`
     - `M index, voices;`
   - Mutate `Turtle.chord` to have a secondary function relative to a target 
@@ -243,16 +248,13 @@ is discrete, the result of the command is rounded to the nearest integer.
     - `S function, target_degree;`
     - `S function, target_degree, voices;`
   - Perform the `K` operation of the Generalized Contextual Group, i.e. 
-    contextual inversion, upon `Turtle.chord`, and insert the result into the 
-    harmony at the turtle time.
+    contextual inversion, upon `Turtle.chord`.
     - `K;`
-  - Transpose `Turtle.chord` by semitones and insert into the harmony at the 
-    turtle time (legacy `T(n)` equivalent).
+  - Transpose `Turtle.chord` by `interval` semitones.
     - `T interval;`
-  - Perform the `Q(steps)` operation of the Generalized Contextual Group, i.e. 
-    contextual transposition, upon `Turtle.chord`, with an optional value 
-    of `steps` semitones.
-    - `Q steps;`
+  - Perform the `Q` operation of the Generalized Contextual Group, i.e. 
+    contextual transposition by `n` steps, upon `Turtle.chord`.
+    - `Q n;`
   - Push the current turtle state onto `PLSystem.stack`.
     - `[;`
   - Pop the current turtle state from `PLSystem.stack`.
