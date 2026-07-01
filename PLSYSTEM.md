@@ -227,7 +227,8 @@ nearest integer.
     - `Hcs;`
     - `Hcs voices;` gathers notes still playing at the harmony time, then fills
       to \c voices with the most recently ended notes from the prior segment
-      (scanning backward through the score).
+      (scanning backward through the score), voice-leads to the target chord,
+      and conforms pitch-classes while preserving each note's octave register.
     - `Hd;`
     - `Hds;`
   - Modulate fron `Turtle.scale` to a new `Turtle.scale` using `Turtle.chord` 
