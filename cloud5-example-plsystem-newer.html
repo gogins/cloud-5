@@ -1926,13 +1926,13 @@
             let lsys = new PLSystem.PLSystem();
             lsys.pitv.initialize(3, 72, 1, false);
             lsys.set_axiom('Hc 3; n = 1, 1.5, 144, 1, 1, 1, 0; Wn;');
-            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration<3)', `
+            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration<5)', `
                   n = t/2.00+0.00, d/2.00+0, s, c/2+0.000, k/2.00+(t % 6), v/2.00+0.02, x/2+0; Wn;
             T -4; Hc 3; n = t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/-2.00+0.00, v/2.00+0.00, x/2+0; Wn;
             T 5; Hc 3;
             K; Hc 3; n = t/2.10+1.00, d/-2.00+0, s, c/2+1.100, k/2.00+1.90, v/2.00+3.00, x/2+0; Wn;
             `);
-            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration==3)', `
+            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration==5)', `
                   m * 0, 2.0;
                   m * 4, 2.0;
     T -4; Hc 3; n = t/1.50-0.50, d/1.50+0, s, c/2+0.000, k/2.00-0.10, v/2.00+0.00, x/2+0; Wn;
@@ -1942,12 +1942,12 @@
                   m * 0, 0.5;
                   m * 4, 0.5;
             `);
-            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration>3 && (t % 8 < 1))', `
+            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration>5 && (t % 8 < 1))', `
                   n = t/2.20+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.02, v/2.00+0.02, x/2+0; Wn;
                   T -4; Hc 3; n = t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.03, v/2.00+0.00, x/2+0; Wn;
                   K; Hc 3; n = t/2.10+1.00, d/2.00+0, s, c/2+1.150, k/2.00+0.90, v/2.00+0.00, x/2+0; Wn;
             `);
-            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration>3 && (t % 8 >= 1))', `
+            lsys.add_rule('n = t, d, s, c, k, v, x;', '(iteration>5 && (t % 8 >= 1))', `
                   n = t/2.20+0.00, d/2.00+0, s, c/2+0.000, k/2.00+0.02, v/2.00+0.02, x/2+0; Wn;
                   n = t/2.30+0.10, d/2.00+0, s, c/2+0.500, k/2.00+1.10, v/2.00+2.00, x/2+0; Wn;
                   K; Hc 3; n = t/2.10+1.00, d/2.00+0, s, c/2+0.000, k/2.00+0.03, v/2.00+0.00, x/2+0; Wn;
@@ -2146,7 +2146,7 @@
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
             "gk_Duration_factor": 1.887587340731607,
-            "gk_Iterations": 6,
+            "gk_Iterations": 7,
             "gk_MasterOutput_level": 7,
             "gk_ReverbSC_wet": 0.5,
             "gk_ReverbSC_feedback": 0.8707357172215372,
