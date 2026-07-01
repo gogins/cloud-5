@@ -76,6 +76,37 @@ For more complete documentation, see PLSYSTEM.md.
         return /^[A-Za-z_$][\w$]*$/.test(text.trim());
     };
 
+    /**
+     * Removes leading/trailing whitespace and a single trailing item terminator (;).
+     * Every item in the grammar is written with a terminating semicolon; parsing
+     * strips it so argument lists are not polluted (e.g. "x;" -> "x").
+     */
+    PLSystem.normalize_item_text = function (text) {
+        return String(text).trim().replace(/;\s*$/, '');
+    };
+
+    PLSystem.require_item_terminator = function (text, role) {
+        const trimmed = String(text).trim();
+        if (!trimmed.endsWith(';')) {
+            throw new Error("PLSystem: " + role + " must end with ';': " + trimmed);
+        }
+    };
+
+    PLSystem.require_production_terminator = function (text, role) {
+        PLSystem.require_item_terminator(text, role);
+    };
+
+    PLSystem.split_production = function (text) {
+        const words = [];
+        for (const part of String(text).split(';')) {
+            const word = part.trim();
+            if (word.length > 0) {
+                words.push(word);
+            }
+        }
+        return words;
+    };
+
     PLSystem.formal_parameters_from_item = function (word) {
         return word.actual_parameter_expressions.filter(expr => PLSystem.is_identifier_expression(expr));
     };
@@ -401,7 +432,7 @@ For more complete documentation, see PLSYSTEM.md.
      */
     PLSystem.Word = class {
         constructor(text) {
-            this.text = text.trim();
+            this.text = PLSystem.normalize_item_text(text);
             this.actual_parameter_values = [];
             if (PLSystem.is_legacy_word_text(this.text)) {
                 PLSystem.parse_legacy_word(this, this.text);
@@ -476,15 +507,11 @@ For more complete documentation, see PLSYSTEM.md.
             this.add_condition(condition_, production_);
         }
         add_condition(condition_, production_) {
+            PLSystem.require_production_terminator(production_, 'rule successor');
             let production = [];
-            let words = production_.split(';');
+            let words = PLSystem.split_production(production_);
             for (let i = 0; i < words.length; i++) {
-                let word = words[i];
-                if (typeof word !== "undefined" && word !== null) {
-                    if (word.length > 0) {
-                        production.push(new PLSystem.Word(word));
-                    }
-                }
+                production.push(new PLSystem.Word(words[i]));
             }
             this.productions_for_conditions[condition_] = production;
         }
@@ -500,8 +527,8 @@ For more complete documentation, see PLSYSTEM.md.
         try {
             let result = eval?.(code);
             return result;
-        } catch (x) {
-            console.log(x);
+        } catch (err) {
+            throw err;
         }
     }
 
@@ -933,13 +960,7 @@ For more complete documentation, see PLSYSTEM.md.
             let operation = word.operator;
             if (object_name === 'n') {
                 if (operation === '=' && args.length === 7) {
-                    turtle = this.assign_note_fields(turtle, args, '=');
-                    let note = turtle.note.clone();
-                    if (turtle.chord !== null) {
-                        note.chord = turtle.chord.clone();
-                    }
-                    this.score.append_event(note);
-                    return turtle;
+                    return this.assign_note_fields(turtle, args, '=');
                 }
                 if (args.length >= 2) {
                     let dimension = args[0];
@@ -1089,6 +1110,9 @@ For more complete documentation, see PLSYSTEM.md.
                 }
                 case 'Wn': {
                     let note = turtle.note.clone();
+                    if (turtle.chord !== null) {
+                        note.chord = turtle.chord.clone();
+                    }
                     this.score.append_event(note);
                     return turtle;
                 }
@@ -1110,10 +1134,12 @@ For more complete documentation, see PLSYSTEM.md.
                     return this.insert_harmony(turtle, turtle.chord, 'Hc', voices);
                 }
                 case 'Hcv': {
-                    return this.insert_harmony(turtle, turtle.chord, 'Hcv');
+                    let voices = args.length > 0 ? args[0] : turtle.chord.voices();
+                    return this.insert_harmony(turtle, turtle.chord, 'Hcv', voices);
                 }
                 case 'Hcs': {
-                    return this.insert_harmony(turtle, turtle.chord, 'Hcs');
+                    let voices = args.length > 0 ? args[0] : turtle.chord.voices();
+                    return this.insert_harmony(turtle, turtle.chord, 'Hcs', voices);
                 }
                 case 'Hd': {
                     let voices = args.length > 0 ? args[0] : turtle.chord.voices();
@@ -1232,13 +1258,11 @@ For more complete documentation, see PLSYSTEM.md.
             }
         }
         set_axiom(text) {
+            PLSystem.require_production_terminator(text, 'axiom');
             this.axiom.length = 0;
-            let words = text.split(';');
+            let words = PLSystem.split_production(text);
             for (let i = 0; i < words.length; i++) {
-                let word = words[i];
-                if (word.length > 0) {
-                    this.axiom.push(new PLSystem.Word(word));
-                }
+                this.axiom.push(new PLSystem.Word(words[i]));
             }
         }
         set_turtle(turtle_) {
@@ -1252,6 +1276,7 @@ For more complete documentation, see PLSYSTEM.md.
             this.formal_parameters_for_commands[word.key] = formal_parameters;
         }
         add_rule(word_, condition, production) {
+            PLSystem.require_item_terminator(word_, 'rule predecessor');
             let word = new PLSystem.Word(word_);
             this.register_formal_parameters_for_item(word);
             let rule = this.rule_for_word(word);

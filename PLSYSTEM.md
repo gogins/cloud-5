@@ -115,7 +115,11 @@ omitting parallel fifths, thus ignoring the `V` element of `{P, I, T, V}`.
 A `PLSystem.Rule` is created by giving a predecessor pattern, an optional 
 conditional expression, and a successor word.
 
-`PLSystem.add_rule("predecessor", [ "condition", ] "successor_word");`
+`PLSystem.add_rule("predecessor;", [ "condition", ] "successor;");`
+
+Each item, rule predecessor, axiom, and successor production must end with `;`.
+The parser strips that terminator before reading arguments, so formal parameters
+such as `x` in `n = t, d, s, c, k, v, x;` are recognized correctly.
 
 Item names are JavaScript identifiers or reserved command names. A word is a 
 sequence of semicolon-terminated items. Each item is either rewritten by a 
@@ -156,7 +160,7 @@ nearest integer.
 
   - Assign: 
     - `n = dimension, value;`
-    - `n = t, d, s, c, k, v, x;` assigns note fields and writes a note event.
+    - `n = t, d, s, c, k, v, x;` assigns note fields on `Turtle.note` (use `Wn;` to write the note to the score).
     - `c = {pitch};`
     - `s = {pitch};`
     - `d = degree;`
@@ -218,8 +222,12 @@ nearest integer.
     from currently sounding notes in the score, into the _harmony_ at the 
     turtle time:
     - `Hc;`
+    - `Hc voices;`
     - `Hcv;`
-    - `Hcs;`   
+    - `Hcs;`
+    - `Hcs voices;` gathers notes still playing at the harmony time, then fills
+      to \c voices with the most recently ended notes from the prior segment
+      (scanning backward through the score).
     - `Hd;`
     - `Hds;`
   - Modulate fron `Turtle.scale` to a new `Turtle.scale` using `Turtle.chord` 
