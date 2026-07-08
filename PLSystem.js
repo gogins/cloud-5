@@ -164,7 +164,10 @@ For more complete documentation, see PLSYSTEM.md.
     };
 
     PLSystem.parse_vector_literal = function (text) {
-        text = text.trim();
+        if (text === null || typeof text === 'undefined') {
+            return null;
+        }
+        text = String(text).trim();
         if (text.charAt(0) !== '{') {
             return null;
         }
@@ -983,7 +986,7 @@ For more complete documentation, see PLSYSTEM.md.
             }
             if (object_name === 'o') {
                 if (operation === '=' && args.length === 1) {
-                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    let vector = PLSystem.parse_vector_literal(word.actual_parameter_expressions[0]);
                     if (vector !== null) {
                         turtle.orientation = vector;
                     }
@@ -994,7 +997,7 @@ For more complete documentation, see PLSYSTEM.md.
             }
             if (object_name === 'm') {
                 if (operation === '=' && args.length === 1) {
-                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    let vector = PLSystem.parse_vector_literal(word.actual_parameter_expressions[0]);
                     if (vector !== null) {
                         turtle.magnitude = vector;
                     }
@@ -1011,7 +1014,7 @@ For more complete documentation, see PLSYSTEM.md.
             }
             if (object_name === 'c') {
                 if (operation === '=' && args.length === 1) {
-                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    let vector = PLSystem.parse_vector_literal(word.actual_parameter_expressions[0]);
                     if (vector !== null) {
                         turtle.chord = PLSystem.chord_from_pitches(vector);
                     }
@@ -1029,7 +1032,7 @@ For more complete documentation, see PLSYSTEM.md.
             }
             if (object_name === 's') {
                 if (operation === '=' && args.length === 1) {
-                    let vector = PLSystem.parse_vector_literal(args[0]);
+                    let vector = PLSystem.parse_vector_literal(word.actual_parameter_expressions[0]);
                     if (vector !== null) {
                         turtle.scale = PLSystem.scale_from_pitches(vector);
                     }
@@ -1357,9 +1360,9 @@ For more complete documentation, see PLSYSTEM.md.
          * Conforms the pitch of each event in this,
          * to the closest pitch-class in its chord.
          */
-        conformToChords() {
+        conformToChords(tie_overlaps = true, octave_equivalence = true) {
             this.score.sort();
-            this.score.conformToChords(true, true);
+            this.score.conformToChords(tie_overlaps, octave_equivalence);
             
             //     if (event.status == 144 && event.chord !== null) {
             //         ChordSpace.conformToChord(event, event.chord, false);
