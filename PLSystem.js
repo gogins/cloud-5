@@ -53,8 +53,78 @@ For more complete documentation, see PLSYSTEM.md.
 
     const GRAMMAR_DISCRETE_OBJECTS = new Set(['d', 'p', 'i', 't', 'v']);
     const GRAMMAR_BUILTIN_NAMES = [
-        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hds', 'Hd', 'Hc', 'R', 'Q', 'M', 'S', 'K', 'I', 'F', 'T', '[', ']'
+        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hds', 'Hd', 'Hs', 'Hc', 'R', 'Q', 'M', 'S', 'seed', 'K', 'I', 'F', 'T', '[', ']'
     ];
+
+    /**
+     * mt19937_64 PRNG matching ChordLindenmayer's std::mt19937_64 twister.
+     */
+    PLSystem.Mt19937_64 = class {
+        constructor(seed) {
+            this.mt = new BigUint64Array(312);
+            this.mti = 312;
+            if (typeof seed !== 'undefined') {
+                this.seed(seed);
+            }
+        }
+        seed(seed) {
+            this.mt[0] = BigInt(Math.trunc(seed)) & 0xFFFFFFFFFFFFFFFFn;
+            for (let i = 1; i < 312; i++) {
+                let x = this.mt[i - 1] ^ (this.mt[i - 1] >> 62n);
+                this.mt[i] = (0x6364136223846793005n * x + BigInt(i - 1)) & 0xFFFFFFFFFFFFFFFFn;
+            }
+            this.mti = 312;
+        }
+        twist() {
+            const MATRIX_A = 0xB5026F5AA96619E9n;
+            const UM = 0xFFFFFFFF80000000n;
+            const LM = 0x7FFFFFFFn;
+            for (let i = 0; i < 312; i++) {
+                let x = (this.mt[i] & UM) | (this.mt[(i + 1) % 312] & LM);
+                let xA = x >> 1n;
+                if (x & 1n) {
+                    xA ^= MATRIX_A;
+                }
+                this.mt[i] = this.mt[(i + 156) % 312] ^ xA;
+            }
+            this.mti = 0;
+        }
+        next_uint64() {
+            if (this.mti >= 312) {
+                this.twist();
+            }
+            let y = this.mt[this.mti++];
+            y ^= (y >> 29n) & 0x5555555555555555n;
+            y ^= (y << 17n) & 0x71D67FFFEDA60000n;
+            y ^= (y << 37n) & 0xFFF7EEE000000000n;
+            y ^= (y >> 43n);
+            return y;
+        }
+        /** uniform_real_distribution [lo, hi) using 53 bits (C++ double canonical). */
+        uniform(lo, hi) {
+            const u = Number(this.next_uint64() >> 11n) / 9007199254740992.0;
+            return u * (Number(hi) - Number(lo)) + Number(lo);
+        }
+    };
+
+    PLSystem._rng = null;
+
+    /** ChordLindenmayer (seed P value): reseed the score generator PRNG. */
+    PLSystem.seed_random = function (seed) {
+        PLSystem._rng = new PLSystem.Mt19937_64(seed);
+    };
+
+    /** [lo, hi) uniform; uses seeded PRNG when seed_random was called. */
+    PLSystem.random_uniform = function (lo, hi) {
+        if (PLSystem._rng === null) {
+            return Number(lo) + Math.random() * (Number(hi) - Number(lo));
+        }
+        return PLSystem._rng.uniform(lo, hi);
+    };
+
+    PLSystem.random = function () {
+        return PLSystem.random_uniform(0, 1);
+    };
 
     PLSystem.harmony_mode = function (name) {
         const modes = CsoundAC.HarmonyConformMode;
@@ -628,7 +698,8 @@ For more complete documentation, see PLSYSTEM.md.
                 return turtle;
             });
             this.add_command('Steps(s)', function (lsystem, turtle, s) {
-                orientation_ = numeric.mul(turtle.orientation, s);
+                // Use a local variable; strict-mode JS will reject implicit globals.
+                let orientation_ = numeric.mul(turtle.orientation, s);
                 orientation_ = numeric.mul(orientation_, turtle.magnitude);
                 turtle.note.data = numeric.add(turtle.note.data, orientation_);
                 return turtle;
@@ -1147,6 +1218,19 @@ For more complete documentation, see PLSYSTEM.md.
                 case 'Hd': {
                     let voices = args.length > 0 ? args[0] : turtle.chord.voices();
                     return this.insert_harmony(turtle, null, 'Hd', voices);
+                }
+                case 'Hs': {
+                    // ChordLindenmayer (Sc P): insert the current scale on the harmony timeline.
+                    this.score.insertChord(turtle.note.getTime(), turtle.scale);
+                    turtle.prior_chord = turtle.scale.clone();
+                    return turtle;
+                }
+                case 'seed': {
+                    // ChordLindenmayer (seed P value).
+                    if (args.length > 0) {
+                        PLSystem.seed_random(args[0]);
+                    }
+                    return turtle;
                 }
                 case 'Hds': {
                     let voices = args.length > 0 ? args[0] : turtle.chord.voices();

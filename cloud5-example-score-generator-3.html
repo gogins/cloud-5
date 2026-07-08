@@ -2063,6 +2063,22 @@
                 turtle.chord = turtle.scale.chord(degree, voices);
                 return turtle;
             });
+            // (M Sc voices choice) in ChordLindenmayer: modulate scale using the chord
+            // at the current scale degree, NOT turtle.chord directly (PLSystem's built-in M).
+            lsys.add_command('MSc(int voices, int choice)', function (lsys_, turtle, voices, choice) {
+                const scaleDegree = turtle.scale.degree(turtle.chord);
+                if (scaleDegree > 0) {
+                    const degreeChord = turtle.scale.chord(scaleDegree, voices);
+                    const modulations = turtle.scale.modulations_for_voices(degreeChord, voices);
+                    if (modulations.length > 0) {
+                        let index = choice;
+                        while (index < 0) index += modulations.length;
+                        while (index >= modulations.length) index -= modulations.length;
+                        turtle.scale = modulations[index];
+                    }
+                }
+                return turtle;
+            });
             lsys.add_command('AddVoice()', function (lsys_, turtle) {
                 // (++) C in ChordLindenmayer adds one voice to the current chord.
                 turtle.chord = chordlAddVoice(CsoundAC, turtle.chord);
@@ -2179,8 +2195,8 @@
                 lsys.add_rule('A;', 'true',
                     'B; Fwd(0.125); UniV(1, 111); Wcr(); Nk(-1); Nv(2); d - 1; ' +
                     '[; StMul(0, 0.75); Nk(-0.5); Fwd(1); A; ]; ' +
-                    'M 1, 3; NxRand(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 0, 3; ScP(); Wnr(); A; ' +
+                    'MSc(3, 1); NxRand(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
+                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); MSc(3, 0); ScP(); Wnr(); A; ' +
                     'Nk(2); Nt(5); Wnr(); A;'
                 );
 
