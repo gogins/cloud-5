@@ -2096,21 +2096,6 @@
                 turtle.step[dim] /= val;
                 return turtle;
             });
-            // ChordLindenmayer rotates the orientation as a column vector:
-            //   turtle.orientation = rotation * turtle.orientation
-            // PLSystem stores orientation as a row vector and the built-in 'R'
-            // multiplies as orientation * rotation. To match ChordL, we apply
-            // orientation * rotation^T instead.
-            lsys.add_command('RC(int from_axis, int to_axis, num angle)', function (lsys_, turtle, from_axis, to_axis, angle) {
-                const rotation = numeric.identity(turtle.orientation.length);
-                rotation[from_axis][from_axis] = Math.cos(angle);
-                rotation[from_axis][to_axis] = -Math.sin(angle);
-                rotation[to_axis][from_axis] = Math.sin(angle);
-                rotation[to_axis][to_axis] = Math.cos(angle);
-                const rotationT = numeric.transpose(rotation);
-                turtle.orientation = numeric.dotVM(turtle.orientation, rotationT);
-                return turtle;
-            });
             lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
                 turtle.voicing = PLSystem.random_uniform(lo, hi);
                 return turtle;
@@ -2197,7 +2182,10 @@
                 lsys.add_rule('A;', 'true',
                     'B; Fwd(0.125); UniV(1, 111); Revoicing(); WriteChord(); Nk(-1); Nv(2); d - 1; ' +
                     '[; StMul(0, 0.75); Nk(-0.5); Fwd(1); A; ]; ' +
-                    'MSc(3, 1); NxRand(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
+                    // ChordL rotates orientation as a column vector; PLSystem's
+                    // builtin R uses a row vector, so negate the angles:
+                    // (R O t k .041) -> R 0, 4, -0.041 and (R O t i -.325) -> R 0, 3, 0.325.
+                    'MSc(3, 1); NxRand(); Nt(1); R 0, 4, -0.041; Fwd(1.5); R 0, 3, 0.325; Nv(-2); ' +
                     'B; d + 4; Cd(4); d + 3; NiRand(1, 5); MSc(3, 0); Hs; WriteNote(); A; ' +
                     'Nk(2); Nt(5); WriteNote(); A;'
                 );
