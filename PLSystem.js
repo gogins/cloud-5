@@ -1184,9 +1184,6 @@ For more complete documentation, see PLSYSTEM.md.
                 }
                 case 'Wn': {
                     let note = turtle.note.clone();
-                    if (turtle.chord !== null) {
-                        note.chord = turtle.chord.clone();
-                    }
                     this.score.append_event(note);
                     return turtle;
                 }
