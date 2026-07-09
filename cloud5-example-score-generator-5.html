@@ -2028,6 +2028,7 @@
         }
         function chordlPrepareTurtle(turtle) {
             chordlEnsureState(turtle);
+            PLSystem.ensure_turtle_degree(turtle);
             return turtle;
         }
         function chordlEnsureState(turtle) {
@@ -2048,27 +2049,51 @@
             lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
                 // (C Sd voices) in ChordLindenmayer sets the chord from the current
                 // scale degree (wrapping degrees into the valid 1..voices range).
-                const scaleVoices = turtle.scale.voices();
-                let degree = turtle.degree;
-                while (degree < 1) degree += scaleVoices;
-                while (degree > scaleVoices) degree -= scaleVoices;
-                turtle.degree = degree;
-                turtle.chord = turtle.scale.chord(degree, voices);
+                const degree = PLSystem.ensure_turtle_degree(turtle);
+                turtle.chord = PLSystem.chord_at_scale_degree(turtle.scale, degree, voices);
                 return turtle;
             });
             // (M Sc voices choice) in ChordLindenmayer: modulate scale using the chord
             // at the current scale degree, NOT turtle.chord directly (PLSystem's built-in M).
             lsys.add_command('MSc(int voices, int choice)', function (lsys_, turtle, voices, choice) {
-                const scaleDegree = turtle.scale.degree(turtle.chord);
-                if (scaleDegree > 0) {
-                    const degreeChord = turtle.scale.chord(scaleDegree, voices);
-                    const modulations = turtle.scale.modulations_for_voices(degreeChord, voices);
-                    if (modulations.length > 0) {
+                const fromScaleText = PLSystem.describe_scale(turtle.scale);
+                let scaleDegree = PLSystem.scale_degree_for_chord(turtle.scale, turtle.chord);
+                if (scaleDegree <= 0) {
+                    scaleDegree = PLSystem.ensure_turtle_degree(turtle);
+                }
+                let succeeded = false;
+                let details = '';
+                let scaleText = null;
+
+                if (scaleDegree <= 0) {
+                    details = `chord not in scale, stored=${turtle.degree}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
+                } else {
+                    const degreeChord = PLSystem.chord_at_scale_degree(turtle.scale, scaleDegree, voices);
+                    const modulations = PLSystem.modulations_for_voices(
+                        turtle.scale, degreeChord, voices);
+                    const modCount = PLSystem.vector_size(modulations);
+                    if (modCount === 0) {
+                        details = `no modulations, degree=${scaleDegree}, degreeChord=${PLSystem.describe_chord(degreeChord)}, voices=${voices}, choice=${choice}`;
+                    } else {
                         let index = choice;
-                        while (index < 0) index += modulations.length;
-                        while (index >= modulations.length) index -= modulations.length;
-                        turtle.scale = modulations[index];
+                        while (index < 0) index += modCount;
+                        while (index >= modCount) index -= modCount;
+                        const newScale = PLSystem.vector_get(modulations, index);
+                        if (newScale == null) {
+                            details = `missing modulation at index ${index}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
+                        } else {
+                            scaleText = `${fromScaleText} -> ${PLSystem.describe_scale(newScale)}`;
+                            turtle.scale = newScale;
+                            succeeded = true;
+                            details = `degree=${scaleDegree}, choice=${choice}->${index}, voices=${voices}`;
+                        }
                     }
+                }
+
+                try {
+                    PLSystem.log_modulation('MSc', succeeded, turtle, details, scaleText);
+                } catch (logErr) {
+                    PLSystem.log_to_csound(`MSc: log error (${logErr.message || logErr})`);
                 }
                 return turtle;
             });
@@ -2121,19 +2146,24 @@
                 turtle.n.setInstrument(PLSystem.random_uniform(lo, hi));
                 return turtle;
             });
-            // (W C) revoicing only — pitches on turtle.chord; WriteChord() inserts.
+            // (W C) revoicing only. In ChordLindenmayer the octavewise revoicing is a
+            // LOCAL Chord used only for writing; turtle.chord is NOT mutated (otherwise it
+            // becomes an octave-stacked single pitch class and scale.degree() returns -1).
+            // Stash the revoiced chord in a separate field for WriteChord() to consume.
             lsys.add_command('Revoicing()', function (lsys_, turtle) {
                 chordlEnsureState(turtle);
-                turtle.chord = CsoundAC.octavewiseRevoicing(
+                turtle.voiced_chord = CsoundAC.octavewiseRevoicing(
                     turtle.chord, Math.floor(turtle.voicing), Math.floor(turtle.rangeSize));
                 return turtle;
             });
             // (W C) insert only — clone turtle.note per voice (matches ChordLindenmayer).
+            // Writes from the revoiced chord if present, else the canonical turtle.chord.
             lsys.add_command('WriteChord()', function (lsys_, turtle) {
                 chordlEnsureState(turtle);
-                for (let i = 0; i < turtle.chord.voices(); i++) {
+                const chord = turtle.voiced_chord || turtle.chord;
+                for (let i = 0; i < chord.voices(); i++) {
                     const event = turtle.n.clone();
-                    event.setKey(turtle.chord.getPitch(i));
+                    event.setKey(chord.getPitch(i));
                     lsys_.score.append_event(event);
                 }
                 return turtle;
@@ -2190,9 +2220,11 @@
                     'Hs; B; [; StDiv(0, 2); StDiv(1, 2); d + 3; UniV(1, 101); Revoicing(); WriteChord(); A; ];'
                 );
 
-                let initialChord = PLSystem.chord_from_pitches([0, 4, 7]);
-                let initialScale = PLSystem.scale_from_pitches([0, 2, 4, 5, 7, 9, 11]);
+                // Avoid new Scale("C major") — wasm chord-name init can OOB-crash.
+                let initialScale = PLSystem.c_major_scale();
+                let initialChord = PLSystem.chord_at_scale_degree(initialScale, 1, 3);
                 let turtle = chordlPrepareTurtle(new PLSystem.Turtle(new CsoundAC.Event(), initialChord, initialScale));
+                turtle.degree = 1;
                 turtle.pitv = lsys.pitv;
                 lsys.set_turtle(turtle);
 

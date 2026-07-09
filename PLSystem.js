@@ -126,6 +126,17 @@ For more complete documentation, see PLSYSTEM.md.
         return PLSystem.random_uniform(0, 1);
     };
 
+    /** Route messages to the Csound log overlay and the developer console. */
+    PLSystem.log_to_csound = function (message) {
+        const text = typeof message === 'string' ? message : String(message);
+        const line = text.endsWith('\n') ? text : text + '\n';
+        console.info(line.trimEnd());
+        const piece = globalThis.cloud5_piece;
+        if (piece && typeof piece.log === 'function') {
+            piece.log(line);
+        }
+    };
+
     PLSystem.harmony_mode = function (name) {
         const modes = CsoundAC.HarmonyConformMode;
         if (modes && typeof modes[name] !== 'undefined') {
@@ -285,6 +296,213 @@ For more complete documentation, see PLSYSTEM.md.
             scale.setPitch(i, pitches[i]);
         }
         return scale;
+    };
+
+    /** C-major pitch classes without named-scale lookup (wasm name DB can crash). */
+    PLSystem.C_MAJOR_PITCHES = [0, 2, 4, 5, 7, 9, 11];
+
+    PLSystem.HARMONIC_MINOR_PITCHES = [0, 2, 3, 5, 7, 8, 11];
+
+    PLSystem.c_major_scale = function () {
+        return PLSystem.scale_from_pitches(PLSystem.C_MAJOR_PITCHES);
+    };
+
+    PLSystem.scale_from_template = function (template, tonic) {
+        return PLSystem.scale_from_pitches(template.map(function (p) { return p + tonic; }));
+    };
+
+    PLSystem.scales_equal = function (a, b) {
+        if (a == null || b == null || a.voices() !== b.voices()) {
+            return false;
+        }
+        for (let i = 0; i < a.voices(); i++) {
+            if (a.getPitch(i) !== b.getPitch(i)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    /**
+     * Modulations for a chord (csound::Scale::modulations_for_voices) without the
+     * wasm chord-name database. Enumerates major and harmonic-minor tonics.
+     */
+    PLSystem.modulations_for_voices = function (currentScale, chord, voices, interval = 3) {
+        const currentDegree = PLSystem.scale_degree_for_chord(currentScale, chord, interval);
+        if (currentDegree <= 0) {
+            return [];
+        }
+        const degreeChord = PLSystem.chord_at_scale_degree(
+            currentScale, currentDegree, voices, interval);
+        const results = [];
+        const templates = [
+            PLSystem.C_MAJOR_PITCHES,
+            PLSystem.HARMONIC_MINOR_PITCHES,
+        ];
+        for (let tonic = 0; tonic < 12; tonic++) {
+            for (let t = 0; t < templates.length; t++) {
+                const candidate = PLSystem.scale_from_template(templates[t], tonic);
+                if (PLSystem.scale_degree_for_chord(candidate, degreeChord, interval) > 0) {
+                    let duplicate = false;
+                    for (let r = 0; r < results.length; r++) {
+                        if (PLSystem.scales_equal(results[r], candidate)) {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (!duplicate) {
+                        results.push(candidate);
+                    }
+                }
+            }
+        }
+        return results;
+    };
+
+    /**
+     * Chord at a scale degree (csound::chord). Prefer the free function over
+     * scale.chord() — embind can mis-bind the inherited Scale::chord method.
+     */
+    PLSystem.chord_at_scale_degree = function (scale, scaleDegree, voices, interval = 3) {
+        if (typeof CsoundAC.chord === 'function') {
+            return CsoundAC.chord(scale, scaleDegree, voices, interval);
+        }
+        let scaleIndex = scaleDegree - 1;
+        const scaleInterval = interval - 1;
+        const OCTAVE = 12;
+        const result = new CsoundAC.Chord();
+        result.resize(voices);
+        let octave = 0;
+        for (let chordVoice = 0; chordVoice < voices; chordVoice++) {
+            while (scaleIndex >= scale.voices()) {
+                scaleIndex -= scale.voices();
+                octave += OCTAVE;
+            }
+            result.setPitch(chordVoice, scale.getPitch(scaleIndex) + octave);
+            scaleIndex += scaleInterval;
+        }
+        return result;
+    };
+
+    /**
+     * Scale degree of a chord (csound::Scale::degree). Always pass interval
+     * explicitly — embind does not apply the C++ default interval = 3.
+     */
+    PLSystem.scale_degree_for_chord = function (scale, chord, interval = 3) {
+        if (scale == null || chord == null) {
+            return -1;
+        }
+        return scale.degree(chord, interval);
+    };
+
+    /** Wrap a scale degree into 1..scale.voices() (ChordLindenmayer equivalentDegree). */
+    PLSystem.equivalent_degree = function (scale, degree) {
+        const voices = scale.voices();
+        let wrapped = Math.round(degree);
+        while (wrapped < 1) {
+            wrapped += voices;
+        }
+        while (wrapped > voices) {
+            wrapped -= voices;
+        }
+        return wrapped;
+    };
+
+    /** Ensure turtle.degree is a finite wrapped scale degree (default 1). */
+    PLSystem.ensure_turtle_degree = function (turtle) {
+        if (typeof turtle.degree !== 'number' || !Number.isFinite(turtle.degree)) {
+            turtle.degree = 1;
+        }
+        turtle.degree = PLSystem.equivalent_degree(turtle.scale, turtle.degree);
+        return turtle.degree;
+    };
+
+    /** Element from an embind std::vector wrapper or a plain JS array. */
+    PLSystem.vector_get = function (vector, index) {
+        if (vector == null) {
+            return undefined;
+        }
+        if (typeof vector.get === 'function') {
+            return vector.get(index);
+        }
+        return vector[index];
+    };
+
+    PLSystem.vector_size = function (vector) {
+        if (vector == null) {
+            return 0;
+        }
+        if (typeof vector.size === 'function') {
+            return vector.size();
+        }
+        return vector.length;
+    };
+
+    PLSystem.describe_pitches = function (chord) {
+        const voices = chord.voices();
+        const pitches = [];
+        for (let i = 0; i < voices; i++) {
+            pitches.push(chord.getPitch(i));
+        }
+        return `{${pitches.join(',')}}`;
+    };
+
+    PLSystem.describe_chord = function (chord) {
+        if (chord == null) {
+            return '(no chord)';
+        }
+        try {
+            return PLSystem.describe_pitches(chord);
+        } catch (err) {
+            return '(chord)';
+        }
+    };
+
+    PLSystem.describe_scale = function (scale) {
+        if (scale == null) {
+            return '(no scale)';
+        }
+        try {
+            let label = '';
+            try {
+                if (typeof scale.getTypeName === 'function') {
+                    label = scale.getTypeName();
+                } else if (typeof scale.name === 'function') {
+                    label = scale.name();
+                }
+            } catch (err) {
+                /* ignore */
+            }
+            const pitches = PLSystem.describe_pitches(scale);
+            return label ? `${label} ${pitches}` : pitches;
+        } catch (err) {
+            return '(scale)';
+        }
+    };
+
+  /**
+   * Log a modulation attempt to the Csound message overlay.
+   * @param {string} command Command name, e.g. 'M' or 'MSc'.
+   * @param {boolean} succeeded Whether modulation changed the scale.
+   * @param {object} turtle Current turtle (time, scale, chord).
+   * @param {string} [details] Extra context (degree, choice, voices, reason).
+   * @param {string} [scaleText] Preformatted scale text (e.g. from->to on success).
+   */
+    PLSystem.log_modulation = function (command, succeeded, turtle, details, scaleText) {
+        try {
+            const time = turtle.note.getTime();
+            const chord = PLSystem.describe_chord(turtle.chord);
+            const scale = scaleText || PLSystem.describe_scale(turtle.scale);
+            const outcome = succeeded ? 'success' : 'failed';
+            const detailSuffix = details ? `, ${details}` : '';
+            PLSystem.log_to_csound(
+                `${command}: ${outcome} at t=${time}, scale=${scale}, chord=${chord}${detailSuffix}`
+            );
+        } catch (err) {
+            PLSystem.log_to_csound(
+                `${command}: log error (${err.message || err})`
+            );
+        }
     };
 
     PLSystem.parse_legacy_word = function (word, text) {
@@ -1114,9 +1332,16 @@ For more complete documentation, see PLSYSTEM.md.
                 if (args.length >= 1) {
                     let value = args[0];
                     if (operation === '=') {
-                        turtle.degree = PLSystem.round_if_discrete('d', value);
+                        turtle.degree = PLSystem.equivalent_degree(
+                            turtle.scale,
+                            PLSystem.round_if_discrete('d', value));
                     } else {
-                        turtle.degree = this.apply_arithmetic_scalar(turtle.degree, operation, value, 'd');
+                        const current = (typeof turtle.degree === 'number' && Number.isFinite(turtle.degree))
+                            ? turtle.degree
+                            : 1;
+                        turtle.degree = PLSystem.equivalent_degree(
+                            turtle.scale,
+                            this.apply_arithmetic_scalar(current, operation, value, 'd'));
                     }
                 }
                 return turtle;
@@ -1148,7 +1373,8 @@ For more complete documentation, see PLSYSTEM.md.
                 this.score.insertFunctionalHarmony(
                     time, turtle.scale, turtle.degree, voices_arg, mode, range);
                 const voice_count = voices_arg > 0 ? voices_arg : turtle.chord.voices();
-                turtle.prior_chord = turtle.scale.chord(turtle.degree, voice_count).clone();
+                turtle.prior_chord = PLSystem.chord_at_scale_degree(
+                    turtle.scale, turtle.degree, voice_count).clone();
             } else if (typeof this.score.insertChordWithMode === 'function') {
                 const reference = chord || turtle.chord;
                 this.score.insertChordWithMode(time, reference, mode, voices_arg, range);
@@ -1236,18 +1462,44 @@ For more complete documentation, see PLSYSTEM.md.
                 case 'M': {
                     if (args.length > 0) {
                         let voices = args.length > 1 ? args[1] : turtle.chord.voices();
+                        let choice = args[0];
+                        let fromScaleText = PLSystem.describe_scale(turtle.scale);
                         let modulations = turtle.scale.modulations_for_voices(turtle.chord, voices);
-                        if (modulations.length > 0) {
-                            let index = args[0];
+                        let modCount = PLSystem.vector_size(modulations);
+                        if (modCount > 0) {
+                            let index = choice;
                             while (index < 0) {
-                                index += modulations.length;
+                                index += modCount;
                             }
-                            while (index >= modulations.length) {
-                                index -= modulations.length;
+                            while (index >= modCount) {
+                                index -= modCount;
                             }
-                            turtle.scale = modulations[index];
+                            let newScale = PLSystem.vector_get(modulations, index);
+                            if (newScale == null) {
+                                PLSystem.log_modulation(
+                                    'M',
+                                    false,
+                                    turtle,
+                                    `missing modulation at index ${index}, voices=${voices}, choice=${choice}`
+                                );
+                            } else {
+                                let scaleText = `${fromScaleText} -> ${PLSystem.describe_scale(newScale)}`;
+                                turtle.scale = newScale;
+                                PLSystem.log_modulation(
+                                    'M',
+                                    true,
+                                    turtle,
+                                    `choice ${choice}->${index}, voices=${voices}`,
+                                    scaleText
+                                );
+                            }
                         } else {
-                            console.warn('No modulation is possible for the current scale and chord.');
+                            PLSystem.log_modulation(
+                                'M',
+                                false,
+                                turtle,
+                                `no modulations, voices=${voices}, choice=${choice}`
+                            );
                         }
                     }
                     return turtle;
