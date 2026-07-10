@@ -107,6 +107,21 @@ cloud5-about {
 /* Must be on top to permit editing text fields. */
 #menu_item_dat_gui {
   z-index: 9000;
+  overflow: visible;
+}
+
+/* w3.css sets overflow:hidden on .w3-bar and .w3-btn, which clips dat.gui. */
+#main_menu,
+#main_menu_list {
+  overflow: visible;
+}
+
+#menu_item_dat_gui > .dg.main {
+  position: fixed;
+  right: 0;
+  top: 2.75em;
+  max-height: calc(100vh - 3em);
+  overflow-y: auto;
 }
 
 /* Layering (top → bottom) */

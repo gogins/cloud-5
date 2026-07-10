@@ -722,8 +722,8 @@ For more complete documentation, see PLSYSTEM.md.
             clone_.degree = this.degree;
             clone_.prior_chord = this.prior_chord.clone();
             clone_.pitv = this.pitv;
-            if (typeof this.voicing === 'number') {
-                clone_.voicing = this.voicing;
+            if (this.chordl_pitv) {
+                clone_.chordl_pitv = Object.assign({}, this.chordl_pitv);
             }
             if (this.voiced_chord) {
                 clone_.voiced_chord = this.voiced_chord.clone();
@@ -1843,11 +1843,35 @@ For more complete documentation, see PLSYSTEM.md.
         }
     }
 
-    function chordl_ensure_voicing(turtle) {
-        if (typeof turtle.voicing !== 'number' || !Number.isFinite(turtle.voicing)) {
-            turtle.voicing = 1;
+    /** Voicing index for ChordL (matches C++ turtle.voicing; not full PITV decomposition). */
+    function chordl_default_pitv(V) {
+        return { P: 0, I: 0, T: 0, V: Number.isFinite(V) ? V : 1 };
+    }
+
+    /**
+     * ChordL revoicing: octavewiseRevoicing only (see ChordLindenmayer::chordOperation W).
+     * Do not call PITV fromChord/toChord here — wasm aborts on non-OP working chords.
+     */
+    function chordl_revoicing(lsys, chord, pitv_obj) {
+        const pitv_config = lsys && lsys.pitv;
+        const V = Math.floor(pitv_obj.V);
+        const range = pitv_config ? Math.floor(pitv_config.range) : 84;
+        if (typeof CsoundAC !== 'undefined'
+            && typeof CsoundAC.octavewiseRevoicing === 'function') {
+            return CsoundAC.octavewiseRevoicing(chord, V, range);
         }
-        return turtle;
+        return chord;
+    }
+
+    /** Ensure turtle.chordl_pitv exists (plain JS object; pitv.V is the voicing index). */
+    function chordl_pitv_from_turtle(turtle) {
+        if (!turtle.chordl_pitv) {
+            turtle.chordl_pitv = chordl_default_pitv(1);
+        }
+        if (typeof turtle.chordl_pitv.V !== 'number' || !Number.isFinite(turtle.chordl_pitv.V)) {
+            turtle.chordl_pitv.V = 1;
+        }
+        return turtle.chordl_pitv;
     }
 
     function chordl_add_voice(chord) {
@@ -1858,7 +1882,7 @@ For more complete documentation, see PLSYSTEM.md.
     }
 
     PLSystem.prepare_chordl_turtle = function (turtle) {
-        chordl_ensure_voicing(turtle);
+        chordl_pitv_from_turtle(turtle);
         PLSystem.ensure_turtle_degree(turtle);
         return turtle;
     };
@@ -1888,7 +1912,7 @@ For more complete documentation, see PLSYSTEM.md.
         });
 
         lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
-            chordl_ensure_voicing(turtle);
+            chordl_pitv_from_turtle(turtle);
             let timeDelta = 0;
             for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
                 const delta = x * turtle.magnitude[i] * turtle.orientation[i];
@@ -1905,7 +1929,8 @@ For more complete documentation, see PLSYSTEM.md.
         });
 
         lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
-            turtle.voicing = PLSystem.random_uniform(lo, hi);
+            chordl_pitv_from_turtle(turtle);
+            turtle.chordl_pitv.V = PLSystem.random_uniform(lo, hi);
             return turtle;
         });
 
@@ -1920,14 +1945,13 @@ For more complete documentation, see PLSYSTEM.md.
         });
 
         lsys.add_command('Revoicing()', function (lsys_, turtle) {
-            chordl_ensure_voicing(turtle);
-            turtle.voiced_chord = CsoundAC.octavewiseRevoicing(
-                turtle.chord, Math.floor(turtle.voicing), Math.floor(turtle.pitv.range));
+            const pitv = chordl_pitv_from_turtle(turtle);
+            turtle.voiced_chord = chordl_revoicing(lsys_, turtle.chord, pitv);
             return turtle;
         });
 
         lsys.add_command('WriteChord()', function (lsys_, turtle) {
-            chordl_ensure_voicing(turtle);
+            chordl_pitv_from_turtle(turtle);
             const chord = turtle.voiced_chord || turtle.chord;
             for (let i = 0; i < chord.voices(); i++) {
                 const event = turtle.n.clone();
