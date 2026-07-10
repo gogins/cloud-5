@@ -2042,6 +2042,13 @@
             }
             return turtle;
         }
+        // Note-length shaping for Fwd. Each (F N x) step advances time by
+        // |x * m[0] * o[0]|; that value becomes the written note's duration.
+        // Scale it up for longer notes, and floor it so heavily-subdivided
+        // branches don't collapse to near-zero durations. Overlaps that result
+        // are tied by tieOverlappingNotes, so modulations stay audible.
+        const CHORDL_DURATION_FACTOR = 3.0;
+        const CHORDL_DURATION_MINIMUM = 1.5;
         function chordlRegisterCommands(lsys, CsoundAC) {
             lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
                 // (C Sd voices) in ChordLindenmayer sets the chord from the current
@@ -2099,12 +2106,22 @@
                 turtle.chord = chordlAddVoice(CsoundAC, turtle.chord);
                 return turtle;
             });
-            // ChordL (F N x): x * magnitude * orientation (PLSystem m matches ChordL S step).
+            // ChordL (F N x): x * step * orientation. PLSystem uses magnitude as step.
+            // Set N[d] from the time-axis advance (|x * m[0] * o[0]|) so written notes
+            // are not left at axiom duration 36, which caused mass overlap before tie.
             lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
                 chordlEnsureState(turtle);
-                for (let i = 0; i < 11; i++) {
+                let timeDelta = 0;
+                for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
                     const delta = x * turtle.magnitude[i] * turtle.orientation[i];
+                    if (i === 0) {
+                        timeDelta = delta;
+                    }
                     chordlSetNoteDim(turtle.n, i, chordlNoteDim(turtle.n, i) + delta);
+                }
+                if (timeDelta !== 0) {
+                    const scaled = Math.abs(timeDelta) * CHORDL_DURATION_FACTOR;
+                    turtle.n.setDuration(Math.max(scaled, CHORDL_DURATION_MINIMUM));
                 }
                 return turtle;
             });
@@ -2166,15 +2183,19 @@
                 lsys.pitv.initialize(4, 72, 1, false);
                 chordlRegisterCommands(lsys, CsoundAC);
 
-                // ChordLindenmayer axiom: (seed P 3928394)(= P 72)(= Sc Cmajor {0,2,4,5,7,9,11})
+                // ChordLindenmayer axiom: (seed P 3928394)(= P 72)(= Sc Cmajor …)
                 // (++ C)(= C {0,4,7})(= M {0,4,7})(= N[d] 36.)(Sc P)(A)
+                // N[d]=36 is the template until Fwd sets duration from each (F N x) step.
                 lsys.set_axiom(
                     'seed 3928394; ' +
                     'AddVoice(); ' +
                     'c = {0,4,7}; ' +
                     's = {0,2,4,5,7,9,11}; ' +
                     'd = 1; ' +
-                    'n = 0, 36, 144, 1, 0, 1, 0; ' +
+                    'n + 1, 36; ' +
+                    'n + 2, 0; ' +
+                    'n + 3, 1; ' +
+                    'n + 5, 1; ' +
                     'Hs; ' +
                     'A;'
                 );
@@ -2196,7 +2217,7 @@
 
                 // ChordLindenmayer rule (B).
                 lsys.add_rule('B;', 'true',
-                    'Hs; B; [; m / 0, 2; m / 1, 2; d + 3; UniV(1, 101); Revoicing(); WriteChord(); A; ];'
+                    'Hs; B; [; m / 0, 2; m / 1, 2; Nk(3); d + 3; UniV(1, 101); Revoicing(); WriteChord(); A; ];'
                 );
 
                 // Avoid new Scale("C major") — wasm chord-name init can OOB-crash.
@@ -2214,16 +2235,13 @@
                 dbg('lsys.generate done notes=' + scoreCount);
                 host.log(`generate: ${(performance.now() - t0).toFixed(0)}ms, ${scoreCount} notes.\n`);
 
-                lsys.score.sort();
-
-                // Match generator-2 order: ChordLindenmayer conforms/voiceleads
-                // internally FIRST, and the Rescale node (its parent) is applied
-                // LAST. So conform before rescale here.
+                // ChordLindenmayer post-process: tie → conform → tie → fixStatus, then Rescale.
                 t0 = performance.now();
-                dbg('conformToChords tie_overlaps=false');
-                lsys.conformToChords(false);
-                dbg('conformToChords done');
-                host.log(`conformToChords: ${(performance.now() - t0).toFixed(0)}ms.\n`);
+                dbg('applyChordLindenmayerPostProcess');
+                lsys.applyChordLindenmayerPostProcess();
+                const postCount = lsys.score.size();
+                dbg('applyChordLindenmayerPostProcess done notes=' + postCount);
+                host.log(`voiceleading post-process: ${(performance.now() - t0).toFixed(0)}ms, ${postCount} notes.\n`);
 
                 // Match generator-2 Rescale flags exactly:
                 //   rescale.setRescale(0, true, false, 1., 0.);  time: shift min, KEEP range
@@ -2242,14 +2260,17 @@
                 lsys.score.setDuration(7 * 60);
 
                 const scoreForDraw = lsys.score;
-                if (scoreCount <= 600) {
+                const drawCount = scoreForDraw.size();
+                if (drawCount > 0 && drawCount <= 600) {
                     requestAnimationFrame(() => {
                         host.piano_roll_overlay.draw_csoundac_score(scoreForDraw);
                     });
+                } else if (drawCount === 0) {
+                    host.log('Piano roll skipped: score is empty after post-process.\n');
                 } else {
-                    host.log(`Skipping piano roll draw for ${scoreCount} notes.\n`);
+                    host.log(`Skipping piano roll draw for ${drawCount} notes.\n`);
                 }
-                dbg('score_generator_function_addon OK');
+                dbg('score_generator_function_addon OK notes=' + drawCount);
                 return lsys.score;
             } catch (err) {
                 dbg('score_generator_function_addon error: ' + (err.stack || err.message || err));

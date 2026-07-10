@@ -126,6 +126,48 @@ For more complete documentation, see PLSYSTEM.md.
         return PLSystem.random_uniform(0, 1);
     };
 
+    /** CsoundAC Event indices below HOMOGENEITY (ChordL F N moves this many dims). */
+    PLSystem.NOTE_MOTION_DIMENSIONS = 10;
+
+    /** Unique pitch classes from a chord's epcs (VoiceleadingNode::apply). */
+    PLSystem.unique_pitch_classes = function (chord) {
+        const epcs = chord.epcs();
+        const pcs = [];
+        for (let voice = 0, voices = epcs.voices(); voice < voices; ++voice) {
+            const pc = epcs.getPitch(voice);
+            let found = false;
+            for (let i = 0; i < pcs.length; ++i) {
+                if (Math.abs(pcs[i] - pc) < 1e-9) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                pcs.push(pc);
+            }
+        }
+        return pcs;
+    };
+
+    /** ChordLindenmayer::fixStatus — note-on status 0 becomes 144. */
+    PLSystem.fix_status = function (score) {
+        for (let i = 0, n = score.size(); i < n; ++i) {
+            const event = score.get(i);
+            if (event.getStatus() === 0) {
+                event.setStatus(144);
+            }
+        }
+    };
+
+    /** Embind std::vector<double> wrapper for Score.setPitchClassSet and similar. */
+    PLSystem.to_double_vector = function (values) {
+        const vec = new CsoundAC.DoubleVector();
+        for (let i = 0; i < values.length; i++) {
+            vec.push_back(Number(values[i]));
+        }
+        return vec;
+    };
+
     /** Route messages to the Csound log overlay and the developer console. */
     PLSystem.log_to_csound = function (message) {
         const text = typeof message === 'string' ? message : String(message);
@@ -586,7 +628,8 @@ For more complete documentation, see PLSYSTEM.md.
      */
     PLSystem.Turtle = class {
         constructor(note_, chord_, scale_) {
-            this.orientation = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+            // Match ChordLindenmayer Turtle: orientation[TIME]=1 only.
+            this.orientation = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             this.magnitude = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
             if (typeof note_ === "undefined") {
                 this.note = new CsoundAC.Event();
@@ -621,6 +664,15 @@ For more complete documentation, see PLSYSTEM.md.
             clone_.degree = this.degree;
             clone_.prior_chord = this.prior_chord.clone();
             clone_.pitv = this.pitv;
+            if (typeof this.voicing === 'number') {
+                clone_.voicing = this.voicing;
+            }
+            if (typeof this.rangeSize === 'number') {
+                clone_.rangeSize = this.rangeSize;
+            }
+            if (this.voiced_chord) {
+                clone_.voiced_chord = this.voiced_chord.clone();
+            }
             return clone_;
         }
         pitv_from_chord() {
@@ -1442,7 +1494,7 @@ For more complete documentation, see PLSYSTEM.md.
                     return this.insert_harmony(turtle, null, 'Hd', voices);
                 }
                 case 'Hs': {
-                    // ChordLindenmayer (Sc P): insert the current scale on the harmony timeline.
+                    // ChordLindenmayer (Sc P): harmony timeline for conform / voiceleading.
                     this.score.insertChord(turtle.note.getTime(), turtle.scale);
                     turtle.prior_chord = turtle.scale.clone();
                     return turtle;
@@ -1566,6 +1618,17 @@ For more complete documentation, see PLSYSTEM.md.
             this.score = new window.CsoundAC.ChordScore();
             this.chord_score = this.score;
             this.turtle.pitv = this.pitv;
+        }
+        /**
+         * ChordLindenmayer::generateLocally post-process after writeScore:
+         * tie, conform, tie, fixStatus.
+         */
+        applyChordLindenmayerPostProcess(octave_equivalence = true) {
+            this.score.sort();
+            this.score.tieOverlappingNotes();
+            this.score.conformToChords(false, octave_equivalence);
+            this.score.tieOverlappingNotes();
+            PLSystem.fix_status(this.score);
         }
         evaluate_actual_parameter_expressions(parent_word, child_word) {
             try {
