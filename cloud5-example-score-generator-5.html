@@ -1993,178 +1993,6 @@
                 globalThis.cloud5_nwjs_debug(msg);
             }
         }
-        function chordlModR(value, rangeSize) {
-            const modulus = rangeSize;
-            return ((value % modulus) + modulus) % modulus;
-        }
-        function chordlNoteDim(note, dim) {
-            switch (dim) {
-                case 0: return note.getTime();
-                case 1: return note.getDuration();
-                case 2: return note.getStatus();
-                case 3: return note.getInstrument();
-                case 4: return note.getKey();
-                case 5: return note.getVelocity();
-                case 6: return note.getPan();
-                default: return 0;
-            }
-        }
-        function chordlSetNoteDim(note, dim, value) {
-            switch (dim) {
-                case 0: note.setTime(value); break;
-                case 1: note.setDuration(value); break;
-                case 2: note.setStatus(value); break;
-                case 3: note.setInstrument(value); break;
-                case 4: note.setKey(value); break;
-                case 5: note.setVelocity(value); break;
-                case 6: note.setPan(value); break;
-            }
-        }
-        function chordlAddVoice(CsoundAC, chord) {
-            let c = chord.eOP();
-            c.resize(c.voices() + 1);
-            c.setPitch(c.voices() - 1, c.getPitch(0));
-            return c.eOP();
-        }
-        function chordlPrepareTurtle(turtle) {
-            chordlEnsureState(turtle);
-            PLSystem.ensure_turtle_degree(turtle);
-            return turtle;
-        }
-        function chordlEnsureState(turtle) {
-            // PLSystem clones turtles via the class method, so any extra instance fields
-            // (like voicing/rangeSize) may be missing on cloned turtles.
-            if (typeof turtle.voicing !== 'number' || !Number.isFinite(turtle.voicing)) {
-                turtle.voicing = 1;
-            }
-            if (typeof turtle.rangeSize !== 'number' || !Number.isFinite(turtle.rangeSize)) {
-                turtle.rangeSize = 72;
-            }
-            return turtle;
-        }
-        // Note-length shaping for Fwd. Each (F N x) step advances time by
-        // |x * m[0] * o[0]|; that value becomes the written note's duration.
-        // Scale it up for longer notes, and floor it so heavily-subdivided
-        // branches don't collapse to near-zero durations. Overlaps that result
-        // are tied by tieOverlappingNotes, so modulations stay audible.
-        const CHORDL_DURATION_FACTOR = 3.0;
-        const CHORDL_DURATION_MINIMUM = 1.5;
-        function chordlRegisterCommands(lsys, CsoundAC) {
-            lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
-                // (C Sd voices) in ChordLindenmayer sets the chord from the current
-                // scale degree (wrapping degrees into the valid 1..voices range).
-                const degree = PLSystem.ensure_turtle_degree(turtle);
-                turtle.chord = PLSystem.chord_at_scale_degree(turtle.scale, degree, voices);
-                return turtle;
-            });
-            // (M Sc voices choice) in ChordLindenmayer: modulate scale using the chord
-            // at the current scale degree, NOT turtle.chord directly (PLSystem's built-in M).
-            lsys.add_command('MSc(int voices, int choice)', function (lsys_, turtle, voices, choice) {
-                const fromScaleText = PLSystem.describe_scale(turtle.scale);
-                let scaleDegree = PLSystem.scale_degree_for_chord(turtle.scale, turtle.chord);
-                if (scaleDegree <= 0) {
-                    scaleDegree = PLSystem.ensure_turtle_degree(turtle);
-                }
-                let succeeded = false;
-                let details = '';
-                let scaleText = null;
-
-                if (scaleDegree <= 0) {
-                    details = `chord not in scale, stored=${turtle.degree}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
-                } else {
-                    const degreeChord = PLSystem.chord_at_scale_degree(turtle.scale, scaleDegree, voices);
-                    const modulations = PLSystem.modulations_for_voices(
-                        turtle.scale, degreeChord, voices);
-                    const modCount = PLSystem.vector_size(modulations);
-                    if (modCount === 0) {
-                        details = `no modulations, degree=${scaleDegree}, degreeChord=${PLSystem.describe_chord(degreeChord)}, voices=${voices}, choice=${choice}`;
-                    } else {
-                        let index = choice;
-                        while (index < 0) index += modCount;
-                        while (index >= modCount) index -= modCount;
-                        const newScale = PLSystem.vector_get(modulations, index);
-                        if (newScale == null) {
-                            details = `missing modulation at index ${index}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
-                        } else {
-                            scaleText = `${fromScaleText} -> ${PLSystem.describe_scale(newScale)}`;
-                            turtle.scale = newScale;
-                            succeeded = true;
-                            details = `degree=${scaleDegree}, choice=${choice}->${index}, voices=${voices}`;
-                        }
-                    }
-                }
-
-                try {
-                    PLSystem.log_modulation('MSc', succeeded, turtle, details, scaleText);
-                } catch (logErr) {
-                    PLSystem.log_to_csound(`MSc: log error (${logErr.message || logErr})`);
-                }
-                return turtle;
-            });
-            lsys.add_command('AddVoice()', function (lsys_, turtle) {
-                // (++) C in ChordLindenmayer adds one voice to the current chord.
-                turtle.chord = chordlAddVoice(CsoundAC, turtle.chord);
-                return turtle;
-            });
-            // ChordL (F N x): x * step * orientation. PLSystem uses magnitude as step.
-            // Set N[d] from the time-axis advance (|x * m[0] * o[0]|) so written notes
-            // are not left at axiom duration 36, which caused mass overlap before tie.
-            lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
-                chordlEnsureState(turtle);
-                let timeDelta = 0;
-                for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
-                    const delta = x * turtle.magnitude[i] * turtle.orientation[i];
-                    if (i === 0) {
-                        timeDelta = delta;
-                    }
-                    chordlSetNoteDim(turtle.n, i, chordlNoteDim(turtle.n, i) + delta);
-                }
-                if (timeDelta !== 0) {
-                    const scaled = Math.abs(timeDelta) * CHORDL_DURATION_FACTOR;
-                    turtle.n.setDuration(Math.max(scaled, CHORDL_DURATION_MINIMUM));
-                }
-                return turtle;
-            });
-            lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
-                turtle.voicing = PLSystem.random_uniform(lo, hi);
-                return turtle;
-            });
-            lsys.add_command('Nk(num delta)', function (lsys_, turtle, delta) {
-                chordlEnsureState(turtle);
-                turtle.n.setKey(chordlModR(chordlNoteDim(turtle.n, 4) + delta, turtle.rangeSize));
-                return turtle;
-            });
-            lsys.add_command('NxRand()', function (lsys_, turtle) {
-                turtle.n.setPan(PLSystem.random_uniform(0, 1));
-                return turtle;
-            });
-            lsys.add_command('NiRand(num lo, num hi)', function (lsys_, turtle, lo, hi) {
-                turtle.n.setInstrument(PLSystem.random_uniform(lo, hi));
-                return turtle;
-            });
-            // (W C) revoicing only. In ChordLindenmayer the octavewise revoicing is a
-            // LOCAL Chord used only for writing; turtle.chord is NOT mutated (otherwise it
-            // becomes an octave-stacked single pitch class and scale.degree() returns -1).
-            // Stash the revoiced chord in a separate field for WriteChord() to consume.
-            lsys.add_command('Revoicing()', function (lsys_, turtle) {
-                chordlEnsureState(turtle);
-                turtle.voiced_chord = CsoundAC.octavewiseRevoicing(
-                    turtle.chord, Math.floor(turtle.voicing), Math.floor(turtle.rangeSize));
-                return turtle;
-            });
-            // (W C) insert only — clone turtle.note per voice (matches ChordLindenmayer).
-            // Writes from the revoiced chord if present, else the canonical turtle.chord.
-            lsys.add_command('WriteChord()', function (lsys_, turtle) {
-                chordlEnsureState(turtle);
-                const chord = turtle.voiced_chord || turtle.chord;
-                for (let i = 0; i < chord.voices(); i++) {
-                    const event = turtle.n.clone();
-                    event.setKey(chord.getPitch(i));
-                    lsys_.score.append_event(event);
-                }
-                return turtle;
-            });
-        }
         cloud5_piece.score_generator_function_addon = async function () {
             cloud5_piece.log("score_generator_function_addon...\n");
             dbg('score_generator_function_addon start');
@@ -2181,7 +2009,10 @@
 
                 let lsys = new PLSystem.PLSystem();
                 lsys.pitv.initialize(4, 72, 1, false);
-                chordlRegisterCommands(lsys, CsoundAC);
+                lsys.register_chordlindenmayer_commands({
+                    durationFactor: 2.5,
+                    durationMinimum: 1.5
+                });
 
                 // ChordLindenmayer axiom: (seed P 3928394)(= P 72)(= Sc Cmajor …)
                 // (++ C)(= C {0,4,7})(= M {0,4,7})(= N[d] 36.)(Sc P)(A)
@@ -2199,31 +2030,23 @@
                     'Hs; ' +
                     'A;'
                 );
-
-                // ChordLindenmayer rule (A) — second (A) rule overwrote the first in C++.
-                // (W Cl R) is a no-op in ChordLindenmayer (target "Cl" is not handled).
-                // Insertions: Hs (scale harmony), WriteChord / Wn (note events).
-                // Transforms stay in custom commands; inserts do not mutate the turtle.
                 lsys.add_rule('A;', 'true',
-                    'B; Fwd(0.125); UniV(1, 111); Revoicing(); WriteChord(); Nk(-1); n + 5, 2; d - 1; ' +
-                    '[; m * 0, 0.75; Nk(-0.5); Fwd(1); A; ]; ' +
-                    // ChordL rotates orientation as a column vector; PLSystem's
-                    // builtin R uses a row vector, so negate the angles:
-                    // (R O t k .041) -> R 0, 4, -0.041 and (R O t i -.325) -> R 0, 3, 0.325.
+                    'B; Fwd(0.125); UniV(1, 111); Revoicing(); WriteChord(); n + 4, -1; n + 5, 2; d - 1; ' +
+                    '[; m * 0, 0.75; n + 4, -0.5; Fwd(1); A; ]; ' +
                     'MSc(3, 1); NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(1.5); R 0, 3, 0.325; n + 5, -2; ' +
                     'B; d + 4; Cd(4); d + 3; NiRand(1, 5); MSc(3, 0); Hs; Wn; A; ' +
-                    'Nk(2); n + 0, 5; Wn; A;'
+                    'n + 4, 2; n + 0, 5; Wn; A;'
                 );
 
-                // ChordLindenmayer rule (B).
                 lsys.add_rule('B;', 'true',
-                    'Hs; B; [; m / 0, 2; m / 1, 2; Nk(3); d + 3; UniV(1, 101); Revoicing(); WriteChord(); A; ];'
+                    'Hs; B; [; m / 0, 2; m / 1, 2; n + 4, 3; d + 3; UniV(1, 101); Revoicing(); WriteChord(); A; ];'
                 );
 
                 // Avoid new Scale("C major") — wasm chord-name init can OOB-crash.
                 let initialScale = PLSystem.c_major_scale();
                 let initialChord = PLSystem.chord_at_scale_degree(initialScale, 1, 3);
-                let turtle = chordlPrepareTurtle(new PLSystem.Turtle(new CsoundAC.Event(), initialChord, initialScale));
+                let turtle = PLSystem.prepare_chordl_turtle(
+                    new PLSystem.Turtle(new CsoundAC.Event(), initialChord, initialScale));
                 turtle.degree = 1;
                 turtle.pitv = lsys.pitv;
                 lsys.set_turtle(turtle);
@@ -2243,11 +2066,6 @@
                 dbg('applyChordLindenmayerPostProcess done notes=' + postCount);
                 host.log(`voiceleading post-process: ${(performance.now() - t0).toFixed(0)}ms, ${postCount} notes.\n`);
 
-                // Match generator-2 Rescale flags exactly:
-                //   rescale.setRescale(0, true, false, 1., 0.);  time: shift min, KEEP range
-                //   rescale.setRescale(3, true, true,  1., 8.);  instrument
-                //   rescale.setRescale(4, true, false, 18., 72.); key: shift min, KEEP range
-                //   rescale.setRescale(5, true, true,  60., 12.); velocity
                 t0 = performance.now();
                 dbg('rescale');
                 plsRescaleDimension(lsys.score, 0, true, false, 1, 0);
@@ -2307,10 +2125,10 @@
             "gk_Mverb2020_Mix": 0.5,
             "gk_Mverb2020_Pre_delay": 0.5,
             "gk_Mverb2020_Early_late_mix": 0.5,
-            "gk_Mverb2020_Size": 0.5,
-            "gk_Mverb2020_Density": 0.5,
+            "gk_Mverb2020_Size": 0.85,
+            "gk_Mverb2020_Density": 0.95,
             "gk_Mverb2020_Bandwith_Frequency": 0.5,
-            "gk_Mverb2020_Decay": 0.85,
+            "gk_Mverb2020_Decay": 0.95,
             "gk_Mverb2020_Damping_Frequency": 0.5,
             "gk_Mverb2020_Gain": 1,
             "gi_Mverb2020_Program": 4,

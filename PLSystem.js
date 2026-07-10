@@ -168,6 +168,22 @@ For more complete documentation, see PLSYSTEM.md.
         return vec;
     };
 
+    /** True mathematical modulus (always in [0, modulus)). */
+    PLSystem.modulus = function (value, modulus) {
+        return ((value % modulus) + modulus) % modulus;
+    };
+
+    /**
+     * ChordLindenmayer "R" range equivalence: wrap a pitch into [0, range).
+     * Returns the value unchanged if range is not a positive finite number.
+     */
+    PLSystem.wrap_in_range = function (value, range) {
+        if (typeof range === 'number' && Number.isFinite(range) && range > 0) {
+            return PLSystem.modulus(value, range);
+        }
+        return value;
+    };
+
     /** Route messages to the Csound log overlay and the developer console. */
     PLSystem.log_to_csound = function (message) {
         const text = typeof message === 'string' ? message : String(message);
@@ -666,9 +682,6 @@ For more complete documentation, see PLSYSTEM.md.
             clone_.pitv = this.pitv;
             if (typeof this.voicing === 'number') {
                 clone_.voicing = this.voicing;
-            }
-            if (typeof this.rangeSize === 'number') {
-                clone_.rangeSize = this.rangeSize;
             }
             if (this.voiced_chord) {
                 clone_.voiced_chord = this.voiced_chord.clone();
@@ -1295,6 +1308,11 @@ For more complete documentation, see PLSYSTEM.md.
                     let getter = setter.replace('set', 'get');
                     turtle.note[setter](Math.pow(turtle.note[getter](), scaled));
                 }
+                // ChordLindenmayer range equivalence for the KEY field.
+                if (setter === 'setKey') {
+                    turtle.note.setKey(PLSystem.wrap_in_range(
+                        turtle.note.getKey(), this.pitv.range));
+                }
             }
             return turtle;
         }
@@ -1321,6 +1339,12 @@ For more complete documentation, see PLSYSTEM.md.
                         turtle.note[dimension] /= value;
                     } else if (operation === '^') {
                         turtle.note[dimension] = Math.pow(turtle.note[dimension], value);
+                    }
+                    // ChordLindenmayer range equivalence: the KEY dimension wraps
+                    // around within the range of the PITV group.
+                    if (dimension === 4) {
+                        turtle.note[dimension] = PLSystem.wrap_in_range(
+                            turtle.note[dimension], this.pitv.range);
                     }
                 }
                 return turtle;
@@ -1764,6 +1788,183 @@ For more complete documentation, see PLSYSTEM.md.
             //     }
             // });
         }
+        /**
+         * Register ChordLindenmayer custom commands (Cd, MSc, Fwd, WriteChord, …).
+         * @param {object} [options] durationFactor, durationMinimum for Fwd note lengths.
+         */
+        register_chordlindenmayer_commands(options) {
+            PLSystem.register_chordlindenmayer_commands(this, options);
+        }
+    };
+
+    //////////////////////////////////////////////////////////////////////////////
+    // ChordLindenmayer port (generator-2 → PLSystem grammar)
+    //////////////////////////////////////////////////////////////////////////////
+
+    PLSystem.CHORDL_DURATION_FACTOR = 2.5;
+    PLSystem.CHORDL_DURATION_MINIMUM = 1.5;
+
+    function chordl_note_dim(note, dim) {
+        switch (dim) {
+            case 0: return note.getTime();
+            case 1: return note.getDuration();
+            case 2: return note.getStatus();
+            case 3: return note.getInstrument();
+            case 4: return note.getKey();
+            case 5: return note.getVelocity();
+            case 6: return note.getPan();
+            default: return 0;
+        }
+    }
+
+    function chordl_set_note_dim(note, dim, value) {
+        switch (dim) {
+            case 0: note.setTime(value); break;
+            case 1: note.setDuration(value); break;
+            case 2: note.setStatus(value); break;
+            case 3: note.setInstrument(value); break;
+            case 4: note.setKey(value); break;
+            case 5: note.setVelocity(value); break;
+            case 6: note.setPan(value); break;
+        }
+    }
+
+    function chordl_ensure_voicing(turtle) {
+        if (typeof turtle.voicing !== 'number' || !Number.isFinite(turtle.voicing)) {
+            turtle.voicing = 1;
+        }
+        return turtle;
+    }
+
+    function chordl_add_voice(chord) {
+        let c = chord.eOP();
+        c.resize(c.voices() + 1);
+        c.setPitch(c.voices() - 1, c.getPitch(0));
+        return c.eOP();
+    }
+
+    PLSystem.prepare_chordl_turtle = function (turtle) {
+        chordl_ensure_voicing(turtle);
+        PLSystem.ensure_turtle_degree(turtle);
+        return turtle;
+    };
+
+    /**
+     * ChordLindenmayer custom commands used by cloud5-example-score-generator-5.
+     * Builtin grammar handles n/o/m/c/s/d/p/i/t and inserts; these cover the rest.
+     */
+    PLSystem.register_chordlindenmayer_commands = function (lsys, options) {
+        options = options || {};
+        const durationFactor = (options.durationFactor != null)
+            ? options.durationFactor
+            : PLSystem.CHORDL_DURATION_FACTOR;
+        const durationMinimum = (options.durationMinimum != null)
+            ? options.durationMinimum
+            : PLSystem.CHORDL_DURATION_MINIMUM;
+
+        lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
+            const degree = PLSystem.ensure_turtle_degree(turtle);
+            turtle.chord = PLSystem.chord_at_scale_degree(turtle.scale, degree, voices);
+            return turtle;
+        });
+
+        lsys.add_command('MSc(int voices, int choice)', function (lsys_, turtle, voices, choice) {
+            const fromScaleText = PLSystem.describe_scale(turtle.scale);
+            let scaleDegree = PLSystem.scale_degree_for_chord(turtle.scale, turtle.chord);
+            if (scaleDegree <= 0) {
+                scaleDegree = PLSystem.ensure_turtle_degree(turtle);
+            }
+            let succeeded = false;
+            let details = '';
+            let scaleText = null;
+
+            if (scaleDegree <= 0) {
+                details = `chord not in scale, stored=${turtle.degree}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
+            } else {
+                const degreeChord = PLSystem.chord_at_scale_degree(turtle.scale, scaleDegree, voices);
+                const modulations = PLSystem.modulations_for_voices(
+                    turtle.scale, degreeChord, voices);
+                const modCount = PLSystem.vector_size(modulations);
+                if (modCount === 0) {
+                    details = `no modulations, degree=${scaleDegree}, degreeChord=${PLSystem.describe_chord(degreeChord)}, voices=${voices}, choice=${choice}`;
+                } else {
+                    let index = choice;
+                    while (index < 0) index += modCount;
+                    while (index >= modCount) index -= modCount;
+                    const newScale = PLSystem.vector_get(modulations, index);
+                    if (newScale == null) {
+                        details = `missing modulation at index ${index}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
+                    } else {
+                        scaleText = `${fromScaleText} -> ${PLSystem.describe_scale(newScale)}`;
+                        turtle.scale = newScale;
+                        succeeded = true;
+                        details = `degree=${scaleDegree}, choice=${choice}->${index}, voices=${voices}`;
+                    }
+                }
+            }
+
+            try {
+                PLSystem.log_modulation('MSc', succeeded, turtle, details, scaleText);
+            } catch (logErr) {
+                PLSystem.log_to_csound(`MSc: log error (${logErr.message || logErr})`);
+            }
+            return turtle;
+        });
+
+        lsys.add_command('AddVoice()', function (lsys_, turtle) {
+            turtle.chord = chordl_add_voice(turtle.chord);
+            return turtle;
+        });
+
+        lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
+            chordl_ensure_voicing(turtle);
+            let timeDelta = 0;
+            for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
+                const delta = x * turtle.magnitude[i] * turtle.orientation[i];
+                if (i === 0) {
+                    timeDelta = delta;
+                }
+                chordl_set_note_dim(turtle.n, i, chordl_note_dim(turtle.n, i) + delta);
+            }
+            if (timeDelta !== 0) {
+                const scaled = Math.abs(timeDelta) * durationFactor;
+                turtle.n.setDuration(Math.max(scaled, durationMinimum));
+            }
+            return turtle;
+        });
+
+        lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
+            turtle.voicing = PLSystem.random_uniform(lo, hi);
+            return turtle;
+        });
+
+        lsys.add_command('NxRand()', function (lsys_, turtle) {
+            turtle.n.setPan(PLSystem.random_uniform(0, 1));
+            return turtle;
+        });
+
+        lsys.add_command('NiRand(num lo, num hi)', function (lsys_, turtle, lo, hi) {
+            turtle.n.setInstrument(PLSystem.random_uniform(lo, hi));
+            return turtle;
+        });
+
+        lsys.add_command('Revoicing()', function (lsys_, turtle) {
+            chordl_ensure_voicing(turtle);
+            turtle.voiced_chord = CsoundAC.octavewiseRevoicing(
+                turtle.chord, Math.floor(turtle.voicing), Math.floor(turtle.pitv.range));
+            return turtle;
+        });
+
+        lsys.add_command('WriteChord()', function (lsys_, turtle) {
+            chordl_ensure_voicing(turtle);
+            const chord = turtle.voiced_chord || turtle.chord;
+            for (let i = 0; i < chord.voices(); i++) {
+                const event = turtle.n.clone();
+                event.setKey(chord.getPitch(i));
+                lsys_.score.append_event(event);
+            }
+            return turtle;
+        });
     };
 
     //////////////////////////////////////////////////////////////////////////////
