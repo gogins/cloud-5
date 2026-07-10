@@ -2033,10 +2033,7 @@
         }
         function chordlEnsureState(turtle) {
             // PLSystem clones turtles via the class method, so any extra instance fields
-            // (like step/voicing/rangeSize) may be missing on cloned turtles.
-            if (!turtle.step || !Array.isArray(turtle.step)) {
-                turtle.step = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-            }
+            // (like voicing/rangeSize) may be missing on cloned turtles.
             if (typeof turtle.voicing !== 'number' || !Number.isFinite(turtle.voicing)) {
                 turtle.voicing = 1;
             }
@@ -2102,23 +2099,13 @@
                 turtle.chord = chordlAddVoice(CsoundAC, turtle.chord);
                 return turtle;
             });
-            // ChordL uses turtle.step (not PLSystem magnitude) for (* S[t] ...) and (F N ...).
+            // ChordL (F N x): x * magnitude * orientation (PLSystem m matches ChordL S step).
             lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
                 chordlEnsureState(turtle);
                 for (let i = 0; i < 11; i++) {
-                    const delta = x * turtle.step[i] * turtle.orientation[i];
+                    const delta = x * turtle.magnitude[i] * turtle.orientation[i];
                     chordlSetNoteDim(turtle.n, i, chordlNoteDim(turtle.n, i) + delta);
                 }
-                return turtle;
-            });
-            lsys.add_command('StMul(int dim, num val)', function (lsys_, turtle, dim, val) {
-                chordlEnsureState(turtle);
-                turtle.step[dim] *= val;
-                return turtle;
-            });
-            lsys.add_command('StDiv(int dim, num val)', function (lsys_, turtle, dim, val) {
-                chordlEnsureState(turtle);
-                turtle.step[dim] /= val;
                 return turtle;
             });
             lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
@@ -2128,14 +2115,6 @@
             lsys.add_command('Nk(num delta)', function (lsys_, turtle, delta) {
                 chordlEnsureState(turtle);
                 turtle.n.setKey(chordlModR(chordlNoteDim(turtle.n, 4) + delta, turtle.rangeSize));
-                return turtle;
-            });
-            lsys.add_command('Nv(num delta)', function (lsys_, turtle, delta) {
-                turtle.n.setVelocity(chordlNoteDim(turtle.n, 5) + delta);
-                return turtle;
-            });
-            lsys.add_command('Nt(num delta)', function (lsys_, turtle, delta) {
-                turtle.n.setTime(chordlNoteDim(turtle.n, 0) + delta);
                 return turtle;
             });
             lsys.add_command('NxRand()', function (lsys_, turtle) {
@@ -2205,19 +2184,19 @@
                 // Insertions: Hs (scale harmony), WriteChord / Wn (note events).
                 // Transforms stay in custom commands; inserts do not mutate the turtle.
                 lsys.add_rule('A;', 'true',
-                    'B; Fwd(0.125); UniV(1, 111); Revoicing(); WriteChord(); Nk(-1); Nv(2); d - 1; ' +
-                    '[; StMul(0, 0.75); Nk(-0.5); Fwd(1); A; ]; ' +
+                    'B; Fwd(0.125); UniV(1, 111); Revoicing(); WriteChord(); Nk(-1); n + 5, 2; d - 1; ' +
+                    '[; m * 0, 0.75; Nk(-0.5); Fwd(1); A; ]; ' +
                     // ChordL rotates orientation as a column vector; PLSystem's
                     // builtin R uses a row vector, so negate the angles:
                     // (R O t k .041) -> R 0, 4, -0.041 and (R O t i -.325) -> R 0, 3, 0.325.
-                    'MSc(3, 1); NxRand(); Nt(1); R 0, 4, -0.041; Fwd(1.5); R 0, 3, 0.325; Nv(-2); ' +
+                    'MSc(3, 1); NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(1.5); R 0, 3, 0.325; n + 5, -2; ' +
                     'B; d + 4; Cd(4); d + 3; NiRand(1, 5); MSc(3, 0); Hs; Wn; A; ' +
-                    'Nk(2); Nt(5); Wn; A;'
+                    'Nk(2); n + 0, 5; Wn; A;'
                 );
 
                 // ChordLindenmayer rule (B).
                 lsys.add_rule('B;', 'true',
-                    'Hs; B; [; StDiv(0, 2); StDiv(1, 2); d + 3; UniV(1, 101); Revoicing(); WriteChord(); A; ];'
+                    'Hs; B; [; m / 0, 2; m / 1, 2; d + 3; UniV(1, 101); Revoicing(); WriteChord(); A; ];'
                 );
 
                 // Avoid new Scale("C major") — wasm chord-name init can OOB-crash.

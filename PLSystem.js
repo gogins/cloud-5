@@ -1293,11 +1293,10 @@ For more complete documentation, see PLSYSTEM.md.
                 } else if (args.length >= 2) {
                     let dimension = args[0];
                     let value = args[1];
-                    if (operation === '*') {
-                        turtle.magnitude[dimension] = value;
-                    } else {
-                        turtle.magnitude = this.apply_arithmetic_array(turtle.magnitude, operation, value, dimension, object_name);
-                    }
+                    // All operators (including *) apply in place via
+                    // apply_arithmetic_array, so `m * dim, v` is magnitude[dim] *= v,
+                    // consistent with `m / dim, v` (magnitude[dim] /= v).
+                    turtle.magnitude = this.apply_arithmetic_array(turtle.magnitude, operation, value, dimension, object_name);
                 }
                 return turtle;
             }
