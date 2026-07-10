@@ -1851,16 +1851,30 @@ For more complete documentation, see PLSYSTEM.md.
     /**
      * ChordL revoicing: octavewiseRevoicing only (see ChordLindenmayer::chordOperation W).
      * Do not call PITV fromChord/toChord here — wasm aborts on non-OP working chords.
+     *
+     * When UniV recorded its sampling interval (V_lo/V_hi), the sampled V is mapped
+     * proportionally onto the chord's actual voicing count. Otherwise the raw index
+     * (mod count, as in C++) only reaches the first few — lowest, most compact —
+     * voicings, which piles all chords into a narrow low band of the register.
      */
     function chordl_revoicing(lsys, chord, pitv_obj) {
         const pitv_config = lsys && lsys.pitv;
-        const V = Math.floor(pitv_obj.V);
         const range = pitv_config ? Math.floor(pitv_config.range) : 84;
-        if (typeof CsoundAC !== 'undefined'
-            && typeof CsoundAC.octavewiseRevoicing === 'function') {
-            return CsoundAC.octavewiseRevoicing(chord, V, range);
+        if (typeof CsoundAC === 'undefined'
+            || typeof CsoundAC.octavewiseRevoicing !== 'function') {
+            return chord;
         }
-        return chord;
+        let V = Math.floor(pitv_obj.V);
+        if (typeof CsoundAC.octavewiseRevoicings === 'function'
+            && Number.isFinite(pitv_obj.V_lo) && Number.isFinite(pitv_obj.V_hi)
+            && pitv_obj.V_hi > pitv_obj.V_lo) {
+            const count = CsoundAC.octavewiseRevoicings(chord, range);
+            if (count > 0) {
+                const fraction = (pitv_obj.V - pitv_obj.V_lo) / (pitv_obj.V_hi - pitv_obj.V_lo);
+                V = Math.min(count - 1, Math.max(0, Math.floor(fraction * count)));
+            }
+        }
+        return CsoundAC.octavewiseRevoicing(chord, V, range);
     }
 
     /** Ensure turtle.chordl_pitv exists (plain JS object; pitv.V is the voicing index). */
@@ -1931,6 +1945,8 @@ For more complete documentation, see PLSYSTEM.md.
         lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
             chordl_pitv_from_turtle(turtle);
             turtle.chordl_pitv.V = PLSystem.random_uniform(lo, hi);
+            turtle.chordl_pitv.V_lo = lo;
+            turtle.chordl_pitv.V_hi = hi;
             return turtle;
         });
 
