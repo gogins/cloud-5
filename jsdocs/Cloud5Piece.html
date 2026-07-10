@@ -354,69 +354,6 @@ also be called by user code.</p>
 
         
             
-<h4 class="name" id="f"><span class="type-signature"></span>f<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    <p>Adds a user-defined onclick handler function to the Controls menu of the
-piece.</p>
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2405">line 2405</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
 <h4 class="name" id="html_controls_url_addon"><span class="type-signature"></span>html_controls_url_addon<span class="type-signature"></span></h4>
 
 
@@ -918,7 +855,7 @@ Csound.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2123">line 2123</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2155">line 2155</a>
     </li></ul></dd>
     
 
@@ -1152,7 +1089,7 @@ visibility=&quot;keep&quot;</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2092">line 2092</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2124">line 2124</a>
     </li></ul></dd>
     
 
@@ -1278,7 +1215,7 @@ Does NOT touch the shader overlay (which can remain as background).</p>
     
 
     
-    <h4 class="name" id="copy_parameters"><span class="type-signature"></span>copy_parameters<span class="signature">(parameters)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="copy_parameters"><span class="type-signature">(async) </span>copy_parameters<span class="signature">(parameters)</span><span class="type-signature"></span></h4>
     
 
     
@@ -1384,7 +1321,96 @@ during performance.</p></td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line1906">line 1906</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line1931">line 1931</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="get_current_control_parameters"><span class="type-signature"></span>get_current_control_parameters<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Returns a flat dictionary of current dat.gui control values suitable for
+pasting into control_parameters_addon in piece source.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line1900">line 1900</a>
     </li></ul></dd>
     
 
@@ -1546,7 +1572,7 @@ the same name.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2390">line 2390</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2434">line 2434</a>
     </li></ul></dd>
     
 
@@ -1683,7 +1709,7 @@ the same name.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2201">line 2201</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2233">line 2233</a>
     </li></ul></dd>
     
 
@@ -1947,6 +1973,213 @@ scrolling <csound5-log> element overlay.</p>
     
 
     
+    <h4 class="name" id="menu_add_command"><span class="type-signature"></span>menu_add_command<span class="signature">(control_parameters_addon, gui_folder, name, onclick)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Adds a user-defined onclick handler function to the Controls menu of the
+piece.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>control_parameters_addon</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Dictionary containing all control parameters.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>gui_folder</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The folder to which the command will be added.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The name of the command.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>onclick</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>User-defined function to execute the command.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2450">line 2450</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="menu_folder_addon"><span class="type-signature"></span>menu_folder_addon<span class="signature">(name)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
@@ -2048,7 +2281,7 @@ scrolling <csound5-log> element overlay.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2353">line 2353</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2397">line 2397</a>
     </li></ul></dd>
     
 
@@ -2301,7 +2534,7 @@ negative).</p></td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2368">line 2368</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2412">line 2412</a>
     </li></ul></dd>
     
 
@@ -2440,7 +2673,7 @@ the values of those channels.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2302">line 2302</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2346">line 2346</a>
     </li></ul></dd>
     
 
@@ -2578,7 +2811,7 @@ if required to fit layout.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2148">line 2148</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2180">line 2180</a>
     </li></ul></dd>
     
 
@@ -2667,7 +2900,7 @@ values of all controls in the menu.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2236">line 2236</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2268">line 2268</a>
     </li></ul></dd>
     
 
@@ -2805,7 +3038,7 @@ hidden, or to hide the overlay if it is visible.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2218">line 2218</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2250">line 2250</a>
     </li></ul></dd>
     
 
@@ -2895,7 +3128,7 @@ within instr definitions, with values defined in the parameters addon
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2317">line 2317</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line2361">line 2361</a>
     </li></ul></dd>
     
 
@@ -3045,7 +3278,7 @@ the output soundfile.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line1950">line 1950</a>
+        <a href="cloud-5.js.html">cloud-5.js</a>, <a href="cloud-5.js.html#line1982">line 1982</a>
     </li></ul></dd>
     
 
@@ -3097,7 +3330,7 @@ the output soundfile.</li>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Jul 10 2026 10:25:24 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Jul 10 2026 11:21:25 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -418,6 +418,48 @@ For more complete documentation, see PLSYSTEM.md.
     };
 
     /**
+     * ChordLindenmayer (M Sc voices choice): modulate from the chord at the
+     * current scale degree, not turtle.chord directly.
+     * @returns {{succeeded: boolean, details: string, scaleText: string|null, newScale: object|null}}
+     */
+    PLSystem.modulate_scale = function (turtle, voices, choice) {
+        const fromScaleText = PLSystem.describe_scale(turtle.scale);
+        let scaleDegree = PLSystem.scale_degree_for_chord(turtle.scale, turtle.chord);
+        if (scaleDegree <= 0) {
+            scaleDegree = PLSystem.ensure_turtle_degree(turtle);
+        }
+        let succeeded = false;
+        let details = '';
+        let scaleText = null;
+        let newScale = null;
+
+        if (scaleDegree <= 0) {
+            details = `chord not in scale, stored=${turtle.degree}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
+        } else {
+            const degreeChord = PLSystem.chord_at_scale_degree(turtle.scale, scaleDegree, voices);
+            const modulations = PLSystem.modulations_for_voices(
+                turtle.scale, degreeChord, voices);
+            const modCount = PLSystem.vector_size(modulations);
+            if (modCount === 0) {
+                details = `no modulations, degree=${scaleDegree}, degreeChord=${PLSystem.describe_chord(degreeChord)}, voices=${voices}, choice=${choice}`;
+            } else {
+                let index = choice;
+                while (index < 0) index += modCount;
+                while (index >= modCount) index -= modCount;
+                newScale = PLSystem.vector_get(modulations, index);
+                if (newScale == null) {
+                    details = `missing modulation at index ${index}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
+                } else {
+                    scaleText = `${fromScaleText} -> ${PLSystem.describe_scale(newScale)}`;
+                    succeeded = true;
+                    details = `degree=${scaleDegree}, choice=${choice}->${index}, voices=${voices}`;
+                }
+            }
+        }
+        return { succeeded, details, scaleText, newScale };
+    };
+
+    /**
      * Chord at a scale degree (csound::chord). Prefer the free function over
      * scale.chord() — embind can mis-bind the inherited Scale::chord method.
      */
@@ -540,7 +582,7 @@ For more complete documentation, see PLSYSTEM.md.
 
   /**
    * Log a modulation attempt to the Csound message overlay.
-   * @param {string} command Command name, e.g. 'M' or 'MSc'.
+   * @param {string} command Command name, e.g. 'M'.
    * @param {boolean} succeeded Whether modulation changed the scale.
    * @param {object} turtle Current turtle (time, scale, chord).
    * @param {string} [details] Extra context (degree, choice, voices, reason).
@@ -1535,46 +1577,18 @@ For more complete documentation, see PLSYSTEM.md.
                     return this.insert_harmony(turtle, null, 'Hds', voices);
                 }
                 case 'M': {
+                    // ChordLindenmayer (M Sc voices choice).
                     if (args.length > 0) {
-                        let voices = args.length > 1 ? args[1] : turtle.chord.voices();
-                        let choice = args[0];
-                        let fromScaleText = PLSystem.describe_scale(turtle.scale);
-                        let modulations = turtle.scale.modulations_for_voices(turtle.chord, voices);
-                        let modCount = PLSystem.vector_size(modulations);
-                        if (modCount > 0) {
-                            let index = choice;
-                            while (index < 0) {
-                                index += modCount;
-                            }
-                            while (index >= modCount) {
-                                index -= modCount;
-                            }
-                            let newScale = PLSystem.vector_get(modulations, index);
-                            if (newScale == null) {
-                                PLSystem.log_modulation(
-                                    'M',
-                                    false,
-                                    turtle,
-                                    `missing modulation at index ${index}, voices=${voices}, choice=${choice}`
-                                );
-                            } else {
-                                let scaleText = `${fromScaleText} -> ${PLSystem.describe_scale(newScale)}`;
-                                turtle.scale = newScale;
-                                PLSystem.log_modulation(
-                                    'M',
-                                    true,
-                                    turtle,
-                                    `choice ${choice}->${index}, voices=${voices}`,
-                                    scaleText
-                                );
-                            }
-                        } else {
-                            PLSystem.log_modulation(
-                                'M',
-                                false,
-                                turtle,
-                                `no modulations, voices=${voices}, choice=${choice}`
-                            );
+                        let voices = args.length > 1 ? args[0] : turtle.chord.voices();
+                        let choice = args.length > 1 ? args[1] : args[0];
+                        const result = PLSystem.modulate_scale(turtle, voices, choice);
+                        if (result.newScale != null) {
+                            turtle.scale = result.newScale;
+                        }
+                        try {
+                            PLSystem.log_modulation('M', result.succeeded, turtle, result.details, result.scaleText);
+                        } catch (logErr) {
+                            PLSystem.log_to_csound(`M: log error (${logErr.message || logErr})`);
                         }
                     }
                     return turtle;
@@ -1789,7 +1803,7 @@ For more complete documentation, see PLSYSTEM.md.
             // });
         }
         /**
-         * Register ChordLindenmayer custom commands (Cd, MSc, Fwd, WriteChord, …).
+         * Register ChordLindenmayer custom commands (Cd, Fwd, WriteChord, …).
          * @param {object} [options] durationFactor, durationMinimum for Fwd note lengths.
          */
         register_chordlindenmayer_commands(options) {
@@ -1865,49 +1879,6 @@ For more complete documentation, see PLSYSTEM.md.
         lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
             const degree = PLSystem.ensure_turtle_degree(turtle);
             turtle.chord = PLSystem.chord_at_scale_degree(turtle.scale, degree, voices);
-            return turtle;
-        });
-
-        lsys.add_command('MSc(int voices, int choice)', function (lsys_, turtle, voices, choice) {
-            const fromScaleText = PLSystem.describe_scale(turtle.scale);
-            let scaleDegree = PLSystem.scale_degree_for_chord(turtle.scale, turtle.chord);
-            if (scaleDegree <= 0) {
-                scaleDegree = PLSystem.ensure_turtle_degree(turtle);
-            }
-            let succeeded = false;
-            let details = '';
-            let scaleText = null;
-
-            if (scaleDegree <= 0) {
-                details = `chord not in scale, stored=${turtle.degree}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
-            } else {
-                const degreeChord = PLSystem.chord_at_scale_degree(turtle.scale, scaleDegree, voices);
-                const modulations = PLSystem.modulations_for_voices(
-                    turtle.scale, degreeChord, voices);
-                const modCount = PLSystem.vector_size(modulations);
-                if (modCount === 0) {
-                    details = `no modulations, degree=${scaleDegree}, degreeChord=${PLSystem.describe_chord(degreeChord)}, voices=${voices}, choice=${choice}`;
-                } else {
-                    let index = choice;
-                    while (index < 0) index += modCount;
-                    while (index >= modCount) index -= modCount;
-                    const newScale = PLSystem.vector_get(modulations, index);
-                    if (newScale == null) {
-                        details = `missing modulation at index ${index}, degree=${scaleDegree}, voices=${voices}, choice=${choice}`;
-                    } else {
-                        scaleText = `${fromScaleText} -> ${PLSystem.describe_scale(newScale)}`;
-                        turtle.scale = newScale;
-                        succeeded = true;
-                        details = `degree=${scaleDegree}, choice=${choice}->${index}, voices=${voices}`;
-                    }
-                }
-            }
-
-            try {
-                PLSystem.log_modulation('MSc', succeeded, turtle, details, scaleText);
-            } catch (logErr) {
-                PLSystem.log_to_csound(`MSc: log error (${logErr.message || logErr})`);
-            }
             return turtle;
         });
 
