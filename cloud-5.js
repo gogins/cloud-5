@@ -1376,6 +1376,9 @@ class Cloud5Piece extends Cloud5Element {
   };
 
   maybe_start_meter_poll = (now_ms) => {
+    if (!this.is_performing || !this.csound) {
+      return;
+    }
     if (!globalThis.csound) {
       return;
     }
@@ -1413,6 +1416,10 @@ class Cloud5Piece extends Cloud5Element {
   };
 
   poll_meters_and_update_ui = async (token) => {
+    if (!this.is_performing || !this.csound) {
+      return;
+    }
+    const csound = this.csound;
     let level_left = -100;
     let level_right = -100;
 
@@ -1421,12 +1428,22 @@ class Cloud5Piece extends Cloud5Element {
       score_time = (performance.now() - this._midi_perf_start_ms) / 1000.0;
     }
     else {
-      score_time = await csound.getScoreTime();
+      try {
+        score_time = await csound.getScoreTime();
+      } catch (e) {
+        console.warn('getScoreTime failed during meter poll:', e);
+        return;
+      }
     }
     this.latest_score_time = score_time;
 
-    level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
-    level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
+    try {
+      level_left = await csound.getControlChannel("gk_MasterOutput_output_level_left");
+      level_right = await csound.getControlChannel("gk_MasterOutput_output_level_right");
+    } catch (e) {
+      console.warn('getControlChannel failed during meter poll:', e);
+      return;
+    }
 
     let delta = score_time;
 
@@ -1618,10 +1635,18 @@ class Cloud5Piece extends Cloud5Element {
     };
 
     const menu_item_stop = this.querySelector('#menu_item_stop');
-    menu_item_stop.onclick = (event) => {
+    menu_item_stop.onclick = async (event) => {
       console.info("menu_item_stop click...");
-      this.csound?.setControlChannel("gk_cloud5_performance_mode", 0);
-      this.stop();
+      try {
+        this.csound?.setControlChannel("gk_cloud5_performance_mode", 0);
+      } catch (e) {
+        console.warn('setControlChannel on stop failed:', e);
+      }
+      try {
+        await this.stop();
+      } catch (e) {
+        console.warn('Stop failed:', e);
+      }
       if (this.is_rendering) {
         const soundfile_url = url_for_soundfile(this.csound);
         this.is_rendering = false;
@@ -2011,9 +2036,6 @@ class Cloud5Piece extends Cloud5Element {
     if (non_csound(this.csound)) return;
     // Stop any current performance first.
     await this.stop();
-    for (const overlay of this._get_all_overlays()) {
-      overlay?.on_stop();
-    }
     this._reset_score_time_followers();
     // Clear performance-related state from all components.
     await this?.log_overlay?.clear?.();
@@ -2153,21 +2175,56 @@ gS_cloud5_soundfile_name init "${output_soundfile_name}"
    * Stops both Csound and Strudel from performing.
    */
   stop = async function () {
+    if (this._stop_promise) {
+      return this._stop_promise;
+    }
+    this._stop_promise = this._stop_impl().finally(() => {
+      this._stop_promise = null;
+    });
+    return this._stop_promise;
+  };
+
+  _stop_impl = async function () {
     this.csound_message_callback("cloud-5 is stopping...\n");
     this.is_performing = false;
-    // Stop performance in all components.
-    if (this.csound) {
-      await this.csound.stop();
-      await this.csound.cleanup();
-      this.csound.reset();
-    }
-    for (const overlay of this._get_all_overlays()) {
-      overlay?.on_stop?.();
-    }
-    await this._stop_legacy_strudel();
-    /// await cloud5_save_state_if_needed(this);
+    this._meter_poll_in_flight = false;
+    this._meter_poll_token = (this._meter_poll_token || 0) + 1;
+    this.cancel_scheduled_stop();
     this._stop_display_loop();
     this._stop_ui_timer();
+
+    for (const overlay of this._get_all_overlays()) {
+      try {
+        overlay?.on_stop?.();
+      } catch (e) {
+        console.warn('overlay on_stop failed:', e);
+      }
+    }
+    try {
+      this.shader_overlay?.on_stop?.();
+    } catch (e) {
+      console.warn('shader on_stop failed:', e);
+    }
+    try {
+      await this._stop_legacy_strudel();
+    } catch (e) {
+      console.warn('legacy Strudel stop failed:', e);
+    }
+
+    const csound = this.csound;
+    if (csound) {
+      try {
+        if (typeof globalThis.cloud5_nwjs_debug === 'function') {
+          globalThis.cloud5_nwjs_debug('stop: csound.node=' + cloud5_csound_backend_is_node(csound));
+        }
+        await cloud5_call_csound_teardown(csound, false);
+      } catch (e) {
+        console.warn('Csound stop failed:', e);
+        this.csound_message_callback(`Stop error (continuing): ${e.message || e}\n`);
+      }
+    }
+
+    this._reset_score_time_followers();
     this.csound_message_callback("cloud-5 has stopped.\n");
   };
 
@@ -2974,9 +3031,17 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
   }
 
   write_audio_texture(analyser, texture_unit, texture, sampler) {
+    if (!this.gl) {
+      return;
+    }
     if (analyser != null) {
-      analyser.getByteFrequencyData(this.frequency_domain_data);
-      analyser.getByteTimeDomainData(this.time_domain_data);
+      try {
+        analyser.getByteFrequencyData(this.frequency_domain_data);
+        analyser.getByteTimeDomainData(this.time_domain_data);
+      } catch (e) {
+        this.analyser = null;
+        return;
+      }
       for (let i = 0; i < this.audio_texture_width; ++i) {
         // Map frequency domain magnitudes to [0, 1].
         let sample = this.frequency_domain_data[i];
@@ -3155,21 +3220,30 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
       return;
     }
     // Here we create an AnalyserNode as soon as Csound is available.
-    if (this.analyser) {
-    } else {
-      let csound = this?.cloud5_piece?.csound;
+    const piece = this?.cloud5_piece;
+    if (!this.analyser && piece?.is_performing && piece?.csound) {
+      let csound = piece.csound;
       if (csound) {
         let node = null;
         if (typeof csound.getNode === 'function') {
-          node = await csound.getNode();
+          try {
+            node = await csound.getNode();
+          } catch (e) {
+            console.warn('Cloud5ShaderToy getNode failed:', e);
+          }
         } else if (csound instanceof AudioNode) {
           node = csound;
         }
         if (node) {
-          this.analyser = new AnalyserNode(node.context);
-          this.analyser.fftSize = 2048;
-          console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
-          node.connect(this.analyser);
+          try {
+            this.analyser = new AnalyserNode(node.context);
+            this.analyser.fftSize = 2048;
+            console.info("Analyzer buffer size: " + this.analyser.frequencyBinCount);
+            node.connect(this.analyser);
+          } catch (e) {
+            console.warn('Cloud5ShaderToy analyser connect failed:', e);
+            this.analyser = null;
+          }
         }
       }
     }
@@ -3197,10 +3271,19 @@ customElements.define("cloud5-strudel", Cloud5Strudel);
     this._raf = requestAnimationFrame((milliseconds) => this.render_frame(milliseconds));
   }
 
+  on_stop() {
+    if (this.analyser) {
+      try {
+        this.analyser.disconnect();
+      } catch (e) {
+        console.warn('Cloud5ShaderToy analyser disconnect failed:', e);
+      }
+      this.analyser = null;
+    }
+  }
+
   on_shown() {
     if (!this.canvas) return;
-
-    // 1) Compute visible CSS size; fall back to viewport when display:none had zeroed sizes
     const dpr = window.devicePixelRatio || 1;
     let cssW = this.clientWidth, cssH = this.clientHeight;
     if (!cssW || !cssH) { cssW = document.documentElement.clientWidth; cssH = document.documentElement.clientHeight; }
@@ -3415,6 +3498,69 @@ function non_csound(csound_) {
     return true;
   }
   return false;
+}
+
+/** True for NW.js csound.node (not CsoundAudioNode / wasm worklet). */
+function cloud5_csound_backend_is_node(csound_) {
+  if (non_csound(csound_)) {
+    return false;
+  }
+  if (typeof csound_.getNode === 'function') {
+    return false;
+  }
+  return typeof csound_.perform === 'function' || typeof csound_.Perform === 'function';
+}
+
+async function cloud5_call_csound_stop(csound_) {
+  if (typeof csound_.stop === 'function') {
+    const result = csound_.stop();
+    if (result && typeof result.then === 'function') {
+      await result;
+    }
+  } else if (typeof csound_.Stop === 'function') {
+    csound_.Stop();
+  }
+}
+
+/**
+ * Stop Csound and optionally tear down for the next compile.
+ * csound.node: Stop() already Join()s; on Csound 7 cleanup() is Reset().
+ * Calling cleanup+reset after Stop unloads VST3 plugins and can exit NW.js.
+ */
+async function cloud5_call_csound_teardown(csound_, reset_for_recompile = false) {
+  await cloud5_call_csound_stop(csound_);
+  if (cloud5_csound_backend_is_node(csound_)) {
+    if (reset_for_recompile) {
+      if (typeof csound_.reset === 'function') {
+        csound_.reset();
+      } else if (typeof csound_.Reset === 'function') {
+        csound_.Reset();
+      }
+    }
+    return;
+  }
+  if (typeof csound_.cleanup === 'function') {
+    const cleanup_result = csound_.cleanup();
+    if (cleanup_result && typeof cleanup_result.then === 'function') {
+      await cleanup_result;
+    }
+  } else if (typeof csound_.Cleanup === 'function') {
+    const cleanup_result = csound_.Cleanup();
+    if (cleanup_result && typeof cleanup_result.then === 'function') {
+      await cleanup_result;
+    }
+  }
+  if (typeof csound_.reset === 'function') {
+    const reset_result = csound_.reset();
+    if (reset_result && typeof reset_result.then === 'function') {
+      await reset_result;
+    }
+  } else if (typeof csound_.Reset === 'function') {
+    const reset_result = csound_.Reset();
+    if (reset_result && typeof reset_result.then === 'function') {
+      await reset_result;
+    }
+  }
 }
 
 /**
