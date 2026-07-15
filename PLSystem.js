@@ -174,14 +174,22 @@ For more complete documentation, see PLSYSTEM.md.
     };
 
     /**
-     * ChordLindenmayer "R" range equivalence: wrap a pitch into [0, range).
-     * Returns the value unchanged if range is not a positive finite number.
+     * ChordLindenmayer "R" range equivalence (modulus). Not applied during turtle
+     * motion; keys are rescaled linearly in applyChordLindenmayerPostProcess before
+     * conformToChords.
      */
     PLSystem.wrap_in_range = function (value, range) {
         if (typeof range === 'number' && Number.isFinite(range) && range > 0) {
             return PLSystem.modulus(value, range);
         }
         return value;
+    };
+
+    /** Linear rescale of one score dimension (CsoundAC Score.setScale). */
+    PLSystem.rescale_score_dimension = function (
+        score, dimension, rescaleMinimum, rescaleRange, minimum, range) {
+        score.setScale(
+            score, dimension, rescaleMinimum, rescaleRange, 0, score.size(), minimum, range);
     };
 
     /** Route messages to the Csound log overlay and the developer console. */
@@ -728,6 +736,18 @@ For more complete documentation, see PLSYSTEM.md.
             if (this.voiced_chord) {
                 clone_.voiced_chord = this.voiced_chord.clone();
             }
+            if (this.stagger != null) {
+                clone_.stagger = this.stagger;
+            }
+            if (this.revoicing_range != null) {
+                clone_.revoicing_range = this.revoicing_range;
+            }
+            if (this.rangeSize != null) {
+                clone_.rangeSize = this.rangeSize;
+            }
+            if (this.v_frac != null) {
+                clone_.v_frac = this.v_frac;
+            }
             return clone_;
         }
         pitv_from_chord() {
@@ -1011,7 +1031,8 @@ For more complete documentation, see PLSYSTEM.md.
                 return turtle_;
             };
             this.add_command('Assign(dimension, value)', function (lsystem, turtle, dimension, value) {
-                turtle.note[dimension] = value;
+                // Embind Event has no JS [i] / .data; use get*/set* (see chordl_set_note_dim).
+                chordl_set_note_dim(turtle.note, dimension, value);
                 return turtle;
             });
             this.add_command('Scale(dimension, value)', function (lsystem, turtle, dimension, value) {
@@ -1019,19 +1040,29 @@ For more complete documentation, see PLSYSTEM.md.
                 return turtle;
             });
             this.add_command('Move(dimension, value)', function (lsystem, turtle, dimension, value) {
-                turtle.note[dimension] += value;
+                chordl_set_note_dim(
+                    turtle.note, dimension,
+                    chordl_note_dim(turtle.note, dimension) + value);
                 return turtle;
             });
             this.add_command('Steps(s)', function (lsystem, turtle, s) {
-                // Use a local variable; strict-mode JS will reject implicit globals.
-                let orientation_ = numeric.mul(turtle.orientation, s);
-                orientation_ = numeric.mul(orientation_, turtle.magnitude);
-                turtle.note.data = numeric.add(turtle.note.data, orientation_);
+                for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
+                    const delta = s * turtle.magnitude[i] * turtle.orientation[i];
+                    if (delta !== 0) {
+                        chordl_set_note_dim(
+                            turtle.note, i, chordl_note_dim(turtle.note, i) + delta);
+                    }
+                }
                 return turtle;
             });
             this.add_command('Step()', function (lsystem, turtle) {
-                let scaled_direction = numeric.mul(turtle.orientation, turtle.magnitude);
-                turtle.note.data = numeric.add(turtle.note.data, scaled_direction);
+                for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
+                    const delta = turtle.magnitude[i] * turtle.orientation[i];
+                    if (delta !== 0) {
+                        chordl_set_note_dim(
+                            turtle.note, i, chordl_note_dim(turtle.note, i) + delta);
+                    }
+                }
                 return turtle;
             });
             // http://wscg.zcu.cz/wscg2004/Papers_2004_Short/N29.pdf: main rotations.
@@ -1350,11 +1381,6 @@ For more complete documentation, see PLSYSTEM.md.
                     let getter = setter.replace('set', 'get');
                     turtle.note[setter](Math.pow(turtle.note[getter](), scaled));
                 }
-                // ChordLindenmayer range equivalence for the KEY field.
-                if (setter === 'setKey') {
-                    turtle.note.setKey(PLSystem.wrap_in_range(
-                        turtle.note.getKey(), this.pitv.range));
-                }
             }
             return turtle;
         }
@@ -1369,24 +1395,19 @@ For more complete documentation, see PLSYSTEM.md.
                 if (args.length >= 2) {
                     let dimension = args[0];
                     let value = args[1];
+                    let current = chordl_note_dim(turtle.note, dimension);
                     if (operation === '=') {
-                        turtle.note[dimension] = value;
+                        chordl_set_note_dim(turtle.note, dimension, value);
                     } else if (operation === '+') {
-                        turtle.note[dimension] += value;
+                        chordl_set_note_dim(turtle.note, dimension, current + value);
                     } else if (operation === '-') {
-                        turtle.note[dimension] -= value;
+                        chordl_set_note_dim(turtle.note, dimension, current - value);
                     } else if (operation === '*') {
-                        turtle.note[dimension] *= value;
+                        chordl_set_note_dim(turtle.note, dimension, current * value);
                     } else if (operation === '/') {
-                        turtle.note[dimension] /= value;
+                        chordl_set_note_dim(turtle.note, dimension, current / value);
                     } else if (operation === '^') {
-                        turtle.note[dimension] = Math.pow(turtle.note[dimension], value);
-                    }
-                    // ChordLindenmayer range equivalence: the KEY dimension wraps
-                    // around within the range of the PITV group.
-                    if (dimension === 4) {
-                        turtle.note[dimension] = PLSystem.wrap_in_range(
-                            turtle.note[dimension], this.pitv.range);
+                        chordl_set_note_dim(turtle.note, dimension, Math.pow(current, value));
                     }
                 }
                 return turtle;
@@ -1507,8 +1528,13 @@ For more complete documentation, see PLSYSTEM.md.
             let args = word.actual_parameter_values;
             switch (word.builtin_name) {
                 case 'F': {
-                    let scaled_direction = numeric.mul(turtle.orientation, turtle.magnitude);
-                    turtle.note.data = numeric.add(turtle.note.data, scaled_direction);
+                    for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
+                        const delta = turtle.magnitude[i] * turtle.orientation[i];
+                        if (delta !== 0) {
+                            chordl_set_note_dim(
+                                turtle.note, i, chordl_note_dim(turtle.note, i) + delta);
+                        }
+                    }
                     return turtle;
                 }
                 case 'R': {
@@ -1659,11 +1685,36 @@ For more complete documentation, see PLSYSTEM.md.
         }
         /**
          * ChordLindenmayer::generateLocally post-process after writeScore:
-         * tie, conform, tie, fixStatus.
+         * rescale KEY into range, conform, tie (only at end), fixStatus.
+         *
+         * During generation, KEY is never wrapped; register arcs are preserved until
+         * this rescale step. Do not tie before rescale — overlapping ties would lock
+         * pitches. Harmony (conformToChords) runs only after rescale; tying is last.
+         *
+         * @param {boolean} [octave_equivalence=true]
+         * @param {object} [options]
+         * @param {boolean} [options.rescaleKey=true] rescale KEY before conform
+         * @param {number} [options.keyMinimum=0] target minimum MIDI key
+         * @param {number} [options.keyRange] target span (default pitv.range)
+         * @param {boolean} [options.keyRescaleMinimum=true]
+         * @param {boolean} [options.keyRescaleRange=true]
          */
-        applyChordLindenmayerPostProcess(octave_equivalence = true) {
+        applyChordLindenmayerPostProcess(octave_equivalence = true, options = {}) {
+            const opts = options || {};
+            const rescaleKey = opts.rescaleKey !== false;
+            const pitvRange = (this.pitv && Number.isFinite(this.pitv.range) && this.pitv.range > 0)
+                ? this.pitv.range
+                : 84;
+            const keyMinimum = (opts.keyMinimum != null) ? opts.keyMinimum : 0;
+            const keyRange = (opts.keyRange != null) ? opts.keyRange : pitvRange;
+            const keyRescaleMinimum = opts.keyRescaleMinimum !== false;
+            const keyRescaleRange = opts.keyRescaleRange !== false;
+
             this.score.sort();
-            this.score.tieOverlappingNotes();
+            if (rescaleKey && keyRange > 0) {
+                PLSystem.rescale_score_dimension(
+                    this.score, 4, keyRescaleMinimum, keyRescaleRange, keyMinimum, keyRange);
+            }
             this.score.conformToChords(false, octave_equivalence);
             this.score.tieOverlappingNotes();
             PLSystem.fix_status(this.score);
@@ -1760,6 +1811,7 @@ For more complete documentation, see PLSYSTEM.md.
                 working_turtle.pitv = this.pitv;
                 for (wordIndex = 0; wordIndex < current_production.length; wordIndex++) {
                     let word = current_production[wordIndex];
+                    this.evaluate_actual_parameter_expressions(null, word);
                     working_turtle = this.invoke_command(word, working_turtle);
                 }
                 this.turtle = working_turtle;
@@ -1966,13 +2018,27 @@ For more complete documentation, see PLSYSTEM.md.
             return turtle;
         });
 
+        /** Absolute seconds between WriteChord() voices; 0 = simultaneous. */
+        lsys.add_command('Stagger(num dt)', function (lsys_, turtle, dt) {
+            turtle.stagger = Math.max(0, dt);
+            return turtle;
+        });
+
+        /**
+         * Write each voiced-chord pitch at the turtle time, then advance time by
+         * turtle.stagger (set via Stagger). No post-hoc onset offsets.
+         */
         lsys.add_command('WriteChord()', function (lsys_, turtle) {
             chordl_pitv_from_turtle(turtle);
             const chord = turtle.voiced_chord || turtle.chord;
+            const step = (turtle.stagger != null) ? turtle.stagger : 0;
             for (let i = 0; i < chord.voices(); i++) {
                 const event = turtle.n.clone();
                 event.setKey(chord.getPitch(i));
                 lsys_.score.append_event(event);
+                if (step > 0 && i + 1 < chord.voices()) {
+                    turtle.n.setTime(turtle.n.getTime() + step);
+                }
             }
             return turtle;
         });

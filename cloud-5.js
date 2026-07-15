@@ -2036,6 +2036,18 @@ class Cloud5Piece extends Cloud5Element {
     if (non_csound(this.csound)) return;
     // Stop any current performance first.
     await this.stop();
+    if (!non_csound(this.csound) && cloud5_csound_backend_is_node(this.csound)) {
+      try {
+        if (typeof this.csound.reset === 'function') {
+          this.csound.reset();
+        } else if (typeof this.csound.Reset === 'function') {
+          this.csound.Reset();
+        }
+        this.csound_message_callback('Csound reset for recompile.\n');
+      } catch (e) {
+        console.warn('Reset before compile failed:', e);
+      }
+    }
     this._reset_score_time_followers();
     // Clear performance-related state from all components.
     await this?.log_overlay?.clear?.();

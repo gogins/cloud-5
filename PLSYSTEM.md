@@ -86,6 +86,14 @@ several ways of working with harmony:
 the notes of the score. Flags added to the Chords in the timeline indicate how 
 notes are to be conformed to those chords.
 
+**KEY during generation and post-process:** `n + 4` / `Nk` and other turtle motion
+may move KEY freely (no modulus wrap). After `generate()` has finished all
+iterations, call `applyChordLindenmayerPostProcess()`: it **linearly rescales KEY**
+into `[keyMinimum, keyMinimum + keyRange]` (defaults: `0` and `pitv.range`),
+then runs `conformToChords`, then **ties overlapping notes** (only at the end).
+Register arcs from the grammar are preserved by the rescale; harmony is applied
+only after keys are brought into range. Do not wrap or tie keys during generation.
+
 `PLSystem.chord_space_group` is a group in which all equally tempered Chords 
 within a given range of pitches can be represented by the orthogonal 
 subgroups:
@@ -214,6 +222,12 @@ nearest integer.
     - `Wn;`
     - `Wc;`
     - `Wcd;`
+  - ChordLindenmayer helpers (via `register_chordlindenmayer_commands`):
+    - `Stagger(dt);` sets seconds between successive `WriteChord()` voices
+      (advances turtle time; default `0` = simultaneous). Do not post-stagger
+      onsets after generation.
+    - `WriteChord();` writes each pitch of the voiced chord at the turtle time,
+      advancing by `turtle.stagger` between voices.
   - Write the pitch-classes of `Turtle.chord`; `Turtle.chord` as actually 
     voiced; the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
     from currently sounding notes in the score; the pitch-classes of the 
