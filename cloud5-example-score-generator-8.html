@@ -2057,20 +2057,20 @@
                 const largoA =
                     'B; Fwd(0.4); Rng(60); RevoicingR(); WriteChord(); n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.6; n + 4, -0.5; Fwd(3); A; ]; ' +
-                    'M 3, 0; NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(4); R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 3, 0; Hs; Wn; A; ' +
+                    'M 3, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; Fwd(4); R 0, 3, 0.325; n + 5, -2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, 2; n + 0, 5; Wn; A;';
                 const andanteA =
                     'B; Fwd(0.125); Rng(72); RevoicingR(); WriteChord(); n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m * 0, 0.75; n + 4, -0.5; Fwd(1); A; ]; ' +
-                    'M 4, 0; NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(1.5); R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 3, 0; Hs; Wn; A; ' +
+                    'M 4, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; Fwd(1.5); R 0, 3, 0.325; n + 5, -2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, 2; n + 0, 5; Wn; A;';
                 const adagioA =
                     'B; Fwd(0.35); Rng(54); RevoicingR(); WriteChord(); n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.45; n + 4, -0.5; Fwd(2.75); A; ]; ' +
-                    'M 3, 0; NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(3.25); R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 3, 0; Hs; Wn; A; ' +
+                    'M 3, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; Fwd(3.25); R 0, 3, 0.325; n + 5, -2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, 2; n + 0, 5; Wn; A;';
 
                 lsys.add_rule('A;', 'iteration < 2', largoA);

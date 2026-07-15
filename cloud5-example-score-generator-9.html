@@ -2068,26 +2068,26 @@
                 const largoA =
                     'B; Fwd(0.4); Rng(60); RevoicingR(); WriteChord(); n + 4, -1; n + 5, .2; d - 1; ' +
                     '[; m / 0, 1.6; n + 4, -0.5; Fwd(3); A; ]; ' +
-                    'M 3, 0; NxRand(); n + 0, .1; R 0, 4, -0.041; Fwd(4); R 0, 3, 0.325; n + 5, -.2; ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 3, 0; Hs; Wn; A; ' +
+                    'M 3, 0; n = 6, Math.random(); n + 0, .1; R 0, 4, -0.041; Fwd(4); R 0, 3, 0.325; n + 5, -.2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, 2; n + 0, 5; Wn; A;';
                 const middleClimbA =
                     'B; Fwd(0.05); Rng(72); RevoicingFrac(0.88); WriteChord(); n + 4, 3; n + 5, .3; d - 1; ' +
                     '[; m * 0, 0.42; n + 4, 1.5; Fwd(0.5); A; ]; ' +
-                    'M 3, 0; NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(0.55); R 0, 3, 0.325; n + 5, -.2; ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 3, 0; Hs; Wn; A; ' +
+                    'M 3, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; Fwd(0.55); R 0, 3, 0.325; n + 5, -.2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, 5; n + 0, 3; Wn; A;';
                 const middleDescendA =
                     'B; Fwd(0.16); Rng(72); RevoicingFrac(0.12); WriteChord(); n + 4, -3; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.15; n + 4, -1.5; Fwd(1.35); A; ]; ' +
-                    'M 3, 0; NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(1.75); R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 3, 0; Hs; Wn; A; ' +
+                    'M 3, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; Fwd(1.75); R 0, 3, 0.325; n + 5, -2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, -2; n + 0, 4; Wn; A;';
                 const adagioA =
                     'B; Fwd(0.35); Rng(54); RevoicingR(); WriteChord(); n + 4, -1; n + 5, .2; d - 1; ' +
                     '[; m / 0, 1.45; n + 4, -0.5; Fwd(2.75); A; ]; ' +
-                    'M 3, 0; NxRand(); n + 0, 1; R 0, 4, -0.041; Fwd(3.25); R 0, 3, 0.325; n + 5, -.2; ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); M 3, 0; Hs; Wn; A; ' +
+                    'M 3, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; Fwd(3.25); R 0, 3, 0.325; n + 5, -.2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, 2; n + 0, 5; Wn; A;';
 
                 lsys.add_rule('A;', 'iteration < 2', largoA);

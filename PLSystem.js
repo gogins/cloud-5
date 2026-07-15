@@ -2002,16 +2002,6 @@ For more complete documentation, see PLSYSTEM.md.
             return turtle;
         });
 
-        lsys.add_command('NxRand()', function (lsys_, turtle) {
-            turtle.n.setPan(PLSystem.random_uniform(0, 1));
-            return turtle;
-        });
-
-        lsys.add_command('NiRand(num lo, num hi)', function (lsys_, turtle, lo, hi) {
-            turtle.n.setInstrument(PLSystem.random_uniform(lo, hi));
-            return turtle;
-        });
-
         lsys.add_command('Revoicing()', function (lsys_, turtle) {
             const pitv = chordl_pitv_from_turtle(turtle);
             turtle.voiced_chord = chordl_revoicing(lsys_, turtle.chord, pitv);

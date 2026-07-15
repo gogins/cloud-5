@@ -2121,25 +2121,12 @@
                 turtle.voicing = lo + Math.random() * (hi - lo);
                 return turtle;
             });
-            lsys.add_command('Nk(num delta)', function (lsys_, turtle, delta) {
-                chordlEnsureState(turtle);
-                turtle.n.setKey(chordlModR(chordlNoteDim(turtle.n, 4) + delta, turtle.rangeSize));
-                return turtle;
-            });
             lsys.add_command('Nv(num delta)', function (lsys_, turtle, delta) {
                 turtle.n.setVelocity(chordlNoteDim(turtle.n, 5) + delta);
                 return turtle;
             });
             lsys.add_command('Nt(num delta)', function (lsys_, turtle, delta) {
                 turtle.n.setTime(chordlNoteDim(turtle.n, 0) + delta);
-                return turtle;
-            });
-            lsys.add_command('NxRand()', function (lsys_, turtle) {
-                turtle.n.setPan(Math.random());
-                return turtle;
-            });
-            lsys.add_command('NiRand(num lo, num hi)', function (lsys_, turtle, lo, hi) {
-                turtle.n.setInstrument(Math.floor(lo + Math.random() * (hi - lo + 1)));
                 return turtle;
             });
             lsys.add_command('Wcr()', function (lsys_, turtle) {
@@ -2193,11 +2180,11 @@
                 // ChordLindenmayer rule (A) — second (A) rule overwrote the first in C++.
                 // (W Cl R) is a no-op in ChordLindenmayer (target "Cl" is not handled).
                 lsys.add_rule('A;', 'true',
-                    'B; Fwd(0.125); UniV(1, 111); Wcr(); Nk(-1); Nv(2); d - 1; ' +
-                    '[; StMul(0, 0.75); Nk(-0.5); Fwd(1); A; ]; ' +
-                    'MSc(3, 1); NxRand(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
-                    'B; d + 4; Cd(4); d + 3; NiRand(1, 5); MSc(3, 0); ScP(); Wnr(); A; ' +
-                    'Nk(2); Nt(5); Wnr(); A;'
+                    'B; Fwd(0.125); UniV(1, 111); Wcr(); n + 4, -1; Nv(2); d - 1; ' +
+                    '[; StMul(0, 0.75); n + 4, -0.5; Fwd(1); A; ]; ' +
+                    'MSc(3, 1); n = 6, Math.random(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); ScP(); Wnr(); A; ' +
+                    'n + 4, 2; Nt(5); Wnr(); A;'
                 );
 
                 // ChordLindenmayer rule (B).
