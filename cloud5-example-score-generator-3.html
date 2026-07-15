@@ -2020,12 +2020,6 @@
                 case 6: note.setPan(value); break;
             }
         }
-        function chordlAddVoice(CsoundAC, chord) {
-            let c = chord.eOP();
-            c.resize(c.voices() + 1);
-            c.setPitch(c.voices() - 1, c.getPitch(0));
-            return c.eOP();
-        }
         function chordlPrepareTurtle(turtle) {
             chordlEnsureState(turtle);
             return turtle;
@@ -2070,11 +2064,6 @@
                         turtle.scale = modulations[index];
                     }
                 }
-                return turtle;
-            });
-            lsys.add_command('AddVoice()', function (lsys_, turtle) {
-                // (++) C in ChordLindenmayer adds one voice to the current chord.
-                turtle.chord = chordlAddVoice(CsoundAC, turtle.chord);
                 return turtle;
             });
             lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
@@ -2136,7 +2125,7 @@
                 // ChordLindenmayer axiom: (seed P 3928394)(= P 72)(= Sc Cmajor {0,2,4,5,7,9,11})
                 // (++ C)(= C {0,4,7})(= M {0,4,7})(= N[d] 36.)(Sc P)(A)
                 lsys.set_axiom(
-                    'AddVoice(); ' +
+                    'C+; ' +
                     'c = {0,4,7}; ' +
                     's = {0,2,4,5,7,9,11}; ' +
                     'd = 1; ' +

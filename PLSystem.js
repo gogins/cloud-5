@@ -1991,11 +1991,6 @@ For more complete documentation, see PLSYSTEM.md.
             return turtle;
         });
 
-        lsys.add_command('AddVoice()', function (lsys_, turtle) {
-            turtle.chord = chordl_add_voice(turtle.chord);
-            return turtle;
-        });
-
         lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
             chordl_pitv_from_turtle(turtle);
             let timeDelta = 0;

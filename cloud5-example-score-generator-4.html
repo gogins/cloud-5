@@ -2020,12 +2020,6 @@
                 case 6: note.setPan(value); break;
             }
         }
-        function chordlAddVoice(CsoundAC, chord) {
-            let c = chord.eOP();
-            c.resize(c.voices() + 1);
-            c.setPitch(c.voices() - 1, c.getPitch(0));
-            return c.eOP();
-        }
         function chordlPrepareTurtle(turtle) {
             chordlEnsureState(turtle);
             return turtle;
@@ -2070,11 +2064,6 @@
                         turtle.scale = modulations[index];
                     }
                 }
-                return turtle;
-            });
-            lsys.add_command('AddVoice()', function (lsys_, turtle) {
-                // (++) C in ChordLindenmayer adds one voice to the current chord.
-                turtle.chord = chordlAddVoice(CsoundAC, turtle.chord);
                 return turtle;
             });
             // ChordL uses turtle.step (not PLSystem magnitude) for (* S[t] ...) and (F N ...).
@@ -2145,7 +2134,7 @@
                 // (++ C)(= C {0,4,7})(= M {0,4,7})(= N[d] 36.)(Sc P)(A)
                 lsys.set_axiom(
                     'seed 3928394; ' +
-                    'AddVoice(); ' +
+                    'C+; ' +
                     'c = {0,4,7}; ' +
                     's = {0,2,4,5,7,9,11}; ' +
                     'd = 1; ' +
