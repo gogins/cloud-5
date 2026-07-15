@@ -1557,8 +1557,14 @@ For more complete documentation, see PLSYSTEM.md.
                     return turtle;
                 }
                 case 'Wc': {
-                    CsoundAC.insert(this.score, turtle.chord, turtle.note.getTime());
-                    turtle.prior_chord = turtle.chord.clone();
+                    // Prefer octavewise-voiced chord when present (set by Revoicing*).
+                    const chord = turtle.voiced_chord || turtle.chord;
+                    for (let i = 0; i < chord.voices(); i++) {
+                        const event = turtle.note.clone();
+                        event.setKey(chord.getPitch(i));
+                        this.score.append_event(event);
+                    }
+                    turtle.prior_chord = chord.clone();
                     return turtle;
                 }
                 case 'Wcd': {
@@ -1855,7 +1861,7 @@ For more complete documentation, see PLSYSTEM.md.
             // });
         }
         /**
-         * Register ChordLindenmayer custom commands (Cd, Fwd, WriteChord, …).
+         * Register ChordLindenmayer custom commands (Cd, Fwd, UniV, Revoicing, …).
          * @param {object} [options] durationFactor, durationMinimum for Fwd note lengths.
          */
         register_chordlindenmayer_commands(options) {
@@ -2005,31 +2011,6 @@ For more complete documentation, see PLSYSTEM.md.
         lsys.add_command('Revoicing()', function (lsys_, turtle) {
             const pitv = chordl_pitv_from_turtle(turtle);
             turtle.voiced_chord = chordl_revoicing(lsys_, turtle.chord, pitv);
-            return turtle;
-        });
-
-        /** Absolute seconds between WriteChord() voices; 0 = simultaneous. */
-        lsys.add_command('Stagger(num dt)', function (lsys_, turtle, dt) {
-            turtle.stagger = Math.max(0, dt);
-            return turtle;
-        });
-
-        /**
-         * Write each voiced-chord pitch at the turtle time, then advance time by
-         * turtle.stagger (set via Stagger). No post-hoc onset offsets.
-         */
-        lsys.add_command('WriteChord()', function (lsys_, turtle) {
-            chordl_pitv_from_turtle(turtle);
-            const chord = turtle.voiced_chord || turtle.chord;
-            const step = (turtle.stagger != null) ? turtle.stagger : 0;
-            for (let i = 0; i < chord.voices(); i++) {
-                const event = turtle.n.clone();
-                event.setKey(chord.getPitch(i));
-                lsys_.score.append_event(event);
-                if (step > 0 && i + 1 < chord.voices()) {
-                    turtle.n.setTime(turtle.n.getTime() + step);
-                }
-            }
             return turtle;
         });
     };

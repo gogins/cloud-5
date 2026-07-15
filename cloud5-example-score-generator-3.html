@@ -2129,18 +2129,6 @@
                 turtle.n.setTime(chordlNoteDim(turtle.n, 0) + delta);
                 return turtle;
             });
-            lsys.add_command('Wcr()', function (lsys_, turtle) {
-                chordlEnsureState(turtle);
-                const revoiced = CsoundAC.octavewiseRevoicing(
-                    turtle.chord, Math.floor(turtle.voicing), Math.floor(turtle.rangeSize));
-                lsys_.__chordlInserted = (lsys_.__chordlInserted || 0) + revoiced.voices();
-                for (let i = 0; i < revoiced.voices(); i++) {
-                    const event = turtle.n.clone();
-                    event.setKey(revoiced.getPitch(i));
-                    lsys_.score.append_event(event);
-                }
-                return turtle;
-            });
             lsys.add_command('Wnr()', function (lsys_, turtle) {
                 lsys_.__chordlInserted = (lsys_.__chordlInserted || 0) + 1;
                 lsys_.score.append_event(turtle.n.clone());
@@ -2180,7 +2168,7 @@
                 // ChordLindenmayer rule (A) — second (A) rule overwrote the first in C++.
                 // (W Cl R) is a no-op in ChordLindenmayer (target "Cl" is not handled).
                 lsys.add_rule('A;', 'true',
-                    'B; Fwd(0.125); UniV(1, 111); Wcr(); n + 4, -1; Nv(2); d - 1; ' +
+                    'B; Fwd(0.125); UniV(1, 111); Wc; n + 4, -1; Nv(2); d - 1; ' +
                     '[; StMul(0, 0.75); n + 4, -0.5; Fwd(1); A; ]; ' +
                     'MSc(3, 1); n = 6, Math.random(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
                     'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); ScP(); Wnr(); A; ' +
@@ -2189,7 +2177,7 @@
 
                 // ChordLindenmayer rule (B).
                 lsys.add_rule('B;', 'true',
-                    'ScP(); B; [; StDiv(0, 2); StDiv(1, 2); d + 3; UniV(1, 101); Wcr(); A; ];'
+                    'ScP(); B; [; StDiv(0, 2); StDiv(1, 2); d + 3; UniV(1, 101); Wc; A; ];'
                 );
 
                 let initialChord = PLSystem.chord_from_pitches([0, 4, 7]);

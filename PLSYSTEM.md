@@ -217,17 +217,12 @@ nearest integer.
     - `R from_dimension, to_dimension, radians;`
   - Move `Turtle.note` along `Turtle.orientation` by `Turtle.magnitude`:
     - `F;`
-  - Write `Turtle.note`, notes of `Turtle.chord`, or notes of `Turtle.chord` 
-    with duration into the generated _score_ at the turtle time:
+  - Write `Turtle.note`, notes of `Turtle.chord` (or `Turtle.voiced_chord` if
+    set by a revoicing step), or notes of `Turtle.chord` with duration into the
+    generated _score_ at the turtle time:
     - `Wn;`
     - `Wc;`
     - `Wcd;`
-  - ChordLindenmayer helpers (via `register_chordlindenmayer_commands`):
-    - `Stagger(dt);` sets seconds between successive `WriteChord()` voices
-      (advances turtle time; default `0` = simultaneous). Do not post-stagger
-      onsets after generation.
-    - `WriteChord();` writes each pitch of the voiced chord at the turtle time,
-      advancing by `turtle.stagger` between voices.
   - Write the pitch-classes of `Turtle.chord`; `Turtle.chord` as actually 
     voiced; the pitch-classes of `Turtle.chord` at the smoothest voice-leading 
     from currently sounding notes in the score; the pitch-classes of the 
