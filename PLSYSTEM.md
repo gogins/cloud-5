@@ -52,6 +52,9 @@ BuiltinCommand ::= "R"   [ArgumentList]
                  | "Hcs"
                  | "Hd"
                  | "Hds"
+                 | "Hs"
+                 | "Cd"  [ArgumentList]
+                 | "C+"
                  | "Q"   [ArgumentList]
                  | "K"
                  | "M"   [ArgumentList]
@@ -240,6 +243,13 @@ nearest integer.
       and conforms pitch-classes while preserving each note's octave register.
     - `Hd;`
     - `Hds;`
+    - `Hs;` inserts `Turtle.scale` into the harmony timeline at the turtle time
+      (for later chord conformation).
+    - `Cd voices;` sets `Turtle.chord` to the chord of `Turtle.scale` at
+      `Turtle.degree` with the given number of voices (degree is wrapped into
+      the valid range of the scale). Does not write notes or harmony.
+    - `C+;` adds one voice to `Turtle.chord` (eOP-normalize, append a copy of
+      the bass pitch, eOP again), increasing the chord's voice count.
   - Modulate fron `Turtle.scale` to a new `Turtle.scale` using `Turtle.chord` 
     as the pivot. The system finds all scales in which `Turtle.chord` occurs 
     at some degree, and selects the `i`th scale from that list of possible 

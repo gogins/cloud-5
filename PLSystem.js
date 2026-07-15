@@ -53,7 +53,8 @@ For more complete documentation, see PLSYSTEM.md.
 
     const GRAMMAR_DISCRETE_OBJECTS = new Set(['d', 'p', 'i', 't', 'v']);
     const GRAMMAR_BUILTIN_NAMES = [
-        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hds', 'Hd', 'Hs', 'Hc', 'R', 'Q', 'M', 'S', 'seed', 'K', 'I', 'F', 'T', '[', ']'
+        'Wcd', 'Wc', 'Wn', 'Hcv', 'Hcs', 'Hds', 'Hd', 'Hs', 'Hc', 'Cd', 'C+',
+        'R', 'Q', 'M', 'S', 'seed', 'K', 'I', 'F', 'T', '[', ']'
     ];
 
     /**
@@ -1595,6 +1596,18 @@ For more complete documentation, see PLSYSTEM.md.
                     // ChordLindenmayer (Sc P): harmony timeline for conform / voiceleading.
                     this.score.insertChord(turtle.note.getTime(), turtle.scale);
                     turtle.prior_chord = turtle.scale.clone();
+                    return turtle;
+                }
+                case 'Cd': {
+                    // Set turtle.chord from scale at turtle.degree with N voices.
+                    let voices = args.length > 0 ? args[0] : turtle.chord.voices();
+                    const degree = PLSystem.ensure_turtle_degree(turtle);
+                    turtle.chord = PLSystem.chord_at_scale_degree(turtle.scale, degree, voices);
+                    return turtle;
+                }
+                case 'C+': {
+                    // Add one voice to turtle.chord (bass doubled / eOP).
+                    turtle.chord = chordl_add_voice(turtle.chord);
                     return turtle;
                 }
                 case 'seed': {

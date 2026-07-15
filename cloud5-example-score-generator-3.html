@@ -2045,13 +2045,6 @@
             return turtle;
         }
         function chordlRegisterCommands(lsys, CsoundAC) {
-            lsys.add_command('ScP()', function (lsys_, turtle) {
-                // (Sc P) in ChordLindenmayer inserts the current scale as harmony.
-                // PLSystem stores it on `turtle.scale`.
-                lsys_.score.insertChord(turtle.note.getTime(), turtle.scale);
-                turtle.prior_chord = turtle.scale.clone();
-                return turtle;
-            });
             lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
                 // (C Sd voices) in ChordLindenmayer sets the chord from the current
                 // scale degree (wrapping degrees into the valid 1..voices range).
@@ -2121,19 +2114,6 @@
                 turtle.voicing = lo + Math.random() * (hi - lo);
                 return turtle;
             });
-            lsys.add_command('Nv(num delta)', function (lsys_, turtle, delta) {
-                turtle.n.setVelocity(chordlNoteDim(turtle.n, 5) + delta);
-                return turtle;
-            });
-            lsys.add_command('Nt(num delta)', function (lsys_, turtle, delta) {
-                turtle.n.setTime(chordlNoteDim(turtle.n, 0) + delta);
-                return turtle;
-            });
-            lsys.add_command('Wnr()', function (lsys_, turtle) {
-                lsys_.__chordlInserted = (lsys_.__chordlInserted || 0) + 1;
-                lsys_.score.append_event(turtle.n.clone());
-                return turtle;
-            });
         }
         cloud5_piece.score_generator_function_addon = async function () {
             cloud5_piece.log("score_generator_function_addon...\n");
@@ -2161,23 +2141,23 @@
                     's = {0,2,4,5,7,9,11}; ' +
                     'd = 1; ' +
                     'n = 0, 36, 144, 1, 0, 1, 0; ' +
-                    'ScP(); ' +
+                    'Hs; ' +
                     'A;'
                 );
 
                 // ChordLindenmayer rule (A) — second (A) rule overwrote the first in C++.
                 // (W Cl R) is a no-op in ChordLindenmayer (target "Cl" is not handled).
                 lsys.add_rule('A;', 'true',
-                    'B; Fwd(0.125); UniV(1, 111); Wc; n + 4, -1; Nv(2); d - 1; ' +
+                    'B; Fwd(0.125); UniV(1, 111); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; StMul(0, 0.75); n + 4, -0.5; Fwd(1); A; ]; ' +
-                    'MSc(3, 1); n = 6, Math.random(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
-                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); ScP(); Wnr(); A; ' +
-                    'n + 4, 2; Nt(5); Wnr(); A;'
+                    'MSc(3, 1); n = 6, Math.random(); n + 0, 1; RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; n + 5, -2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); Hs; Wn; A; ' +
+                    'n + 4, 2; n + 0, 5; Wn; A;'
                 );
 
                 // ChordLindenmayer rule (B).
                 lsys.add_rule('B;', 'true',
-                    'ScP(); B; [; StDiv(0, 2); StDiv(1, 2); d + 3; UniV(1, 101); Wc; A; ];'
+                    'Hs; B; [; StDiv(0, 2); StDiv(1, 2); d + 3; UniV(1, 101); Wc; A; ];'
                 );
 
                 let initialChord = PLSystem.chord_from_pitches([0, 4, 7]);

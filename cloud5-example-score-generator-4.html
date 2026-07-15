@@ -2115,24 +2115,11 @@
                 turtle.voicing = PLSystem.random_uniform(lo, hi);
                 return turtle;
             });
-            lsys.add_command('Nv(num delta)', function (lsys_, turtle, delta) {
-                turtle.n.setVelocity(chordlNoteDim(turtle.n, 5) + delta);
-                return turtle;
-            });
-            lsys.add_command('Nt(num delta)', function (lsys_, turtle, delta) {
-                turtle.n.setTime(chordlNoteDim(turtle.n, 0) + delta);
-                return turtle;
-            });
             // (W C) revoicing only — pitches on turtle.chord; Wc inserts.
             lsys.add_command('Revoicing()', function (lsys_, turtle) {
                 chordlEnsureState(turtle);
                 turtle.chord = CsoundAC.octavewiseRevoicing(
                     turtle.chord, Math.floor(turtle.voicing), Math.floor(turtle.rangeSize));
-                return turtle;
-            });
-            // (W N) insert only.
-            lsys.add_command('WriteNote()', function (lsys_, turtle) {
-                lsys_.score.append_event(turtle.n.clone());
                 return turtle;
             });
         }
@@ -2172,11 +2159,11 @@
                 // Insertions: Hs (scale harmony), Wc / Wn (WriteNote) (note events).
                 // Transforms stay in custom commands; inserts do not mutate the turtle.
                 lsys.add_rule('A;', 'true',
-                    'B; Fwd(0.125); UniV(1, 111); Revoicing(); Wc; n + 4, -1; Nv(2); d - 1; ' +
+                    'B; Fwd(0.125); UniV(1, 111); Revoicing(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; StMul(0, 0.75); n + 4, -0.5; Fwd(1); A; ]; ' +
-                    'MSc(3, 1); n = 6, Math.random(); Nt(1); RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; Nv(-2); ' +
-                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); Hs; WriteNote(); A; ' +
-                    'n + 4, 2; Nt(5); WriteNote(); A;'
+                    'MSc(3, 1); n = 6, Math.random(); n + 0, 1; RC 0, 4, 0.041; Fwd(1.5); RC 0, 3, -0.325; n + 5, -2; ' +
+                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); Hs; Wn; A; ' +
+                    'n + 4, 2; n + 0, 5; Wn; A;'
                 );
 
                 // ChordLindenmayer rule (B).
