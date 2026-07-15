@@ -2059,50 +2059,7 @@
 
                 // Piece-local: ChordL rangeSize (semitones). RevoicingR uses
                 // octavewiseRevoicing only — preserves pitch-class set; no T().
-                lsys.add_command('Rng(num r)', function (lsys_, turtle, r) {
-                    turtle.revoicing_range = r;
-                    turtle.rangeSize = r;
-                    if (lsys_.pitv) {
-                        lsys_.pitv.range = r;
-                    }
-                    return turtle;
-                });
-                lsys.add_command('RevoicingR()', function (lsys_, turtle) {
-                    const range = Math.floor(turtle.revoicing_range || 60);
-                    const count = CsoundAC.octavewiseRevoicings(turtle.chord, range);
-                    const V = count > 0 ? Math.floor(count / 2) : 0;
-                    turtle.voiced_chord = CsoundAC.octavewiseRevoicing(
-                        turtle.chord, V, range);
-                    return turtle;
-                });
-                // Voicing index as fraction 0..1 (octavewise only — pitch classes unchanged).
-                lsys.add_command('RevoicingFrac(num frac)', function (lsys_, turtle, frac) {
-                    const range = Math.floor(turtle.revoicing_range || 60);
-                    const count = CsoundAC.octavewiseRevoicings(turtle.chord, range);
-                    const f = Math.max(0, Math.min(1, frac));
-                    const V = count > 1 ? Math.floor(f * (count - 1)) : 0;
-                    turtle.voiced_chord = CsoundAC.octavewiseRevoicing(
-                        turtle.chord, V, range);
-                    return turtle;
-                });
                 // Cumulative voicing arc (not wrapped by pitv.range).
-                lsys.add_command('VSet(num f)', function (lsys_, turtle, f) {
-                    turtle.v_frac = Math.max(0, Math.min(1, f));
-                    return turtle;
-                });
-                lsys.add_command('VUp(num df)', function (lsys_, turtle, df) {
-                    turtle.v_frac = Math.max(0, Math.min(1, (turtle.v_frac || 0.5) + df));
-                    return turtle;
-                });
-                lsys.add_command('RevoicingArc()', function (lsys_, turtle) {
-                    const range = Math.floor(turtle.revoicing_range || 60);
-                    const count = CsoundAC.octavewiseRevoicings(turtle.chord, range);
-                    const f = Math.max(0, Math.min(1, turtle.v_frac != null ? turtle.v_frac : 0.5));
-                    const V = count > 1 ? Math.floor(f * (count - 1)) : 0;
-                    turtle.voiced_chord = CsoundAC.octavewiseRevoicing(
-                        turtle.chord, V, range);
-                    return turtle;
-                });
                 // Key step without ChordL range wrap (n + 4 wraps into pitv.range and folds register).
 
 
@@ -2138,42 +2095,42 @@
                 // Tempo: m[0] time-step + FwdT (IOI-linked duration); avoid uniform n + 0, 1.
 
                 const largoBody =
-                    'm / 0, 2.5; B; ' + Fs(1.5) + ' Rng(60); VSet(0.5); RevoicingArc(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
+                    'm / 0, 2.5; B; ' + Fs(1.5) + ' v = 30; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 3; R 0, 4, -0.041; ' + Fs(8) + ' R 0, 3, 0.325; n + 5, -2; ' +
                     'd + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
                     'n + 4, 1; n + 0, 0.4; Wn;';
                 const largoExpand =
-                    'm / 0, 2.5; B; ' + Fs(1.5) + ' Rng(60); VSet(0.5); RevoicingArc(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
+                    'm / 0, 2.5; B; ' + Fs(1.5) + ' v = 30; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.8; n + 4, -0.5; ' + Fs(6) + ' L; ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 3; R 0, 4, -0.041; ' + Fs(8) + ' R 0, 3, 0.325; n + 5, -2; ' +
                     'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; L; ' +
                     'n + 4, 1; n + 0, 0.4; Wn; L;';
                 const climbBody =
-                    'm * 0, 0.07; B; ' + Fs(0.08) + ' Rng(72); VSet(0.62); RevoicingArc(); Wc; n + 4, 1; n + 5, 5; d - 1; ' +
-                    Fs(0.08) + ' VUp(0.14); RevoicingArc(); Wc; n + 4, 1; ' +
+                    'm * 0, 0.07; B; ' + Fs(0.08) + ' v = 37; Wc; n + 4, 1; n + 5, 5; d - 1; ' +
+                    Fs(0.08) + ' v + 8; Wc; n + 4, 1; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.15; R 0, 4, -0.041; ' + Fs(0.35) + ' R 0, 3, 0.325; n + 5, -2; ' +
                     'd + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
                     'n + 4, 1; n + 0, 0.25; Wn;';
                 const climbExpand =
-                    'm * 0, 0.07; B; ' + Fs(0.08) + ' Rng(72); VSet(0.55); RevoicingArc(); Wc; n + 4, 1; n + 5, 5; d - 1; ' +
-                    '[; m * 0, 0.6; n + 4, 1; VUp(0.1); RevoicingArc(); ' + Fs(0.35) + ' U; ]; ' +
+                    'm * 0, 0.07; B; ' + Fs(0.08) + ' v = 33; Wc; n + 4, 1; n + 5, 5; d - 1; ' +
+                    '[; m * 0, 0.6; n + 4, 1; v + 6; ' + Fs(0.35) + ' U; ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.15; R 0, 4, -0.041; ' + Fs(0.35) + ' R 0, 3, 0.325; n + 5, -2; ' +
                     'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; U; ' +
                     'n + 4, 1; n + 0, 0.25; Wn; U;';
                 const descendBody =
-                    'm * 0, 0.28; B; ' + Fs(0.35) + ' Rng(72); VSet(0.38); RevoicingArc(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
-                    Fs(0.35) + ' VUp(-0.14); RevoicingArc(); Wc; n + 4, -1; ' +
+                    'm * 0, 0.28; B; ' + Fs(0.35) + ' v = 23; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
+                    Fs(0.35) + ' v - 8; Wc; n + 4, -1; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.8; R 0, 4, -0.041; ' + Fs(1.2) + ' R 0, 3, 0.325; n + 5, -2; ' +
                     'd + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
                     'n + 4, -1; n + 0, 0.35; Wn;';
                 const descendExpand =
-                    'm * 0, 0.28; B; ' + Fs(0.35) + ' Rng(72); VSet(0.45); RevoicingArc(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
-                    '[; m / 0, 1.4; n + 4, -1; VUp(-0.1); RevoicingArc(); ' + Fs(1.2) + ' D; ]; ' +
+                    'm * 0, 0.28; B; ' + Fs(0.35) + ' v = 27; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
+                    '[; m / 0, 1.4; n + 4, -1; v - 6; ' + Fs(1.2) + ' D; ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.8; R 0, 4, -0.041; ' + Fs(1.2) + ' R 0, 3, 0.325; n + 5, -2; ' +
                     'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; D; ' +
                     'n + 4, -1; n + 0, 0.35; Wn; D;';
                 const adagioBody =
-                    'm / 0, 2.2; B; ' + Fs(1.2) + ' Rng(54); VSet(0.5); RevoicingArc(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
+                    'm / 0, 2.2; B; ' + Fs(1.2) + ' v = 30; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.6; n + 4, -0.5; ' + Fs(5) + ' ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 3; R 0, 4, -0.041; ' + Fs(6) + ' R 0, 3, 0.325; n + 5, -2; ' +
                     'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
@@ -2188,13 +2145,13 @@
                 lsys.add_rule('E;', 'iteration >= 4', adagioBody);
 
                 lsys.add_rule('B;', 'iteration < 2',
-                    'Hc; B; [; m / 0, 2; m / 1, 2; n + 4, 1; d + 4; Rng(60); VSet(0.5); RevoicingArc(); Wc; I; L; ];');
+                    'Hc; B; [; m / 0, 2; m / 1, 2; n + 4, 1; d + 4; v = 30; Wc; I; L; ];');
                 lsys.add_rule('B;', 'iteration == 2',
-                    'Hc; B; [; m * 0, 0.35; m / 1, 2; n + 4, 1; VUp(0.12); d + 4; Rng(72); RevoicingArc(); Wc; I; U; ];');
+                    'Hc; B; [; m * 0, 0.35; m / 1, 2; n + 4, 1; v + 7; d + 4; Wc; I; U; ];');
                 lsys.add_rule('B;', 'iteration == 3',
-                    'Hc; B; [; m / 0, 1.6; m / 1, 2; n + 4, -1; VUp(-0.12); d + 4; Rng(72); RevoicingArc(); Wc; I; D; ];');
+                    'Hc; B; [; m / 0, 1.6; m / 1, 2; n + 4, -1; v - 7; d + 4; Wc; I; D; ];');
                 lsys.add_rule('B;', 'iteration >= 4',
-                    'Hc; B; [; m / 0, 2; m / 1, 2; n + 4, 1; d + 4; Rng(54); VSet(0.5); RevoicingArc(); Wc; I; E; ];');
+                    'Hc; B; [; m / 0, 2; m / 1, 2; n + 4, 1; d + 4; v = 30; Wc; I; E; ];');
 
                 // Avoid new Scale("C major") — wasm chord-name init can OOB-crash.
                 let initialScale = PLSystem.c_major_scale();
@@ -2203,8 +2160,6 @@
                     new PLSystem.Turtle(new CsoundAC.Event(), initialChord, initialScale));
                 turtle.degree = 1;
                 turtle.rangeSize = 60;
-                turtle.revoicing_range = 60;
-                turtle.v_frac = 0.5;
                 turtle.pitv = lsys.pitv;
                 lsys.set_turtle(turtle);
 

@@ -218,8 +218,10 @@ nearest integer.
     - `v ^ exponent;`
   - Rotate:
     - `R from_dimension, to_dimension, radians;`
-  - Move `Turtle.note` along `Turtle.orientation` by `Turtle.magnitude`:
+  - Move `Turtle.note` along `Turtle.orientation` by `Turtle.magnitude`, or 
+    by `Turtle.magnitude * steps`:
     - `F;`
+    - `F steps;`
   - Write `Turtle.note`, notes of `Turtle.chord` (or `Turtle.voiced_chord` if
     set by a revoicing step), or notes of `Turtle.chord` with duration into the
     generated _score_ at the turtle time:

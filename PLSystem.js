@@ -746,9 +746,6 @@ For more complete documentation, see PLSYSTEM.md.
             if (this.rangeSize != null) {
                 clone_.rangeSize = this.rangeSize;
             }
-            if (this.v_frac != null) {
-                clone_.v_frac = this.v_frac;
-            }
             return clone_;
         }
         pitv_from_chord() {
@@ -759,6 +756,7 @@ For more complete documentation, see PLSYSTEM.md.
         }
         apply_pitv(pitv) {
             this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+            this.voiced_chord = null;
         }
         get o() {
             return this.orientation;
@@ -1348,6 +1346,7 @@ For more complete documentation, see PLSYSTEM.md.
             let pitv = lsystem.pitv.fromChord(turtle.chord);
             pitv[component] = this.apply_arithmetic_scalar(pitv[component], operation, value, component.toLowerCase());
             turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+            turtle.voiced_chord = null;
             return turtle;
         }
         assign_note_fields(turtle, values, operation) {
