@@ -2089,43 +2089,43 @@
                 const largoBody =
                     'm / 0, 2.5; B; F 1.5;  v = 30; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 3; R 0, 4, -0.041; F 8;  R 0, 3, 0.325; n + 5, -2; ' +
-                    'd + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
+                    'd + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
                     'n + 4, 1; n + 0, 0.4; Wn;';
                 const largoExpand =
                     'm / 0, 2.5; B; F 1.5;  v = 30; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.8; n + 4, -0.5; F 6;  L; ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 3; R 0, 4, -0.041; F 8;  R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; L; ' +
+                    'B; d + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; L; ' +
                     'n + 4, 1; n + 0, 0.4; Wn; L;';
                 const climbBody =
                     'm * 0, 0.07; B; F 0.08;  v = 37; Wc; n + 4, 1; n + 5, 5; d - 1; ' +
                     'F 0.08;  v + 8; Wc; n + 4, 1; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.15; R 0, 4, -0.041; F 0.35;  R 0, 3, 0.325; n + 5, -2; ' +
-                    'd + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
+                    'd + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
                     'n + 4, 1; n + 0, 0.25; Wn;';
                 const climbExpand =
                     'm * 0, 0.07; B; F 0.08;  v = 33; Wc; n + 4, 1; n + 5, 5; d - 1; ' +
                     '[; m * 0, 0.6; n + 4, 1; v + 6; F 0.35;  U; ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.15; R 0, 4, -0.041; F 0.35;  R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; U; ' +
+                    'B; d + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; U; ' +
                     'n + 4, 1; n + 0, 0.25; Wn; U;';
                 const descendBody =
                     'm * 0, 0.28; B; F 0.35;  v = 23; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     'F 0.35;  v - 8; Wc; n + 4, -1; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.8; R 0, 4, -0.041; F 1.2;  R 0, 3, 0.325; n + 5, -2; ' +
-                    'd + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
+                    'd + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
                     'n + 4, -1; n + 0, 0.35; Wn;';
                 const descendExpand =
                     'm * 0, 0.28; B; F 0.35;  v = 27; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.4; n + 4, -1; v - 6; F 1.2;  D; ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 0.8; R 0, 4, -0.041; F 1.2;  R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; D; ' +
+                    'B; d + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; D; ' +
                     'n + 4, -1; n + 0, 0.35; Wn; D;';
                 const adagioBody =
                     'm / 0, 2.2; B; F 1.2;  v = 30; Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m / 0, 1.6; n + 4, -0.5; F 5;  ]; ' +
                     'M 3, 0; n = 6, Math.random(); n + 0, 3; R 0, 4, -0.041; F 6;  R 0, 3, 0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
+                    'B; d + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; ' +
                     'n + 4, 1; n + 0, 0.5; Wn;';
 
                 lsys.add_rule('L;', 'iteration < 2', largoExpand);

@@ -252,9 +252,12 @@ nearest integer.
     - `Hds;`
     - `Hs;` inserts `Turtle.scale` into the harmony timeline at the turtle time
       (for later chord conformation).
+    - `Cd;`
     - `Cd voices;` sets `Turtle.chord` to the chord of `Turtle.scale` at
       `Turtle.degree` with the given number of voices (degree is wrapped into
-      the valid range of the scale). Does not write notes or harmony.
+      the valid range of the scale). With no argument, keeps the current voice
+      count. Does not write notes or harmony. Same ArgumentList style as
+      `Hc voices;` / `F steps;` (no parentheses).
     - `C+;` adds one voice to `Turtle.chord` (eOP-normalize, append a copy of
       the bass pitch, eOP again), increasing the chord's voice count.
   - Modulate fron `Turtle.scale` to a new `Turtle.scale` using `Turtle.chord` 

@@ -2039,17 +2039,6 @@
             return turtle;
         }
         function chordlRegisterCommands(lsys, CsoundAC) {
-            lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
-                // (C Sd voices) in ChordLindenmayer sets the chord from the current
-                // scale degree (wrapping degrees into the valid 1..voices range).
-                const scaleVoices = turtle.scale.voices();
-                let degree = turtle.degree;
-                while (degree < 1) degree += scaleVoices;
-                while (degree > scaleVoices) degree -= scaleVoices;
-                turtle.degree = degree;
-                turtle.chord = turtle.scale.chord(degree, voices);
-                return turtle;
-            });
             // (M Sc voices choice) in ChordLindenmayer: modulate scale using the chord
             // at the current scale degree, NOT turtle.chord directly (PLSystem's built-in M).
             lsys.add_command('MSc(int voices, int choice)', function (lsys_, turtle, voices, choice) {
@@ -2132,7 +2121,7 @@
                     'B; F 0.125; UniV(1, 111); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
                     '[; m * 0, 0.75; n + 4, -0.5; F 1; A; ]; ' +
                     'MSc(3, 1); n = 6, Math.random(); n + 0, 1; RC 0, 4, 0.041; F 1.5; RC 0, 3, -0.325; n + 5, -2; ' +
-                    'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); Hs; Wn; A; ' +
+                    'B; d + 4; Cd 4; d + 3; n = 3, 1 + Math.random() * 4; MSc(3, 0); Hs; Wn; A; ' +
                     'n + 4, 2; n + 0, 5; Wn; A;'
                 );
 

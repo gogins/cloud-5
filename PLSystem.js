@@ -1718,7 +1718,7 @@ For more complete documentation, see PLSYSTEM.md.
                     return turtle;
                 }
                 case 'Cd': {
-                    // Set turtle.chord from scale at turtle.degree with N voices.
+                    // `Cd voices;` — set turtle.chord from scale at turtle.degree.
                     let voices = args.length > 0 ? args[0] : turtle.chord.voices();
                     const degree = PLSystem.ensure_turtle_degree(turtle);
                     turtle.chord = PLSystem.chord_at_scale_degree(turtle.scale, degree, voices);
@@ -2095,12 +2095,7 @@ For more complete documentation, see PLSYSTEM.md.
     PLSystem.register_chordlindenmayer_commands = function (lsys, options) {
         options = options || {};
 
-        lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
-            const degree = PLSystem.ensure_turtle_degree(turtle);
-            turtle.chord = PLSystem.chord_at_scale_degree(turtle.scale, degree, voices);
-            return turtle;
-        });
-
+        // Cd is a builtin: `Cd voices;` (see interpret_grammar_builtin).
 
         lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
             chordl_pitv_from_turtle(turtle);
