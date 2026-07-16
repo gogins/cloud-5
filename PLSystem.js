@@ -17,6 +17,137 @@ For more complete documentation, see PLSYSTEM.md.
 
     var PLSystem = {};
 
+
+
+    /**
+     * Pitch-class of a MIDI pitch (0..12), matching CsoundAC.epc when available.
+     */
+    PLSystem.pitch_epc = function (pitch) {
+        if (typeof CsoundAC !== 'undefined' && typeof CsoundAC.epc === 'function') {
+            return CsoundAC.epc(pitch);
+        }
+        return ((pitch % 12) + 12) % 12;
+    };
+
+    /**
+     * Add one octave-doubled voice (same as builtin C+ / ChordL add-voice).
+     * Chord.resize() wipes pitches (Eigen Matrix::resize), so copy first.
+     */
+    PLSystem.chord_add_octave_doubling = function (chord) {
+        let c = chord.eOP();
+        const n = c.voices();
+        const pitches = [];
+        for (let i = 0; i < n; i++) {
+            pitches.push(c.getPitch(i));
+        }
+        c.resize(n + 1);
+        for (let i = 0; i < n; i++) {
+            c.setPitch(i, pitches[i]);
+        }
+        c.setPitch(n, pitches[0]);
+        return c.eOP();
+    };
+
+    /**
+     * Remove one octave-doubled voice (same pitch class, different octave).
+     * Returns a new chord, or null if no octave doubling exists.
+     */
+    PLSystem.chord_remove_octave_doubling = function (chord) {
+        const n = chord.voices();
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                if (Math.abs(PLSystem.pitch_epc(chord.getPitch(i))
+                        - PLSystem.pitch_epc(chord.getPitch(j))) < 1e-9) {
+                    // Drop the higher of the doubled pair.
+                    const drop = (chord.getPitch(i) <= chord.getPitch(j)) ? j : i;
+                    const pitches = [];
+                    for (let k = 0; k < n; k++) {
+                        if (k !== drop) {
+                            pitches.push(chord.getPitch(k));
+                        }
+                    }
+                    return PLSystem.chord_from_pitches(pitches);
+                }
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Clone chord, snap to the ET lattice (eET), and make voices() === pitv.N
+     * so fromChord/toChord are valid. PITV indexes only lattice chords.
+     * Fewer voices → octave-double; more voices with an octave doubling → undouble.
+     * @param {object} chord
+     * @param {number} N pitv.N
+     * @param {number} [g=1] temperament step (pitv.g)
+     */
+    PLSystem.chord_for_pitv = function (chord, N, g) {
+        N = N | 0;
+        g = (typeof g === 'number' && g > 0) ? g : 1;
+        if (!chord || typeof chord.clone !== 'function') {
+            throw new Error('chord_for_pitv: invalid chord');
+        }
+        let c = chord.clone();
+        if (typeof c.eET === 'function') {
+            c = c.eET(g);
+        }
+        let guard = 0;
+        while (c.voices() < N) {
+            const before = c.voices();
+            c = PLSystem.chord_add_octave_doubling(c);
+            if (c.voices() <= before) {
+                throw new Error('chord_for_pitv: octave doubling did not add a voice');
+            }
+            if (++guard > N + 8) {
+                throw new Error('chord_for_pitv: failed to reach pitv.N=' + N);
+            }
+        }
+        guard = 0;
+        while (c.voices() > N) {
+            const undoubled = PLSystem.chord_remove_octave_doubling(c);
+            if (!undoubled) {
+                throw new Error(
+                    'chord_for_pitv: chord has ' + c.voices()
+                    + ' voices but pitv.N=' + N + ' and no octave doubling to remove');
+            }
+            c = undoubled;
+            if (++guard > 64) {
+                throw new Error('chord_for_pitv: failed to reduce to pitv.N=' + N);
+            }
+        }
+        if (typeof c.eET === 'function') {
+            c = c.eET(g);
+        }
+        return c;
+    };
+
+    /**
+     * Factor chord into {P,I,T,V}. Quantizes to eET(pitv.g) and matches voices
+     * to pitv.N first. Uses fromChordIndices (Embind cannot return Eigen::VectorXi
+     * from fromChord).
+     */
+    PLSystem.pitv_from_chord = function (pitv, chord) {
+        const g = (pitv && typeof pitv.g === 'number' && pitv.g > 0) ? pitv.g : 1;
+        const matched = PLSystem.chord_for_pitv(chord, pitv.N, g);
+        if (typeof pitv.fromChordIndices === 'function') {
+            const idx = pitv.fromChordIndices(matched);
+            return { P: idx.P | 0, I: idx.I | 0, T: idx.T | 0, V: idx.V | 0 };
+        }
+        if (typeof pitv.fromChordAsVector === 'function') {
+            const vec = pitv.fromChordAsVector(matched);
+            const at = (i) => (typeof vec.get === 'function' ? vec.get(i) : vec[i]);
+            return { P: at(0) | 0, I: at(1) | 0, T: at(2) | 0, V: at(3) | 0 };
+        }
+        throw new Error('PITV.fromChordIndices / fromChordAsVector unavailable');
+    };
+
+    /** Synthesize revoiced chord from PITV indices (toChord result[0]). */
+    PLSystem.pitv_to_chord = function (pitv, P, I, T, V) {
+        const chords = pitv.toChord(P | 0, I | 0, T | 0, V | 0, false);
+        return (typeof chords.get === 'function') ? chords.get(0) : chords[0];
+    };
+
+
     /**
 
     This one is redone, for the sake of ever-loving consistency, to use:
@@ -752,10 +883,13 @@ For more complete documentation, see PLSYSTEM.md.
             if (typeof this.pitv === "undefined") {
                 throw new Error('Turtle.pitv is not set; assign lsystem.pitv to the turtle.');
             }
-            return this.pitv.fromChord(this.chord);
+            return PLSystem.pitv_from_chord(this.pitv, this.chord);
         }
         apply_pitv(pitv) {
-            this.chord = this.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, this.chord).revoicing;
+            if (typeof this.pitv === "undefined") {
+                throw new Error('Turtle.pitv is not set; assign lsystem.pitv to the turtle.');
+            }
+            this.chord = PLSystem.pitv_to_chord(this.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
             this.voiced_chord = null;
         }
         get o() {
@@ -772,7 +906,7 @@ For more complete documentation, see PLSYSTEM.md.
         }
         get n() {
             return this.note;
-        }   
+        }
         set n(value) {
             this.note = value;
         }
@@ -795,38 +929,34 @@ For more complete documentation, see PLSYSTEM.md.
             this.degree = value;
         }
         get p() {
-            let pitv = this.pitv_from_chord();
-            return pitv.P;
+            return this.pitv_from_chord().P;
         }
         set p(value) {
-            let pitv = this.pitv_from_chord();
+            const pitv = this.pitv_from_chord();
             pitv.P = value;
             this.apply_pitv(pitv);
         }
         get i() {
-            let pitv = this.pitv_from_chord();
-            return pitv.I;
+            return this.pitv_from_chord().I;
         }
         set i(value) {
-            let pitv = this.pitv_from_chord();
+            const pitv = this.pitv_from_chord();
             pitv.I = value;
             this.apply_pitv(pitv);
         }
         get t() {
-            let pitv = this.pitv_from_chord();
-            return pitv.T;
+            return this.pitv_from_chord().T;
         }
         set t(value) {
-            let pitv = this.pitv_from_chord();
+            const pitv = this.pitv_from_chord();
             pitv.T = value;
             this.apply_pitv(pitv);
         }
         get v() {
-            let pitv = this.pitv_from_chord();
-            return pitv.V;
+            return this.pitv_from_chord().V;
         }
         set v(value) {
-            let pitv = this.pitv_from_chord();
+            const pitv = this.pitv_from_chord();
             pitv.V = value;
             this.apply_pitv(pitv);
         }
@@ -1153,91 +1283,77 @@ For more complete documentation, see PLSYSTEM.md.
              * Assign the parameters P, I, T, and V to the current turtle state.
              */
             this.add_command('PitvAssign(P, I, T, V)', function (lsystem, turtle, P, I, T, V) {
-                turtle.chord = lsystem.pitv.toChord(P, I, T, V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, P, I, T, V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
             /**
              * Add the parameters P, I, T, and V to the current turtle state.
              */
             this.add_command('PitvMove(P, I, T, V', function (lsystem, turtle, P, I, T, V) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.P += P;
                 pitv.I += I;
                 pitv.T += T;
                 pitv.V += V;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Assign the parameter P to the current turtle state.
-             */
             this.add_command('PAssign(P)', function (lsystem, turtle, P) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.P = P;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Add the parameter P to the current turtle state.
-             */
             this.add_command('PMove(P)', function (lsystem, turtle, P) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.P += P;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Assign the parameter I to the current turtle state.
-             */
             this.add_command('IAssign(I)', function (lsystem, turtle, I) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.I = I;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Add the parameter I to the current turtle state.
-             */
             this.add_command('IMove(I)', function (lsystem, turtle, I) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.I += I;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Assign the parameter T to the current turtle state.
-             */
             this.add_command('TAssign(T)', function (lsystem, turtle, T) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.T = T;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Add the parameter T to the current turtle state.
-             */
             this.add_command('TMove(T)', function (lsystem, turtle, T) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.T += T;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Assign the parameter V to the current turtle state.
-             */
             this.add_command('VAssign(V)', function (lsystem, turtle, V) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.V = V;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
-            /**
-             * Add the parameter V to the current turtle state.
-             */
             this.add_command('VMove(V)', function (lsystem, turtle, V) {
-                let pitv = lsystem.pitv.fromChord(turtle.chord);
+                let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
                 pitv.V += V;
-                turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+                turtle.chord = PLSystem.pitv_to_chord(lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
+                turtle.voiced_chord = null;
                 return turtle;
             });
             /**
@@ -1343,9 +1459,11 @@ For more complete documentation, see PLSYSTEM.md.
             return result;
         }
         apply_pitv_component(lsystem, turtle, component, operation, value) {
-            let pitv = lsystem.pitv.fromChord(turtle.chord);
-            pitv[component] = this.apply_arithmetic_scalar(pitv[component], operation, value, component.toLowerCase());
-            turtle.chord = lsystem.pitv.toChord(pitv.P, pitv.I, pitv.T, pitv.V, turtle.chord).revoicing;
+            let pitv = PLSystem.pitv_from_chord(lsystem.pitv, turtle.chord);
+            pitv[component] = this.apply_arithmetic_scalar(
+                pitv[component], operation, value, component.toLowerCase());
+            turtle.chord = PLSystem.pitv_to_chord(
+                lsystem.pitv, pitv.P, pitv.I, pitv.T, pitv.V);
             turtle.voiced_chord = null;
             return turtle;
         }
@@ -1528,8 +1646,10 @@ For more complete documentation, see PLSYSTEM.md.
             let args = word.actual_parameter_values;
             switch (word.builtin_name) {
                 case 'F': {
+                    const steps = (args.length >= 1 && typeof args[0] === 'number'
+                        && Number.isFinite(args[0])) ? args[0] : 1;
                     for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
-                        const delta = turtle.magnitude[i] * turtle.orientation[i];
+                        const delta = steps * turtle.magnitude[i] * turtle.orientation[i];
                         if (delta !== 0) {
                             chordl_set_note_dim(
                                 turtle.note, i, chordl_note_dim(turtle.note, i) + delta);
@@ -1873,8 +1993,8 @@ For more complete documentation, see PLSYSTEM.md.
             // });
         }
         /**
-         * Register ChordLindenmayer custom commands (Cd, Fwd, UniV, Revoicing, …).
-         * @param {object} [options] durationFactor, durationMinimum for Fwd note lengths.
+         * Register ChordLindenmayer custom commands (Cd, UniV, Revoicing, …).
+         * @param {object} [options] unused; kept for call-site compatibility.
          */
         register_chordlindenmayer_commands(options) {
             PLSystem.register_chordlindenmayer_commands(this, options);
@@ -1959,10 +2079,7 @@ For more complete documentation, see PLSYSTEM.md.
     }
 
     function chordl_add_voice(chord) {
-        let c = chord.eOP();
-        c.resize(c.voices() + 1);
-        c.setPitch(c.voices() - 1, c.getPitch(0));
-        return c.eOP();
+        return PLSystem.chord_add_octave_doubling(chord);
     }
 
     PLSystem.prepare_chordl_turtle = function (turtle) {
@@ -1977,12 +2094,6 @@ For more complete documentation, see PLSYSTEM.md.
      */
     PLSystem.register_chordlindenmayer_commands = function (lsys, options) {
         options = options || {};
-        const durationFactor = (options.durationFactor != null)
-            ? options.durationFactor
-            : PLSystem.CHORDL_DURATION_FACTOR;
-        const durationMinimum = (options.durationMinimum != null)
-            ? options.durationMinimum
-            : PLSystem.CHORDL_DURATION_MINIMUM;
 
         lsys.add_command('Cd(int voices)', function (lsys_, turtle, voices) {
             const degree = PLSystem.ensure_turtle_degree(turtle);
@@ -1990,22 +2101,6 @@ For more complete documentation, see PLSYSTEM.md.
             return turtle;
         });
 
-        lsys.add_command('Fwd(num x)', function (lsys_, turtle, x) {
-            chordl_pitv_from_turtle(turtle);
-            let timeDelta = 0;
-            for (let i = 0; i < PLSystem.NOTE_MOTION_DIMENSIONS; i++) {
-                const delta = x * turtle.magnitude[i] * turtle.orientation[i];
-                if (i === 0) {
-                    timeDelta = delta;
-                }
-                chordl_set_note_dim(turtle.n, i, chordl_note_dim(turtle.n, i) + delta);
-            }
-            if (timeDelta !== 0) {
-                const scaled = Math.abs(timeDelta) * durationFactor;
-                turtle.n.setDuration(Math.max(scaled, durationMinimum));
-            }
-            return turtle;
-        });
 
         lsys.add_command('UniV(num lo, num hi)', function (lsys_, turtle, lo, hi) {
             chordl_pitv_from_turtle(turtle);

@@ -41,7 +41,7 @@ Object         ::= "n" | "o" | "m" | "c" | "s" | "d"
                  | "p" | "i" | "t" | "v" ;
 Operator       ::= "=" | "+" | "-" | "*" | "/" | "^";
 BuiltinCommand ::= "R"   [ArgumentList]
-                 | "F"
+                 | "F"   [ArgumentList]
                  | "T"   [ArgumentList]
                  | "I"
                  | "Wn"
@@ -118,6 +118,11 @@ new `P`, `I`, `T`, and `V`. Hence, operations upon `P`, `I`, `T`, or `V`
 involve factoring the chord into `P`, `I`, `T`, and `V`, performing the 
 operation, and then re-composing the chord from the new `P`, `I`, `T`, and 
 `V`.
+
+Before factoring, `PLSystem` snaps the turtle chord to the equal-temperament 
+lattice with `eET(pitv.g)` and adjusts voice count to `pitv.N` (octave 
+doubling / undoubling). Continuous or off-lattice pitches are not valid PITV 
+inputs.
 
 Voice-leading means producing a new chord of the specified pitch-class set as 
 the smoothest voice-leading from the currently sounding notes in the score, 

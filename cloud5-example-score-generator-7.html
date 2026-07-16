@@ -2016,7 +2016,7 @@
 
                 // ChordLindenmayer axiom: (seed P 3928394)(= P 72)(= Sc Cmajor …)
                 // (++ C)(= C {0,4,7})(= M {0,4,7})(= N[d] 36.)(Sc P)(A)
-                // N[d]=36 is the template until Fwd sets duration from each (F N x) step.
+                // n + 1, 36 is the duration template; motion via F steps (no auto duration).
                 lsys.set_axiom(
                     'seed 3928394; ' +
                     'C+; ' +
@@ -2031,9 +2031,9 @@
                     'A;'
                 );
                 lsys.add_rule('A;', 'true',
-                    'B; Fwd(0.125); UniV(1, 111); Revoicing(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
-                    '[; m * 0, 0.75; n + 4, -0.5; Fwd(1); A; ]; ' +
-                    'M 3, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; Fwd(1.5); R 0, 3, 0.325; n + 5, -2; ' +
+                    'B; F 0.125; UniV(1, 111); Revoicing(); Wc; n + 4, -1; n + 5, 2; d - 1; ' +
+                    '[; m * 0, 0.75; n + 4, -0.5; F 1; A; ]; ' +
+                    'M 3, 0; n = 6, Math.random(); n + 0, 1; R 0, 4, -0.041; F 1.5; R 0, 3, 0.325; n + 5, -2; ' +
                     'B; d + 4; Cd(4); d + 3; n = 3, 1 + Math.random() * 4; M 3, 0; Hs; Wn; A; ' +
                     'n + 4, 2; n + 0, 5; Wn; A;'
                 );
