@@ -135,7 +135,7 @@ conditional expression, and a successor word.
 
 Each item, rule predecessor, axiom, and successor production must end with `;`.
 The parser strips that terminator before reading arguments, so formal parameters
-such as `x` in `n = t, d, s, c, k, v, x;` are recognized correctly.
+such as `x` in `n = t0, d1, s2, c3, k4, v5, x6;` are recognized correctly.
 
 Item names are JavaScript identifiers or reserved command names. A word is a 
 sequence of semicolon-terminated items. Each item is either rewritten by a 
