@@ -1924,6 +1924,7 @@
             console.log(chord.information());
             // p0_t, p1_d, p2_s, p3_c, p4_k, p5_v, p6_x
             let lsys = new ParametricLindenmayer.PLSystem();
+            let lsys = new PLSystem.PLSystem();
             lsys.pitv.initialize(3, 72, 1, false);
             lsys.set_axiom('Chord();Note(1, 1.5, 144, 1, 1, 1, 0);');
             // The problem here is that Command(t,d,s,c,k,v,x) carries state down from the stack,

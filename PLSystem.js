@@ -147,6 +147,18 @@ For more complete documentation, see PLSYSTEM.md.
         return (typeof chords.get === 'function') ? chords.get(0) : chords[0];
     };
 
+    /**
+     * After raw pitch edits on a chord, re-factor into PITV and recompose so
+     * p/i/t/v match the new chord (eET + voice match included).
+     */
+    PLSystem.chord_resync_pitv = function (pitv, chord) {
+        if (!pitv || !chord || !(pitv.N > 0)) {
+            return chord;
+        }
+        const idx = PLSystem.pitv_from_chord(pitv, chord);
+        return PLSystem.pitv_to_chord(pitv, idx.P, idx.I, idx.T, idx.V);
+    };
+
 
     /**
 
@@ -1558,12 +1570,26 @@ For more complete documentation, see PLSYSTEM.md.
                 return turtle;
             }
             if (object_name === 'c') {
+                let mutated = false;
                 if (operation === '=' && args.length === 1) {
                     let vector = PLSystem.parse_vector_literal(word.actual_parameter_expressions[0]);
                     if (vector !== null) {
                         turtle.chord = PLSystem.chord_from_pitches(vector);
+                        mutated = true;
                     }
+                } else if (args.length === 1 && operation !== '=') {
+                    // Scalar on all pitches only: `c + 20;` transposes every voice.
+                    const value = args[0];
+                    const n = turtle.chord.voices();
+                    for (let i = 0; i < n; i++) {
+                        const current = turtle.chord.getPitch(i);
+                        turtle.chord.setPitch(
+                            i,
+                            this.apply_arithmetic_scalar(current, operation, value, object_name));
+                    }
+                    mutated = true;
                 } else if (args.length >= 2) {
+                    // Per-voice: `c + voice, x;`
                     let index = args[0];
                     let value = args[1];
                     if (operation === '=') {
@@ -1572,6 +1598,12 @@ For more complete documentation, see PLSYSTEM.md.
                         let current = turtle.chord.getPitch(index);
                         turtle.chord.setPitch(index, this.apply_arithmetic_scalar(current, operation, value, object_name));
                     }
+                    mutated = true;
+                }
+                if (mutated) {
+                    // Re-factor through PITV so p/i/t/v reflect the new pitches.
+                    turtle.chord = PLSystem.chord_resync_pitv(this.pitv, turtle.chord);
+                    turtle.voiced_chord = null;
                 }
                 return turtle;
             }

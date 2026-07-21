@@ -76,7 +76,8 @@ points in a vector space, with implied harmonies; in fact, `PLSystem` defines
 several ways of working with harmony:
 
 - Matrix/vector arithmetic on `Turtle.note` and `Turtle.chord` using 
-  `Turtle.orientation` and `Turtle.magnitude`.
+  `Turtle.orientation` and `Turtle.magnitude`, plus scalar arithmetic on the 
+  pitches of `Turtle.chord` (`c + x;`, etc.).
 - Neo-Riemannian transformations of `Turtle.chord`, including actions of the 
   Generalized Contextual Group.
 - Actions of `Turtle.chord_space_group` on `Turtle.chord`.
@@ -122,7 +123,9 @@ operation, and then re-composing the chord from the new `P`, `I`, `T`, and
 Before factoring, `PLSystem` snaps the turtle chord to the equal-temperament 
 lattice with `eET(pitv.g)` and adjusts voice count to `pitv.N` (octave 
 doubling / undoubling). Continuous or off-lattice pitches are not valid PITV 
-inputs.
+inputs. Arithmetic on `c` (assign or scalar/per-voice pitch ops) always 
+re-factors and recomposes through PITV afterward, so subsequent `p`/`i`/`t`/`v` 
+commands see the updated indices.
 
 Voice-leading means producing a new chord of the specified pitch-class set as 
 the smoothest voice-leading from the currently sounding notes in the score, 
@@ -177,7 +180,9 @@ nearest integer.
   - Assign: 
     - `n = dimension, value;`
     - `n = t, d, s, c, k, v, x;` assigns note fields on `Turtle.note` (use `Wn;` to write the note to the score).
-    - `c = {pitch};`
+    - `c = {pitch};` replaces `Turtle.chord` with the given pitches, then
+      re-factors through PITV so `p`/`i`/`t`/`v` match.
+    - `c = voice, pitch;` sets one voice of `Turtle.chord` (then PITV re-factor).
     - `s = {pitch};`
     - `d = degree;`
     - `p = x;`
@@ -186,6 +191,10 @@ nearest integer.
     - `v = x;`
   - Add (means `+=`): 
     - `n + dimension, x;`
+    - `c + x;` adds `x` semitones to every pitch of `Turtle.chord` (raw MIDI
+      transposition of all voices), then re-factors the chord through PITV so
+      `p`/`i`/`t`/`v` update to the new chord.
+    - `c + voice, x;` adds `x` to one voice only (then same PITV re-factor).
     - `d + steps;`
     - `p + x;`
     - `i + x;`
@@ -193,6 +202,8 @@ nearest integer.
     - `v + x;`
   - Subtract (means `-=`): 
     - `n - dimension, x;`
+    - `c - x;` subtracts `x` from every pitch of `Turtle.chord` (then PITV re-factor).
+    - `c - voice, x;`
     - `d - steps;`
     - `p - x;`
     - `i - x;`
@@ -200,8 +211,9 @@ nearest integer.
     - `v - x;`
   - Multiply (means `*=`): 
     - `n * dimension, x;`
-    - `m * dimension, x;` sets `Turtle.magnitude[dimension]` to `x` (equivalent to 
-      legacy `Scale(dimension, x)`).
+    - `c * x;` multiplies every pitch of `Turtle.chord` by `x` (then PITV re-factor).
+    - `c * voice, x;`
+    - `m * dimension, x;` multiplies `Turtle.magnitude[dimension]` by `x`.
     - `d * steps;` 
     - `p * x;`
     - `i * x;`
@@ -209,6 +221,8 @@ nearest integer.
     - `v * x;`
   - Divide (means `/=`): 
     - `n / dimension, x;`
+    - `c / x;` divides every pitch of `Turtle.chord` by `x` (then PITV re-factor).
+    - `c / voice, x;`
     - `d / steps;` 
     - `p / x;`
     - `i / x;`
@@ -216,6 +230,8 @@ nearest integer.
     - `v / x;`
   - Exponentiate (means `^=`): 
     - `n ^ dimension, exponent;`
+    - `c ^ x;` raises every pitch of `Turtle.chord` to the power `x` (then PITV re-factor).
+    - `c ^ voice, x;`
     - `d ^ exponent;` 
     - `p ^ exponent;`
     - `i ^ exponent;`
@@ -280,7 +296,8 @@ nearest integer.
     effect.
     - `S function, target_degree;`
     - `S function, target_degree, voices;`
-  - Transpose `Turtle.chord` by `interval` semitones.
+  - Transpose `Turtle.chord` by `interval` semitones (same effect on pitches as
+    `c + interval;`, via `Chord.T`).
     - `T interval;`
   - Invert `Turtle.chord` by reflecting it in the inversion flat of the 
     cyclic region of `OP` to which `Turtle.chord` belongs.
