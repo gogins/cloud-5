@@ -3363,7 +3363,7 @@ the CsoundAC module namespace described below.</p>
 </section>
 <section class="member" id="class-Score-method-tieOverlappingNotes">
 <h4><code>tieOverlappingNotes</code> <span class="cpp">(<code>csound::Score::tieOverlappingNotes</code>)</span></h4>
-<div class="doc">If the score contains two notes of the same pitch and loudness greater than 0 that overlap in time, extend the earlier note and discard the later note.</div>
+<div class="doc">If the score contains notes of the same pitch (and optionally instrument) with velocity &gt; 0 that overlap in time, merge each contiguous group into one note: onset of the first, offset of the last (latest end time).</p><p>Later notes in the group are discarded.</div>
 <table class="params"><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>considerInstrumentNumber</code></td><td></td></tr></tbody></table>
 <p class="returns"><strong>Returns:</strong> <code>void</code></p>
 </section>
