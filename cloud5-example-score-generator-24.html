@@ -1838,18 +1838,64 @@
         gk_OrganOutOrganteq_left_to_right init 0.5
 
         instr OrganOutOrganteq
-        ; Internal reverb off; Organteq 2 stop buttons start at 109.
+        ; Internal reverb off. Organteq 2 stop-button params start at 109.
+        ; Console layout (50 slots): Pedale 10, Positif 10, Grand Orgue 20, Recit 10.
+        ; Soft flute registrations — sparse, distinct color per keyboard; no reeds/mixtures.
         vst3paramset gi_Organteq, 8, 0
-        ; Pedale
+        ; Pedale (109–118) — soft bourdon 16'/8'
         vst3paramset gi_Organteq, 109, 1
+        vst3paramset gi_Organteq, 110, 0
+        vst3paramset gi_Organteq, 111, 0
+        vst3paramset gi_Organteq, 112, 0
+        vst3paramset gi_Organteq, 113, 0
+        vst3paramset gi_Organteq, 114, 0
         vst3paramset gi_Organteq, 115, 1
-        ; Positif
+        vst3paramset gi_Organteq, 116, 0
+        vst3paramset gi_Organteq, 117, 0
+        vst3paramset gi_Organteq, 118, 0
+        ; Positif (119–128) — light flute pair
+        vst3paramset gi_Organteq, 119, 0
+        vst3paramset gi_Organteq, 120, 0
         vst3paramset gi_Organteq, 121, 1
+        vst3paramset gi_Organteq, 122, 0
+        vst3paramset gi_Organteq, 123, 0
         vst3paramset gi_Organteq, 124, 1
-        ; Grand Orgue
+        vst3paramset gi_Organteq, 125, 0
+        vst3paramset gi_Organteq, 126, 0
+        vst3paramset gi_Organteq, 127, 0
+        vst3paramset gi_Organteq, 128, 0
+        ; Grand Orgue (129–148) — single soft flute 8'
+        vst3paramset gi_Organteq, 129, 0
+        vst3paramset gi_Organteq, 130, 0
+        vst3paramset gi_Organteq, 131, 0
+        vst3paramset gi_Organteq, 132, 0
         vst3paramset gi_Organteq, 133, 1
-        ; Recit
-        vst3paramset gi_Organteq, 146, 1
+        vst3paramset gi_Organteq, 134, 0
+        vst3paramset gi_Organteq, 135, 0
+        vst3paramset gi_Organteq, 136, 0
+        vst3paramset gi_Organteq, 137, 0
+        vst3paramset gi_Organteq, 138, 0
+        vst3paramset gi_Organteq, 139, 0
+        vst3paramset gi_Organteq, 140, 0
+        vst3paramset gi_Organteq, 141, 0
+        vst3paramset gi_Organteq, 142, 0
+        vst3paramset gi_Organteq, 143, 0
+        vst3paramset gi_Organteq, 144, 0
+        vst3paramset gi_Organteq, 145, 0
+        vst3paramset gi_Organteq, 146, 0
+        vst3paramset gi_Organteq, 147, 0
+        vst3paramset gi_Organteq, 148, 0
+        ; Recit (149–158) — soft flute / céleste color
+        vst3paramset gi_Organteq, 149, 1
+        vst3paramset gi_Organteq, 150, 0
+        vst3paramset gi_Organteq, 151, 0
+        vst3paramset gi_Organteq, 152, 0
+        vst3paramset gi_Organteq, 153, 1
+        vst3paramset gi_Organteq, 154, 0
+        vst3paramset gi_Organteq, 155, 0
+        vst3paramset gi_Organteq, 156, 0
+        vst3paramset gi_Organteq, 157, 0
+        vst3paramset gi_Organteq, 158, 0
         k_gain = ampdb(gk_OrganOutOrganteq_level)
         i_overall_amps = 100
         i_normalization = ampdb(-i_overall_amps) * 2
@@ -1971,8 +2017,9 @@
 
             <p> Variant of generator-23: same Sierpinski geometry and score machinery,
                 but instruments 1–4 are Organteq manuals (Pedale, Positif, Grand&nbsp;Orgue,
-                R&eacute;cit) on MIDI channels 0–3. Play generates the score, collapses
-                dat.gui, shows the score view, then starts Csound (no auto-play on load).
+                R&eacute;cit) on MIDI channels 0–3, each with its own stop registration.
+                Play generates the score, collapses dat.gui, shows the score view, then
+                starts Csound (no auto-play on load).
             
             <h2 style="font-size:13px">Credits</h2>
 
@@ -2077,7 +2124,8 @@
                 dbg('CsoundAC ready');
 
                 let lsys = new PLSystem.PLSystem();
-                lsys.pitv.initialize(4, 84, 1, false);
+                // Organteq manuals: 5 octaves (MIDI 36–96); PITV voice-leading span matches.
+                lsys.pitv.initialize(4, 60, 1, false);
                 lsys.register_chordlindenmayer_commands({
                     durationFactor: 1.5,
                     durationMinimum: 0.12
@@ -2165,9 +2213,10 @@
                 const spanX = Math.max(1e-9, maxX - minX);
                 const spanY = Math.max(1e-9, maxY - minY);
                 const tSpan = 140;
-                // Provisional KEY span; after conform, rescale to 7 octaves + 12-TET.
-                const kMin = 24;
-                const kSpan = 84;
+                // Organteq playable compass: manuals are 5 octaves C2–C7 (MIDI 36–96).
+                // Pedal is 32 notes (C1–G3); shared pitch map uses the manual range.
+                const kMin = 36;
+                const kSpan = 60; // 36 .. 96 inclusive
                 // Organteq manuals: 1 Pedale, 2 Positif, 3 Grand_Orgue, 4 Recit
                 // → MIDI channels 0–3.
                 const organInstrs = [1, 2, 3, 4];
@@ -2181,7 +2230,7 @@
                 let turtle = PLSystem.prepare_chordl_turtle(
                     new PLSystem.Turtle(new CsoundAC.Event(), initialChord, initialScale));
                 turtle.degree = 1;
-                turtle.rangeSize = 84;
+                turtle.rangeSize = kSpan;
                 turtle.pitv = lsys.pitv;
                 lsys.set_turtle(turtle);
 
@@ -2253,13 +2302,16 @@
                 tGen = performance.now();
                 PLSystem.fix_status(lsys.score);
                 plsRescaleDimension(lsys.score, 0, true, false, 0, 0);
-                // Pitch → 7 octaves (MIDI 24–108), then snap to 12-TET integers.
-                plsRescaleDimension(lsys.score, 4, true, true, 24, 84);
+                // Pitch → Organteq manuals (MIDI 36–96), then snap to 12-TET integers.
+                plsRescaleDimension(lsys.score, 4, true, true, kMin, kSpan);
                 {
                     const nSnap = lsys.score.size();
                     for (let i = 0; i < nSnap; i++) {
                         const e = lsys.score.get(i);
-                        e.setKey(Math.round(e.getKey()));
+                        let k = Math.round(e.getKey());
+                        if (k < kMin) k = kMin;
+                        if (k > kMin + kSpan) k = kMin + kSpan;
+                        e.setKey(k);
                     }
                 }
                 // Instruments already 1–4 (Organteq manuals); do not rescale channel/instr.
