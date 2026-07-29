@@ -108,7 +108,7 @@
           alwayson "Mverb2020"
           alwayson "MasterOutput"
           
-          gk_Duration_factor init 2.5
+          gk_Duration_factor init 2.4
           
           prealloc 1, 50
           prealloc 2, 50
@@ -1881,7 +1881,7 @@
         gk_Mverb2020_level init 0
         gk_Mverb2020_Mix init 0.17
         gk_Mverb2020_Pre_delay init 0.02
-        gk_Mverb2020_Early_late_mix init 0.05
+        gk_Mverb2020_Early_late_mix init 0.02
         gk_Mverb2020_Size init 0.92
         gk_Mverb2020_Density init 1
         gk_Mverb2020_Bandwith_Frequency init 0.82
@@ -2214,8 +2214,9 @@
                 }
                 // Harmony must be time-ordered. The arrowhead path folds in x, so
                 // writing chords during path traversal scrambled the timeline.
-                // Double prior harmonic tempo (was 40 chord steps over tSpan).
-                const harmonyCount = 80;
+                const harmonyCountRaw = Number(host.control_parameters_addon.gk_Harmony_count);
+                const harmonyCount = Math.max(1, Math.min(500,
+                    Number.isFinite(harmonyCountRaw) ? Math.round(harmonyCountRaw) : 120));
                 const harmonyPeriod = tSpan / harmonyCount;
                 turtle.scale = initialScale;
                 turtle.degree = 1;
@@ -2274,10 +2275,13 @@
                     }
                 }
                 // 2) Rescale to the specified total duration (notes + harmony timeline).
+                const scoreDurRaw = Number(host.control_parameters_addon.gk_Score_duration);
+                const scoreDuration = (Number.isFinite(scoreDurRaw) && scoreDurRaw > 0)
+                    ? scoreDurRaw : (5 * 60);
                 if (typeof lsys.score.setDurationFromZero === 'function') {
-                    lsys.score.setDurationFromZero(7 * 60);
+                    lsys.score.setDurationFromZero(scoreDuration);
                 } else {
-                    lsys.score.setDuration(7 * 60);
+                    lsys.score.setDuration(scoreDuration);
                 }
                 // 3) Conform to harmony.
                 lsys.score.conformToChords(false, true);
@@ -2320,12 +2324,14 @@
         // #region Controls 
         cloud5_piece.control_parameters_addon = {
             "gk_MasterOutput_level": 6.,
-            "gk_Iterations": 11,
-            "gk_Duration_factor": 3.2,
+            "gk_Iterations": 10,
+            "gk_Duration_factor": 2.4,
+            "gk_Harmony_count": 140,
+            "gk_Score_duration": 198,
             "gk_Mverb2020_level": 0,
             "gk_Mverb2020_Mix": 0.17,
             "gk_Mverb2020_Pre_delay": 0.02,
-            "gk_Mverb2020_Early_late_mix": 0.05,
+            "gk_Mverb2020_Early_late_mix": 0.02,
             "gk_Mverb2020_Size": 0.92,
             "gk_Mverb2020_Density": 1,
             "gk_Mverb2020_Bandwith_Frequency": 0.82,
@@ -2389,6 +2395,8 @@
         cloud5_piece.menu_slider_addon(Master, 'gk_MasterOutput_level', -50, 50);
         cloud5_piece.menu_slider_addon(Master, 'gk_Iterations', 2., 20., 1.);
         cloud5_piece.menu_slider_addon(Master, 'gk_Duration_factor', 0., 20.);
+        cloud5_piece.menu_slider_addon(Master, 'gk_Harmony_count', 1., 500., 1.);
+        cloud5_piece.menu_slider_addon(Master, 'gk_Score_duration', 30., 900.);
         var Mverb2020 = cloud5_piece.menu_folder_addon('Mverb2020');
         cloud5_piece.menu_slider_addon(Mverb2020, 'gk_Mverb2020_level', -50, 50);
         cloud5_piece.menu_slider_addon(Mverb2020, 'gk_Mverb2020_Mix', 0., 1.);
